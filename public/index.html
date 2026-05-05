@@ -731,12 +731,12 @@ async function doLogout() {
 }
 
 async function loadAll() {
-  const [tec, cli, eq, atend, os, lab, hist, est, supr] = await Promise.all([
+  const [tec, cli, eq, os, lab, hist, est, supr] = await Promise.all([
     api('GET','/api/tecnicos'), api('GET','/api/clientes'), api('GET','/api/equipamentos'),
-    api('GET','/api/atendimentos'), api('GET','/api/ordens'), api('GET','/api/laboratorio'),
+    api('GET','/api/ordens'), api('GET','/api/laboratorio'),
     api('GET','/api/historico'), api('GET','/api/estoque'), api('GET','/api/estoque-supr')
   ]);
-  G.tecnicos=tec; G.clientes=cli; G.equipamentos=eq; G.atendimentos=atend;
+  G.tecnicos=tec; G.clientes=cli; G.equipamentos=eq; G.atendimentos=os;
   G.ordens=os; G.laboratorio=lab; G.historico=hist; G.estoque=est; G.suprCli=supr;
   updateBadges();
 }
@@ -830,7 +830,7 @@ async function saveAtend() {
   const eid = document.getElementById('a-id').value;
   const body = { data:document.getElementById('a-data').value, hora:document.getElementById('a-hora').value, tecnicoId:document.getElementById('a-tec').value, clienteId:cid, equipId:document.getElementById('a-eq').value, modelo:document.getElementById('a-modelo').value, nserie:document.getElementById('a-nserie').value, contador:document.getElementById('a-cont').value, descricao:document.getElementById('a-desc').value, pecas:document.getElementById('a-pecas').value, viag:+document.getElementById('a-viag').value||0, alim:+document.getElementById('a-alim').value||0, hosp:+document.getElementById('a-hosp').value||0, comb:+document.getElementById('a-comb').value||0, ped:+document.getElementById('a-ped').value||0, outros:+document.getElementById('a-out').value||0, status:document.getElementById('a-status').value, obs:document.getElementById('a-obs').value };
   try {
-    if(eid) await api('PUT',`/api/atendimentos/${eid}`,body); else await api('POST','/api/atendimentos',body);
+    if(eid) await api('PUT',`/api/ordens/${eid}`,body); else await api('POST','/api/ordens',body);
     await loadAll(); closeM('m-atend'); renderAtend(); loadDash();
   } catch(e){alert(e.message)}
 }
@@ -851,7 +851,7 @@ function renderAtend() {
     <td style="white-space:nowrap"><button class="btn btn-ghost btn-xs" onclick="openAtend('${a.id}')">Editar</button> <button class="btn btn-danger btn-xs" onclick="delAtend('${a.id}')">×</button></td>
    </tr>`}).join('');
 }
-async function delAtend(id){if(confirm('Excluir?')){await api('DELETE',`/api/atendimentos/${id}`);await loadAll();renderAtend();loadDash()}}
+async function delAtend(id){if(confirm('Excluir?')){await api('DELETE',`/api/ordens/${id}`);await loadAll();renderAtend();loadDash()}}
 
 // ─── OS ───────────────────────────────────────────────────
 function openOS(id) {
