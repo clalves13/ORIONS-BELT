@@ -255,8 +255,8 @@ tr:hover td{background:var(--sf2)}
   <div style="flex:1">
     <div class="nav-sec">Principal</div>
     <div class="ni active" onclick="nav('dashboard',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Dashboard</div>
-    <div class="ni" onclick="nav('atend',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Atendimentos<span class="ni-badge" id="b-atend">0</span></div>
-    <div class="ni" onclick="nav('os',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="2"/></svg>Ordens de Serviço<span class="ni-badge" id="b-os">0</span></div>
+    <div class="ni" onclick="nav('os',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="2"/></svg>OS / Atendimento<span class="ni-badge" id="b-os">0</span></div>
+    <div class="ni" onclick="nav('logistica',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16,8 20,8 23,11 23,16 16,16 16,8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>Logística</div>
     <div class="ni" onclick="nav('lab',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/></svg>Laboratório</div>
     <div class="nav-sec">Histórico</div>
     <div class="ni" onclick="nav('historico',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>Histórico de Atend.</div>
@@ -298,23 +298,17 @@ tr:hover td{background:var(--sf2)}
       <div class="card"><div class="card-hd"><div class="card-title">⚠ Retrabalho</div></div><div id="d-ret"></div></div>
     </div>
     <div class="card" style="margin-top:12px"><div class="card-hd"><div class="card-title">Gastos por Categoria</div></div><div id="d-bargasto" class="barchart"></div></div>
-  </div>
+  
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
+      <div class="card"><div class="card-hd"><div class="card-title">Evolução de Atendimentos por Técnico</div></div><canvas id="chart-atend-linha" style="width:100%;height:220px"></canvas></div>
+      <div class="card"><div class="card-hd"><div class="card-title">Evolução de Gastos em Rota</div></div><canvas id="chart-gastos-linha" style="width:100%;height:220px"></canvas></div>
+    </div>
+    <div style="margin-top:12px">
+      <div class="card"><div class="card-hd"><div class="card-title">Consumo de Toner por Tipo</div></div><canvas id="chart-toner-pizza" style="width:100%;height:250px"></canvas></div>
+    </div>
+</div>
 </div>
 
-<!-- ATENDIMENTOS -->
-<div id="page-atend" class="page">
-  <div class="topbar"><div><div class="tb-title">Atendimentos</div><div class="tb-sub">Serviços em campo</div></div>
-    <div class="tb-right">
-      <div class="swrap"><span style="color:var(--tx3)">🔍</span><input type="text" placeholder="Buscar..." id="s-atend" oninput="renderAtend()"></div>
-      <button class="btn btn-info btn-sm" onclick="printRelatorio('atendimentos')">🖨 Relatório</button>
-      <button class="btn btn-accent" onclick="openAtend(null)">+ Novo</button>
-    </div>
-  </div>
-  <div class="content"><div class="card" style="padding:0"><div class="twrap"><tr>
-    <thead><tr><th>#</th><th>Data</th><th>Técnico</th><th>Cliente</th><th>Equipamento</th><th>Nº Série</th><th>Status</th><th>Total R$</th><th>Ações</th></tr></thead>
-    <tbody id="tb-atend"></tbody>
-  追赶</div></div></div>
-</div>
 
 <!-- OS -->
 <div id="page-os" class="page">
@@ -325,7 +319,7 @@ tr:hover td{background:var(--sf2)}
       <button class="btn btn-accent" onclick="openOS(null)">+ Nova OS</button>
     </div>
   </div>
-  <div class="content"><div class="card" style="padding:0"><div class="twrap"></table>
+  <div class="content"><div class="card" style="padding:0"><div class="twrap"><table>
     <thead><tr><th>Nº OS</th><th>Abertura</th><th>Cliente</th><th>Equipamento</th><th>Defeito</th><th>Técnico</th><th>Status</th><th>Ações</th></tr></thead>
     <tbody id="tb-os"></tbody>
   </table></div></div></div>
@@ -415,48 +409,25 @@ tr:hover td{background:var(--sf2)}
   </table></div></div></div>
 </div>
 
+<!-- LOGISTICA -->
+<div id="page-logistica" class="page">
+  <div class="topbar"><div><div class="tb-title">Logística</div><div class="tb-sub">Controle de rotas e combustível</div></div>
+    <div class="tb-right">
+      <div class="swrap"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" id="s-log" placeholder="Buscar..." oninput="renderLogistica()"></div>
+      <button class="btn btn-ghost btn-sm" onclick="genRelatorio('logistica')">📊 Relatório</button>
+      <button class="btn btn-accent" onclick="openLogistica(null)">+ Nova Rota</button>
+    </div>
+  </div>
+  <div class="content"><div class="card" style="padding:0"><div class="twrap"><table>
+    <thead><tr><th>Data Saída</th><th>Motorista</th><th>Veículo</th><th>Placa</th><th>Rota</th><th>Combustível</th><th>Litros</th><th>Total R$</th><th>Retorno</th><th>Ações</th></tr></thead>
+    <tbody id="tb-log"></tbody>
+  </table></div></div></div>
+</div>
+
 </div><!-- /main -->
 
 <!-- ===== MODAIS ===== -->
 
-<!-- Atendimento -->
-<div class="mov" id="m-atend">
-<div class="modal">
-  <div class="mhd"><div class="mhd-title" id="m-atend-title">Novo Atendimento</div><button class="btnx" onclick="closeM('m-atend')">×</button></div>
-  <div class="mbody">
-    <input type="hidden" id="a-id">
-    <div style="margin-bottom:13px"><div class="fsec">Identificação</div>
-      <div class="fgrid fg3"><div class="fg"><label>Data</label><input type="date" id="a-data"></div><div class="fg"><label>Hora</label><input type="time" id="a-hora"></div><div class="fg"><label>Técnico</label><select id="a-tec"></select></div></div>
-    </div>
-    <div style="margin-bottom:13px"><div class="fsec">Cliente e Equipamento</div>
-      <div class="fgrid fg2">
-        <div class="fg"><label>Cliente *</label><select id="a-cli" onchange="loadEqs('a')"></select></div>
-        <div class="fg"><label>Equipamento</label><select id="a-eq" onchange="fillEq('a')"></select></div>
-        <div class="fg"><label>Modelo</label><input type="text" id="a-modelo"></div>
-        <div class="fg"><label>Nº Série</label><input type="text" id="a-nserie"></div>
-        <div class="fg"><label>Contador</label><input type="text" id="a-cont"></div>
-      </div>
-    </div>
-    <div style="margin-bottom:13px"><div class="fsec">Serviço</div>
-      <div class="fgrid"><div class="fg"><label>Descrição *</label><textarea id="a-desc" rows="3"></textarea></div><div class="fg"><label>Peças Utilizadas *</label><textarea id="a-pecas" rows="2"></textarea></div></div>
-    </div>
-    <div style="margin-bottom:13px"><div class="fsec">Gastos</div>
-      <div class="fgrid fg3">
-        <div class="fg"><label>Viagem R$</label><input type="number" id="a-viag" value="0" step="0.01" oninput="calcA()"></div>
-        <div class="fg"><label>Alimentação R$</label><input type="number" id="a-alim" value="0" step="0.01" oninput="calcA()"></div>
-        <div class="fg"><label>Hospedagem R$</label><input type="number" id="a-hosp" value="0" step="0.01" oninput="calcA()"></div>
-        <div class="fg"><label>Combustível R$</label><input type="number" id="a-comb" value="0" step="0.01" oninput="calcA()"></div>
-        <div class="fg"><label>Pedágios R$</label><input type="number" id="a-ped" value="0" step="0.01" oninput="calcA()"></div>
-        <div class="fg"><label>Outros R$</label><input type="number" id="a-out" value="0" step="0.01" oninput="calcA()"></div>
-      </div>
-      <div class="totbox"><span class="totbox-label">Total de Gastos</span><span class="totbox-val" id="a-tot">R$ 0,00</span></div>
-    </div>
-    <div><div class="fsec">Status</div>
-      <div class="fgrid fg2"><div class="fg"><label>Status</label><select id="a-status"><option>Em aberto</option><option>Concluído</option><option>Retrabalho</option></select></div><div class="fg"><label>Obs</label><input type="text" id="a-obs"></div></div>
-    </div>
-  </div>
-  <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('m-atend')">Cancelar</button><button class="btn btn-primary" onclick="saveAtend()">Salvar</button></div>
-</div></div>
 
 <!-- OS -->
 <div class="mov" id="m-os">
@@ -674,6 +645,51 @@ tr:hover td{background:var(--sf2)}
   <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('m-backup')">Fechar</button></div>
 </div></div>
 
+<!-- Logística -->
+<div class="mov" id="m-log">
+<div class="modal" style="max-width:700px">
+  <div class="mhd"><div class="mhd-title" id="m-log-title">Nova Rota</div><button class="btnx" onclick="closeM('m-log')">×</button></div>
+  <div class="mbody">
+    <input type="hidden" id="log-id">
+    <div style="margin-bottom:13px"><div class="fsec">Saída</div>
+      <div class="fgrid fg4">
+        <div class="fg"><label>Data Saída</label><input type="date" id="log-dsai"></div>
+        <div class="fg"><label>Hora Saída</label><input type="time" id="log-hsai"></div>
+        <div class="fg"><label>Data Retorno</label><input type="date" id="log-dret"></div>
+        <div class="fg"><label>Hora Retorno</label><input type="time" id="log-hret"></div>
+      </div>
+    </div>
+    <div style="margin-bottom:13px"><div class="fsec">Veículo e Motorista</div>
+      <div class="fgrid fg3">
+        <div class="fg"><label>Motorista *</label><input type="text" id="log-mot"></div>
+        <div class="fg"><label>Veículo</label><input type="text" id="log-vei"></div>
+        <div class="fg"><label>Placa</label><input type="text" id="log-placa"></div>
+      </div>
+    </div>
+    <div style="margin-bottom:13px"><div class="fsec">Rota</div>
+      <div class="fg"><label>Rota do Dia</label><textarea id="log-rota" rows="3" placeholder="Descreva os destinos, clientes visitados..."></textarea></div>
+    </div>
+    <div style="margin-bottom:13px"><div class="fsec">Combustível</div>
+      <div class="fgrid fg3">
+        <div class="fg"><label>Tipo de Combustível</label><select id="log-tcomb"><option>Gasolina</option><option>Etanol</option><option>Diesel</option><option>GNV</option><option>Elétrico</option></select></div>
+        <div class="fg"><label>Qtd. Litros</label><input type="number" id="log-lit" value="0" step="0.01" oninput="calcLog()"></div>
+        <div class="fg"><label>Valor Total R$</label><input type="number" id="log-val" value="0" step="0.01" oninput="calcLog()"></div>
+      </div>
+      <div class="totbox"><span class="totbox-label">Custo desta Rota</span><span class="totbox-val" id="log-tot">R$ 0,00</span></div>
+    </div>
+    <div style="margin-bottom:13px"><div class="fsec">Observações</div>
+      <div class="fg"><label>Obs</label><textarea id="log-obs" rows="2"></textarea></div>
+    </div>
+    <div><div class="fsec">Assinatura do Motorista</div>
+      <div style="background:var(--sf2);border:1.5px solid var(--bd2);border-radius:var(--r);padding:8px;margin-bottom:8px">
+        <canvas id="sig-canvas" width="600" height="120" style="width:100%;border:1px solid var(--bd);border-radius:6px;background:#fff;cursor:crosshair;touch-action:none"></canvas>
+      </div>
+      <div style="display:flex;gap:6px"><button class="btn btn-ghost btn-sm" onclick="sigClear()">Limpar Assinatura</button></div>
+    </div>
+  </div>
+  <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('m-log')">Cancelar</button><button class="btn btn-primary" onclick="saveLogistica()">Salvar</button></div>
+</div></div>
+
 <script>
 let G = { user: null, tecnicos: [], clientes: [], equipamentos: [], atendimentos: [], ordens: [], laboratorio: [], historico: [], estoque: [], suprCli: [], currentOSData: null, currentLabData: null };
 
@@ -682,20 +698,11 @@ const fd = d => { if(!d)return''; const p=d.split('-'); return p.length===3?`${p
 const today = () => new Date().toISOString().slice(0,10);
 const nowT = () => new Date().toTimeString().slice(0,5);
 
-// ========== API COM CREDENTIALS INCLUDE ==========
-// ⚠️ LINHA CRUCIAL ADICIONADA: credentials: 'include'
 async function api(method, url, body) {
-  const opts = { 
-    method, 
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include'  // ← ESTA É A ÚNICA LINHA ADICIONADA NO FRONTEND
-  };
+  const opts = { method, headers:{'Content-Type':'application/json'} };
   if (body) opts.body = JSON.stringify(body);
   const r = await fetch(url, opts);
-  if (!r.ok) { 
-    const e = await r.json().catch(()=>({})); 
-    throw new Error(e.error || r.statusText); 
-  }
+  if (!r.ok) { const e = await r.json().catch(()=>({})); throw new Error(e.error || r.statusText); }
   return r.json();
 }
 
@@ -731,19 +738,20 @@ async function doLogout() {
 }
 
 async function loadAll() {
-  const [tec, cli, eq, os, lab, hist, est, supr] = await Promise.all([
+  const [tec, cli, eq, os, lab, hist, est, supr, log] = await Promise.all([
     api('GET','/api/tecnicos'), api('GET','/api/clientes'), api('GET','/api/equipamentos'),
     api('GET','/api/ordens'), api('GET','/api/laboratorio'),
-    api('GET','/api/historico'), api('GET','/api/estoque'), api('GET','/api/estoque-supr')
+    api('GET','/api/historico'), api('GET','/api/estoque'), api('GET','/api/estoque-supr'),
+    api('GET','/api/logistica')
   ]);
-  G.tecnicos=tec; G.clientes=cli; G.equipamentos=eq; G.atendimentos=os;
-  G.ordens=os; G.laboratorio=lab; G.historico=hist; G.estoque=est; G.suprCli=supr;
+  G.tecnicos=tec; G.clientes=cli; G.equipamentos=eq;
+  G.atendimentos=os; G.ordens=os; G.laboratorio=lab; G.historico=hist; G.estoque=est; G.suprCli=supr; G.logistica=log||[];
   updateBadges();
 }
 
 function updateBadges() {
-  document.getElementById('b-atend').textContent = G.atendimentos.length;
-  document.getElementById('b-os').textContent = G.ordens.filter(o=>o.status==='Aberta'||o.status==='Em andamento').length;
+  const bos=document.getElementById('b-os');
+  if(bos) bos.textContent = G.ordens.filter(o=>o.status==='Aberta'||o.status==='Em andamento').length;
 }
 
 function nav(p, el) {
@@ -751,7 +759,7 @@ function nav(p, el) {
   document.querySelectorAll('.ni').forEach(x=>x.classList.remove('active'));
   const pg = document.getElementById('page-'+p); if(pg) pg.classList.add('active');
   if(el) el.classList.add('active');
-  const renders = { atend:renderAtend, os:renderOS, lab:renderLab, clientes:renderClientes, tecnicos:renderTec, usuarios:renderUsers, historico:renderHist, estoque:renderEstoque, 'supr-cli':renderSuprCli, dashboard:loadDash };
+  const renders = { os:renderOS, logistica:renderLogistica, lab:renderLab, clientes:renderClientes, tecnicos:renderTec, usuarios:renderUsers, historico:renderHist, estoque:renderEstoque, 'supr-cli':renderSuprCli, dashboard:loadDash };
   if(renders[p]) renders[p]();
 }
 
@@ -787,7 +795,8 @@ function fillCliOS() {
 }
 
 // ─── CALCS ────────────────────────────────────────────────
-function calcA() {
+function calcA() { return calcOS(); }
+function _calcA_unused() {
   const t=['a-viag','a-alim','a-hosp','a-comb','a-ped','a-out'].reduce((s,f)=>s+(+document.getElementById(f).value||0),0);
   document.getElementById('a-tot').textContent=fm(t); return t;
 }
@@ -801,57 +810,10 @@ function calcL() {
 }
 
 // ─── ATENDIMENTOS ─────────────────────────────────────────
-function openAtend(id) {
-  popTec(['a-tec']); popCli(['a-cli']);
-  document.getElementById('m-atend-title').textContent = id ? 'Editar Atendimento' : 'Novo Atendimento';
-  if (id) {
-    const a = G.atendimentos.find(x=>x.id===id); if(!a) return;
-    document.getElementById('a-id').value=a.id;
-    document.getElementById('a-data').value=a.data||''; document.getElementById('a-hora').value=a.hora||'';
-    document.getElementById('a-tec').value=a.tecnico_id||''; document.getElementById('a-cli').value=a.cliente_id||'';
-    loadEqs('a'); document.getElementById('a-eq').value=a.equip_id||'';
-    document.getElementById('a-modelo').value=a.modelo||''; document.getElementById('a-nserie').value=a.nserie||'';
-    document.getElementById('a-cont').value=a.contador||''; document.getElementById('a-desc').value=a.descricao||'';
-    document.getElementById('a-pecas').value=a.pecas||'';
-    ['viag','alim','hosp','comb','ped','outros'].forEach(k=>document.getElementById('a-'+k.replace('outros','out')).value=a[k]||0);
-    document.getElementById('a-status').value=a.status||'Em aberto'; document.getElementById('a-obs').value=a.obs||'';
-    calcA();
-  } else {
-    document.getElementById('a-id').value=''; document.getElementById('a-data').value=today(); document.getElementById('a-hora').value=nowT();
-    ['a-tec','a-cli','a-eq'].forEach(f=>document.getElementById(f).value='');
-    ['a-modelo','a-nserie','a-cont','a-desc','a-pecas','a-obs'].forEach(f=>document.getElementById(f).value='');
-    ['a-viag','a-alim','a-hosp','a-comb','a-ped','a-out'].forEach(f=>document.getElementById(f).value=0);
-    document.getElementById('a-status').value='Em aberto'; document.getElementById('a-tot').textContent='R$ 0,00';
-  }
-  openM('m-atend');
-}
-async function saveAtend() {
-  const cid = document.getElementById('a-cli').value; if(!cid){alert('Selecione o cliente.');return}
-  const eid = document.getElementById('a-id').value;
-  const body = { data:document.getElementById('a-data').value, hora:document.getElementById('a-hora').value, tecnicoId:document.getElementById('a-tec').value, clienteId:cid, equipId:document.getElementById('a-eq').value, modelo:document.getElementById('a-modelo').value, nserie:document.getElementById('a-nserie').value, contador:document.getElementById('a-cont').value, descricao:document.getElementById('a-desc').value, pecas:document.getElementById('a-pecas').value, viag:+document.getElementById('a-viag').value||0, alim:+document.getElementById('a-alim').value||0, hosp:+document.getElementById('a-hosp').value||0, comb:+document.getElementById('a-comb').value||0, ped:+document.getElementById('a-ped').value||0, outros:+document.getElementById('a-out').value||0, status:document.getElementById('a-status').value, obs:document.getElementById('a-obs').value };
-  try {
-    if(eid) await api('PUT',`/api/ordens/${eid}`,body); else await api('POST','/api/ordens',body);
-    await loadAll(); closeM('m-atend'); renderAtend(); loadDash();
-  } catch(e){alert(e.message)}
-}
-function renderAtend() {
-  const q=(document.getElementById('s-atend')?.value||'').toLowerCase();
-  const rows=G.atendimentos.filter(a=>{const c=G.clientes.find(x=>x.id===a.cliente_id);const t=G.tecnicos.find(x=>x.id===a.tecnico_id);return!q||[a.nserie,a.modelo,c?.nome,t?.nome,a.descricao].join(' ').toLowerCase().includes(q)});
-  const tb=document.getElementById('tb-atend');
-  if(!rows.length){tb.innerHTML=`<tr><td colspan="9"><div class="empty"><div class="empty-ico">📋</div><div class="empty-t">Nenhum atendimento</div></div></td></tr>`;return}
-  tb.innerHTML=rows.map((a,i)=>{const c=G.clientes.find(x=>x.id===a.cliente_id);const t=G.tecnicos.find(x=>x.id===a.tecnico_id);const e=G.equipamentos.find(x=>x.id===a.equip_id);const sb=a.status==='Concluído'?'bg':a.status==='Retrabalho'?'br':'bo';
-  return`</td><td style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--tx3)">#${i+1}</td>
-    <td>${fd(a.data)}</td>
-    <td>${t?.nome||'—'}</td>
-    <td style="font-weight:600">${c?.nome||'—'}</td>
-    <td>${e?.nome||a.modelo||'—'}</td>
-    <td style="font-family:'JetBrains Mono',monospace;font-size:11px">${a.nserie||'—'}</td>
-    <td><span class="badge ${sb}">${a.status}</span></td>
-    <td style="font-weight:700">${fm(a.total)}</td>
-    <td style="white-space:nowrap"><button class="btn btn-ghost btn-xs" onclick="openAtend('${a.id}')">Editar</button> <button class="btn btn-danger btn-xs" onclick="delAtend('${a.id}')">×</button></td>
-   </tr>`}).join('');
-}
-async function delAtend(id){if(confirm('Excluir?')){await api('DELETE',`/api/ordens/${id}`);await loadAll();renderAtend();loadDash()}}
+function openAtend(id) { openOS(id); }
+async function saveAtend() { await saveOS(); }
+function renderAtend() { renderOS(); }
+async function delAtend(id){if(confirm('Excluir?')){await api('DELETE',`/api/ordens/${id}`);await loadAll();renderOS();loadDash()}}
 
 // ─── OS ───────────────────────────────────────────────────
 function openOS(id) {
@@ -892,18 +854,10 @@ async function saveOS() {
 function renderOS() {
   const q=(document.getElementById('s-os')?.value||'').toLowerCase();
   const rows=G.ordens.filter(os=>{const c=G.clientes.find(x=>x.id===os.cliente_id);return!q||[os.num,c?.nome,os.defeito,os.modelo,os.nserie].join(' ').toLowerCase().includes(q)});
-  const tb=document.getElementById('tb-os');
+  const tb=document.getElementById('tb-os'); if(!tb)return;
   if(!rows.length){tb.innerHTML=`<tr><td colspan="8"><div class="empty"><div class="empty-ico">📝</div><div class="empty-t">Nenhuma OS</div></div></td></tr>`;return}
   tb.innerHTML=rows.map(os=>{const c=G.clientes.find(x=>x.id===os.cliente_id);const t=G.tecnicos.find(x=>x.id===os.tecnico_id);const sb=os.status==='Concluída'?'bg':os.status==='Cancelada'?'br':os.status==='Em andamento'?'bb':'bo';
-  return`<tr><td style="font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--nv)">${os.num}</td>
-    <td>${fd(os.data_ab)}</td>
-    <td style="font-weight:600">${c?.nome||'—'}</td>
-    <td>${os.modelo||'—'}</td>
-    <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${os.defeito||'—'}</td>
-    <td>${t?.nome||'—'}</td>
-    <td><span class="badge ${sb}">${os.status}</span></td>
-    <td style="white-space:nowrap"><button class="btn btn-ghost btn-xs" onclick="openOS('${os.id}')">Editar</button> <button class="btn btn-success btn-xs" onclick="showOSPreview('${os.id}')">🖨</button> <button class="btn btn-danger btn-xs" onclick="delOS('${os.id}')">×</button></td>
-   </tr>`}).join('');
+  return`<tr><td style="font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--nv)">${os.num}</td><td>${fd(os.data_ab)}</td><td style="font-weight:600">${c?.nome||'—'}</td><td>${os.modelo||'—'}</td><td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${os.defeito||'—'}</td><td>${t?.nome||'—'}</td><td><span class="badge ${sb}">${os.status}</span></td><td style="white-space:nowrap"><button class="btn btn-ghost btn-xs" onclick="openOS('${os.id}')">Editar</button> <button class="btn btn-success btn-xs" onclick="showOSPreview('${os.id}')">🖨</button> <button class="btn btn-danger btn-xs" onclick="delOS('${os.id}')">×</button></td></tr>`}).join('');
 }
 async function delOS(id){if(confirm('Excluir?')){await api('DELETE',`/api/ordens/${id}`);await loadAll();renderOS();updateBadges()}}
 
@@ -914,7 +868,7 @@ function buildOSDoc(os) {
   const tot=(os.viag||0)+(os.alim||0)+(os.hosp||0)+(os.comb||0)+(os.ped||0)+(os.outros||0);
   return `<div class="os-doc">
   <div class="os-hd">
-    <div class="os-logo-col"><div class="os-logo-txt">THEIKÓS</div><div class="os-logo-sub">Soluções</div></div>
+    <div class="os-logo-col"><div style="font-size:22px;line-height:1">🦁</div><div class="os-logo-txt">THEIKÓS</div><div class="os-logo-sub">SOLUÇÕES</div></div>
     <div class="os-mid"><div class="os-co-name">THEIKÓS SOLUÇÕES</div><div class="os-co-tag">Impressoras · Toners · Peças e Suprimentos</div><div class="os-co-addr">Av. José Faria da Rocha, 5222 — Eldorado, Contagem/MG | CEP: 32310-210<br>Tel: (31) 97505-0034</div></div>
     <div class="os-right-col"><div class="os-right-lbl">Ordem de Serviço</div><div class="os-right-num">${os.num}</div><div class="os-right-date">Abertura: ${fd(os.data_ab)}</div></div>
   </div>
@@ -925,13 +879,7 @@ function buildOSDoc(os) {
   <div class="os-sec"><span class="os-sec-title">Procedimento Técnico</span><div class="os-ta" style="min-height:70px;background:#fffdf0">${os.procedimento||''}</div></div>
   <div class="os-sec"><span class="os-sec-title">Peças Trocadas</span><div class="os-ta">${os.pecas||''}</div></div>
   <div class="os-sec"><span class="os-sec-title">Gastos do Atendimento</span>
-    <table class="os-gtbl"><tr><td>Viagem</td><td>${fm(os.viag||0)}</td></tr>
-    <tr><td>Alimentação</td><td>${fm(os.alim||0)}</td></tr>
-    <tr><td>Hospedagem</td><td>${fm(os.hosp||0)}</td></tr>
-    <tr><td>Combustível</td><td>${fm(os.comb||0)}</td></tr>
-    <tr><td>Pedágios</td><td>${fm(os.ped||0)}</td></tr>
-    <tr><td>Outros</td><td>${fm(os.outros||0)}</td></tr>
-    <tr class="os-gtot"><td>TOTAL</td><td>${fm(tot)}</td></tr></table>
+    <table class="os-gtbl"><tr><td>Viagem</td><td>${fm(os.viag||0)}</td></tr><tr><td>Alimentação</td><td>${fm(os.alim||0)}</td></tr><tr><td>Hospedagem</td><td>${fm(os.hosp||0)}</td></tr><tr><td>Combustível</td><td>${fm(os.comb||0)}</td></tr><tr><td>Pedágios</td><td>${fm(os.ped||0)}</td></tr><tr><td>Outros</td><td>${fm(os.outros||0)}</td></tr><tr class="os-gtot"><td>TOTAL</td><td>${fm(tot)}</td></tr></table>
   </div>
   <div class="os-sec"><span class="os-sec-title">Observações</span><div class="os-ta" style="min-height:32px">${os.obs||''}</div></div>
   <div class="os-sigs"><div><div class="os-sig">Assinatura do Cliente</div></div><div><div class="os-sig">Assinatura do Técnico</div></div></div>
@@ -981,7 +929,7 @@ function openLab(id) {
     document.getElementById('l-supr').value=lab.suprimentos||'';
     document.getElementById('l-gpec').value=lab.g_pecas||0; document.getElementById('l-gsup').value=lab.g_supr||0; document.getElementById('l-gout').value=lab.g_outros||0;
     document.getElementById('l-status').value=lab.status_final||CHK_ITEMS[0]; document.getElementById('l-obs').value=lab.obs||'';
-    let chk=[]; try{chk=JSON.parse(lab.checklist||'[]')}catch(e){}
+    let chk=[]; try{ const raw=lab.checklist||[]; chk=Array.isArray(raw)?raw:JSON.parse(raw); }catch(e){chk=[];}
     buildChk(chk); calcL();
     G.currentLabData=lab; document.getElementById('btn-print-lab').style.display='inline-flex';
   } else {
@@ -1008,22 +956,13 @@ function renderLab() {
   const tb=document.getElementById('tb-lab');
   if(!rows.length){tb.innerHTML=`<tr><td colspan="9"><div class="empty"><div class="empty-ico">🔬</div><div class="empty-t">Nenhuma entrada</div></div></td></tr>`;return}
   tb.innerHTML=rows.map((l,i)=>{const t=G.tecnicos.find(x=>x.id===l.tecnico_id);const sf=l.status_final||'';const sb=sf.startsWith('Aprovado')?(sf.includes('Ressalvas')?'bo':'bg'):(sf.includes('Aguardo')?'bb':'br');
-  return`<tr><td style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--tx3)">#${i+1}</td>
-    <td>${fd(l.data_entrada)}</td>
-    <td>${t?.nome||'—'}</td>
-    <td style="font-weight:600">${l.nome}</td>
-    <td style="font-family:'JetBrains Mono',monospace;font-size:11px">${l.nserie||'—'}</td>
-    <td>${l.modelo||'—'}</td>
-    <td><span class="badge ${sb}">${sf||'—'}</span></td>
-    <td>${l.tempo_horas||0}h</
-     <td><button class="btn btn-ghost btn-xs" onclick="openLab('${l.id}')">Editar</button> <button class="btn btn-info btn-xs" onclick="printChecklistById('${l.id}')">🖨</button> <button class="btn btn-danger btn-xs" onclick="delLab('${l.id}')">×</button></td>
-    </tr>`}).join('');
+  return`<tr><td style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--tx3)">#${i+1}</td><td>${fd(l.data_entrada)}</td><td>${t?.nome||'—'}</td><td style="font-weight:600">${l.nome}</td><td style="font-family:'JetBrains Mono',monospace;font-size:11px">${l.nserie||'—'}</td><td>${l.modelo||'—'}</td><td><span class="badge ${sb}">${sf||'—'}</span></td><td>${l.tempo_horas||0}h</td><td style="white-space:nowrap"><button class="btn btn-ghost btn-xs" onclick="openLab('${l.id}')">Editar</button> <button class="btn btn-info btn-xs" onclick="printChecklistById('${l.id}')">🖨</button> <button class="btn btn-danger btn-xs" onclick="delLab('${l.id}')">×</button></td></tr>`}).join('');
 }
 async function delLab(id){if(confirm('Excluir?')){await api('DELETE',`/api/laboratorio/${id}`);await loadAll();renderLab();loadDash()}}
 
 function buildChecklistDoc(lab) {
   const t=G.tecnicos.find(x=>x.id===lab.tecnico_id);
-  let chk=[]; try{chk=JSON.parse(lab.checklist||'[]')}catch(e){}
+  let chk=[]; try{ const raw=lab.checklist||[]; chk=Array.isArray(raw)?raw:JSON.parse(raw); }catch(e){chk=[];}
   const items=CHK_ITEMS.map((it,i)=>`<tr><td style="padding:4px 8px;border-bottom:1px solid #eee;font-size:10px">${it}</td><td style="text-align:center;font-size:14px;border-bottom:1px solid #eee">${chk.includes(i)?'✅':'⬜'}</td></tr>`).join('');
   return `<div style="font-family:'Sora',sans-serif;max-width:600px;margin:0 auto">
   <div style="background:#0d1f3c;color:#fff;padding:14px 18px;border-radius:8px 8px 0 0;display:flex;justify-content:space-between;align-items:center">
@@ -1198,6 +1137,7 @@ async function loadDash(){
     const maxG=Math.max(1,...gmap.map(([,v])=>v));
     document.getElementById('d-bargasto').innerHTML=gmap.length?gmap.sort((a,b)=>b[1]-a[1]).map(([n,v])=>`<div class="barrow"><div class="barlabel">${n}</div><div class="bartrack"><div class="barfill" style="width:${Math.round(v/maxG*100)}%;background:var(--ac)"><span class="barval" style="color:var(--nv)">R$${Math.round(v)}</span></div></div></div>`).join(''):`<div class="empty-s">Nenhum gasto.</div>`;
     document.getElementById('d-ret').innerHTML=d.retrabalho.length?d.retrabalho.map(r=>{const c=G.clientes.find(x=>x.id===r.cliente_id);return`<div class="ret-item"><div class="ret-title">Nº Série: ${r.nserie} — ${r.modelo||''}</div><div class="ret-sub">Cliente: ${c?.nome||'—'} · ${r.qtd} ocorrências · Último: ${fd(r.ultimo)}</div></div>`}).join(''):`<div class="empty" style="padding:20px"><div class="empty-ico">✓</div><div class="empty-t">Nenhum retrabalho</div></div>`;
+    renderGraficos(d);
   }catch(e){console.error(e)}
 }
 
@@ -1219,6 +1159,10 @@ function printRelatorio(tipo){
   } else if(tipo==='estoque'){
     title='Relatório de Estoque';
     html=`<h2 style="color:#0d1f3c;margin-bottom:14px">${title}</h2><table style="width:100%;border-collapse:collapse;font-size:11px"><thead><tr style="background:#0d1f3c;color:#fff"><th style="padding:6px 8px">Nome</th><th>Categoria</th><th>Condição</th><th>Testada</th><th>Qtd</th><th>Custo</th><th>Local</th></tr></thead><tbody>${G.estoque.map(e=>`<tr style="border-bottom:1px solid #eee${e.quantidade<=e.quantidade_min?';background:#fff8f0':''}"><td style="padding:5px 8px;font-weight:600">${e.nome}${e.quantidade<=e.quantidade_min?' ⚠':''}</td><td>${e.categoria}</td><td>${e.condicao}</td><td>${e.testada?'Sim':'—'}</td><td style="font-weight:700">${e.quantidade}</td><td>${fm(e.custo)}</td><td>${e.localizacao||'—'}</td></tr>`).join('')}</tbody></table>`;
+  } else if(tipo==='logistica'){
+    title='Relatório de Logística';
+    const totLog=(G.logistica||[]).reduce((s,l)=>s+(l.valor_total||0),0);
+    html=`<h2 style="color:#0d1f3c;margin-bottom:14px">${title}</h2><table style="width:100%;border-collapse:collapse;font-size:11px"><thead><tr style="background:#0d1f3c;color:#fff"><th style="padding:6px 8px">Data</th><th>Motorista</th><th>Veículo</th><th>Placa</th><th>Rota</th><th>Combustível</th><th>Litros</th><th>Valor</th></tr></thead><tbody>${(G.logistica||[]).map(l=>`<tr style="border-bottom:1px solid #eee"><td style="padding:5px 8px">${fd(l.data_saida)}</td><td style="font-weight:600">${l.motorista}</td><td>${l.veiculo||'—'}</td><td style="font-family:monospace">${l.placa||'—'}</td><td>${l.rota||'—'}</td><td>${l.tipo_combustivel||'—'}</td><td>${l.litros||0}L</td><td style="font-weight:700">${fm(l.valor_total)}</td></tr>`).join('')}<tr style="background:#0d1f3c;color:#fff"><td colspan="7" style="padding:5px 8px;font-weight:700">TOTAL</td><td style="font-weight:700;color:#f5a030;padding:5px 8px">${fm(totLog)}</td></tr></tbody></table>`;
   }
   const header=`<div style="background:#0d1f3c;color:#fff;padding:12px 18px;border-radius:8px 8px 0 0;display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><div><div style="font-size:14px;font-weight:800;color:#e07818">THEIKÓS SOLUÇÕES</div><div style="font-size:9px;opacity:.6">${title} · Gerado em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</div></div></div>`;
   openPrintWindow(header+html,'');
@@ -1251,6 +1195,184 @@ async function doImport(){
     await loadAll();
     loadDash();
   }catch(e){alert("Erro ao restaurar: "+e.message)}
+}
+
+// ─── LOGÍSTICA ────────────────────────────────────────
+let sigPad={drawing:false,ctx:null,last:{x:0,y:0}};
+function sigInit(){
+  const c=document.getElementById('sig-canvas'); if(!c||sigPad.ctx)return;
+  sigPad.ctx=c.getContext('2d');
+  sigPad.ctx.strokeStyle='#1a2340'; sigPad.ctx.lineWidth=2; sigPad.ctx.lineCap='round';
+  const getPos=(e)=>{const r=c.getBoundingClientRect();const t=e.touches?e.touches[0]:e;return{x:(t.clientX-r.left)*(c.width/r.width),y:(t.clientY-r.top)*(c.height/r.height)};};
+  const start=(e)=>{sigPad.drawing=true;const p=getPos(e);sigPad.last=p;e.preventDefault();};
+  const move=(e)=>{if(!sigPad.drawing)return;const p=getPos(e);sigPad.ctx.beginPath();sigPad.ctx.moveTo(sigPad.last.x,sigPad.last.y);sigPad.ctx.lineTo(p.x,p.y);sigPad.ctx.stroke();sigPad.last=p;e.preventDefault();};
+  const end=()=>{sigPad.drawing=false;};
+  c.addEventListener('mousedown',start); c.addEventListener('mousemove',move); c.addEventListener('mouseup',end);
+  c.addEventListener('touchstart',start,{passive:false}); c.addEventListener('touchmove',move,{passive:false}); c.addEventListener('touchend',end);
+}
+function sigClear(){const c=document.getElementById('sig-canvas');if(c&&sigPad.ctx)sigPad.ctx.clearRect(0,0,c.width,c.height);}
+function sigGet(){const c=document.getElementById('sig-canvas');if(!c)return'';const blank=document.createElement('canvas');blank.width=c.width;blank.height=c.height;return c.toDataURL()===blank.toDataURL()?'':c.toDataURL();}
+function sigSet(data){const c=document.getElementById('sig-canvas');if(!c||!data)return;const img=new Image();img.onload=()=>{sigPad.ctx.clearRect(0,0,c.width,c.height);sigPad.ctx.drawImage(img,0,0);};img.src=data;}
+function calcLog(){const v=+document.getElementById('log-val').value||0;document.getElementById('log-tot').textContent='R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:2});}
+function openLogistica(id){
+  sigPad.ctx=null;
+  setTimeout(sigInit,50);
+  document.getElementById('m-log-title').textContent=id?'Editar Rota':'Nova Rota';
+  if(id){
+    const l=G.logistica.find(x=>x.id===id); if(!l) return;
+    document.getElementById('log-id').value=l.id;
+    document.getElementById('log-dsai').value=l.data_saida||''; document.getElementById('log-hsai').value=l.hora_saida||'';
+    document.getElementById('log-dret').value=l.data_retorno||''; document.getElementById('log-hret').value=l.hora_retorno||'';
+    document.getElementById('log-mot').value=l.motorista||''; document.getElementById('log-vei').value=l.veiculo||'';
+    document.getElementById('log-placa').value=l.placa||''; document.getElementById('log-rota').value=l.rota||'';
+    document.getElementById('log-tcomb').value=l.tipo_combustivel||'Gasolina';
+    document.getElementById('log-lit').value=l.litros||0; document.getElementById('log-val').value=l.valor_total||0;
+    document.getElementById('log-obs').value=l.obs||''; calcLog();
+    setTimeout(()=>sigSet(l.assinatura||''),80);
+  } else {
+    document.getElementById('log-id').value='';
+    document.getElementById('log-dsai').value=today(); document.getElementById('log-hsai').value=nowT();
+    ['log-dret','log-hret','log-mot','log-vei','log-placa','log-rota','log-obs'].forEach(f=>document.getElementById(f).value='');
+    document.getElementById('log-tcomb').value='Gasolina';
+    document.getElementById('log-lit').value=0; document.getElementById('log-val').value=0;
+    document.getElementById('log-tot').textContent='R$ 0,00';
+  }
+  openM('m-log');
+}
+async function saveLogistica(){
+  const mot=document.getElementById('log-mot').value.trim(); if(!mot){alert('Informe o motorista.');return}
+  const eid=document.getElementById('log-id').value;
+  const body={data_saida:document.getElementById('log-dsai').value,hora_saida:document.getElementById('log-hsai').value,data_retorno:document.getElementById('log-dret').value,hora_retorno:document.getElementById('log-hret').value,motorista:mot,veiculo:document.getElementById('log-vei').value,placa:document.getElementById('log-placa').value,rota:document.getElementById('log-rota').value,tipo_combustivel:document.getElementById('log-tcomb').value,litros:+document.getElementById('log-lit').value||0,valor_total:+document.getElementById('log-val').value||0,obs:document.getElementById('log-obs').value,assinatura:sigGet()};
+  try{
+    if(eid) await api('PUT',`/api/logistica/${eid}`,body); else await api('POST','/api/logistica',body);
+    await loadAll(); closeM('m-log'); renderLogistica();
+  }catch(e){alert(e.message)}
+}
+async function delLog(id){if(confirm('Excluir rota?')){await api('DELETE',`/api/logistica/${id}`);await loadAll();renderLogistica();}}
+function renderLogistica(){
+  const q=(document.getElementById('s-log')?.value||'').toLowerCase();
+  const rows=(G.logistica||[]).filter(l=>!q||[l.motorista,l.veiculo,l.placa,l.rota].join(' ').toLowerCase().includes(q));
+  const tb=document.getElementById('tb-log'); if(!tb) return;
+  if(!rows.length){tb.innerHTML=`<tr><td colspan="10"><div class="empty"><div class="empty-ico">🚛</div><div class="empty-t">Nenhuma rota registrada</div></div></td></tr>`;return}
+  tb.innerHTML=rows.map(l=>`<tr>
+    <td>${fd(l.data_saida)} ${l.hora_saida||''}</td>
+    <td style="font-weight:600">${l.motorista}</td>
+    <td>${l.veiculo||'—'}</td>
+    <td style="font-family:'JetBrains Mono',monospace;font-size:11px">${l.placa||'—'}</td>
+    <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l.rota||'—'}</td>
+    <td><span class="badge bb">${l.tipo_combustivel||'—'}</span></td>
+    <td>${l.litros||0}L</td>
+    <td style="font-weight:700">${fm(l.valor_total)}</td>
+    <td>${l.data_retorno?fd(l.data_retorno)+' '+l.hora_retorno:'—'}</td>
+    <td style="white-space:nowrap">
+      <button class="btn btn-ghost btn-xs" onclick="openLogistica('${l.id}')">Editar</button>
+      <button class="btn btn-info btn-xs" onclick="printLogRel('${l.id}')">🖨</button>
+      <button class="btn btn-danger btn-xs" onclick="delLog('${l.id}')">×</button>
+    </td>
+  </tr>`).join('');
+}
+function printLogRel(id){
+  const l=G.logistica.find(x=>x.id===id); if(!l) return;
+  const html=`<div class="os-doc"><div class="os-hd"><div class="os-logo-col"><div class="os-logo-txt">THEIKÓS</div><div class="os-logo-sub">SOLUÇÕES</div></div><div class="os-mid"><div class="os-co-name">THEIKÓS SOLUÇÕES</div><div class="os-co-tag">Impressoras · Toners · Peças e Suprimentos</div><div class="os-co-addr">Av. José Faria da Rocha, 5222 - Eldorado, Contagem - MG | CEP: 32310-210<br>Tel: (31) 97505-0034</div></div><div class="os-right-col"><div class="os-right-lbl">Relatório de Rota</div><div class="os-right-date">${fd(l.data_saida)}</div></div></div>
+  <div class="os-sec"><span class="os-sec-title">Veículo e Motorista</span><div class="os-g4"><div class="os-field"><label>Motorista</label><p>${l.motorista}</p></div><div class="os-field"><label>Veículo</label><p>${l.veiculo||'—'}</p></div><div class="os-field"><label>Placa</label><p>${l.placa||'—'}</p></div></div></div>
+  <div class="os-sec"><span class="os-sec-title">Horários</span><div class="os-g4"><div class="os-field"><label>Data Saída</label><p>${fd(l.data_saida)}</p></div><div class="os-field"><label>Hora Saída</label><p>${l.hora_saida||'—'}</p></div><div class="os-field"><label>Data Retorno</label><p>${l.data_retorno?fd(l.data_retorno):'—'}</p></div><div class="os-field"><label>Hora Retorno</label><p>${l.hora_retorno||'—'}</p></div></div></div>
+  <div class="os-sec"><span class="os-sec-title">Rota do Dia</span><div class="os-ta">${l.rota||'—'}</div></div>
+  <div class="os-sec"><span class="os-sec-title">Combustível</span><div class="os-g4"><div class="os-field"><label>Tipo</label><p>${l.tipo_combustivel||'—'}</p></div><div class="os-field"><label>Litros</label><p>${l.litros||0} L</p></div><div class="os-field"><label>Valor Total</label><p style="font-weight:700">${fm(l.valor_total)}</p></div></div></div>
+  ${l.obs?`<div class="os-sec"><span class="os-sec-title">Observações</span><div class="os-ta">${l.obs}</div></div>`:''}
+  <div class="os-sigs"><div class="os-sig">${l.assinatura?`<img src="${l.assinatura}" style="max-height:60px;margin-bottom:4px">`:''}<div style="margin-top:20px;border-top:1px solid #555;padding-top:4px">${l.motorista} — Motorista</div></div><div class="os-sig"><div style="margin-top:44px;border-top:1px solid #555;padding-top:4px">Responsável — Theikós</div></div></div>
+  </div>`;
+  openPrintWindow(html,'');
+}
+
+// ─── GRÁFICOS ─────────────────────────────────────────────
+function renderGraficos(d){
+  renderGraficoLinhaAtend(d);
+  renderGraficoLinhaGastos(d);
+  renderGraficoPizzaToner(d);
+}
+function mkCanvas(id,w,h){
+  const c=document.getElementById(id); if(!c)return null;
+  c.width=w||c.offsetWidth||400; c.height=h||220;
+  const ctx=c.getContext('2d'); ctx.clearRect(0,0,c.width,c.height); return ctx;
+}
+function lineChart(ctx,labels,datasets,title){
+  const W=ctx.canvas.width,H=ctx.canvas.height;
+  const pad={t:30,r:20,b:40,l:50};
+  const w=W-pad.l-pad.r, h=H-pad.t-pad.b;
+  const colors=['#1e4080','#e07818','#1a7a4a','#b83030'];
+  const allVals=datasets.flatMap(d=>d.data);
+  const maxV=Math.max(1,...allVals);
+  // grid
+  ctx.strokeStyle='#e0e8f0'; ctx.lineWidth=1;
+  for(let i=0;i<=4;i++){const y=pad.t+h*(1-i/4);ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(pad.l+w,y);ctx.stroke();}
+  // y labels
+  ctx.fillStyle='#8899bb'; ctx.font='10px Sora,sans-serif'; ctx.textAlign='right';
+  for(let i=0;i<=4;i++){const y=pad.t+h*(1-i/4);ctx.fillText(Math.round(maxV*i/4),pad.l-6,y+3);}
+  // title
+  ctx.fillStyle='#1a2340'; ctx.font='bold 11px Sora,sans-serif'; ctx.textAlign='center';
+  ctx.fillText(title,W/2,16);
+  // x labels
+  ctx.fillStyle='#8899bb'; ctx.font='10px Sora,sans-serif';
+  labels.forEach((lb,i)=>{const x=pad.l+w*i/(Math.max(labels.length-1,1));ctx.fillText(lb,x,H-8);});
+  // lines
+  datasets.forEach((ds,di)=>{
+    const color=colors[di%colors.length];
+    ctx.strokeStyle=color; ctx.lineWidth=2.5; ctx.lineJoin='round'; ctx.beginPath();
+    ds.data.forEach((v,i)=>{const x=pad.l+w*i/(Math.max(labels.length-1,1));const y=pad.t+h*(1-v/maxV);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
+    ctx.stroke();
+    // dots
+    ds.data.forEach((v,i)=>{const x=pad.l+w*i/(Math.max(labels.length-1,1));const y=pad.t+h*(1-v/maxV);ctx.beginPath();ctx.arc(x,y,3.5,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();});
+    // legend
+    ctx.fillStyle=color; ctx.fillRect(pad.l+di*120,H-28,10,10);
+    ctx.fillStyle='#445577'; ctx.font='10px Sora,sans-serif'; ctx.textAlign='left';
+    ctx.fillText(ds.label,pad.l+di*120+14,H-20);
+  });
+}
+function pieChart(ctx,labels,values,title){
+  const W=ctx.canvas.width,H=ctx.canvas.height;
+  const colors=['#1e4080','#e07818','#1a7a4a','#b83030','#6b3fa0','#1a50b0','#c06010'];
+  const total=values.reduce((a,b)=>a+b,0)||1;
+  const cx=W*0.38,cy=H/2,r=Math.min(W*0.28,H*0.38);
+  ctx.fillStyle='#1a2340'; ctx.font='bold 11px Sora,sans-serif'; ctx.textAlign='center';
+  ctx.fillText(title,W/2,16);
+  let angle=-Math.PI/2;
+  values.forEach((v,i)=>{const slice=2*Math.PI*v/total;ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,angle,angle+slice);ctx.closePath();ctx.fillStyle=colors[i%colors.length];ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();angle+=slice;});
+  // legend
+  labels.forEach((lb,i)=>{const ly=30+i*22;ctx.fillStyle=colors[i%colors.length];ctx.fillRect(W*0.68,ly,12,12);ctx.fillStyle='#1a2340';ctx.font='10px Sora,sans-serif';ctx.textAlign='left';ctx.fillText(`${lb}: ${values[i]}`,W*0.68+16,ly+10);});
+}
+function renderGraficoLinhaAtend(d){
+  if(!d?.por_tecnico?.length)return;
+  const ctx=mkCanvas('chart-atend-linha'); if(!ctx)return;
+  const meses=d.gastos_mensais?.map(g=>g.mes.slice(5))||[''];
+  const tecs=d.por_tecnico.slice(0,3);
+  // build monthly data per tecnico from ordens
+  const datasets=tecs.map(t=>({label:t.nome,data:meses.map(()=>0)}));
+  G.ordens.forEach(o=>{
+    if(!o.data_ab)return;
+    const mes=o.data_ab.slice(5,7);
+    const mi=meses.indexOf(mes);
+    if(mi<0)return;
+    const ti=tecs.findIndex(t=>G.tecnicos.find(x=>x.id===o.tecnico_id)?.nome===t.nome);
+    if(ti>=0)datasets[ti].data[mi]++;
+  });
+  lineChart(ctx,meses,datasets,'Evolução de Atendimentos por Técnico');
+}
+function renderGraficoLinhaGastos(d){
+  if(!d?.gastos_mensais?.length)return;
+  const ctx=mkCanvas('chart-gastos-linha'); if(!ctx)return;
+  const labels=d.gastos_mensais.map(g=>g.mes.slice(5)+'/'+g.mes.slice(2,4));
+  const vals=d.gastos_mensais.map(g=>g.total);
+  lineChart(ctx,labels,[{label:'Gastos em Rota (R$)',data:vals}],'Evolução de Gastos em Rota');
+}
+function renderGraficoPizzaToner(d){
+  if(!d?.consumo_toner?.length)return;
+  const ctx=mkCanvas('chart-toner-pizza'); if(!ctx)return;
+  // aggregate by type
+  const tots={Preto:0,Magenta:0,Ciano:0,Amarelo:0,Grampos:0};
+  d.consumo_toner.forEach(c=>{tots.Preto+=c.preto||0;tots.Magenta+=c.magenta||0;tots.Ciano+=c.ciano||0;tots.Amarelo+=c.amarelo||0;tots.Grampos+=c.grampos||0;});
+  const labels=Object.keys(tots).filter(k=>tots[k]>0);
+  const values=labels.map(k=>tots[k]);
+  pieChart(ctx,labels,values,'Consumo de Toner por Tipo');
 }
 
 // ─── INIT ─────────────────────────────────────────────────
