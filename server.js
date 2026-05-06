@@ -55,25 +55,40 @@ const col = (name) => db.collection(name);
 function requireAuth(req,res,next){ if(req.session.user)return next(); res.status(401).json({error:'Não autenticado'}); }
 function requireAdmin(req,res,next){ if(req.session.user&&(req.session.user.role==='admin'||req.session.user.isMaster))return next(); res.status(403).json({error:'Acesso negado'}); }
 
+
+// PERFIS DE ACESSO
+const PERFIS = {
+  admin:          { label:'Administrador', modulos:['dashboard','os','lab','historico','estoque','supr-cli','clientes','tecnicos','usuarios','logistica'] },
+  tecnico:        { label:'Técnico',       modulos:['dashboard','os','lab','historico','estoque','supr-cli','clientes'] },
+  logistica:      { label:'Logística',     modulos:['dashboard','logistica','clientes'] },
+  rh:             { label:'RH',            modulos:['dashboard','tecnicos','usuarios'] },
+  financeiro:     { label:'Financeiro',    modulos:['dashboard','os','historico','logistica'] },
+  comercial:      { label:'Comercial',     modulos:['dashboard','os','historico','clientes'] },
+  administrativo: { label:'Administrativo',modulos:['dashboard','os','lab','historico','estoque','supr-cli','clientes','logistica'] },
+};
+app.get('/api/perfis', requireAuth, (req,res) => {
+  res.json(Object.entries(PERFIS).map(([k,v])=>({value:k, label:v.label, modulos:v.modulos})));
+});
+
 // AUTH
 app.post('/api/login', async (req,res) => {
   try {
     const {login,senha} = req.body;
     if (login==='master' && bcrypt.compareSync(senha||'', MASTER_HASH)) {
-      req.session.user = {id:'master',login:'master',nome:'Master Admin',role:'admin',isMaster:true};
+      req.session.user = {id:'master',login:'master',nome:'Master Admin',role:'admin',perfil:'admin',isMaster:true};
       return res.json({ok:true,user:req.session.user});
     }
     if (login==='admin') {
       const adminPass = process.env.ADMIN_PASSWORD||'admin123';
       if (senha===adminPass) {
-        req.session.user = {id:'admin',login:'admin',nome:'Administrador',role:'admin'};
+        req.session.user = {id:'admin',login:'admin',nome:'Administrador',role:'admin',perfil:'admin'};
         return res.json({ok:true,user:req.session.user});
       }
       return res.status(401).json({error:'Usuário ou senha incorretos'});
     }
     const user = await col('users').findOne({login, ativo:1});
     if (!user||!bcrypt.compareSync(senha||'',user.senha_hash)) return res.status(401).json({error:'Usuário ou senha incorretos'});
-    req.session.user = {id:user._id.toString(),login:user.login,nome:user.nome,role:user.role};
+    req.session.user = {id:user._id.toString(),login:user.login,nome:user.nome,role:user.role,perfil:user.perfil||user.role};
     res.json({ok:true,user:req.session.user});
   } catch(e){res.status(500).json({error:e.message});}
 });
@@ -90,14 +105,14 @@ app.post('/api/users', requireAuth, requireAdmin, async (req,res) => {
     const {nome,login,senha,role,ativo}=req.body;
     if(!nome||!login||!senha) return res.status(400).json({error:'Campos obrigatórios'});
     if(await col('users').findOne({login})) return res.status(400).json({error:'Login já existe'});
-    await col('users').insertOne({login,nome,senha_hash:bcrypt.hashSync(senha,10),role:role||'tecnico',ativo:ativo??1,created_at:now()});
+    await col('users').insertOne({login,nome,senha_hash:bcrypt.hashSync(senha,10),role:role||'tecnico',perfil:req.body.perfil||role||'tecnico',ativo:ativo??1,created_at:now()});
     res.json({ok:true});
   }catch(e){res.status(500).json({error:e.message});}
 });
 app.put('/api/users/:id', requireAuth, requireAdmin, async (req,res) => {
   try {
     const {nome,login,senha,role,ativo}=req.body;
-    const upd={nome,login,role,ativo};
+    const upd={nome,login,role,perfil:req.body.perfil||role,ativo};
     if(senha) upd.senha_hash=bcrypt.hashSync(senha,10);
     await col('users').updateOne({_id:new ObjectId(req.params.id)},{$set:upd});
     res.json({ok:true});
@@ -216,7 +231,7 @@ app.get('/api/dashboard', requireAuth, async (req,res) => {
       col('tecnicos').find().toArray(),
       col('clientes').find().toArray(),
       col('supr_cli').find().toArray(),
-      col('supr_movs').find().sort({created_at:-1}).limit(200).toArray()
+      col('supr_movs').find().sort({created_at:-1}).toArray()
     ]);
     const total_os=ordens.length;
     const os_abertas=ordens.filter(o=>o.status==='Aberta'||o.status==='Em andamento').length;
