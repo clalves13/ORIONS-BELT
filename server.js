@@ -274,7 +274,7 @@ app.get('/api/dashboard', requireAuth, async (req,res) => {
       meses[mes]+=(o.viag||0)+(o.alim||0)+(o.hosp||0)+(o.comb||0)+(o.ped||0)+(o.outros||0);
     });
     const gastos_mensais=Object.entries(meses).sort((a,b)=>a[0].localeCompare(b[0])).slice(-6).map(([mes,total])=>({mes,total}));
-    res.json({total_os,os_abertas,os_concluidas,total_lab,por_tecnico,gastos_tecnico,gastos,consumo_toner,retrabalho,gastos_mensais});
+    res.json({total_os,total_atend:total_os,os_abertas,os_concluidas,total_lab,por_tecnico,gastos_tecnico,gastos,consumo_toner,retrabalho,gastos_mensais});
   }catch(e){res.status(500).json({error:e.message});}
 });
 
@@ -304,6 +304,53 @@ app.get('/api/atendimentos', requireAuth, async (req,res) => { const d=await col
 app.post('/api/atendimentos', requireAuth, async (req,res) => { try{ const b=req.body; const num=(await col('counter').findOneAndUpdate({_id:'os'},{$inc:{valor:1}},{upsert:true,returnDocument:'after'})).valor||1; const cliente=b.clienteId?await col('clientes').findOne({_id:new ObjectId(b.clienteId)}):null; const tecnico=b.tecnicoId?await col('tecnicos').findOne({_id:new ObjectId(b.tecnicoId)}):null; const total=(b.viag||0)+(b.alim||0)+(b.hosp||0)+(b.comb||0)+(b.ped||0)+(b.outros||0); await col('ordens').insertOne({num,data_ab:b.data||b.data_ab||'',tecnico_id:b.tecnicoId||'',cliente_id:b.clienteId||'',equip_id:b.equipId||'',contato:b.contato||'',tel:b.tel||'',end_logradouro:b.end||'',modelo:b.modelo||'',nserie:b.nserie||'',contador:b.contador||'',defeito:b.descricao||b.defeito||'',procedimento:b.procedimento||'',pecas:b.pecas||'',obs:b.obs||'',viag:b.viag||0,alim:b.alim||0,hosp:b.hosp||0,comb:b.comb||0,ped:b.ped||0,outros:b.outros||0,total,data_chamado:b.data_chamado||'',data_atend:b.data_atend||'',hora_chegada:b.hora_chegada||'',hora_saida:b.hora_saida||'',status:b.status||'Aberta',checklist:b.checklist||[],sig_tec:b.sig_tec||'',sig_cli:b.sig_cli||'',created_at:new Date().toISOString()}); if(b.status==='Concluída'||b.status==='Concluído'){await col('historico').insertOne({os_num:num,tipo:'os',data:b.data||b.data_ab||'',cliente:cliente?.nome||'',tecnico:tecnico?.nome||'',modelo:b.modelo||'',nserie:b.nserie||'',defeito:b.descricao||b.defeito||'',procedimento:b.procedimento||'',pecas:b.pecas||'',total,created_at:new Date().toISOString()});} res.json({ok:true,num});}catch(e){res.status(500).json({error:e.message});} });
 app.put('/api/atendimentos/:id', requireAuth, async (req,res) => { try{ const b=req.body; const total=(b.viag||0)+(b.alim||0)+(b.hosp||0)+(b.comb||0)+(b.ped||0)+(b.outros||0); await col('ordens').updateOne({_id:new ObjectId(req.params.id)},{$set:{data_ab:b.data||b.data_ab||'',tecnico_id:b.tecnicoId||'',cliente_id:b.clienteId||'',equip_id:b.equipId||'',modelo:b.modelo||'',nserie:b.nserie||'',contador:b.contador||'',defeito:b.descricao||b.defeito||'',procedimento:b.procedimento||'',pecas:b.pecas||'',obs:b.obs||'',viag:b.viag||0,alim:b.alim||0,hosp:b.hosp||0,comb:b.comb||0,ped:b.ped||0,outros:b.outros||0,total,status:b.status||'Aberta',checklist:b.checklist||[],sig_tec:b.sig_tec||'',sig_cli:b.sig_cli||''}}); res.json({ok:true});}catch(e){res.status(500).json({error:e.message});} });
 app.delete('/api/atendimentos/:id', requireAuth, async (req,res) => { try{await col('ordens').deleteOne({_id:new ObjectId(req.params.id)});res.json({ok:true});}catch(e){res.status(500).json({error:e.message});} });
+
+
+// RESET DE SENHA
+app.post('/api/forgot-password', async (req,res) => {
+  try {
+    const {login} = req.body;
+    if(!login) return res.status(400).json({error:'Informe o login ou email.'});
+    const user = await col('users').findOne({$or:[{login},{email:login}]});
+    if(!user) return res.json({ok:true,msg:'Se o usuário existir, o email será enviado.'});
+    const token = require('crypto').randomBytes(20).toString('hex');
+    const expiry = Date.now() + 3600000; // 1h
+    await col('users').updateOne({_id:user._id},{$set:{reset_token:token,reset_expiry:expiry}});
+    // Tente enviar email se SMTP configurado
+    const smtpUser = process.env.SMTP_USER;
+    const smtpPass = process.env.SMTP_PASS;
+    if(smtpUser && smtpPass) {
+      try {
+        const nodemailer = require('nodemailer');
+        const transporter = nodemailer.createTransport({service:'gmail',auth:{user:smtpUser,pass:smtpPass}});
+        const appUrl = process.env.APP_URL || 'https://theikos-at-production.up.railway.app';
+        await transporter.sendMail({
+          from:`"Theikós AT" <${smtpUser}>`,
+          to: user.email || smtpUser,
+          subject:'Redefinição de Senha — Theikós AT',
+          html:`<p>Olá, <b>${user.nome}</b>!</p><p>Clique no link para redefinir sua senha:</p><p><a href="${appUrl}/reset?token=${token}">${appUrl}/reset?token=${token}</a></p><p>O link expira em 1 hora.</p>`
+        });
+        return res.json({ok:true,msg:'Email enviado! Verifique sua caixa de entrada.'});
+      } catch(e) {
+        console.error('Email error:',e.message);
+      }
+    }
+    // Se não tem SMTP, retorna o token para exibir (modo dev)
+    res.json({ok:true,token,msg:'SMTP não configurado. Token gerado: '+token});
+  } catch(e) { res.status(500).json({error:e.message}); }
+});
+
+app.post('/api/reset-password', async (req,res) => {
+  try {
+    const {token, nova_senha} = req.body;
+    if(!token||!nova_senha) return res.status(400).json({error:'Dados inválidos.'});
+    const user = await col('users').findOne({reset_token:token,reset_expiry:{$gt:Date.now()}});
+    if(!user) return res.status(400).json({error:'Token inválido ou expirado.'});
+    const bcrypt = require('bcryptjs');
+    await col('users').updateOne({_id:user._id},{$set:{senha_hash:bcrypt.hashSync(nova_senha,10),$unset:{reset_token:'',reset_expiry:''}}});
+    res.json({ok:true,msg:'Senha redefinida com sucesso!'});
+  } catch(e) { res.status(500).json({error:e.message}); }
+});
 
 // Debug route
 app.get('/api/test', (req,res) => res.json({ok:true, session: req.session.user || null}));

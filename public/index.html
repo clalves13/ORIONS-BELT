@@ -59,7 +59,7 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--tx);font-siz
 .btn-logout:hover{color:var(--rd)}
 
 /* MAIN */
-#main{margin-left:220px;min-height:100vh}
+#main{margin-left:220px;min-height:100vh;padding-bottom:32px}
 .topbar{background:var(--sf);border-bottom:1px solid var(--bd);padding:0 24px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
 .tb-title{font-size:14px;font-weight:700;color:var(--nv)}
 .tb-sub{font-size:10px;color:var(--tx3);margin-top:1px}
@@ -244,8 +244,16 @@ tr:hover td{background:var(--sf2)}
   </div>
   <div class="lerr" id="lerr"></div>
   <div class="lfg"><label>Usuário</label><input type="text" id="l-user" onkeydown="if(event.key==='Enter')doLogin()"></div>
-  <div class="lfg"><label>Senha</label><input type="password" id="l-pass" onkeydown="if(event.key==='Enter')doLogin()"></div>
-  <button class="lbtn" onclick="doLogin()">Entrar</button>
+  <div class="lfg"><label>Senha</label><div style="position:relative;display:flex;align-items:center">
+  <input type="password" id="l-pass" onkeydown="if(event.key==='Enter')doLogin()" style="padding-right:40px;width:100%">
+  <button type="button" onclick="toggleSenha('l-pass','eye-login')" style="position:absolute;right:10px;background:none;border:none;cursor:pointer;color:#8899bb;padding:0;line-height:1">
+    <svg id="eye-login" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+  </button>
+</div></div>
+  <div style="text-align:right;margin:-4px 0 10px">
+  <button type="button" onclick="openForgotPassword()" style="background:none;border:none;color:#e07818;font-size:11px;cursor:pointer;text-decoration:underline;padding:0">Esqueceu a senha?</button>
+</div>
+<button class="lbtn" onclick="doLogin()">Entrar</button>
 </div>
 </div>
 
@@ -429,6 +437,17 @@ tr:hover td{background:var(--sf2)}
   </table></div></div></div>
 </div>
 
+<!-- DEV FOOTER -->
+<div id="dev-footer" style="position:fixed;bottom:0;left:0;right:0;height:28px;background:rgba(255,255,255,0.96);border-top:1px solid #e0e8f0;display:flex;align-items:center;justify-content:center;gap:8px;z-index:50;font-size:9px;color:#8899bb;letter-spacing:.3px">
+  <img src="data:image/png;base64,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" style="height:16px;width:16px;object-fit:contain;border-radius:50%">
+  <span>Desenvolvido por <strong style="color:#1e4080">Clairton Alves</strong></span>
+  <span style="color:#c0c8d8">•</span>
+  <span>© 2026 Todos os direitos reservados</span>
+  <span style="color:#c0c8d8">•</span>
+  <span style="font-size:8px;color:#b0bcc8">Theikós AT v4.0</span>
+</div>
+
+
 </div><!-- /main -->
 
 <!-- ===== MODAIS ===== -->
@@ -588,7 +607,12 @@ tr:hover td{background:var(--sf2)}
     <div class="fgrid fg2">
       <div class="fg" style="grid-column:1/-1"><label>Nome *</label><input type="text" id="u-nome"></div>
       <div class="fg"><label>Login *</label><input type="text" id="u-login"></div>
-      <div class="fg"><label>Senha *</label><input type="password" id="u-senha"></div>
+      <div class="fg"><label>Senha *</label><div style="position:relative;display:flex;align-items:center">
+  <input type="password" id="u-senha" style="padding-right:36px;width:100%">
+  <button type="button" onclick="toggleSenha('u-senha','eye-usr')" style="position:absolute;right:8px;background:none;border:none;cursor:pointer;color:#8899bb;padding:0;line-height:1">
+    <svg id="eye-usr" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+  </button>
+</div></div>
       <div class="fg"><label>Categoria / Perfil</label><select id="u-perfil" onchange="setRoleFromPerfil()">
         <option value="tecnico">Técnico</option>
         <option value="logistica">Logística</option>
@@ -748,6 +772,7 @@ async function doLogin() {
     document.getElementById('sb-role').textContent = res.user.role === 'admin' ? 'Administrador' : 'Técnico';
     await loadAll();
     applyPermissoes(res.user);
+    document.getElementById('dev-footer').style.display='flex';
   } catch(e) {
     const el = document.getElementById('lerr');
     el.textContent = e.message; el.style.display = 'block';
@@ -1765,8 +1790,112 @@ ${l.obs ? `<div class="section"><span class="sec-title">Observações</span><div
 }
 
 
+
+// ─── UTILITÁRIOS ──────────────────────────────────────────
+function toggleSenha(inputId, iconId) {
+  const inp = document.getElementById(inputId);
+  const icon = document.getElementById(iconId);
+  if (!inp) return;
+  const isHidden = inp.type === 'password';
+  inp.type = isHidden ? 'text' : 'password';
+  if (icon) {
+    icon.innerHTML = isHidden
+      ? '<path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>'
+      : '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+  }
+}
+
+function openForgotPassword() {
+  document.getElementById('forgot-login').value = '';
+  document.getElementById('forgot-msg').style.display = 'none';
+  document.getElementById('forgot-token-area').style.display = 'none';
+  document.getElementById('btn-forgot-submit').style.display = 'inline-flex';
+  document.getElementById('btn-forgot-reset').style.display = 'none';
+  if (document.getElementById('forgot-token')) document.getElementById('forgot-token').value = '';
+  if (document.getElementById('forgot-nova')) document.getElementById('forgot-nova').value = '';
+  openM('m-forgot');
+}
+
+function showForgotMsg(msg, tipo) {
+  const el = document.getElementById('forgot-msg');
+  el.style.display = 'block';
+  el.style.background = tipo === 'ok' ? '#edfaf3' : tipo === 'err' ? '#fef2f2' : '#eff6ff';
+  el.style.color = tipo === 'ok' ? '#1a7a4a' : tipo === 'err' ? '#b91c1c' : '#1e4080';
+  el.style.border = `1px solid ${tipo === 'ok' ? '#6ee7b7' : tipo === 'err' ? '#fca5a5' : '#93c5fd'}`;
+  el.textContent = msg;
+}
+
+async function submitForgot() {
+  const login = document.getElementById('forgot-login').value.trim();
+  if (!login) { showForgotMsg('Informe seu login ou email.', 'err'); return; }
+  const btn = document.getElementById('btn-forgot-submit');
+  btn.disabled = true; btn.textContent = 'Enviando...';
+  try {
+    const res = await api('POST', '/api/forgot-password', { login });
+    showForgotMsg(res.msg || 'Verifique seu email!', 'ok');
+    if (res.token) {
+      // Modo dev: sem SMTP, mostrar campo para inserir token manualmente
+      document.getElementById('forgot-token-area').style.display = 'block';
+      document.getElementById('btn-forgot-reset').style.display = 'inline-flex';
+      btn.style.display = 'none';
+    }
+  } catch(e) {
+    showForgotMsg(e.message || 'Erro ao processar solicitação.', 'err');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Enviar';
+  }
+}
+
+async function submitReset() {
+  const token = document.getElementById('forgot-token').value.trim();
+  const nova = document.getElementById('forgot-nova').value;
+  if (!token || !nova) { showForgotMsg('Preencha o token e a nova senha.', 'err'); return; }
+  if (nova.length < 4) { showForgotMsg('A senha deve ter pelo menos 4 caracteres.', 'err'); return; }
+  const btn = document.getElementById('btn-forgot-reset');
+  btn.disabled = true; btn.textContent = 'Redefinindo...';
+  try {
+    const res = await api('POST', '/api/reset-password', { token, nova_senha: nova });
+    showForgotMsg(res.msg || 'Senha redefinida com sucesso!', 'ok');
+    setTimeout(() => closeM('m-forgot'), 2000);
+  } catch(e) {
+    showForgotMsg(e.message || 'Token inválido ou expirado.', 'err');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Redefinir Senha';
+  }
+}
+
 // ─── INIT ─────────────────────────────────────────────────
-(async()=>{try{const me=await api('GET','/api/me');G.user=me;document.getElementById('login-screen').style.display='none';document.getElementById('sidebar').style.display='flex';document.getElementById('main').style.display='block';document.getElementById('sb-av').textContent=me.nome[0].toUpperCase();document.getElementById('sb-name').textContent=me.nome;document.getElementById('sb-role').textContent=me.role==='admin'?'Administrador':'Técnico';await loadAll(); applyPermissoes(me);}catch(e){/* not logged in */}})();
+(async()=>{try{const me=await api('GET','/api/me');G.user=me;document.getElementById('login-screen').style.display='none';document.getElementById('sidebar').style.display='flex';document.getElementById('main').style.display='block';document.getElementById('sb-av').textContent=me.nome[0].toUpperCase();document.getElementById('sb-name').textContent=me.nome;document.getElementById('sb-role').textContent=me.role==='admin'?'Administrador':'Técnico';await loadAll(); applyPermissoes(me);
+    document.getElementById('dev-footer').style.display='flex';}catch(e){/* not logged in */}})();
 </script>
+
+<!-- Modal Esqueceu Senha -->
+<div class="mov" id="m-forgot" style="display:none">
+<div class="modal" style="max-width:400px">
+  <div class="mhd"><div class="mhd-title">Redefinir Senha</div><button class="btnx" onclick="closeM('m-forgot')">×</button></div>
+  <div class="mbody">
+    <p style="font-size:13px;color:var(--tx2);margin-bottom:14px">Informe seu login ou email cadastrado. Se houver email configurado, você receberá um link de redefinição.</p>
+    <div class="fg"><label>Login ou Email</label><input type="text" id="forgot-login" placeholder="Seu login ou email"></div>
+    <div id="forgot-msg" style="display:none;margin-top:12px;padding:10px 12px;border-radius:var(--r);font-size:12px"></div>
+    <!-- Campo nova senha (aparece após token em modo dev) -->
+    <div id="forgot-token-area" style="display:none;margin-top:14px">
+      <div class="fsec" style="margin-bottom:8px">Nova Senha</div>
+      <div class="fg"><label>Token recebido</label><input type="text" id="forgot-token" placeholder="Cole o token aqui"></div>
+      <div class="fg" style="margin-top:8px"><label>Nova Senha</label>
+        <div style="position:relative;display:flex;align-items:center">
+          <input type="password" id="forgot-nova" placeholder="Nova senha" style="padding-right:36px;width:100%">
+          <button type="button" onclick="toggleSenha('forgot-nova','eye-forgot')" style="position:absolute;right:8px;background:none;border:none;cursor:pointer;color:#8899bb;padding:0">
+            <svg id="eye-forgot" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="mfoot">
+    <button class="btn btn-ghost" onclick="closeM('m-forgot')">Cancelar</button>
+    <button class="btn btn-primary" id="btn-forgot-submit" onclick="submitForgot()">Enviar</button>
+    <button class="btn btn-success" id="btn-forgot-reset" style="display:none" onclick="submitReset()">Redefinir Senha</button>
+  </div>
+</div></div>
 </body>
 </html>
