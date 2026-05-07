@@ -224,6 +224,11 @@ tr:hover td{background:var(--sf2)}
 .os-gtbl td{padding:2px 7px;border-bottom:1px solid #eef}.os-gtbl td:last-child{text-align:right;font-weight:600}
 .os-gtot td{background:#0d1f3c;color:#fff;font-weight:700;font-size:10px;padding:3px 7px}.os-gtot td:last-child{color:#f5a030}
 .os-sigs{display:grid;grid-template-columns:1fr 1fr;gap:40px;padding:12px 14px;border:1px solid #c0cbdf;border-top:none;border-radius:0 0 6px 6px}
+.os-sigs{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:16px;padding:0 4px}
+.os-sig-block{text-align:center}
+.os-sig-img{max-height:65px;max-width:220px;display:block;margin:0 auto 6px}
+.os-sig-empty{height:55px}
+.os-sig-line{border-top:1.5px solid #444;padding-top:5px;font-size:9px;color:#555;margin-top:4px}
 .os-sig{border-top:1px solid #555;padding-top:4px;text-align:center;font-size:8px;color:#667;margin-top:26px}
 </style>
 </head>
@@ -463,6 +468,20 @@ tr:hover td{background:var(--sf2)}
     </div>
     <div><div class="fsec">Status</div>
       <div class="fgrid fg2"><div class="fg"><label>Status</label><select id="o-status"><option>Aberta</option><option>Em andamento</option><option>Concluída</option><option>Cancelada</option></select></div></div>
+    </div>
+    <div style="margin-top:13px"><div class="fsec">Assinaturas</div>
+      <div class="fgrid fg2">
+        <div>
+          <div style="font-size:10px;font-weight:700;color:var(--tx2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px">Assinatura do Técnico</div>
+          <canvas id="sig-tec" height="100" style="width:100%;display:block;border:1.5px solid var(--bd2);border-radius:var(--r);background:#fff;cursor:crosshair;touch-action:none"></canvas>
+          <button class="btn btn-ghost btn-xs" style="margin-top:4px" onclick="sigOSClear('tec')">Limpar</button>
+        </div>
+        <div>
+          <div style="font-size:10px;font-weight:700;color:var(--tx2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px">Assinatura do Cliente</div>
+          <canvas id="sig-cli" height="100" style="width:100%;display:block;border:1.5px solid var(--bd2);border-radius:var(--r);background:#fff;cursor:crosshair;touch-action:none"></canvas>
+          <button class="btn btn-ghost btn-xs" style="margin-top:4px" onclick="sigOSClear('cli')">Limpar</button>
+        </div>
+      </div>
     </div>
   </div>
   <div class="mfoot">
@@ -840,6 +859,7 @@ function openOS(id) {
     document.getElementById('o-viag').value=os.viag||0; document.getElementById('o-alim').value=os.alim||0; document.getElementById('o-hosp').value=os.hosp||0; document.getElementById('o-comb').value=os.comb||0; document.getElementById('o-ped').value=os.ped||0; document.getElementById('o-out').value=os.outros||0;
     document.getElementById('o-status').value=os.status||'Aberta'; calcOS();
     document.getElementById('btn-prev').style.display='inline-flex';
+    setTimeout(()=>{sigOSInit();sigOSSet('tec',os.sig_tec||'');sigOSSet('cli',os.sig_cli||'');},80);
   } else {
     document.getElementById('o-id').value=''; document.getElementById('o-num-val').value=''; document.getElementById('o-num').value='(gerado ao salvar)';
     document.getElementById('o-dab').value=today(); document.getElementById('o-dcham').value=today();
@@ -848,12 +868,13 @@ function openOS(id) {
     ['o-viag','o-alim','o-hosp','o-comb','o-ped','o-out'].forEach(f=>document.getElementById(f).value=0);
     document.getElementById('o-status').value='Aberta'; document.getElementById('o-tot').textContent='R$ 0,00';
   }
+  setTimeout(()=>{sigOSInit();sigOSClear('tec');sigOSClear('cli');},80);
   openM('m-os');
 }
 async function saveOS() {
   const cid=document.getElementById('o-cli').value; if(!cid){alert('Selecione o cliente.');return}
   const eid=document.getElementById('o-id').value;
-  const body={dataAb:document.getElementById('o-dab').value,tecnicoId:document.getElementById('o-tec').value,clienteId:cid,contato:document.getElementById('o-contato').value,tel:document.getElementById('o-tel').value,end:document.getElementById('o-end').value,equipId:document.getElementById('o-eq').value,modelo:document.getElementById('o-modelo').value,nserie:document.getElementById('o-nserie').value,contador:document.getElementById('o-cont').value,defeito:document.getElementById('o-defeito').value,procedimento:document.getElementById('o-proc').value,pecas:document.getElementById('o-pecas').value,obs:document.getElementById('o-obs').value,dataChamado:document.getElementById('o-dcham').value,dataAtend:document.getElementById('o-datend').value,horaChegada:document.getElementById('o-hcheg').value,horaSaida:document.getElementById('o-hsai').value,viag:+document.getElementById('o-viag').value||0,alim:+document.getElementById('o-alim').value||0,hosp:+document.getElementById('o-hosp').value||0,comb:+document.getElementById('o-comb').value||0,ped:+document.getElementById('o-ped').value||0,outros:+document.getElementById('o-out').value||0,status:document.getElementById('o-status').value};
+  const body={dataAb:document.getElementById('o-dab').value,tecnicoId:document.getElementById('o-tec').value,clienteId:cid,contato:document.getElementById('o-contato').value,tel:document.getElementById('o-tel').value,end:document.getElementById('o-end').value,equipId:document.getElementById('o-eq').value,modelo:document.getElementById('o-modelo').value,nserie:document.getElementById('o-nserie').value,contador:document.getElementById('o-cont').value,defeito:document.getElementById('o-defeito').value,procedimento:document.getElementById('o-proc').value,pecas:document.getElementById('o-pecas').value,obs:document.getElementById('o-obs').value,dataChamado:document.getElementById('o-dcham').value,dataAtend:document.getElementById('o-datend').value,horaChegada:document.getElementById('o-hcheg').value,horaSaida:document.getElementById('o-hsai').value,viag:+document.getElementById('o-viag').value||0,alim:+document.getElementById('o-alim').value||0,hosp:+document.getElementById('o-hosp').value||0,comb:+document.getElementById('o-comb').value||0,ped:+document.getElementById('o-ped').value||0,outros:+document.getElementById('o-out').value||0,status:document.getElementById('o-status').value,sig_tec:sigOSGet('tec'),sig_cli:sigOSGet('cli')};
   try {
     if(eid){ await api('PUT',`/api/ordens/${eid}`,body); } else { const res=await api('POST','/api/ordens',body); document.getElementById('o-id').value=res.id; document.getElementById('o-num-val').value=res.num; document.getElementById('o-num').value=res.num; document.getElementById('btn-prev').style.display='inline-flex'; }
     await loadAll(); renderOS(); loadDash(); closeM('m-os');
@@ -890,7 +911,16 @@ function buildOSDoc(os) {
     <table class="os-gtbl"><tr><td>Viagem</td><td>${fm(os.viag||0)}</td></tr><tr><td>Alimentação</td><td>${fm(os.alim||0)}</td></tr><tr><td>Hospedagem</td><td>${fm(os.hosp||0)}</td></tr><tr><td>Combustível</td><td>${fm(os.comb||0)}</td></tr><tr><td>Pedágios</td><td>${fm(os.ped||0)}</td></tr><tr><td>Outros</td><td>${fm(os.outros||0)}</td></tr><tr class="os-gtot"><td>TOTAL</td><td>${fm(tot)}</td></tr></table>
   </div>
   <div class="os-sec"><span class="os-sec-title">Observações</span><div class="os-ta" style="min-height:32px">${os.obs||''}</div></div>
-  <div class="os-sigs"><div><div class="os-sig">Assinatura do Cliente</div></div><div><div class="os-sig">Assinatura do Técnico</div></div></div>
+  <div class="os-sigs">
+    <div class="os-sig-block">
+      ${os.sig_cli ? `<img src="${os.sig_cli}" class="os-sig-img">` : '<div class="os-sig-empty"></div>'}
+      <div class="os-sig-line">Assinatura do Cliente</div>
+    </div>
+    <div class="os-sig-block">
+      ${os.sig_tec ? `<img src="${os.sig_tec}" class="os-sig-img">` : '<div class="os-sig-empty"></div>'}
+      <div class="os-sig-line">Assinatura do Técnico</div>
+    </div>
+  </div>
 </div>`;
 }
 function showOSPreview(id) {
@@ -905,7 +935,12 @@ function printFromPreview() {
   openPrintWindow(buildOSDoc(G.currentOSData), getOSPrintStyles());
 }
 function getOSPrintStyles() {
-  return `.os-doc{font-family:'Sora',sans-serif;color:#111;font-size:11px}.os-hd{display:flex;border:2px solid #1e4080;border-radius:6px 6px 0 0;overflow:hidden}.os-logo-col{background:#0d1f3c;padding:10px 14px;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:100px}.os-logo-txt{color:#e07818;font-size:14px;font-weight:800;letter-spacing:1px}.os-logo-sub{color:rgba(255,255,255,.5);font-size:8px;text-align:center;margin-top:2px}.os-mid{flex:1;padding:9px 13px;border-left:2px solid #1e4080;border-right:2px solid #1e4080}.os-co-name{font-size:13px;font-weight:800;color:#0d1f3c;margin-bottom:1px}.os-co-tag{font-size:8px;color:#667;margin-bottom:3px}.os-co-addr{font-size:8px;color:#445;line-height:1.5}.os-right-col{padding:9px 12px;text-align:center;min-width:120px;display:flex;flex-direction:column;justify-content:center;align-items:center}.os-right-lbl{font-size:8px;font-weight:700;color:#1e4080;text-transform:uppercase;letter-spacing:.8px}.os-right-num{font-size:16px;font-weight:800;color:#e07818;margin:2px 0}.os-right-date{font-size:9px;color:#445}.os-sec{border:1px solid #c0cbdf;border-top:none;padding:7px 10px}.os-sec-title{font-size:7px;font-weight:800;color:#fff;background:#1e4080;padding:2px 7px;border-radius:3px;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;display:inline-block}.os-g2{display:grid;grid-template-columns:1fr 1fr;gap:5px}.os-g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:5px}.os-field label{font-size:7px;color:#667;font-weight:700;text-transform:uppercase;display:block;margin-bottom:1px}.os-field p{font-size:9px;color:#111;border-bottom:1px solid #dde3ee;padding-bottom:2px;min-height:14px}.os-ta{border:1px solid #dde3ee;border-radius:3px;min-height:48px;padding:5px 7px;font-size:9px;line-height:1.5;color:#111}.os-gtbl{width:100%;border-collapse:collapse;font-size:9px}.os-gtbl td{padding:2px 7px;border-bottom:1px solid #eef}.os-gtbl td:last-child{text-align:right;font-weight:600}.os-gtot td{background:#0d1f3c;color:#fff;font-weight:700;font-size:10px;padding:3px 7px}.os-gtot td:last-child{color:#f5a030}.os-sigs{display:grid;grid-template-columns:1fr 1fr;gap:40px;padding:12px 14px;border:1px solid #c0cbdf;border-top:none;border-radius:0 0 6px 6px}.os-sig{border-top:1px solid #555;padding-top:4px;text-align:center;font-size:8px;color:#667;margin-top:26px}`;
+  return `.os-doc{font-family:'Sora',sans-serif;color:#111;font-size:11px}.os-hd{display:flex;border:2px solid #1e4080;border-radius:6px 6px 0 0;overflow:hidden}.os-logo-col{background:#0d1f3c;padding:10px 14px;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:100px}.os-logo-txt{color:#e07818;font-size:14px;font-weight:800;letter-spacing:1px}.os-logo-sub{color:rgba(255,255,255,.5);font-size:8px;text-align:center;margin-top:2px}.os-mid{flex:1;padding:9px 13px;border-left:2px solid #1e4080;border-right:2px solid #1e4080}.os-co-name{font-size:13px;font-weight:800;color:#0d1f3c;margin-bottom:1px}.os-co-tag{font-size:8px;color:#667;margin-bottom:3px}.os-co-addr{font-size:8px;color:#445;line-height:1.5}.os-right-col{padding:9px 12px;text-align:center;min-width:120px;display:flex;flex-direction:column;justify-content:center;align-items:center}.os-right-lbl{font-size:8px;font-weight:700;color:#1e4080;text-transform:uppercase;letter-spacing:.8px}.os-right-num{font-size:16px;font-weight:800;color:#e07818;margin:2px 0}.os-right-date{font-size:9px;color:#445}.os-sec{border:1px solid #c0cbdf;border-top:none;padding:7px 10px}.os-sec-title{font-size:7px;font-weight:800;color:#fff;background:#1e4080;padding:2px 7px;border-radius:3px;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;display:inline-block}.os-g2{display:grid;grid-template-columns:1fr 1fr;gap:5px}.os-g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:5px}.os-field label{font-size:7px;color:#667;font-weight:700;text-transform:uppercase;display:block;margin-bottom:1px}.os-field p{font-size:9px;color:#111;border-bottom:1px solid #dde3ee;padding-bottom:2px;min-height:14px}.os-ta{border:1px solid #dde3ee;border-radius:3px;min-height:48px;padding:5px 7px;font-size:9px;line-height:1.5;color:#111}.os-gtbl{width:100%;border-collapse:collapse;font-size:9px}.os-gtbl td{padding:2px 7px;border-bottom:1px solid #eef}.os-gtbl td:last-child{text-align:right;font-weight:600}.os-gtot td{background:#0d1f3c;color:#fff;font-weight:700;font-size:10px;padding:3px 7px}.os-gtot td:last-child{color:#f5a030}.os-sigs{display:grid;grid-template-columns:1fr 1fr;gap:40px;padding:12px 14px;border:1px solid #c0cbdf;border-top:none;border-radius:0 0 6px 6px}.os-sigs{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:16px;padding:0 4px}
+.os-sig-block{text-align:center}
+.os-sig-img{max-height:65px;max-width:220px;display:block;margin:0 auto 6px}
+.os-sig-empty{height:55px}
+.os-sig-line{border-top:1.5px solid #444;padding-top:5px;font-size:9px;color:#555;margin-top:4px}
+.os-sig{border-top:1px solid #555;padding-top:4px;text-align:center;font-size:8px;color:#667;margin-top:26px}`;
 }
 function openPrintWindow(html, styles) {
   const w=window.open('','_blank','width=780,height:950');
@@ -1454,6 +1489,82 @@ function applyPermissoes(user) {
   const primeiro = permitidos.find(m => m !== 'usuarios') || 'dashboard';
   const primeiroEl = document.querySelector(`.ni[data-modulo="${primeiro}"]`);
   nav(primeiro, primeiroEl);
+}
+
+// ─── ASSINATURAS OS ───────────────────────────────────────
+const sigOS = { tec:{drawing:false,ctx:null,last:{x:0,y:0}}, cli:{drawing:false,ctx:null,last:{x:0,y:0}} };
+
+function sigOSInit() {
+  ['tec','cli'].forEach(k => {
+    const c = document.getElementById('sig-'+k);
+    if (!c) return;
+    const s = sigOS[k];
+    s.ctx = null; // reset so we reinit
+    s.ctx = c.getContext('2d');
+    s.ctx.strokeStyle = '#1a2340';
+    s.ctx.lineWidth = 2;
+    s.ctx.lineCap = 'round';
+    s.ctx.lineJoin = 'round';
+    const getPos = e => {
+      const r = c.getBoundingClientRect();
+      const t = e.touches ? e.touches[0] : e;
+      return { x:(t.clientX-r.left)*(c.width/r.width), y:(t.clientY-r.top)*(c.height/r.height) };
+    };
+    // Remove old listeners by cloning
+    const newC = c.cloneNode(true);
+    c.parentNode.replaceChild(newC, c);
+    const ctx2 = newC.getContext('2d');
+    ctx2.strokeStyle = '#1a2340'; ctx2.lineWidth = 2; ctx2.lineCap = 'round'; ctx2.lineJoin = 'round';
+    s.ctx = ctx2;
+    const getPos2 = e => {
+      const r = newC.getBoundingClientRect();
+      const t = e.touches ? e.touches[0] : e;
+      return { x:(t.clientX-r.left)*(newC.width/r.width), y:(t.clientY-r.top)*(newC.height/r.height) };
+    };
+    newC.addEventListener('mousedown', e => { s.drawing=true; s.last=getPos2(e); e.preventDefault(); });
+    newC.addEventListener('mousemove', e => {
+      if (!s.drawing) return;
+      const p = getPos2(e);
+      s.ctx.beginPath(); s.ctx.moveTo(s.last.x, s.last.y); s.ctx.lineTo(p.x, p.y); s.ctx.stroke();
+      s.last = p; e.preventDefault();
+    });
+    newC.addEventListener('mouseup',   () => { s.drawing=false; });
+    newC.addEventListener('mouseleave',() => { s.drawing=false; });
+    newC.addEventListener('touchstart', e => { s.drawing=true; s.last=getPos2(e); e.preventDefault(); }, {passive:false});
+    newC.addEventListener('touchmove',  e => {
+      if (!s.drawing) return;
+      const p = getPos2(e);
+      s.ctx.beginPath(); s.ctx.moveTo(s.last.x, s.last.y); s.ctx.lineTo(p.x, p.y); s.ctx.stroke();
+      s.last = p; e.preventDefault();
+    }, {passive:false});
+    newC.addEventListener('touchend', () => { s.drawing=false; });
+  });
+}
+
+function sigOSClear(k) {
+  const c = document.getElementById('sig-'+k);
+  const s = sigOS[k];
+  if (c && s.ctx) s.ctx.clearRect(0, 0, c.width, c.height);
+}
+
+function sigOSGet(k) {
+  const c = document.getElementById('sig-'+k);
+  if (!c) return '';
+  const blank = document.createElement('canvas');
+  blank.width = c.width; blank.height = c.height;
+  return c.toDataURL() === blank.toDataURL() ? '' : c.toDataURL();
+}
+
+function sigOSSet(k, data) {
+  if (!data) return;
+  const c = document.getElementById('sig-'+k);
+  if (!c) return;
+  const img = new Image();
+  img.onload = () => {
+    const s = sigOS[k];
+    if (s.ctx) { s.ctx.clearRect(0,0,c.width,c.height); s.ctx.drawImage(img,0,0); }
+  };
+  img.src = data;
 }
 
 // ─── LOGÍSTICA ────────────────────────────────────────
