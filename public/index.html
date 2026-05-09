@@ -296,30 +296,169 @@ tr:hover td{background:var(--sf2)}
 
 <!-- DASHBOARD -->
 <div id="page-dashboard" class="page active">
-  <div class="topbar"><div><div class="tb-title">Dashboard</div><div class="tb-sub">Visão geral</div></div>
-    <div class="tb-right"><button class="btn btn-ghost btn-sm" onclick="loadDash()">↻ Atualizar</button></div>
+  <div class="topbar">
+    <div><div class="tb-title">Dashboard</div><div class="tb-sub" id="d-lastupdate">Visão geral operacional</div></div>
+    <div class="tb-right">
+      <div class="swrap">
+        <span style="color:var(--tx3);font-size:11px">📅 De</span>
+        <input type="date" id="d-de" style="border:none;outline:none;font-size:12px;font-family:inherit;color:var(--tx);background:transparent;width:110px">
+        <span style="color:var(--tx3);font-size:11px">até</span>
+        <input type="date" id="d-ate" style="border:none;outline:none;font-size:12px;font-family:inherit;color:var(--tx);background:transparent;width:110px">
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="dashFiltroRapido(7)">7d</button>
+      <button class="btn btn-ghost btn-sm" onclick="dashFiltroRapido(30)">30d</button>
+      <button class="btn btn-ghost btn-sm" onclick="dashFiltroRapido(90)">90d</button>
+      <button class="btn btn-primary btn-sm" onclick="loadDash()">↻ Atualizar</button>
+      <button class="btn btn-ghost btn-sm" onclick="printRelatorio('dashboard')">🖨 Exportar</button>
+    </div>
   </div>
   <div class="content">
-    <div class="sgrid">
-      <div class="scard"><div class="sico" style="background:var(--bl2bg);color:var(--bl2)">📋</div><div class="slabel">OS / Atendimentos</div><div class="sval" id="d-atend">0</div><div class="ssub">Total registradas</div></div>
-      <div class="scard"><div class="sico" style="background:var(--orbg);color:var(--or)">📝</div><div class="slabel">OS Abertas</div><div class="sval" id="d-osab">0</div><div class="ssub">Aguardando</div></div>
-      <div class="scard"><div class="sico" style="background:var(--gnbg);color:var(--gn)">✓</div><div class="slabel">OS Concluídas</div><div class="sval" id="d-osok">0</div><div class="ssub">Total</div></div>
-      <div class="scard"><div class="sico" style="background:var(--pubg);color:var(--pu)">🔬</div><div class="slabel">Laboratório</div><div class="sval" id="d-lab">0</div><div class="ssub">Entradas</div></div>
+
+    <!-- KPIs linha 1: Operações -->
+    <div style="margin-bottom:6px;font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:1px">⚙ Operações Técnicas</div>
+    <div class="sgrid" style="grid-template-columns:repeat(6,1fr);margin-bottom:16px">
+      <div class="scard" style="cursor:pointer" onclick="nav('os',document.querySelector('[data-modulo=os]'))">
+        <div class="sico" style="background:var(--bl2bg);color:var(--bl2)">📋</div>
+        <div class="slabel">OS Total</div>
+        <div class="sval" id="d-atend">0</div>
+        <div class="ssub">Registradas</div>
+      </div>
+      <div class="scard" style="cursor:pointer" onclick="nav('os',document.querySelector('[data-modulo=os]'))">
+        <div class="sico" style="background:var(--orbg);color:var(--or)">🔓</div>
+        <div class="slabel">OS Abertas</div>
+        <div class="sval" id="d-osab">0</div>
+        <div class="ssub">Aguardando</div>
+      </div>
+      <div class="scard">
+        <div class="sico" style="background:var(--bl2bg);color:var(--bl2)">⏳</div>
+        <div class="slabel">Em Andamento</div>
+        <div class="sval" id="d-osand">0</div>
+        <div class="ssub">Em execução</div>
+      </div>
+      <div class="scard">
+        <div class="sico" style="background:var(--gnbg);color:var(--gn)">✅</div>
+        <div class="slabel">Concluídas</div>
+        <div class="sval" id="d-osok">0</div>
+        <div class="ssub">Finalizadas</div>
+      </div>
+      <div class="scard" style="cursor:pointer" onclick="nav('lab',document.querySelector('[data-modulo=lab]'))">
+        <div class="sico" style="background:var(--pubg);color:var(--pu)">🔬</div>
+        <div class="slabel">Laboratório</div>
+        <div class="sval" id="d-lab">0</div>
+        <div class="ssub">Entradas</div>
+      </div>
+      <div class="scard">
+        <div class="sico" style="background:var(--rdbg);color:var(--rd)">⚠</div>
+        <div class="slabel">Retrabalhos</div>
+        <div class="sval" id="d-retqtd">0</div>
+        <div class="ssub">Equipamentos</div>
+      </div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-      <div class="card"><div class="card-hd"><div class="card-title">Atendimentos por Técnico</div></div><div id="d-bartec" class="barchart"></div></div>
-      <div class="card"><div class="card-hd"><div class="card-title">⚠ Retrabalho</div></div><div id="d-ret"></div></div>
+
+    <!-- KPIs linha 2: Logística e Estoque -->
+    <div style="margin-bottom:6px;font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:1px">🚛 Logística / Estoque / Financeiro</div>
+    <div class="sgrid" style="grid-template-columns:repeat(5,1fr);margin-bottom:16px">
+      <div class="scard" style="cursor:pointer" onclick="nav('logistica',document.querySelector('[data-modulo=logistica]'))">
+        <div class="sico" style="background:var(--bl2bg);color:var(--bl2)">🚚</div>
+        <div class="slabel">Rotas</div>
+        <div class="sval" id="d-rotas">0</div>
+        <div class="ssub">Registradas</div>
+      </div>
+      <div class="scard">
+        <div class="sico" style="background:var(--orbg);color:var(--or)">⛽</div>
+        <div class="slabel">Combustível</div>
+        <div class="sval" id="d-litros">0L</div>
+        <div class="ssub">Total abastecido</div>
+      </div>
+      <div class="scard">
+        <div class="sico" style="background:var(--rdbg);color:var(--rd)">💰</div>
+        <div class="slabel">Gasto Total</div>
+        <div class="sval" id="d-gastoT" style="font-size:14px">R$0</div>
+        <div class="ssub">Rota + OS</div>
+      </div>
+      <div class="scard" style="cursor:pointer" onclick="nav('estoque',document.querySelector('[data-modulo=estoque]'))">
+        <div class="sico" style="background:var(--gnbg);color:var(--gn)">📦</div>
+        <div class="slabel">Itens Estoque</div>
+        <div class="sval" id="d-estqtd">0</div>
+        <div class="ssub">Cadastrados</div>
+      </div>
+      <div class="scard">
+        <div class="sico" style="background:var(--rdbg);color:var(--rd)">🔴</div>
+        <div class="slabel">Est. Baixo</div>
+        <div class="sval" id="d-estbaixo">0</div>
+        <div class="ssub">Abaixo do mín.</div>
+      </div>
     </div>
-    <div class="card" style="margin-top:12px"><div class="card-hd"><div class="card-title">Gastos por Categoria</div></div><div id="d-bargasto" class="barchart"></div></div>
-  
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
-      <div class="card"><div class="card-hd"><div class="card-title">Evolução de Atendimentos por Técnico</div></div><canvas id="chart-atend-linha" height="220" style="width:100%;display:block"></canvas></div>
-      <div class="card"><div class="card-hd"><div class="card-title">Evolução de Gastos em Rota</div></div><canvas id="chart-gastos-linha" height="220" style="width:100%;display:block"></canvas></div>
+
+    <!-- Linha de gráficos principais -->
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-bottom:12px">
+      <!-- Evolução mensal OS -->
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-title">📈 Evolução de Atendimentos por Técnico / Mês</div>
+          <div style="display:flex;gap:6px" id="d-leg-tec"></div>
+        </div>
+        <canvas id="chart-atend-linha" height="200" style="width:100%;display:block"></canvas>
+      </div>
+      <!-- Pizza status OS -->
+      <div class="card">
+        <div class="card-hd"><div class="card-title">Status das OS</div></div>
+        <canvas id="chart-os-pizza" height="200" style="width:100%;display:block"></canvas>
+      </div>
     </div>
-    <div style="margin-top:12px">
-      <div class="card"><div class="card-hd"><div class="card-title">Consumo de Toner por Tipo</div></div><canvas id="chart-toner-pizza" height="260" style="width:100%;display:block"></canvas></div>
+
+    <!-- Linha de gráficos secundários -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+      <!-- Gastos em rota -->
+      <div class="card">
+        <div class="card-hd"><div class="card-title">💸 Evolução de Gastos em Rota (R$)</div></div>
+        <canvas id="chart-gastos-linha" height="190" style="width:100%;display:block"></canvas>
+      </div>
+      <!-- Consumo toner pizza -->
+      <div class="card">
+        <div class="card-hd"><div class="card-title">🖨 Consumo de Suprimentos por Tipo</div></div>
+        <canvas id="chart-toner-pizza" height="190" style="width:100%;display:block"></canvas>
+      </div>
     </div>
-</div>
+
+    <!-- Linha inferior: barras + retrabalho -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+      <!-- Barra por técnico -->
+      <div class="card">
+        <div class="card-hd"><div class="card-title">👷 Atendimentos por Técnico</div></div>
+        <div id="d-bartec" class="barchart"></div>
+      </div>
+      <!-- Barra gastos -->
+      <div class="card">
+        <div class="card-hd"><div class="card-title">💳 Gastos por Categoria</div></div>
+        <div id="d-bargasto" class="barchart"></div>
+      </div>
+    </div>
+
+    <!-- Linha: retrabalho + top clientes -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+      <!-- Retrabalho -->
+      <div class="card">
+        <div class="card-hd"><div class="card-title">⚠ Retrabalho — Equipamentos com Recorrência</div></div>
+        <div id="d-ret"></div>
+      </div>
+      <!-- Top clientes por OS -->
+      <div class="card">
+        <div class="card-hd"><div class="card-title">🏆 Top Clientes por OS</div></div>
+        <div id="d-topcli" class="barchart"></div>
+      </div>
+    </div>
+
+    <!-- Alertas de estoque baixo -->
+    <div class="card" id="d-alerta-est-wrap" style="margin-bottom:12px;display:none">
+      <div class="card-hd">
+        <div class="card-title" style="color:var(--rd)">🔴 Alertas de Estoque Abaixo do Mínimo</div>
+        <button class="btn btn-ghost btn-xs" onclick="nav('estoque',document.querySelector('[data-modulo=estoque]'))">Ver Estoque →</button>
+      </div>
+      <div id="d-alerta-est"></div>
+    </div>
+
+  </div>
 </div>
 
 
@@ -1209,21 +1348,111 @@ async function renderUsers(){
 async function delUser(id){if(confirm('Excluir usuário?')){await api('DELETE',`/api/users/${id}`);renderUsers()}}
 
 // ─── DASHBOARD ────────────────────────────────────────────
+function dashFiltroRapido(dias) {
+  const ate = new Date(); const de = new Date();
+  de.setDate(de.getDate() - dias);
+  const fmt = d => d.toISOString().slice(0,10);
+  document.getElementById('d-de').value = fmt(de);
+  document.getElementById('d-ate').value = fmt(ate);
+  loadDash();
+}
+
 async function loadDash(){
   try {
-    const d=await api('GET','/api/dashboard');
-    document.getElementById('d-atend').textContent=d.total_atend;
-    document.getElementById('d-osab').textContent=d.os_abertas;
-    document.getElementById('d-osok').textContent=d.os_concluidas;
-    document.getElementById('d-lab').textContent=d.total_lab;
-    const maxT=Math.max(1,...d.por_tecnico.map(x=>x.qtd));
-    document.getElementById('d-bartec').innerHTML=d.por_tecnico.length?d.por_tecnico.map(x=>`<div class="barrow"><div class="barlabel">${x.nome||'Outros'}</div><div class="bartrack"><div class="barfill" style="width:${Math.round(x.qtd/maxT*100)}%;background:var(--nv)"><span class="barval" style="color:#fff">${x.qtd}</span></div></div></div>`).join(''):`<div class="empty-s">Nenhum dado.</div>`;
-    const g=d.gastos||{};const gmap=[['Viagem',g.viag],['Alimentação',g.alim],['Hospedagem',g.hosp],['Combustível',g.comb],['Pedágios',g.ped],['Outros',g.outros]].filter(([,v])=>v>0);
-    const maxG=Math.max(1,...gmap.map(([,v])=>v));
-    document.getElementById('d-bargasto').innerHTML=gmap.length?gmap.sort((a,b)=>b[1]-a[1]).map(([n,v])=>`<div class="barrow"><div class="barlabel">${n}</div><div class="bartrack"><div class="barfill" style="width:${Math.round(v/maxG*100)}%;background:var(--ac)"><span class="barval" style="color:var(--nv)">R$${Math.round(v)}</span></div></div></div>`).join(''):`<div class="empty-s">Nenhum gasto.</div>`;
-    document.getElementById('d-ret').innerHTML=d.retrabalho.length?d.retrabalho.map(r=>{const c=G.clientes.find(x=>x.id===r.cliente_id);return`<div class="ret-item"><div class="ret-title">Nº Série: ${r.nserie} — ${r.modelo||''}</div><div class="ret-sub">Cliente: ${c?.nome||'—'} · ${r.qtd} ocorrências · Último: ${fd(r.ultimo)}</div></div>`}).join(''):`<div class="empty" style="padding:20px"><div class="empty-ico">✓</div><div class="empty-t">Nenhum retrabalho</div></div>`;
-    renderGraficos(d);
-  }catch(e){console.error(e)}
+    const d = await api('GET','/api/dashboard');
+    const now = new Date();
+    document.getElementById('d-lastupdate').textContent = 'Atualizado às ' + now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+
+    // ── Filtro de período ──
+    const de  = document.getElementById('d-de')?.value  || '';
+    const ate = document.getElementById('d-ate')?.value || '';
+    const inPeriod = (dateStr) => {
+      if (!dateStr) return true;
+      if (de  && dateStr < de)  return false;
+      if (ate && dateStr > ate) return false;
+      return true;
+    };
+
+    // ── OS filtradas ──
+    const osF   = G.ordens.filter(o => inPeriod(o.data_ab));
+    const osAb  = osF.filter(o => o.status === 'Aberta').length;
+    const osAnd = osF.filter(o => o.status === 'Em andamento').length;
+    const osOk  = osF.filter(o => o.status === 'Concluída').length;
+
+    // ── Logística filtrada ──
+    const logF   = (G.logistica||[]).filter(l => inPeriod(l.data_saida));
+    const litros = logF.reduce((s,l) => s+(l.litros||0), 0);
+    const gastoLog = logF.reduce((s,l) => s+(l.valor_total||0), 0);
+    const gastoOS  = osF.reduce((s,o) => s+((o.viag||0)+(o.alim||0)+(o.hosp||0)+(o.comb||0)+(o.ped||0)+(o.outros||0)), 0);
+
+    // ── Estoque ──
+    const estBaixo = G.estoque.filter(e => e.quantidade <= e.quantidade_min);
+
+    // ── Preenche KPIs ──
+    document.getElementById('d-atend').textContent   = osF.length;
+    document.getElementById('d-osab').textContent    = osAb;
+    document.getElementById('d-osand').textContent   = osAnd;
+    document.getElementById('d-osok').textContent    = osOk;
+    document.getElementById('d-lab').textContent     = d.total_lab;
+    document.getElementById('d-retqtd').textContent  = d.retrabalho.length;
+    document.getElementById('d-rotas').textContent   = logF.length;
+    document.getElementById('d-litros').textContent  = litros.toFixed(0)+'L';
+    document.getElementById('d-gastoT').textContent  = 'R$'+Math.round(gastoLog+gastoOS).toLocaleString('pt-BR');
+    document.getElementById('d-estqtd').textContent  = G.estoque.length;
+    document.getElementById('d-estbaixo').textContent= estBaixo.length;
+
+    // ── Barra por técnico (filtrado) ──
+    const porTec = {};
+    osF.forEach(o => {
+      const t = G.tecnicos.find(x=>x.id===o.tecnico_id);
+      const n = t?.nome || 'Sem técnico';
+      porTec[n] = (porTec[n]||0)+1;
+    });
+    const tecArr = Object.entries(porTec).sort((a,b)=>b[1]-a[1]);
+    const maxT = Math.max(1,...tecArr.map(x=>x[1]));
+    const TCOLORS = ['var(--nv)','var(--ac)','var(--pu)','var(--gn)','var(--bl2)','var(--or)'];
+    document.getElementById('d-bartec').innerHTML = tecArr.length
+      ? tecArr.map(([n,v],i)=>`<div class="barrow"><div class="barlabel">${n.split(' ')[0]}</div><div class="bartrack"><div class="barfill" style="width:${Math.round(v/maxT*100)}%;background:${TCOLORS[i%TCOLORS.length]}"><span class="barval" style="color:#fff">${v}</span></div></div></div>`).join('')
+      : `<div class="empty-s">Nenhum dado.</div>`;
+
+    // ── Barra gastos ──
+    const g = d.gastos||{};
+    const gmap=[['Viagem',g.viag],['Alimentação',g.alim],['Hospedagem',g.hosp],['Combustível',g.comb],['Pedágios',g.ped],['Outros',g.outros]].filter(([,v])=>v>0);
+    const maxG = Math.max(1,...gmap.map(([,v])=>v));
+    document.getElementById('d-bargasto').innerHTML = gmap.length
+      ? gmap.sort((a,b)=>b[1]-a[1]).map(([n,v])=>`<div class="barrow"><div class="barlabel">${n}</div><div class="bartrack"><div class="barfill" style="width:${Math.round(v/maxG*100)}%;background:var(--ac)"><span class="barval" style="color:var(--nv)">R$${Math.round(v).toLocaleString('pt-BR')}</span></div></div></div>`).join('')
+      : `<div class="empty-s">Nenhum gasto.</div>`;
+
+    // ── Retrabalho ──
+    document.getElementById('d-ret').innerHTML = d.retrabalho.length
+      ? d.retrabalho.map(r=>{const c=G.clientes.find(x=>x.id===r.cliente_id);return`<div class="ret-item"><div class="ret-title">Nº Série: ${r.nserie} — ${r.modelo||''}</div><div class="ret-sub">Cliente: ${c?.nome||'—'} · ${r.qtd} ocorrências · Último: ${fd(r.ultimo)}</div></div>`}).join('')
+      : `<div class="empty" style="padding:20px"><div class="empty-ico">✓</div><div class="empty-t">Nenhum retrabalho</div></div>`;
+
+    // ── Top clientes ──
+    const porCli = {};
+    osF.forEach(o => {
+      const c = G.clientes.find(x=>x.id===o.cliente_id);
+      const n = c?.nome || 'Desconhecido';
+      porCli[n] = (porCli[n]||0)+1;
+    });
+    const cliArr = Object.entries(porCli).sort((a,b)=>b[1]-a[1]).slice(0,6);
+    const maxC = Math.max(1,...cliArr.map(x=>x[1]));
+    document.getElementById('d-topcli').innerHTML = cliArr.length
+      ? cliArr.map(([n,v])=>`<div class="barrow"><div class="barlabel" style="width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${n}">${n}</div><div class="bartrack"><div class="barfill" style="width:${Math.round(v/maxC*100)}%;background:var(--bl2)"><span class="barval" style="color:#fff">${v}</span></div></div></div>`).join('')
+      : `<div class="empty-s">Sem dados.</div>`;
+
+    // ── Alertas de estoque baixo ──
+    const wrapE = document.getElementById('d-alerta-est-wrap');
+    if (estBaixo.length) {
+      wrapE.style.display = 'block';
+      document.getElementById('d-alerta-est').innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:7px;padding-top:4px">`
+        + estBaixo.map(e=>`<div style="background:var(--orbg);border:1px solid var(--orbd);border-radius:8px;padding:8px 12px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-weight:600;font-size:11px">${e.nome}</div><div style="font-size:10px;color:var(--tx3)">${e.categoria} · ${e.localizacao||'—'}</div></div><div style="text-align:right"><div style="font-size:18px;font-weight:700;color:var(--rd)">${e.quantidade}</div><div style="font-size:9px;color:var(--tx3)">mín ${e.quantidade_min}</div></div></div>`).join('')
+        + `</div>`;
+    } else { wrapE.style.display = 'none'; }
+
+    // ── Gráficos ──
+    renderGraficos(d, osF, logF);
+  } catch(e){ console.error(e) }
 }
 
 // ─── RELATÓRIOS ───────────────────────────────────────────
@@ -1248,6 +1477,21 @@ function printRelatorio(tipo){
     title='Relatório de Logística';
     const totLog=(G.logistica||[]).reduce((s,l)=>s+(l.valor_total||0),0);
     html=`<h2 style="color:#0d1f3c;margin-bottom:14px">${title}</h2><table style="width:100%;border-collapse:collapse;font-size:11px"><thead><tr style="background:#0d1f3c;color:#fff"><th style="padding:6px 8px">Data</th><th>Motorista</th><th>Veículo</th><th>Placa</th><th>Rota</th><th>Combustível</th><th>Litros</th><th>Valor</th></tr></thead><tbody>${(G.logistica||[]).map(l=>`<tr style="border-bottom:1px solid #eee"><td style="padding:5px 8px">${fd(l.data_saida)}</td><td style="font-weight:600">${l.motorista}</td><td>${l.veiculo||'—'}</td><td style="font-family:monospace">${l.placa||'—'}</td><td>${l.rota||'—'}</td><td>${l.tipo_combustivel||'—'}</td><td>${l.litros||0}L</td><td style="font-weight:700">${fm(l.valor_total)}</td></tr>`).join('')}<tr style="background:#0d1f3c;color:#fff"><td colspan="7" style="padding:5px 8px;font-weight:700">TOTAL</td><td style="font-weight:700;color:#f5a030;padding:5px 8px">${fm(totLog)}</td></tr></tbody></table>`;
+  }
+  if (tipo==='dashboard') {
+    title='Resumo do Dashboard';
+    const osAll=G.ordens; const logAll=G.logistica||[];
+    const gastoLogT=logAll.reduce((s,l)=>s+(l.valor_total||0),0);
+    const gastoOST=osAll.reduce((s,o)=>s+((o.viag||0)+(o.alim||0)+(o.hosp||0)+(o.comb||0)+(o.ped||0)+(o.outros||0)),0);
+    const litros=logAll.reduce((s,l)=>s+(l.litros||0),0);
+    const estBaixo=G.estoque.filter(e=>e.quantidade<=e.quantidade_min);
+    html=`<h2 style="color:#0d1f3c;margin-bottom:14px">${title}</h2>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px">
+      ${[['OS Total',osAll.length,'#1e4080'],['OS Abertas',osAll.filter(o=>o.status==='Aberta').length,'#c06010'],['Concluídas',osAll.filter(o=>o.status==='Concluída').length,'#1a7a4a'],['Retrabalhos',G.historico?.filter(h=>h.tipo==='retrabalho')?.length||0,'#b83030'],['Rotas',logAll.length,'#1e4080'],['Litros',litros.toFixed(0)+'L','#c06010'],['Gasto Total','R$'+Math.round(gastoLogT+gastoOST).toLocaleString('pt-BR'),'#b83030'],['Est. Baixo',estBaixo.length,'#b83030']].map(([l,v,cor])=>`<div style="border:1px solid #c0cbdf;border-radius:8px;padding:10px 12px;text-align:center"><div style="font-size:9px;color:#667;text-transform:uppercase;letter-spacing:.7px;margin-bottom:4px">${l}</div><div style="font-size:20px;font-weight:800;color:${cor}">${v}</div></div>`).join('')}
+    </div>
+    <h3 style="color:#0d1f3c;margin-bottom:8px;font-size:12px">Ordens de Serviço</h3>
+    <table style="width:100%;border-collapse:collapse;font-size:10px;margin-bottom:14px"><thead><tr style="background:#0d1f3c;color:#fff"><th style="padding:5px 7px">Nº OS</th><th>Abertura</th><th>Cliente</th><th>Equip.</th><th>Status</th><th>Técnico</th></tr></thead><tbody>${osAll.slice(0,20).map(os=>{const c=G.clientes.find(x=>x.id===os.cliente_id);const t=G.tecnicos.find(x=>x.id===os.tecnico_id);return`<tr style="border-bottom:1px solid #eee"><td style="padding:4px 7px;font-family:monospace">${os.num}</td><td>${fd(os.data_ab)}</td><td>${c?.nome||'—'}</td><td>${os.modelo||'—'}</td><td>${os.status}</td><td>${t?.nome||'—'}</td></tr>`}).join('')}</tbody></table>
+    ${estBaixo.length?`<h3 style="color:#b83030;margin-bottom:8px;font-size:12px">⚠ Estoque Abaixo do Mínimo</h3><table style="width:100%;border-collapse:collapse;font-size:10px"><thead><tr style="background:#b83030;color:#fff"><th style="padding:5px 7px">Item</th><th>Qtd Atual</th><th>Qtd Mín</th><th>Local</th></tr></thead><tbody>${estBaixo.map(e=>`<tr style="border-bottom:1px solid #eee;background:#fff8f0"><td style="padding:4px 7px;font-weight:600">${e.nome}</td><td style="color:#b83030;font-weight:700">${e.quantidade}</td><td>${e.quantidade_min}</td><td>${e.localizacao||'—'}</td></tr>`).join('')}</tbody></table>`:''}`;
   }
   const header=`<div style="background:#0d1f3c;color:#fff;padding:12px 18px;border-radius:8px 8px 0 0;display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><div><div style="font-size:14px;font-weight:800;color:#e07818">THEIKÓS SOLUÇÕES</div><div style="font-size:9px;opacity:.6">${title} · Gerado em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</div></div></div>`;
   openPrintWindow(header+html,'');
@@ -1283,12 +1527,13 @@ async function doImport(){
 }
 
 // ─── GRÁFICOS ──────────────────────────────────────────────
-function renderGraficos(d) {
+function renderGraficos(d, osF, logF) {
   if (!d) return;
   setTimeout(() => {
-    renderGraficoLinhaAtend(d);
-    renderGraficoLinhaGastos(d);
+    renderGraficoLinhaAtend(d, osF);
+    renderGraficoLinhaGastos(d, logF);
     renderGraficoPizzaToner(d);
+    renderGraficoPizzaOS(osF);
   }, 150);
 }
 
@@ -1419,54 +1664,108 @@ function drawPieChart(id, labels, values, title) {
   });
 }
 
-function renderGraficoLinhaAtend(d) {
+function renderGraficoLinhaAtend(d, osF) {
+  const ordens = osF || G.ordens;
   const mesesSet = new Set();
-  G.ordens.forEach(o => { if (o.data_ab) mesesSet.add(o.data_ab.slice(0,7)); });
-  const meses = Array.from(mesesSet).sort().slice(-6);
+  ordens.forEach(o => { if (o.data_ab) mesesSet.add(o.data_ab.slice(0,7)); });
+  const meses = Array.from(mesesSet).sort().slice(-8);
   const labels = meses.length
     ? meses.map(m => { const [y,mo]=m.split('-'); return mo+'/'+y.slice(2); })
-    : (d.por_tecnico||[]).slice(0,5).map(t => t.nome.split(' ')[0]);
+    : ['Sem dados'];
 
   if (!meses.length) {
-    const tecs = (d.por_tecnico||[]).slice(0,5);
-    if (!tecs.length) return;
-    drawLineChart('chart-atend-linha', labels,
-      [{ label: 'Atendimentos', data: tecs.map(t=>t.qtd) }], 'Atendimentos por Técnico');
-    return;
+    const c = getCanvasCtx('chart-atend-linha'); if(!c) return;
+    c.ctx.fillStyle='#8899bb'; c.ctx.font='12px Sora,sans-serif'; c.ctx.textAlign='center';
+    c.ctx.fillText('Nenhum dado no período', c.W/2, c.H/2); return;
   }
 
-  const tecs = (d.por_tecnico||[]).slice(0,3);
+  const tecs = [...new Map(ordens.filter(o=>o.tecnico_id).map(o=>{
+    const t=G.tecnicos.find(x=>x.id===o.tecnico_id); return t?[t.id,t]:null;
+  }).filter(Boolean)).values()].slice(0,4);
+
   const datasets = tecs.map(t => ({
     label: t.nome.split(' ')[0],
-    data: meses.map(mes => G.ordens.filter(o =>
-      o.data_ab && o.data_ab.startsWith(mes) &&
-      G.tecnicos.find(x=>x.id===o.tecnico_id)?.nome === t.nome
+    data: meses.map(mes => ordens.filter(o =>
+      o.data_ab && o.data_ab.startsWith(mes) && o.tecnico_id === t.id
     ).length)
   }));
-  drawLineChart('chart-atend-linha', labels, datasets, 'Atendimentos por Técnico / Mês');
+  if (!datasets.length) datasets.push({ label:'Total', data: meses.map(mes => ordens.filter(o=>o.data_ab&&o.data_ab.startsWith(mes)).length) });
+
+  // legenda HTML
+  const COLORS=['#1e4080','#e07818','#1a7a4a','#b83030','#6b3fa0'];
+  const legEl = document.getElementById('d-leg-tec');
+  if (legEl) legEl.innerHTML = datasets.map((ds,i)=>`<span style="display:flex;align-items:center;gap:3px;font-size:9px;color:var(--tx2)"><span style="width:10px;height:10px;border-radius:2px;background:${COLORS[i%COLORS.length]};display:inline-block"></span>${ds.label}</span>`).join('');
+
+  drawLineChart('chart-atend-linha', labels, datasets, '');
 }
 
-function renderGraficoLinhaGastos(d) {
-  const gastos = d.gastos_mensais||[];
-  if (!gastos.length) return;
-  const labels = gastos.map(g => { const [y,m]=g.mes.split('-'); return m+'/'+y.slice(2); });
-  drawLineChart('chart-gastos-linha', labels,
-    [{ label: 'Gastos em Rota (R$)', data: gastos.map(g=>g.total) }], 'Gastos em Rota por Mês (R$)');
+function renderGraficoPizzaOS(osF) {
+  const ordens = osF || G.ordens;
+  const counts = { Aberta:0, 'Em andamento':0, Concluída:0, Cancelada:0 };
+  ordens.forEach(o => { if(counts[o.status]!==undefined) counts[o.status]++; });
+  const labels = Object.keys(counts).filter(k=>counts[k]>0);
+  const values = labels.map(k=>counts[k]);
+  const COLORS = { Aberta:'#e07818', 'Em andamento':'#1a50b0', Concluída:'#1a7a4a', Cancelada:'#b83030' };
+  drawPieChartCustom('chart-os-pizza', labels, values, labels.map(l=>COLORS[l]||'#888'), '');
+}
+
+function renderGraficoLinhaGastos(d, logF) {
+  const logData = logF || G.logistica || [];
+  if (!logData.length) {
+    const gastos = d.gastos_mensais||[];
+    if (!gastos.length) return;
+    const labels = gastos.map(g => { const [y,m]=g.mes.split('-'); return m+'/'+y.slice(2); });
+    drawLineChart('chart-gastos-linha', labels,
+      [{ label: 'Gastos em Rota (R$)', data: gastos.map(g=>g.total) }], '');
+    return;
+  }
+  const mesesSet = new Set();
+  logData.forEach(l => { if(l.data_saida) mesesSet.add(l.data_saida.slice(0,7)); });
+  const meses = Array.from(mesesSet).sort().slice(-8);
+  if (!meses.length) return;
+  const labels = meses.map(m => { const [y,mo]=m.split('-'); return mo+'/'+y.slice(2); });
+  const totals = meses.map(mes => logData.filter(l=>l.data_saida&&l.data_saida.startsWith(mes)).reduce((s,l)=>s+(l.valor_total||0),0));
+  drawLineChart('chart-gastos-linha', labels, [{label:'Gastos Rota (R$)', data:totals}], '');
+}
+
+function drawPieChartCustom(id, labels, values, colors, title) {
+  const c = getCanvasCtx(id); if (!c) return;
+  const { ctx, W, H } = c;
+  const total = values.reduce((a,b) => a+b, 0);
+  ctx.fillStyle = '#f8faff'; ctx.fillRect(0, 0, W, H);
+  if (title) { ctx.fillStyle='#1a2340'; ctx.font='bold 12px Sora,sans-serif'; ctx.textAlign='center'; ctx.fillText(title, W/2, 22); }
+  if (!total) { ctx.fillStyle='#8899bb'; ctx.font='12px Sora,sans-serif'; ctx.textAlign='center'; ctx.fillText('Sem dados', W/2, H/2); return; }
+  const legendW = 160;
+  const cx = (W - legendW) / 2, cy = title ? (H+30)/2 : H/2;
+  const r = Math.min(cx-20, (H-60)/2);
+  let angle = -Math.PI/2;
+  values.forEach((v, i) => {
+    const slice = 2*Math.PI*v/total;
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,r,angle,angle+slice);
+    ctx.closePath(); ctx.fillStyle=colors[i%colors.length]; ctx.fill();
+    ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.stroke();
+    const midA=angle+slice/2, pct=Math.round(v*100/total);
+    if(pct>5){ ctx.fillStyle='#fff'; ctx.font='bold 11px Sora,sans-serif'; ctx.textAlign='center'; ctx.fillText(pct+'%',cx+Math.cos(midA)*r*0.65,cy+Math.sin(midA)*r*0.65+4); }
+    angle+=slice;
+  });
+  const lx=W-legendW+10;
+  labels.forEach((lb,i)=>{
+    const ly=36+i*24;
+    ctx.fillStyle=colors[i%colors.length]; ctx.fillRect(lx,ly,12,12);
+    ctx.fillStyle='#1a2340'; ctx.font='10px Sora,sans-serif'; ctx.textAlign='left';
+    const pct=Math.round(values[i]*100/total);
+    ctx.fillText(`${lb}: ${values[i]} (${pct}%)`,lx+16,ly+10);
+  });
 }
 
 function renderGraficoPizzaToner(d) {
   const ct = d.consumo_toner||[];
   const tots = { Preto:0, Magenta:0, Ciano:0, Amarelo:0, Grampos:0 };
-  ct.forEach(c => {
-    tots.Preto   += (c.preto||0);
-    tots.Magenta += (c.magenta||0);
-    tots.Ciano   += (c.ciano||0);
-    tots.Amarelo += (c.amarelo||0);
-    tots.Grampos += (c.grampos||0);
-  });
-  const labels = Object.keys(tots).filter(k => tots[k] > 0);
-  const values = labels.map(k => tots[k]);
-  drawPieChart('chart-toner-pizza', labels, values, 'Consumo de Suprimentos por Tipo');
+  ct.forEach(c => { tots.Preto+=(c.preto||0); tots.Magenta+=(c.magenta||0); tots.Ciano+=(c.ciano||0); tots.Amarelo+=(c.amarelo||0); tots.Grampos+=(c.grampos||0); });
+  const labels = Object.keys(tots).filter(k=>tots[k]>0);
+  const values = labels.map(k=>tots[k]);
+  const COLORS = {'Preto':'#1a2340','Magenta':'#c0105a','Ciano':'#0090c0','Amarelo':'#d4a000','Grampos':'#6b3fa0'};
+  drawPieChartCustom('chart-toner-pizza', labels, values, labels.map(l=>COLORS[l]||'#888'), '');
 }
 
 
@@ -1865,7 +2164,13 @@ async function submitReset() {
 }
 
 // ─── INIT ─────────────────────────────────────────────────
-(async()=>{try{const me=await api('GET','/api/me');G.user=me;document.getElementById('login-screen').style.display='none';document.getElementById('sidebar').style.display='flex';document.getElementById('main').style.display='block';document.getElementById('sb-av').textContent=me.nome[0].toUpperCase();document.getElementById('sb-name').textContent=me.nome;document.getElementById('sb-role').textContent=me.role==='admin'?'Administrador':'Técnico';await loadAll(); applyPermissoes(me);
+(async()=>{try{const me=await api('GET','/api/me');G.user=me;document.getElementById('login-screen').style.display='none';document.getElementById('sidebar').style.display='flex';document.getElementById('main').style.display='block';document.getElementById('sb-av').textContent=me.nome[0].toUpperCase();document.getElementById('sb-name').textContent=me.nome;document.getElementById('sb-role').textContent=me.role==='admin'?'Administrador':'Técnico';
+    // Filtro padrão: últimos 90 dias
+    const hoje=new Date(),de90=new Date();de90.setDate(hoje.getDate()-90);
+    const fmt=d=>d.toISOString().slice(0,10);
+    const dEl=document.getElementById('d-de'),aEl=document.getElementById('d-ate');
+    if(dEl)dEl.value=fmt(de90);if(aEl)aEl.value=fmt(hoje);
+    await loadAll(); applyPermissoes(me);
     document.getElementById('dev-footer').style.display='flex';}catch(e){/* not logged in */}})();
 </script>
 
