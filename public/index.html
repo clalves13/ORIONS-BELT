@@ -131,6 +131,13 @@ tr:hover td{background:var(--sf2)}
 .empty-t{font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:3px}
 .empty-s{font-size:11px}
 
+/* OS TABS */
+.os-tab{background:none;border:none;padding:9px 14px;font-size:11px;font-weight:600;color:var(--tx3);cursor:pointer;border-bottom:2px solid transparent;font-family:inherit;transition:all .15s}
+.os-tab:hover{color:var(--tx)}
+.os-tab.active{color:var(--nv);border-bottom-color:var(--ac)}
+.os-tab-panel{animation:fadeIn .15s}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+
 /* TIMELINE */
 .timeline{position:relative;padding-left:24px}
 .timeline::before{content:'';position:absolute;left:8px;top:6px;bottom:6px;width:2px;background:var(--bd)}
@@ -464,18 +471,181 @@ tr:hover td{background:var(--sf2)}
 
 <!-- OS -->
 <div id="page-os" class="page">
-  <div class="topbar"><div><div class="tb-title">Ordens de Serviço</div><div class="tb-sub">Gestão de OS</div></div>
+  <div class="topbar">
+    <div><div class="tb-title">Ordens de Serviço</div><div class="tb-sub">Gestão de OS e Atendimentos</div></div>
     <div class="tb-right">
-      <div class="swrap"><span style="color:var(--tx3)">🔍</span><input type="text" placeholder="Buscar..." id="s-os" oninput="renderOS()"></div>
-      <button class="btn btn-info btn-sm" onclick="printRelatorio('os')">🖨 Relatório</button>
+      <div class="swrap"><span style="color:var(--tx3)">🔍</span><input type="text" placeholder="Buscar nº, cliente, série..." id="s-os" oninput="renderOS()"></div>
+      <button class="btn btn-ghost btn-sm" onclick="printRelatorio('os')">🖨 PDF</button>
+      <button class="btn btn-ghost btn-sm" onclick="exportOSExcel()">📊 Excel</button>
       <button class="btn btn-accent" onclick="openOS(null)">+ Nova OS</button>
     </div>
   </div>
-  <div class="content"><div class="card" style="padding:0"><div class="twrap"><table>
-    <thead><tr><th>Nº OS</th><th>Abertura</th><th>Cliente</th><th>Equipamento</th><th>Defeito</th><th>Técnico</th><th>Status</th><th>Ações</th></tr></thead>
-    <tbody id="tb-os"></tbody>
-  </table></div></div></div>
+  <div class="content">
+    <!-- KPIs rápidos -->
+    <div class="sgrid" style="grid-template-columns:repeat(5,1fr);margin-bottom:14px">
+      <div class="scard" style="cursor:pointer" onclick="filtrarOSStatus('')">
+        <div class="sico" style="background:var(--bl2bg);color:var(--bl2)">📋</div>
+        <div class="slabel">Total</div><div class="sval" id="os-kpi-total">0</div><div class="ssub">Todas as OS</div>
+      </div>
+      <div class="scard" style="cursor:pointer" onclick="filtrarOSStatus('Aberta')">
+        <div class="sico" style="background:var(--orbg);color:var(--or)">🔓</div>
+        <div class="slabel">Abertas</div><div class="sval" id="os-kpi-ab">0</div><div class="ssub">Aguardando</div>
+      </div>
+      <div class="scard" style="cursor:pointer" onclick="filtrarOSStatus('Em andamento')">
+        <div class="sico" style="background:var(--bl2bg);color:var(--bl2)">⚙</div>
+        <div class="slabel">Em Andamento</div><div class="sval" id="os-kpi-and">0</div><div class="ssub">Em execução</div>
+      </div>
+      <div class="scard" style="cursor:pointer" onclick="filtrarOSStatus('Concluída')">
+        <div class="sico" style="background:var(--gnbg);color:var(--gn)">✅</div>
+        <div class="slabel">Concluídas</div><div class="sval" id="os-kpi-ok">0</div><div class="ssub">Finalizadas</div>
+      </div>
+      <div class="scard" style="cursor:pointer" onclick="filtrarOSStatus('Cancelada')">
+        <div class="sico" style="background:var(--rdbg);color:var(--rd)">✖</div>
+        <div class="slabel">Canceladas</div><div class="sval" id="os-kpi-can">0</div><div class="ssub">Canceladas</div>
+      </div>
+    </div>
+    <!-- Filtros -->
+    <div class="card" style="padding:10px 14px;margin-bottom:10px">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <div style="display:flex;align-items:center;gap:5px">
+          <span style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase">Status</span>
+          <select id="f-os-status" onchange="renderOS()" style="font-size:11px;padding:4px 7px;border:1.5px solid var(--bd2);border-radius:7px;font-family:inherit;color:var(--tx)">
+            <option value="">Todos</option>
+            <option>Aberta</option><option>Em andamento</option><option>Concluída</option><option>Cancelada</option>
+          </select>
+        </div>
+        <div style="display:flex;align-items:center;gap:5px">
+          <span style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase">Técnico</span>
+          <select id="f-os-tec" onchange="renderOS()" style="font-size:11px;padding:4px 7px;border:1.5px solid var(--bd2);border-radius:7px;font-family:inherit;color:var(--tx)">
+            <option value="">Todos</option>
+          </select>
+        </div>
+        <div style="display:flex;align-items:center;gap:5px">
+          <span style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase">De</span>
+          <input type="date" id="f-os-de" onchange="renderOS()" style="font-size:11px;padding:4px 7px;border:1.5px solid var(--bd2);border-radius:7px;font-family:inherit;color:var(--tx)">
+        </div>
+        <div style="display:flex;align-items:center;gap:5px">
+          <span style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase">Até</span>
+          <input type="date" id="f-os-ate" onchange="renderOS()" style="font-size:11px;padding:4px 7px;border:1.5px solid var(--bd2);border-radius:7px;font-family:inherit;color:var(--tx)">
+        </div>
+        <button class="btn btn-ghost btn-xs" onclick="limparFiltrosOS()">✕ Limpar filtros</button>
+        <span id="os-count-label" style="margin-left:auto;font-size:11px;color:var(--tx3)"></span>
+      </div>
+    </div>
+    <!-- Tabela -->
+    <div class="card" style="padding:0"><div class="twrap"><table>
+      <thead><tr>
+        <th>Nº OS</th><th>Abertura</th><th>Cliente</th><th>Equipamento</th><th>Nº Série</th>
+        <th>Defeito</th><th>Técnico</th><th>Status</th><th>Ações</th>
+      </tr></thead>
+      <tbody id="tb-os"></tbody>
+    </table></div></div>
+  </div>
 </div>
+
+<!-- MODAL DETALHE OS (abas) -->
+<div class="mov" id="m-os-det">
+<div class="modal" style="max-width:700px">
+  <div class="mhd">
+    <div>
+      <div class="mhd-title" id="m-os-det-title">Detalhes da OS</div>
+      <div style="font-size:10px;color:var(--tx3);margin-top:2px" id="m-os-det-sub"></div>
+    </div>
+    <div style="display:flex;gap:6px;align-items:center">
+      <button class="btn btn-success btn-sm" id="btn-det-prev" onclick="detPreview()">🖨 Imprimir</button>
+      <button class="btnx" onclick="closeM('m-os-det')">×</button>
+    </div>
+  </div>
+  <!-- Abas -->
+  <div style="display:flex;border-bottom:1px solid var(--bd);padding:0 20px;background:var(--sf2)">
+    <button class="os-tab active" onclick="osTab('resumo',this)">📋 Resumo</button>
+    <button class="os-tab" onclick="osTab('tecnico',this)">🔧 Técnico</button>
+    <button class="os-tab" onclick="osTab('gastos',this)">💰 Gastos</button>
+    <button class="os-tab" onclick="osTab('historico',this)">📂 Histórico</button>
+    <button class="os-tab" onclick="osTab('sigs',this)">✍ Assinaturas</button>
+  </div>
+  <div class="mbody" style="padding:14px 20px">
+    <!-- Aba Resumo -->
+    <div id="os-tab-resumo" class="os-tab-panel">
+      <div class="fgrid fg2" style="gap:10px">
+        <div style="background:var(--sf2);border-radius:8px;padding:10px 13px">
+          <div class="fsec" style="margin-bottom:8px">Cliente</div>
+          <div id="det-cli-info" style="font-size:12px;line-height:1.8;color:var(--tx)"></div>
+        </div>
+        <div style="background:var(--sf2);border-radius:8px;padding:10px 13px">
+          <div class="fsec" style="margin-bottom:8px">Equipamento</div>
+          <div id="det-eq-info" style="font-size:12px;line-height:1.8;color:var(--tx)"></div>
+        </div>
+        <div style="background:var(--sf2);border-radius:8px;padding:10px 13px">
+          <div class="fsec" style="margin-bottom:8px">Datas e Horários</div>
+          <div id="det-datas-info" style="font-size:12px;line-height:1.8;color:var(--tx)"></div>
+        </div>
+        <div style="background:var(--sf2);border-radius:8px;padding:10px 13px">
+          <div class="fsec" style="margin-bottom:8px">Status</div>
+          <div id="det-status-info" style="font-size:12px;line-height:1.8"></div>
+        </div>
+      </div>
+    </div>
+    <!-- Aba Técnico -->
+    <div id="os-tab-tecnico" class="os-tab-panel" style="display:none">
+      <div style="margin-bottom:10px"><div class="fsec" style="margin-bottom:6px">Defeito Relatado</div><div id="det-defeito" style="background:var(--sf2);border-radius:8px;padding:10px 13px;font-size:12px;line-height:1.7;min-height:50px"></div></div>
+      <div style="margin-bottom:10px"><div class="fsec" style="margin-bottom:6px">Procedimento Técnico</div><div id="det-proc" style="background:var(--sf2);border-radius:8px;padding:10px 13px;font-size:12px;line-height:1.7;min-height:60px;background:#fffdf0"></div></div>
+      <div style="margin-bottom:10px"><div class="fsec" style="margin-bottom:6px">Peças Trocadas / Materiais</div><div id="det-pecas" style="background:var(--sf2);border-radius:8px;padding:10px 13px;font-size:12px;line-height:1.7;min-height:40px"></div></div>
+      <div><div class="fsec" style="margin-bottom:6px">Observações</div><div id="det-obs" style="background:var(--sf2);border-radius:8px;padding:10px 13px;font-size:12px;line-height:1.7;min-height:30px"></div></div>
+    </div>
+    <!-- Aba Gastos -->
+    <div id="os-tab-gastos" class="os-tab-panel" style="display:none">
+      <div id="det-gastos-tbl"></div>
+    </div>
+    <!-- Aba Histórico do equipamento -->
+    <div id="os-tab-historico" class="os-tab-panel" style="display:none">
+      <div id="det-hist-eq" style="font-size:12px"></div>
+    </div>
+    <!-- Aba Assinaturas -->
+    <div id="os-tab-sigs" class="os-tab-panel" style="display:none">
+      <div class="fgrid fg2">
+        <div style="text-align:center">
+          <div style="font-size:10px;font-weight:700;color:var(--tx2);text-transform:uppercase;margin-bottom:6px">Assinatura do Técnico</div>
+          <div id="det-sig-tec" style="border:1.5px solid var(--bd2);border-radius:var(--r);min-height:90px;display:flex;align-items:center;justify-content:center;background:#fafbff"></div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-size:10px;font-weight:700;color:var(--tx2);text-transform:uppercase;margin-bottom:6px">Assinatura do Cliente</div>
+          <div id="det-sig-cli" style="border:1.5px solid var(--bd2);border-radius:var(--r);min-height:90px;display:flex;align-items:center;justify-content:center;background:#fafbff"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<!-- MODAL TROCA DE SÉRIE -->
+<div class="mov" id="m-troca-serie">
+<div class="modal" style="max-width:520px">
+  <div class="mhd"><div class="mhd-title">🔄 Troca de Nº Série / Equipamento</div><button class="btnx" onclick="closeM('m-troca-serie')">×</button></div>
+  <div class="mbody">
+    <div style="background:var(--orbg);border:1px solid var(--orbd);border-radius:8px;padding:10px 13px;margin-bottom:14px;font-size:12px">
+      ⚠ O equipamento anterior será retornado ao estoque com status <strong>"Em manutenção"</strong>. O novo será cadastrado e vinculado ao cliente.
+    </div>
+    <input type="hidden" id="ts-os-id">
+    <div class="fgrid" style="gap:10px">
+      <div style="background:var(--sf2);border-radius:8px;padding:10px;font-size:12px">
+        <div style="font-weight:700;color:var(--tx3);font-size:10px;text-transform:uppercase;margin-bottom:5px">Equipamento Atual</div>
+        <div id="ts-atual-info"></div>
+      </div>
+      <div class="fsec" style="margin-bottom:0">Novo Equipamento</div>
+      <div class="fgrid fg2" style="gap:8px">
+        <div class="fg"><label>Novo Nº Série *</label><input type="text" id="ts-nserie" placeholder="Nº série do substituto"></div>
+        <div class="fg"><label>Modelo</label><input type="text" id="ts-modelo"></div>
+        <div class="fg"><label>Marca</label><input type="text" id="ts-marca"></div>
+        <div class="fg"><label>Contador</label><input type="text" id="ts-cont" placeholder="0"></div>
+        <div class="fg" style="grid-column:1/-1"><label>Motivo da Troca</label><textarea id="ts-motivo" rows="2" placeholder="Descreva o motivo..."></textarea></div>
+      </div>
+    </div>
+  </div>
+  <div class="mfoot">
+    <button class="btn btn-ghost" onclick="closeM('m-troca-serie')">Cancelar</button>
+    <button class="btn btn-accent" onclick="confirmarTrocaSerie()">🔄 Confirmar Troca</button>
+  </div>
+</div></div>
 
 <!-- LABORATÓRIO -->
 <div id="page-lab" class="page">
@@ -625,7 +795,12 @@ tr:hover td{background:var(--sf2)}
       <div class="fgrid fg4"><div class="fg"><label>Data Chamado</label><input type="date" id="o-dcham"></div><div class="fg"><label>Data Atendimento</label><input type="date" id="o-datend"></div><div class="fg"><label>Hora Chegada</label><input type="time" id="o-hcheg"></div><div class="fg"><label>Hora Saída</label><input type="time" id="o-hsai"></div></div>
     </div>
     <div><div class="fsec">Status</div>
-      <div class="fgrid fg2"><div class="fg"><label>Status</label><select id="o-status"><option>Aberta</option><option>Em andamento</option><option>Concluída</option><option>Cancelada</option></select></div></div>
+      <div class="fgrid fg2">
+        <div class="fg"><label>Status</label><select id="o-status"><option>Aberta</option><option>Em andamento</option><option>Concluída</option><option>Cancelada</option></select></div>
+        <div class="fg" style="display:flex;align-items:flex-end">
+          <button class="btn btn-ghost btn-sm" id="btn-troca-serie" style="display:none" onclick="abrirTrocaSerie()">🔄 Trocar Nº Série</button>
+        </div>
+      </div>
     </div>
     <div style="margin-top:13px"><div class="fsec">Assinaturas</div>
       <div class="fgrid fg2">
@@ -1001,15 +1176,35 @@ function calcL() {
 }
 
 // ─── ATENDIMENTOS ─────────────────────────────────────────
-function openAtend(id) { openOS(id); }
+async function delOS(id){if(confirm('Excluir esta OS?')){await api('DELETE',`/api/ordens/${id}`);await loadAll();renderOS();updateBadges();loadDash();}}
 async function saveAtend() { await saveOS(); }
 function renderAtend() { renderOS(); }
 async function delAtend(id){if(confirm('Excluir?')){await api('DELETE',`/api/ordens/${id}`);await loadAll();renderOS();loadDash()}}
 
 // ─── OS ───────────────────────────────────────────────────
+function filtrarOSStatus(status) {
+  document.getElementById('f-os-status').value = status;
+  renderOS();
+}
+function limparFiltrosOS() {
+  document.getElementById('f-os-status').value = '';
+  document.getElementById('f-os-tec').value = '';
+  document.getElementById('f-os-de').value = '';
+  document.getElementById('f-os-ate').value = '';
+  document.getElementById('s-os').value = '';
+  renderOS();
+}
+function populateFiltroTec() {
+  const sel = document.getElementById('f-os-tec'); if (!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Todos</option>' + G.tecnicos.map(t=>`<option value="${t.id}">${t.nome}</option>`).join('');
+  sel.value = cur;
+}
+
 function openOS(id) {
   popTec(['o-tec']); popCli(['o-cli']);
   document.getElementById('btn-prev').style.display='none';
+  document.getElementById('btn-troca-serie').style.display='none';
   document.getElementById('m-os-title').textContent = id ? 'Editar OS' : 'Nova OS';
   if(id) {
     const os=G.ordens.find(x=>x.id===id); if(!os) return;
@@ -1023,6 +1218,10 @@ function openOS(id) {
     document.getElementById('o-viag').value=os.viag||0; document.getElementById('o-alim').value=os.alim||0; document.getElementById('o-hosp').value=os.hosp||0; document.getElementById('o-comb').value=os.comb||0; document.getElementById('o-ped').value=os.ped||0; document.getElementById('o-out').value=os.outros||0;
     document.getElementById('o-status').value=os.status||'Aberta'; calcOS();
     document.getElementById('btn-prev').style.display='inline-flex';
+    // Mostrar botão de troca de série só se OS não estiver encerrada
+    if (os.status !== 'Concluída' && os.status !== 'Cancelada' && os.nserie) {
+      document.getElementById('btn-troca-serie').style.display='inline-flex';
+    }
     setTimeout(()=>{sigOSInit();sigOSSet('tec',os.sig_tec||'');sigOSSet('cli',os.sig_cli||'');},80);
   } else {
     document.getElementById('o-id').value=''; document.getElementById('o-num-val').value=''; document.getElementById('o-num').value='(gerado ao salvar)';
@@ -1035,24 +1234,289 @@ function openOS(id) {
   setTimeout(()=>{sigOSInit();sigOSClear('tec');sigOSClear('cli');},80);
   openM('m-os');
 }
+
 async function saveOS() {
   const cid=document.getElementById('o-cli').value; if(!cid){alert('Selecione o cliente.');return}
-  const eid=document.getElementById('o-id').value;
-  const body={dataAb:document.getElementById('o-dab').value,tecnicoId:document.getElementById('o-tec').value,clienteId:cid,contato:document.getElementById('o-contato').value,tel:document.getElementById('o-tel').value,end:document.getElementById('o-end').value,equipId:document.getElementById('o-eq').value,modelo:document.getElementById('o-modelo').value,nserie:document.getElementById('o-nserie').value,contador:document.getElementById('o-cont').value,defeito:document.getElementById('o-defeito').value,procedimento:document.getElementById('o-proc').value,pecas:document.getElementById('o-pecas').value,obs:document.getElementById('o-obs').value,dataChamado:document.getElementById('o-dcham').value,dataAtend:document.getElementById('o-datend').value,horaChegada:document.getElementById('o-hcheg').value,horaSaida:document.getElementById('o-hsai').value,viag:+document.getElementById('o-viag').value||0,alim:+document.getElementById('o-alim').value||0,hosp:+document.getElementById('o-hosp').value||0,comb:+document.getElementById('o-comb').value||0,ped:+document.getElementById('o-ped').value||0,outros:+document.getElementById('o-out').value||0,status:document.getElementById('o-status').value,sig_tec:sigOSGet('tec'),sig_cli:sigOSGet('cli')};
+  const nserie = document.getElementById('o-nserie').value.trim();
+  const eid = document.getElementById('o-id').value;
+
+  // ── Verificar OS aberta para este Nº Série ──
+  if (!eid && nserie) {
+    const osAberta = G.ordens.find(o =>
+      o.nserie && o.nserie.trim().toLowerCase() === nserie.toLowerCase() &&
+      o.status !== 'Concluída' && o.status !== 'Cancelada'
+    );
+    if (osAberta) {
+      const c = G.clientes.find(x=>x.id===osAberta.cliente_id);
+      alert(`⚠ Já existe uma OS em aberto para o Nº Série "${nserie}".\n\nOS: ${osAberta.num} — Status: ${osAberta.status}\nCliente: ${c?.nome||'—'}\n\nEncerre a OS anterior antes de abrir uma nova para este equipamento.`);
+      return;
+    }
+  }
+
+  const body={dataAb:document.getElementById('o-dab').value,tecnicoId:document.getElementById('o-tec').value,clienteId:cid,contato:document.getElementById('o-contato').value,tel:document.getElementById('o-tel').value,end:document.getElementById('o-end').value,equipId:document.getElementById('o-eq').value,modelo:document.getElementById('o-modelo').value,nserie,contador:document.getElementById('o-cont').value,defeito:document.getElementById('o-defeito').value,procedimento:document.getElementById('o-proc').value,pecas:document.getElementById('o-pecas').value,obs:document.getElementById('o-obs').value,dataChamado:document.getElementById('o-dcham').value,dataAtend:document.getElementById('o-datend').value,horaChegada:document.getElementById('o-hcheg').value,horaSaida:document.getElementById('o-hsai').value,viag:+document.getElementById('o-viag').value||0,alim:+document.getElementById('o-alim').value||0,hosp:+document.getElementById('o-hosp').value||0,comb:+document.getElementById('o-comb').value||0,ped:+document.getElementById('o-ped').value||0,outros:+document.getElementById('o-out').value||0,status:document.getElementById('o-status').value,sig_tec:sigOSGet('tec'),sig_cli:sigOSGet('cli')};
   try {
     if(eid){ await api('PUT',`/api/ordens/${eid}`,body); } else { const res=await api('POST','/api/ordens',body); document.getElementById('o-id').value=res.id; document.getElementById('o-num-val').value=res.num; document.getElementById('o-num').value=res.num; document.getElementById('btn-prev').style.display='inline-flex'; }
     await loadAll(); renderOS(); loadDash(); closeM('m-os');
   } catch(e){alert(e.message)}
 }
+
 function renderOS() {
-  const q=(document.getElementById('s-os')?.value||'').toLowerCase();
-  const rows=G.ordens.filter(os=>{const c=G.clientes.find(x=>x.id===os.cliente_id);return!q||[os.num,c?.nome,os.defeito,os.modelo,os.nserie].join(' ').toLowerCase().includes(q)});
-  const tb=document.getElementById('tb-os'); if(!tb)return;
-  if(!rows.length){tb.innerHTML=`<tr><td colspan="8"><div class="empty"><div class="empty-ico">📝</div><div class="empty-t">Nenhuma OS</div></div></td></tr>`;return}
-  tb.innerHTML=rows.map(os=>{const c=G.clientes.find(x=>x.id===os.cliente_id);const t=G.tecnicos.find(x=>x.id===os.tecnico_id);const sb=os.status==='Concluída'?'bg':os.status==='Cancelada'?'br':os.status==='Em andamento'?'bb':'bo';
-  return`<tr><td style="font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--nv)">${os.num}</td><td>${fd(os.data_ab)}</td><td style="font-weight:600">${c?.nome||'—'}</td><td>${os.modelo||'—'}</td><td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${os.defeito||'—'}</td><td>${t?.nome||'—'}</td><td><span class="badge ${sb}">${os.status}</span></td><td style="white-space:nowrap"><button class="btn btn-ghost btn-xs" onclick="openOS('${os.id}')">Editar</button> <button class="btn btn-success btn-xs" onclick="showOSPreview('${os.id}')">🖨</button> <button class="btn btn-danger btn-xs" onclick="delOS('${os.id}')">×</button></td></tr>`}).join('');
+  // Atualiza filtro de técnico
+  populateFiltroTec();
+
+  const q      = (document.getElementById('s-os')?.value||'').toLowerCase();
+  const fStat  = document.getElementById('f-os-status')?.value||'';
+  const fTec   = document.getElementById('f-os-tec')?.value||'';
+  const fDe    = document.getElementById('f-os-de')?.value||'';
+  const fAte   = document.getElementById('f-os-ate')?.value||'';
+
+  // KPIs
+  document.getElementById('os-kpi-total').textContent = G.ordens.length;
+  document.getElementById('os-kpi-ab').textContent    = G.ordens.filter(o=>o.status==='Aberta').length;
+  document.getElementById('os-kpi-and').textContent   = G.ordens.filter(o=>o.status==='Em andamento').length;
+  document.getElementById('os-kpi-ok').textContent    = G.ordens.filter(o=>o.status==='Concluída').length;
+  document.getElementById('os-kpi-can').textContent   = G.ordens.filter(o=>o.status==='Cancelada').length;
+
+  const rows = G.ordens.filter(os => {
+    const c = G.clientes.find(x=>x.id===os.cliente_id);
+    if (q && ![os.num,c?.nome,os.defeito,os.modelo,os.nserie].join(' ').toLowerCase().includes(q)) return false;
+    if (fStat && os.status !== fStat) return false;
+    if (fTec  && os.tecnico_id !== fTec) return false;
+    if (fDe   && (os.data_ab||'') < fDe) return false;
+    if (fAte  && (os.data_ab||'') > fAte) return false;
+    return true;
+  });
+
+  const countEl = document.getElementById('os-count-label');
+  if (countEl) countEl.textContent = `${rows.length} OS encontrada${rows.length!==1?'s':''}`;
+
+  const tb = document.getElementById('tb-os'); if (!tb) return;
+  if (!rows.length) {
+    tb.innerHTML=`<tr><td colspan="9"><div class="empty"><div class="empty-ico">📝</div><div class="empty-t">Nenhuma OS encontrada</div><div class="empty-s">Tente ajustar os filtros</div></div></td></tr>`;
+    return;
+  }
+  tb.innerHTML = rows.map(os => {
+    const c  = G.clientes.find(x=>x.id===os.cliente_id);
+    const t  = G.tecnicos.find(x=>x.id===os.tecnico_id);
+    const sb = os.status==='Concluída'?'bg':os.status==='Cancelada'?'br':os.status==='Em andamento'?'bb':'bo';
+    const encerrada = os.status==='Concluída'||os.status==='Cancelada';
+    // Botões de mudança rápida de status
+    const proximoStatus = os.status==='Aberta'?'Em andamento':os.status==='Em andamento'?'Concluída':null;
+    const btnStatus = proximoStatus
+      ? `<button class="btn btn-xs" style="background:var(--gnbg);color:var(--gn);border:1px solid var(--gnbd)" onclick="mudarStatusOS('${os.id}','${proximoStatus}')" title="Avançar para ${proximoStatus}">▶ ${proximoStatus==='Em andamento'?'Iniciar':'Concluir'}</button>`
+      : '';
+    return `<tr>
+      <td style="font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--nv)">${os.num}</td>
+      <td>${fd(os.data_ab)}</td>
+      <td style="font-weight:600;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${c?.nome||''}">${c?.nome||'—'}</td>
+      <td>${os.modelo||'—'}</td>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--tx3)">${os.nserie||'—'}</td>
+      <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${os.defeito||''}">${os.defeito||'—'}</td>
+      <td>${t?.nome?.split(' ')[0]||'—'}</td>
+      <td><span class="badge ${sb}">${os.status}</span></td>
+      <td style="white-space:nowrap;display:flex;gap:3px;flex-wrap:wrap">
+        ${btnStatus}
+        <button class="btn btn-ghost btn-xs" onclick="verDetalhesOS('${os.id}')" title="Ver detalhes">👁</button>
+        <button class="btn btn-ghost btn-xs" onclick="openOS('${os.id}')">Editar</button>
+        <button class="btn btn-success btn-xs" onclick="showOSPreview('${os.id}')">🖨</button>
+        ${!encerrada?`<button class="btn btn-danger btn-xs" onclick="delOS('${os.id}')">×</button>`:''}
+      </td>
+    </tr>`;
+  }).join('');
 }
-async function delOS(id){if(confirm('Excluir?')){await api('DELETE',`/api/ordens/${id}`);await loadAll();renderOS();updateBadges()}}
+
+async function mudarStatusOS(id, novoStatus) {
+  const os = G.ordens.find(x=>x.id===id); if (!os) return;
+  if (!confirm(`Mudar status da OS ${os.num} para "${novoStatus}"?`)) return;
+  try {
+    await api('PUT',`/api/ordens/${id}`, {...os, status: novoStatus,
+      tecnicoId: os.tecnico_id, clienteId: os.cliente_id, equipId: os.equip_id,
+      dataAb: os.data_ab, dataChamado: os.data_chamado, dataAtend: os.data_atend,
+      horaChegada: os.hora_chegada, horaSaida: os.hora_saida
+    });
+    await loadAll(); renderOS(); loadDash();
+  } catch(e) { alert(e.message); }
+}
+
+// ─── DETALHE OS (abas) ────────────────────────────────────
+function osTab(tab, btn) {
+  document.querySelectorAll('.os-tab').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.os-tab-panel').forEach(p=>p.style.display='none');
+  if (btn) btn.classList.add('active');
+  const el = document.getElementById('os-tab-'+tab);
+  if (el) el.style.display='block';
+}
+
+function verDetalhesOS(id) {
+  const os = G.ordens.find(x=>x.id===id); if (!os) return;
+  const c  = G.clientes.find(x=>x.id===os.cliente_id);
+  const t  = G.tecnicos.find(x=>x.id===os.tecnico_id);
+  const sb = os.status==='Concluída'?'bg':os.status==='Cancelada'?'br':os.status==='Em andamento'?'bb':'bo';
+  const tot= (os.viag||0)+(os.alim||0)+(os.hosp||0)+(os.comb||0)+(os.ped||0)+(os.outros||0);
+
+  document.getElementById('m-os-det-title').textContent = `OS ${os.num}`;
+  document.getElementById('m-os-det-sub').textContent   = `Abertura: ${fd(os.data_ab)} · Técnico: ${t?.nome||'—'}`;
+
+  // Resumo
+  document.getElementById('det-cli-info').innerHTML =
+    `<b>Cliente:</b> ${c?.nome||'—'}<br><b>Contato:</b> ${os.contato||c?.contato||'—'}<br><b>Telefone:</b> ${os.tel||c?.tel||'—'}<br><b>Endereço:</b> ${os.end_logradouro||c?.end_logradouro||'—'}`;
+  document.getElementById('det-eq-info').innerHTML =
+    `<b>Equipamento:</b> ${os.modelo||'—'}<br><b>Nº Série:</b> <span style="font-family:monospace">${os.nserie||'—'}</span><br><b>Contador:</b> ${os.contador||'—'}`;
+  document.getElementById('det-datas-info').innerHTML =
+    `<b>Data Chamado:</b> ${fd(os.data_chamado)||'—'}<br><b>Data Atend.:</b> ${fd(os.data_atend)||'—'}<br><b>Chegada:</b> ${os.hora_chegada||'—'} · <b>Saída:</b> ${os.hora_saida||'—'}`;
+  document.getElementById('det-status-info').innerHTML =
+    `<span class="badge ${sb}" style="font-size:13px;padding:4px 12px">${os.status}</span>`;
+
+  // Técnico
+  document.getElementById('det-defeito').textContent = os.defeito||'—';
+  document.getElementById('det-proc').textContent    = os.procedimento||'—';
+  document.getElementById('det-pecas').innerHTML     = os.pecas
+    ? os.pecas.split('\n').map(p=>`<div style="padding:2px 0;border-bottom:1px solid var(--bd)">• ${p}</div>`).join('')
+    : '—';
+  document.getElementById('det-obs').textContent = os.obs||'—';
+
+  // Gastos
+  const gastos=[['Viagem',os.viag],['Alimentação',os.alim],['Hospedagem',os.hosp],['Combustível',os.comb],['Pedágios',os.ped],['Outros',os.outros]].filter(([,v])=>(v||0)>0);
+  document.getElementById('det-gastos-tbl').innerHTML = gastos.length
+    ? `<table style="width:100%;border-collapse:collapse;font-size:12px">
+        ${gastos.map(([n,v])=>`<tr><td style="padding:7px 10px;border-bottom:1px solid var(--bd)">${n}</td><td style="text-align:right;font-weight:600;padding:7px 10px;border-bottom:1px solid var(--bd)">${fm(v)}</td></tr>`).join('')}
+        <tr style="background:var(--nv);color:#fff"><td style="padding:8px 10px;font-weight:700">TOTAL</td><td style="text-align:right;font-weight:800;color:var(--ac2);padding:8px 10px">${fm(tot)}</td></tr>
+      </table>`
+    : `<div class="empty" style="padding:24px"><div class="empty-ico">💰</div><div class="empty-t">Nenhum gasto registrado</div></div>`;
+
+  // Histórico do equipamento (mesmo Nº Série)
+  const hist = G.ordens.filter(o => o.nserie && os.nserie && o.nserie===os.nserie && o.id!==os.id).sort((a,b)=>(b.data_ab||'').localeCompare(a.data_ab||''));
+  document.getElementById('det-hist-eq').innerHTML = hist.length
+    ? `<div style="margin-bottom:8px;font-size:11px;color:var(--tx3)">Histórico de atendimentos para o Nº Série <strong style="color:var(--tx);font-family:monospace">${os.nserie}</strong></div>`
+      + hist.map(h=>{const tc=G.tecnicos.find(x=>x.id===h.tecnico_id);const sb2=h.status==='Concluída'?'bg':h.status==='Cancelada'?'br':h.status==='Em andamento'?'bb':'bo';
+        return`<div style="border:1px solid var(--bd);border-radius:8px;padding:10px 13px;margin-bottom:7px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+            <span style="font-weight:700;color:var(--nv);font-family:'JetBrains Mono',monospace">${h.num}</span>
+            <span class="badge ${sb2}">${h.status}</span>
+          </div>
+          <div style="font-size:11px;color:var(--tx3);line-height:1.7">
+            <b>Abertura:</b> ${fd(h.data_ab)} · <b>Técnico:</b> ${tc?.nome||'—'}<br>
+            <b>Defeito:</b> ${h.defeito||'—'}<br>
+            ${h.procedimento?`<b>Procedimento:</b> ${h.procedimento}<br>`:''}
+            ${h.pecas?`<b>Peças:</b> ${h.pecas}<br>`:''}
+          </div>
+        </div>`;}).join('')
+    : `<div class="empty" style="padding:24px"><div class="empty-ico">📂</div><div class="empty-t">Sem histórico para este equipamento</div><div class="empty-s">Esta é a primeira OS para o Nº Série ${os.nserie||'—'}</div></div>`;
+
+  // Assinaturas
+  document.getElementById('det-sig-tec').innerHTML = os.sig_tec
+    ? `<img src="${os.sig_tec}" style="max-height:80px;max-width:100%">`
+    : `<span style="color:var(--tx3);font-size:11px">Sem assinatura</span>`;
+  document.getElementById('det-sig-cli').innerHTML = os.sig_cli
+    ? `<img src="${os.sig_cli}" style="max-height:80px;max-width:100%">`
+    : `<span style="color:var(--tx3);font-size:11px">Sem assinatura</span>`;
+
+  // Resetar para aba resumo
+  osTab('resumo', document.querySelector('.os-tab'));
+  openM('m-os-det');
+}
+
+function detPreview() {
+  const title = document.getElementById('m-os-det-title').textContent;
+  const num   = title.replace('OS ','');
+  const os    = G.ordens.find(x=>x.num===num||x.id===num);
+  if (os) { G.currentOSData=os; openPrintWindow(buildOSDoc(os), getOSPrintStyles()); }
+}
+
+// ─── TROCA DE SÉRIE ───────────────────────────────────────
+function abrirTrocaSerie() {
+  const osId = document.getElementById('o-id').value; if (!osId) return;
+  const os   = G.ordens.find(x=>x.id===osId); if (!os) return;
+  document.getElementById('ts-os-id').value = osId;
+  document.getElementById('ts-atual-info').innerHTML =
+    `<b>Modelo:</b> ${os.modelo||'—'}<br><b>Nº Série:</b> <span style="font-family:monospace">${os.nserie||'—'}</span><br><b>Contador:</b> ${os.contador||'—'}`;
+  document.getElementById('ts-modelo').value = os.modelo||'';
+  document.getElementById('ts-marca').value  = '';
+  document.getElementById('ts-nserie').value = '';
+  document.getElementById('ts-cont').value   = '';
+  document.getElementById('ts-motivo').value = '';
+  openM('m-troca-serie');
+}
+
+async function confirmarTrocaSerie() {
+  const osId    = document.getElementById('ts-os-id').value;
+  const nsNovo  = document.getElementById('ts-nserie').value.trim();
+  if (!nsNovo) { alert('Informe o novo Nº Série.'); return; }
+
+  const os  = G.ordens.find(x=>x.id===osId); if (!os) return;
+  const c   = G.clientes.find(x=>x.id===os.cliente_id);
+  const motivo = document.getElementById('ts-motivo').value.trim();
+
+  try {
+    // 1. Retorna equipamento anterior ao estoque com obs "Em manutenção"
+    if (os.equip_id) {
+      const eq = G.equipamentos.find(x=>x.id===os.equip_id);
+      if (eq) {
+        await api('PUT',`/api/equipamentos/${eq.id}`, {
+          ...eq, clienteId: eq.cliente_id, nome: eq.nome,
+          status: 'Em manutenção',
+          obs: `Retornado ao estoque em ${today()} — Motivo: ${motivo||'Troca de série'} — OS ${os.num}`
+        });
+      }
+    }
+    // 2. Cadastra novo equipamento para o cliente
+    const novoEq = await api('POST','/api/equipamentos', {
+      clienteId: os.cliente_id,
+      nome: document.getElementById('ts-modelo').value||os.modelo||'Equipamento',
+      marca: document.getElementById('ts-marca').value,
+      modelo: document.getElementById('ts-modelo').value||os.modelo||'',
+      nserie: nsNovo,
+      contador: document.getElementById('ts-cont').value||'0',
+      status: 'Ativo',
+      obs: `Substituiu Nº Série ${os.nserie||'—'} via OS ${os.num} em ${today()}`
+    });
+    // 3. Atualiza a OS com o novo equipamento
+    await api('PUT',`/api/ordens/${osId}`, {
+      ...os, tecnicoId: os.tecnico_id, clienteId: os.cliente_id,
+      equipId: novoEq.id||os.equip_id,
+      nserie: nsNovo,
+      modelo: document.getElementById('ts-modelo').value||os.modelo,
+      obs: (os.obs?os.obs+'\n':'') + `Troca de série: ${os.nserie||'—'} → ${nsNovo}. ${motivo}`
+    });
+    await loadAll(); renderOS(); closeM('m-troca-serie'); closeM('m-os');
+    alert(`✅ Troca realizada!\n• Nº Série anterior (${os.nserie}) retornado ao estoque como "Em manutenção".\n• Novo equipamento (${nsNovo}) cadastrado e vinculado ao cliente ${c?.nome||'—'}.`);
+  } catch(e) { alert('Erro: '+e.message); }
+}
+
+// ─── EXPORTAR OS EXCEL (CSV) ─────────────────────────────
+function exportOSExcel() {
+  const fStat = document.getElementById('f-os-status')?.value||'';
+  const fTec  = document.getElementById('f-os-tec')?.value||'';
+  const fDe   = document.getElementById('f-os-de')?.value||'';
+  const fAte  = document.getElementById('f-os-ate')?.value||'';
+  const q     = (document.getElementById('s-os')?.value||'').toLowerCase();
+
+  const rows = G.ordens.filter(os => {
+    const c=G.clientes.find(x=>x.id===os.cliente_id);
+    if (q && ![os.num,c?.nome,os.defeito,os.modelo,os.nserie].join(' ').toLowerCase().includes(q)) return false;
+    if (fStat && os.status!==fStat) return false;
+    if (fTec  && os.tecnico_id!==fTec) return false;
+    if (fDe   && (os.data_ab||'')<fDe) return false;
+    if (fAte  && (os.data_ab||'')>fAte) return false;
+    return true;
+  });
+
+  const esc = v => `"${String(v||'').replace(/"/g,'""')}"`;
+  const cols = ['Nº OS','Data Abertura','Cliente','Modelo','Nº Série','Defeito','Procedimento','Peças','Técnico','Status','Viagem','Alimentação','Hospedagem','Combustível','Pedágios','Outros','Total','Data Atend.','Hora Chegada','Hora Saída'];
+  const lines = [cols.map(esc).join(';')];
+  rows.forEach(os => {
+    const c=G.clientes.find(x=>x.id===os.cliente_id);
+    const t=G.tecnicos.find(x=>x.id===os.tecnico_id);
+    const tot=(os.viag||0)+(os.alim||0)+(os.hosp||0)+(os.comb||0)+(os.ped||0)+(os.outros||0);
+    lines.push([os.num,os.data_ab,c?.nome,os.modelo,os.nserie,os.defeito,os.procedimento,os.pecas,t?.nome,os.status,os.viag,os.alim,os.hosp,os.comb,os.ped,os.outros,tot,os.data_atend,os.hora_chegada,os.hora_saida].map(esc).join(';'));
+  });
+  const bom = '\uFEFF';
+  const blob = new Blob([bom+lines.join('\n')], {type:'text/csv;charset=utf-8'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a'); a.href=url;
+  a.download = `OS_Theikos_${today()}.csv`; a.click();
+  URL.revokeObjectURL(url);
+}
 
 // OS PRINT
 function buildOSDoc(os) {
