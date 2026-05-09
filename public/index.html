@@ -131,6 +131,11 @@ tr:hover td{background:var(--sf2)}
 .empty-t{font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:3px}
 .empty-s{font-size:11px}
 
+/* LOG TABS */
+.log-tab{background:none;border:none;padding:9px 16px;font-size:11px;font-weight:600;color:var(--tx3);cursor:pointer;border-bottom:2px solid transparent;font-family:inherit;transition:all .15s;margin-bottom:-2px}
+.log-tab:hover{color:var(--tx)}
+.log-tab.active{color:var(--nv);border-bottom-color:var(--ac)}
+
 /* OS TABS */
 .os-tab{background:none;border:none;padding:9px 14px;font-size:11px;font-weight:600;color:var(--tx3);cursor:pointer;border-bottom:2px solid transparent;font-family:inherit;transition:all .15s}
 .os-tab:hover{color:var(--tx)}
@@ -733,20 +738,235 @@ tr:hover td{background:var(--sf2)}
 
 <!-- LOGISTICA -->
 <div id="page-logistica" class="page">
-  <div class="topbar"><div><div class="tb-title">Logística</div><div class="tb-sub">Controle de rotas e combustível</div></div>
+  <div class="topbar">
+    <div><div class="tb-title">Logística</div><div class="tb-sub">Rotas · Abastecimento · Checklist · Manutenção</div></div>
     <div class="tb-right">
-      <div class="swrap"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" id="s-log" placeholder="Buscar..." oninput="renderLogistica()"></div>
-      <button class="btn btn-ghost btn-sm" onclick="genRelatorio('logistica')">📊 Relatório</button>
-      <button class="btn btn-accent" onclick="openLogistica(null)">+ Nova Rota</button>
+      <div class="swrap"><span style="color:var(--tx3)">🔍</span><input type="text" id="s-log" placeholder="Buscar..." oninput="renderLogistica()"></div>
+      <button class="btn btn-ghost btn-sm" onclick="printRelatorio('logistica')">🖨 PDF</button>
+      <button class="btn btn-ghost btn-sm" onclick="exportLogExcel()">📊 Excel</button>
+      <button class="btn btn-accent" id="btn-nova-log" onclick="openLogistica(null)">+ Nova Rota</button>
     </div>
   </div>
-  <div class="content"><div class="card" style="padding:0"><div class="twrap"><table>
-    <thead><tr><th>Data Saída</th><th>Motorista</th><th>Veículo</th><th>Placa</th><th>Rota</th><th>Combustível</th><th>Litros</th><th>Total R$</th><th>Retorno</th><th>Ações</th></tr></thead>
-    <tbody id="tb-log"></tbody>
-  </table></div></div></div>
+  <div class="content">
+
+    <!-- KPIs -->
+    <div class="sgrid" style="grid-template-columns:repeat(5,1fr);margin-bottom:14px">
+      <div class="scard"><div class="sico" style="background:var(--bl2bg);color:var(--bl2)">🚚</div><div class="slabel">Rotas</div><div class="sval" id="log-kpi-rotas">0</div><div class="ssub">Registradas</div></div>
+      <div class="scard"><div class="sico" style="background:var(--gnbg);color:var(--gn)">📍</div><div class="slabel">Km Total</div><div class="sval" id="log-kpi-km">0</div><div class="ssub">Percorridos</div></div>
+      <div class="scard"><div class="sico" style="background:var(--orbg);color:var(--or)">⛽</div><div class="slabel">Litros</div><div class="sval" id="log-kpi-lit">0L</div><div class="ssub">Abastecidos</div></div>
+      <div class="scard"><div class="sico" style="background:var(--rdbg);color:var(--rd)">💰</div><div class="slabel">Custo Total</div><div class="sval" id="log-kpi-val" style="font-size:14px">R$0</div><div class="ssub">Rotas + gastos</div></div>
+      <div class="scard" id="log-kpi-manut-card" style="cursor:pointer" onclick="logTab('manut',document.getElementById('ltab-manut'))">
+        <div class="sico" style="background:var(--pubg);color:var(--pu)">🔧</div><div class="slabel">Próx. Manutenção</div><div class="sval" id="log-kpi-manut" style="font-size:13px">—</div><div class="ssub" id="log-kpi-manut-sub">—</div>
+      </div>
+    </div>
+
+    <!-- Abas -->
+    <div style="display:flex;border-bottom:2px solid var(--bd);margin-bottom:14px">
+      <button class="log-tab active" id="ltab-rotas"  onclick="logTab('rotas',this)">🚛 Rotas</button>
+      <button class="log-tab"        id="ltab-abast"  onclick="logTab('abast',this)">⛽ Abastecimento</button>
+      <button class="log-tab"        id="ltab-check"  onclick="logTab('check',this)">✅ Checklist</button>
+      <button class="log-tab"        id="ltab-manut"  onclick="logTab('manut',this)">🔧 Manutenção</button>
+    </div>
+
+    <!-- ABA ROTAS -->
+    <div id="ltab-panel-rotas">
+      <div class="card" style="padding:10px 14px;margin-bottom:10px">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+          <div style="display:flex;align-items:center;gap:5px">
+            <span style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase">Motorista</span>
+            <select id="f-log-mot" onchange="renderLogistica()" style="font-size:11px;padding:4px 7px;border:1.5px solid var(--bd2);border-radius:7px;font-family:inherit"><option value="">Todos</option></select>
+          </div>
+          <div style="display:flex;align-items:center;gap:5px">
+            <span style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase">De</span>
+            <input type="date" id="f-log-de" onchange="renderLogistica()" style="font-size:11px;padding:4px 7px;border:1.5px solid var(--bd2);border-radius:7px;font-family:inherit">
+          </div>
+          <div style="display:flex;align-items:center;gap:5px">
+            <span style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase">Até</span>
+            <input type="date" id="f-log-ate" onchange="renderLogistica()" style="font-size:11px;padding:4px 7px;border:1.5px solid var(--bd2);border-radius:7px;font-family:inherit">
+          </div>
+          <button class="btn btn-ghost btn-xs" onclick="limparFiltrosLog()">✕ Limpar</button>
+          <span id="log-count" style="margin-left:auto;font-size:11px;color:var(--tx3)"></span>
+        </div>
+      </div>
+      <div class="card" style="padding:0"><div class="twrap"><table>
+        <thead><tr><th>Data Saída</th><th>Motorista</th><th>Veículo / Placa</th><th>Rota</th><th>Km</th><th>Combustível</th><th>Gastos</th><th>Total R$</th><th>Retorno</th><th>Ações</th></tr></thead>
+        <tbody id="tb-log"></tbody>
+      </table></div></div>
+    </div>
+
+    <!-- ABA ABASTECIMENTO -->
+    <div id="ltab-panel-abast" style="display:none">
+      <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+        <button class="btn btn-accent btn-sm" onclick="openAbast(null)">+ Registrar Abastecimento</button>
+      </div>
+      <div class="card" style="padding:0"><div class="twrap"><table>
+        <thead><tr><th>Data</th><th>Motorista</th><th>Veículo / Placa</th><th>Posto</th><th>Tipo</th><th>Litros</th><th>R$/L</th><th>Total R$</th><th>Odômetro</th><th>Ações</th></tr></thead>
+        <tbody id="tb-abast"></tbody>
+      </table></div></div>
+    </div>
+
+    <!-- ABA CHECKLIST -->
+    <div id="ltab-panel-check" style="display:none">
+      <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+        <button class="btn btn-accent btn-sm" onclick="openCheck(null)">+ Novo Checklist</button>
+      </div>
+      <div class="card" style="padding:0"><div class="twrap"><table>
+        <thead><tr><th>Data</th><th>Motorista</th><th>Veículo / Placa</th><th>Itens Saída</th><th>Itens Retorno</th><th>Obs</th><th>Ações</th></tr></thead>
+        <tbody id="tb-check"></tbody>
+      </table></div></div>
+    </div>
+
+    <!-- ABA MANUTENÇÃO -->
+    <div id="ltab-panel-manut" style="display:none">
+      <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+        <button class="btn btn-accent btn-sm" onclick="openManut(null)">+ Registrar Manutenção</button>
+      </div>
+      <div class="card" style="padding:0"><div class="twrap"><table>
+        <thead><tr><th>Data</th><th>Veículo / Placa</th><th>Tipo</th><th>Descrição</th><th>Km Atual</th><th>Próx. Km</th><th>Próx. Data</th><th>Valor</th><th>Oficina</th><th>Ações</th></tr></thead>
+        <tbody id="tb-manut"></tbody>
+      </table></div></div>
+    </div>
+
+  </div>
 </div>
 
-<!-- DEV FOOTER -->
+<!-- MODAL ROTA -->
+<div class="mov" id="m-log">
+<div class="modal" style="max-width:720px">
+  <div class="mhd"><div class="mhd-title" id="m-log-title">Nova Rota</div><button class="btnx" onclick="closeM('m-log')">×</button></div>
+  <div class="mbody">
+    <input type="hidden" id="log-id">
+    <div style="margin-bottom:13px"><div class="fsec">Saída e Retorno</div>
+      <div class="fgrid fg4">
+        <div class="fg"><label>Data Saída</label><input type="date" id="log-dsai"></div>
+        <div class="fg"><label>Hora Saída</label><input type="time" id="log-hsai"></div>
+        <div class="fg"><label>Data Retorno</label><input type="date" id="log-dret"></div>
+        <div class="fg"><label>Hora Retorno</label><input type="time" id="log-hret"></div>
+      </div>
+    </div>
+    <div style="margin-bottom:13px"><div class="fsec">Veículo e Motorista</div>
+      <div class="fgrid fg4">
+        <div class="fg" style="grid-column:span 2"><label>Motorista *</label><input type="text" id="log-mot" list="log-mot-list"><datalist id="log-mot-list"></datalist></div>
+        <div class="fg"><label>Veículo</label><input type="text" id="log-vei"></div>
+        <div class="fg"><label>Placa</label><input type="text" id="log-placa" style="text-transform:uppercase"></div>
+      </div>
+      <div class="fgrid fg4" style="margin-top:8px">
+        <div class="fg"><label>Km Inicial</label><input type="number" id="log-kmi" value="0" oninput="calcLog()"></div>
+        <div class="fg"><label>Km Final</label><input type="number" id="log-kmf" value="0" oninput="calcLog()"></div>
+        <div class="fg"><label>Km Percorrido</label><input type="text" id="log-kmt" readonly style="background:var(--sf2);font-weight:700;color:var(--nv)"></div>
+      </div>
+    </div>
+    <div style="margin-bottom:13px"><div class="fsec">Rota e OS Atendidas</div>
+      <div class="fg"><label>Descrição da Rota</label><textarea id="log-rota" rows="2" placeholder="Descreva os destinos, clientes visitados..."></textarea></div>
+      <div class="fg" style="margin-top:8px"><label>OS Atendidas no Dia (selecione)</label>
+        <div id="log-os-list" style="background:var(--sf2);border:1.5px solid var(--bd2);border-radius:var(--r);padding:8px;max-height:130px;overflow-y:auto;display:flex;flex-wrap:wrap;gap:5px"></div>
+      </div>
+    </div>
+    <div style="margin-bottom:13px"><div class="fsec">Gastos da Rota</div>
+      <div class="fgrid fg3">
+        <div class="fg"><label>Pedágio R$</label><input type="number" id="log-ped" value="0" step="0.01" oninput="calcLog()"></div>
+        <div class="fg"><label>Combustível R$</label><input type="number" id="log-comb" value="0" step="0.01" oninput="calcLog()"></div>
+        <div class="fg"><label>Alimentação R$</label><input type="number" id="log-alim" value="0" step="0.01" oninput="calcLog()"></div>
+        <div class="fg"><label>Hospedagem R$</label><input type="number" id="log-hosp" value="0" step="0.01" oninput="calcLog()"></div>
+        <div class="fg"><label>Litros Abast.</label><input type="number" id="log-lit" value="0" step="0.01"></div>
+        <div class="fg"><label>Tipo Combustível</label><select id="log-tcomb"><option>Gasolina</option><option>Etanol</option><option>Diesel</option><option>GNV</option><option>Elétrico</option></select></div>
+        <div class="fg"><label>Outros R$</label><input type="number" id="log-outros" value="0" step="0.01" oninput="calcLog()"></div>
+      </div>
+      <div class="totbox"><span class="totbox-label">Total da Rota</span><span class="totbox-val" id="log-tot">R$ 0,00</span></div>
+    </div>
+    <div style="margin-bottom:13px"><div class="fsec">Observações</div>
+      <div class="fg"><textarea id="log-obs" rows="2"></textarea></div>
+    </div>
+    <div><div class="fsec">Assinatura do Motorista</div>
+      <div style="background:var(--sf2);border:1.5px solid var(--bd2);border-radius:var(--r);padding:8px;margin-bottom:8px">
+        <canvas id="sig-canvas" width="600" height="120" style="width:100%;border:1px solid var(--bd);border-radius:6px;background:#fff;cursor:crosshair;touch-action:none"></canvas>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="sigClear()">Limpar Assinatura</button>
+    </div>
+  </div>
+  <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('m-log')">Cancelar</button><button class="btn btn-primary" onclick="saveLogistica()">Salvar</button></div>
+</div></div>
+
+<!-- MODAL ABASTECIMENTO -->
+<div class="mov" id="m-abast">
+<div class="modal" style="max-width:560px">
+  <div class="mhd"><div class="mhd-title" id="m-abast-title">Registrar Abastecimento</div><button class="btnx" onclick="closeM('m-abast')">×</button></div>
+  <div class="mbody">
+    <input type="hidden" id="ab-id">
+    <div class="fgrid fg2">
+      <div class="fg"><label>Data *</label><input type="date" id="ab-data"></div>
+      <div class="fg"><label>Hora</label><input type="time" id="ab-hora"></div>
+      <div class="fg"><label>Motorista</label><input type="text" id="ab-mot" list="ab-mot-list"><datalist id="ab-mot-list"></datalist></div>
+      <div class="fg"><label>Veículo</label><input type="text" id="ab-vei"></div>
+      <div class="fg"><label>Placa</label><input type="text" id="ab-placa" style="text-transform:uppercase"></div>
+      <div class="fg"><label>Posto</label><input type="text" id="ab-posto"></div>
+      <div class="fg"><label>Tipo</label><select id="ab-tipo"><option>Gasolina</option><option>Etanol</option><option>Diesel</option><option>GNV</option><option>Elétrico</option></select></div>
+      <div class="fg"><label>Litros</label><input type="number" id="ab-lit" value="0" step="0.01" oninput="calcAbast()"></div>
+      <div class="fg"><label>R$ por Litro</label><input type="number" id="ab-vlitro" value="0" step="0.01" oninput="calcAbast()"></div>
+      <div class="fg"><label>Total R$</label><input type="number" id="ab-vtotal" value="0" step="0.01"></div>
+      <div class="fg"><label>Odômetro (km)</label><input type="number" id="ab-odo" value="0"></div>
+      <div class="fg"><label>Obs</label><input type="text" id="ab-obs"></div>
+    </div>
+  </div>
+  <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('m-abast')">Cancelar</button><button class="btn btn-primary" onclick="saveAbast()">Salvar</button></div>
+</div></div>
+
+<!-- MODAL CHECKLIST -->
+<div class="mov" id="m-check">
+<div class="modal" style="max-width:640px">
+  <div class="mhd"><div class="mhd-title" id="m-check-title">Checklist do Veículo</div><button class="btnx" onclick="closeM('m-check')">×</button></div>
+  <div class="mbody">
+    <input type="hidden" id="ck-id">
+    <div class="fgrid fg3" style="margin-bottom:13px">
+      <div class="fg"><label>Data *</label><input type="date" id="ck-data"></div>
+      <div class="fg"><label>Motorista</label><input type="text" id="ck-mot" list="ck-mot-list"><datalist id="ck-mot-list"></datalist></div>
+      <div class="fg"><label>Veículo</label><input type="text" id="ck-vei"></div>
+      <div class="fg"><label>Placa</label><input type="text" id="ck-placa" style="text-transform:uppercase"></div>
+    </div>
+    <div class="fgrid fg2" style="gap:14px">
+      <div>
+        <div class="fsec" style="margin-bottom:8px">✅ Saída</div>
+        <div id="ck-saida-items" style="display:flex;flex-direction:column;gap:5px"></div>
+        <div class="fg" style="margin-top:8px"><label>Obs. Saída</label><textarea id="ck-obs-sai" rows="2"></textarea></div>
+      </div>
+      <div>
+        <div class="fsec" style="margin-bottom:8px">🔁 Retorno</div>
+        <div id="ck-ret-items" style="display:flex;flex-direction:column;gap:5px"></div>
+        <div class="fg" style="margin-top:8px"><label>Obs. Retorno</label><textarea id="ck-obs-ret" rows="2"></textarea></div>
+      </div>
+    </div>
+  </div>
+  <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('m-check')">Cancelar</button><button class="btn btn-primary" onclick="saveCheck()">Salvar</button></div>
+</div></div>
+
+<!-- MODAL MANUTENÇÃO -->
+<div class="mov" id="m-manut">
+<div class="modal" style="max-width:560px">
+  <div class="mhd"><div class="mhd-title" id="m-manut-title">Registrar Manutenção</div><button class="btnx" onclick="closeM('m-manut')">×</button></div>
+  <div class="mbody">
+    <input type="hidden" id="mn-id">
+    <div class="fgrid fg2">
+      <div class="fg"><label>Data *</label><input type="date" id="mn-data"></div>
+      <div class="fg"><label>Veículo</label><input type="text" id="mn-vei"></div>
+      <div class="fg"><label>Placa</label><input type="text" id="mn-placa" style="text-transform:uppercase"></div>
+      <div class="fg"><label>Tipo *</label>
+        <select id="mn-tipo">
+          <option>Troca de óleo</option><option>Troca de pneu</option><option>Revisão geral</option>
+          <option>Freios</option><option>Suspensão</option><option>Elétrica</option>
+          <option>Ar condicionado</option><option>Funilaria/Pintura</option><option>Outro</option>
+        </select>
+      </div>
+      <div class="fg" style="grid-column:1/-1"><label>Descrição</label><textarea id="mn-desc" rows="2"></textarea></div>
+      <div class="fg"><label>Km Atual</label><input type="number" id="mn-km" value="0"></div>
+      <div class="fg"><label>Próxima Manutenção (Km)</label><input type="number" id="mn-kmprox" value="0"></div>
+      <div class="fg"><label>Próxima Data</label><input type="date" id="mn-dtprox"></div>
+      <div class="fg"><label>Valor R$</label><input type="number" id="mn-val" value="0" step="0.01"></div>
+      <div class="fg" style="grid-column:1/-1"><label>Oficina / Fornecedor</label><input type="text" id="mn-ofic"></div>
+      <div class="fg" style="grid-column:1/-1"><label>Obs</label><textarea id="mn-obs" rows="2"></textarea></div>
+    </div>
+  </div>
+  <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('m-manut')">Cancelar</button><button class="btn btn-primary" onclick="saveManut()">Salvar</button></div>
+</div></div>
 <div id="dev-footer" style="position:fixed;bottom:0;left:0;right:0;height:28px;background:rgba(255,255,255,0.96);border-top:1px solid #e0e8f0;display:flex;align-items:center;justify-content:center;gap:8px;z-index:50;font-size:9px;color:#8899bb;letter-spacing:.3px">
   <img src="data:image/png;base64,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" style="height:16px;width:16px;object-fit:contain;border-radius:50%">
   <span>Desenvolvido por <strong style="color:#1e4080">Clairton Alves</strong></span>
@@ -1011,53 +1231,9 @@ tr:hover td{background:var(--sf2)}
   <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('m-backup')">Fechar</button></div>
 </div></div>
 
-<!-- Logística -->
-<div class="mov" id="m-log">
-<div class="modal" style="max-width:700px">
-  <div class="mhd"><div class="mhd-title" id="m-log-title">Nova Rota</div><button class="btnx" onclick="closeM('m-log')">×</button></div>
-  <div class="mbody">
-    <input type="hidden" id="log-id">
-    <div style="margin-bottom:13px"><div class="fsec">Saída</div>
-      <div class="fgrid fg4">
-        <div class="fg"><label>Data Saída</label><input type="date" id="log-dsai"></div>
-        <div class="fg"><label>Hora Saída</label><input type="time" id="log-hsai"></div>
-        <div class="fg"><label>Data Retorno</label><input type="date" id="log-dret"></div>
-        <div class="fg"><label>Hora Retorno</label><input type="time" id="log-hret"></div>
-      </div>
-    </div>
-    <div style="margin-bottom:13px"><div class="fsec">Veículo e Motorista</div>
-      <div class="fgrid fg3">
-        <div class="fg"><label>Motorista *</label><input type="text" id="log-mot"></div>
-        <div class="fg"><label>Veículo</label><input type="text" id="log-vei"></div>
-        <div class="fg"><label>Placa</label><input type="text" id="log-placa"></div>
-      </div>
-    </div>
-    <div style="margin-bottom:13px"><div class="fsec">Rota</div>
-      <div class="fg"><label>Rota do Dia</label><textarea id="log-rota" rows="3" placeholder="Descreva os destinos, clientes visitados..."></textarea></div>
-    </div>
-    <div style="margin-bottom:13px"><div class="fsec">Combustível</div>
-      <div class="fgrid fg3">
-        <div class="fg"><label>Tipo de Combustível</label><select id="log-tcomb"><option>Gasolina</option><option>Etanol</option><option>Diesel</option><option>GNV</option><option>Elétrico</option></select></div>
-        <div class="fg"><label>Qtd. Litros</label><input type="number" id="log-lit" value="0" step="0.01" oninput="calcLog()"></div>
-        <div class="fg"><label>Valor Total R$</label><input type="number" id="log-val" value="0" step="0.01" oninput="calcLog()"></div>
-      </div>
-      <div class="totbox"><span class="totbox-label">Custo desta Rota</span><span class="totbox-val" id="log-tot">R$ 0,00</span></div>
-    </div>
-    <div style="margin-bottom:13px"><div class="fsec">Observações</div>
-      <div class="fg"><label>Obs</label><textarea id="log-obs" rows="2"></textarea></div>
-    </div>
-    <div><div class="fsec">Assinatura do Motorista</div>
-      <div style="background:var(--sf2);border:1.5px solid var(--bd2);border-radius:var(--r);padding:8px;margin-bottom:8px">
-        <canvas id="sig-canvas" width="600" height="120" style="width:100%;border:1px solid var(--bd);border-radius:6px;background:#fff;cursor:crosshair;touch-action:none"></canvas>
-      </div>
-      <div style="display:flex;gap:6px"><button class="btn btn-ghost btn-sm" onclick="sigClear()">Limpar Assinatura</button></div>
-    </div>
-  </div>
-  <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('m-log')">Cancelar</button><button class="btn btn-primary" onclick="saveLogistica()">Salvar</button></div>
-</div></div>
 
 <script>
-let G = { user: null, tecnicos: [], clientes: [], equipamentos: [], atendimentos: [], ordens: [], laboratorio: [], historico: [], estoque: [], suprCli: [], currentOSData: null, currentLabData: null };
+let G = { user: null, tecnicos: [], clientes: [], equipamentos: [], atendimentos: [], ordens: [], laboratorio: [], historico: [], estoque: [], suprCli: [], logistica: [], abastecimento: [], checklist: [], manutencao: [], currentOSData: null, currentLabData: null };
 
 const fm = v => 'R$ ' + (+v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 const fd = d => { if(!d)return''; const p=d.split('-'); return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:d; };
@@ -1104,14 +1280,16 @@ async function doLogout() {
 }
 
 async function loadAll() {
-  const [tec, cli, eq, os, lab, hist, est, supr, log] = await Promise.all([
+  const [tec, cli, eq, os, lab, hist, est, supr, log, abast, ck, manut] = await Promise.all([
     api('GET','/api/tecnicos'), api('GET','/api/clientes'), api('GET','/api/equipamentos'),
     api('GET','/api/ordens'), api('GET','/api/laboratorio'),
     api('GET','/api/historico'), api('GET','/api/estoque'), api('GET','/api/estoque-supr'),
-    api('GET','/api/logistica')
+    api('GET','/api/logistica'), api('GET','/api/abastecimento'),
+    api('GET','/api/checklist'), api('GET','/api/manutencao')
   ]);
   G.tecnicos=tec; G.clientes=cli; G.equipamentos=eq;
-  G.atendimentos=os; G.ordens=os; G.laboratorio=lab; G.historico=hist; G.estoque=est; G.suprCli=supr; G.logistica=log||[];
+  G.atendimentos=os; G.ordens=os; G.laboratorio=lab; G.historico=hist; G.estoque=est; G.suprCli=supr;
+  G.logistica=log||[]; G.abastecimento=abast||[]; G.checklist=ck||[]; G.manutencao=manut||[];
   updateBadges();
 }
 
@@ -2371,63 +2549,351 @@ function sigInit(){
 function sigClear(){const c=document.getElementById('sig-canvas');if(c&&sigPad.ctx)sigPad.ctx.clearRect(0,0,c.width,c.height);}
 function sigGet(){const c=document.getElementById('sig-canvas');if(!c)return'';const blank=document.createElement('canvas');blank.width=c.width;blank.height=c.height;return c.toDataURL()===blank.toDataURL()?'':c.toDataURL();}
 function sigSet(data){const c=document.getElementById('sig-canvas');if(!c||!data)return;const img=new Image();img.onload=()=>{sigPad.ctx.clearRect(0,0,c.width,c.height);sigPad.ctx.drawImage(img,0,0);};img.src=data;}
-function calcLog(){const v=+document.getElementById('log-val').value||0;document.getElementById('log-tot').textContent='R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:2});}
-function openLogistica(id){
-  sigPad.ctx=null;
-  setTimeout(sigInit,50);
-  document.getElementById('m-log-title').textContent=id?'Editar Rota':'Nova Rota';
-  if(id){
-    const l=G.logistica.find(x=>x.id===id); if(!l) return;
+// calcLog is defined in logistica section above
+// ─── LOGÍSTICA ────────────────────────────────────────────
+const CK_ITENS = ['Pneus calibrados','Estepe','Óleo do motor','Água do radiador','Freios','Lanternas/faróis','Documentos (CRLV)','Extintor','Triângulo','Limpadores'];
+
+function logTab(tab, btn) {
+  ['rotas','abast','check','manut'].forEach(t => {
+    const p = document.getElementById('ltab-panel-'+t);
+    const b = document.getElementById('ltab-'+t);
+    if (p) p.style.display = t===tab ? 'block' : 'none';
+    if (b) b.classList.toggle('active', t===tab);
+  });
+  // Atualiza botão topbar
+  const btnNova = document.getElementById('btn-nova-log');
+  const actions = {rotas:['+ Nova Rota','openLogistica(null)'], abast:['+ Abastecimento','openAbast(null)'], check:['+ Checklist','openCheck(null)'], manut:['+ Manutenção','openManut(null)']};
+  if (btnNova && actions[tab]) { btnNova.textContent=actions[tab][0]; btnNova.setAttribute('onclick',actions[tab][1]); }
+  if (tab==='abast') renderAbast();
+  if (tab==='check') renderCheck();
+  if (tab==='manut') renderManut();
+}
+
+function limparFiltrosLog() {
+  ['f-log-mot','f-log-de','f-log-ate','s-log'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  renderLogistica();
+}
+
+function populateMotList() {
+  const mots = [...new Set((G.logistica||[]).map(l=>l.motorista).filter(Boolean))];
+  ['log-mot-list','ab-mot-list','ck-mot-list'].forEach(id => {
+    const dl = document.getElementById(id); if (!dl) return;
+    dl.innerHTML = mots.map(m=>`<option value="${m}">`).join('');
+  });
+  const sel = document.getElementById('f-log-mot'); if (!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Todos</option>' + mots.map(m=>`<option value="${m}">${m}</option>`).join('');
+  sel.value = cur;
+}
+
+function renderLogistica() {
+  populateMotList();
+  const q    = (document.getElementById('s-log')?.value||'').toLowerCase();
+  const fMot = document.getElementById('f-log-mot')?.value||'';
+  const fDe  = document.getElementById('f-log-de')?.value||'';
+  const fAte = document.getElementById('f-log-ate')?.value||'';
+
+  const rows = (G.logistica||[]).filter(l => {
+    if (q && ![l.motorista,l.veiculo,l.placa,l.rota].join(' ').toLowerCase().includes(q)) return false;
+    if (fMot && l.motorista !== fMot) return false;
+    if (fDe  && (l.data_saida||'') < fDe) return false;
+    if (fAte && (l.data_saida||'') > fAte) return false;
+    return true;
+  });
+
+  // KPIs
+  const allLog = G.logistica||[];
+  const totalKm  = allLog.reduce((s,l)=>s+((l.km_final||0)-(l.km_inicial||0)),0);
+  const totalLit = (G.abastecimento||[]).reduce((s,a)=>s+(a.litros||0),0);
+  const totalVal = allLog.reduce((s,l)=>s+(l.valor_total||0),0);
+  document.getElementById('log-kpi-rotas').textContent = allLog.length;
+  document.getElementById('log-kpi-km').textContent    = totalKm.toLocaleString('pt-BR');
+  document.getElementById('log-kpi-lit').textContent   = totalLit.toFixed(0)+'L';
+  document.getElementById('log-kpi-val').textContent   = 'R$'+Math.round(totalVal).toLocaleString('pt-BR');
+
+  // Próxima manutenção
+  const proxManut = (G.manutencao||[]).filter(m=>m.data_proxima).sort((a,b)=>a.data_proxima.localeCompare(b.data_proxima))[0];
+  if (proxManut) {
+    document.getElementById('log-kpi-manut').textContent     = fd(proxManut.data_proxima);
+    document.getElementById('log-kpi-manut-sub').textContent = proxManut.veiculo||'—';
+    const hoje = today(); const urgente = proxManut.data_proxima <= hoje;
+    document.getElementById('log-kpi-manut-card').style.background = urgente ? 'var(--rdbg)' : '';
+  }
+
+  const countEl = document.getElementById('log-count');
+  if (countEl) countEl.textContent = `${rows.length} rota${rows.length!==1?'s':''}`;
+
+  const tb = document.getElementById('tb-log'); if (!tb) return;
+  if (!rows.length) { tb.innerHTML=`<tr><td colspan="10"><div class="empty"><div class="empty-ico">🚛</div><div class="empty-t">Nenhuma rota registrada</div></div></td></tr>`; return; }
+
+  tb.innerHTML = rows.map(l => {
+    const km = (l.km_final||0)-(l.km_inicial||0);
+    const gastos = [l.pedagio,l.alimentacao,l.hospedagem,l.outros].map(v=>v||0).reduce((a,b)=>a+b,0);
+    const osVinc = (l.os_ids||[]).length;
+    return `<tr>
+      <td>${fd(l.data_saida)} ${l.hora_saida||''}</td>
+      <td style="font-weight:600">${l.motorista}</td>
+      <td>${l.veiculo||'—'}<br><span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--tx3)">${l.placa||''}</span></td>
+      <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${l.rota||''}">${l.rota||'—'}</td>
+      <td style="font-weight:600;color:var(--nv)">${km>0?km.toLocaleString('pt-BR')+' km':'—'}</td>
+      <td>${l.litros?l.litros+'L '+l.tipo_combustivel:'—'}</td>
+      <td style="font-size:11px;color:var(--tx2)">${gastos>0?fm(gastos):osVinc?`${osVinc} OS`:'—'}</td>
+      <td style="font-weight:700">${fm(l.valor_total)}</td>
+      <td style="font-size:11px">${l.data_retorno?fd(l.data_retorno)+' '+l.hora_retorno:'⏳ Em rota'}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-ghost btn-xs" onclick="openLogistica('${l.id}')">Editar</button>
+        <button class="btn btn-success btn-xs" onclick="printLogRel('${l.id}')">🖨</button>
+        <button class="btn btn-danger btn-xs" onclick="delLog('${l.id}')">×</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function openLogistica(id) {
+  sigPad.ctx=null; setTimeout(sigInit,50);
+  document.getElementById('m-log-title').textContent = id ? 'Editar Rota' : 'Nova Rota';
+  // Preenche lista de OS para vincular
+  const osList = document.getElementById('log-os-list');
+  if (osList) {
+    const osAbertas = G.ordens.filter(o=>o.status!=='Cancelada');
+    osList.innerHTML = osAbertas.map(os=>{
+      const c = G.clientes.find(x=>x.id===os.cliente_id);
+      return `<label style="display:flex;align-items:center;gap:4px;background:var(--sf);border:1px solid var(--bd);border-radius:6px;padding:3px 7px;cursor:pointer;font-size:11px">
+        <input type="checkbox" class="log-os-cb" value="${os.id}"> ${os.num} — ${c?.nome?.split(' ')[0]||'—'} <span class="badge ${os.status==='Concluída'?'bg':'bo'}" style="font-size:9px">${os.status}</span>
+      </label>`;
+    }).join('') || '<span style="font-size:11px;color:var(--tx3)">Nenhuma OS disponível</span>';
+  }
+  if (id) {
+    const l = G.logistica.find(x=>x.id===id); if (!l) return;
     document.getElementById('log-id').value=l.id;
     document.getElementById('log-dsai').value=l.data_saida||''; document.getElementById('log-hsai').value=l.hora_saida||'';
     document.getElementById('log-dret').value=l.data_retorno||''; document.getElementById('log-hret').value=l.hora_retorno||'';
     document.getElementById('log-mot').value=l.motorista||''; document.getElementById('log-vei').value=l.veiculo||'';
-    document.getElementById('log-placa').value=l.placa||''; document.getElementById('log-rota').value=l.rota||'';
+    document.getElementById('log-placa').value=l.placa||'';
+    document.getElementById('log-kmi').value=l.km_inicial||0; document.getElementById('log-kmf').value=l.km_final||0;
+    document.getElementById('log-rota').value=l.rota||'';
+    document.getElementById('log-ped').value=l.pedagio||0; document.getElementById('log-comb').value=l.combustivel||0;
+    document.getElementById('log-alim').value=l.alimentacao||0; document.getElementById('log-hosp').value=l.hospedagem||0;
+    document.getElementById('log-outros').value=l.outros||0; document.getElementById('log-lit').value=l.litros||0;
     document.getElementById('log-tcomb').value=l.tipo_combustivel||'Gasolina';
-    document.getElementById('log-lit').value=l.litros||0; document.getElementById('log-val').value=l.valor_total||0;
     document.getElementById('log-obs').value=l.obs||''; calcLog();
+    // Marcar OS vinculadas
+    const ids = l.os_ids||[];
+    document.querySelectorAll('.log-os-cb').forEach(cb=>{ cb.checked=ids.includes(cb.value); });
     setTimeout(()=>sigSet(l.assinatura||''),80);
   } else {
     document.getElementById('log-id').value='';
     document.getElementById('log-dsai').value=today(); document.getElementById('log-hsai').value=nowT();
     ['log-dret','log-hret','log-mot','log-vei','log-placa','log-rota','log-obs'].forEach(f=>document.getElementById(f).value='');
-    document.getElementById('log-tcomb').value='Gasolina';
-    document.getElementById('log-lit').value=0; document.getElementById('log-val').value=0;
+    ['log-kmi','log-kmf','log-ped','log-comb','log-alim','log-hosp','log-outros','log-lit'].forEach(f=>document.getElementById(f).value=0);
+    document.getElementById('log-tcomb').value='Gasolina'; document.getElementById('log-kmt').value='';
     document.getElementById('log-tot').textContent='R$ 0,00';
   }
   openM('m-log');
 }
-async function saveLogistica(){
+
+function calcLog() {
+  const kmi=+document.getElementById('log-kmi').value||0, kmf=+document.getElementById('log-kmf').value||0;
+  const kmEl=document.getElementById('log-kmt'); if(kmEl) kmEl.value=kmf>kmi?(kmf-kmi)+' km':'—';
+  const tot=(+document.getElementById('log-ped').value||0)+(+document.getElementById('log-comb').value||0)+(+document.getElementById('log-alim').value||0)+(+document.getElementById('log-hosp').value||0)+(+document.getElementById('log-outros').value||0);
+  document.getElementById('log-tot').textContent=fm(tot);
+}
+
+async function saveLogistica() {
   const mot=document.getElementById('log-mot').value.trim(); if(!mot){alert('Informe o motorista.');return}
   const eid=document.getElementById('log-id').value;
-  const body={data_saida:document.getElementById('log-dsai').value,hora_saida:document.getElementById('log-hsai').value,data_retorno:document.getElementById('log-dret').value,hora_retorno:document.getElementById('log-hret').value,motorista:mot,veiculo:document.getElementById('log-vei').value,placa:document.getElementById('log-placa').value,rota:document.getElementById('log-rota').value,tipo_combustivel:document.getElementById('log-tcomb').value,litros:+document.getElementById('log-lit').value||0,valor_total:+document.getElementById('log-val').value||0,obs:document.getElementById('log-obs').value,assinatura:sigGet()};
-  try{
+  const osIds=[...document.querySelectorAll('.log-os-cb:checked')].map(cb=>cb.value);
+  const tot=(+document.getElementById('log-ped').value||0)+(+document.getElementById('log-comb').value||0)+(+document.getElementById('log-alim').value||0)+(+document.getElementById('log-hosp').value||0)+(+document.getElementById('log-outros').value||0);
+  const body={data_saida:document.getElementById('log-dsai').value,hora_saida:document.getElementById('log-hsai').value,data_retorno:document.getElementById('log-dret').value,hora_retorno:document.getElementById('log-hret').value,motorista:mot,veiculo:document.getElementById('log-vei').value,placa:document.getElementById('log-placa').value.toUpperCase(),km_inicial:+document.getElementById('log-kmi').value||0,km_final:+document.getElementById('log-kmf').value||0,rota:document.getElementById('log-rota').value,os_ids:osIds,pedagio:+document.getElementById('log-ped').value||0,combustivel:+document.getElementById('log-comb').value||0,alimentacao:+document.getElementById('log-alim').value||0,hospedagem:+document.getElementById('log-hosp').value||0,outros:+document.getElementById('log-outros').value||0,valor_total:tot,litros:+document.getElementById('log-lit').value||0,tipo_combustivel:document.getElementById('log-tcomb').value,obs:document.getElementById('log-obs').value,assinatura:sigGet()};
+  try {
     if(eid) await api('PUT',`/api/logistica/${eid}`,body); else await api('POST','/api/logistica',body);
     await loadAll(); closeM('m-log'); renderLogistica();
-  }catch(e){alert(e.message)}
+  } catch(e){alert(e.message)}
 }
+
 async function delLog(id){if(confirm('Excluir rota?')){await api('DELETE',`/api/logistica/${id}`);await loadAll();renderLogistica();}}
-function renderLogistica(){
-  const q=(document.getElementById('s-log')?.value||'').toLowerCase();
-  const rows=(G.logistica||[]).filter(l=>!q||[l.motorista,l.veiculo,l.placa,l.rota].join(' ').toLowerCase().includes(q));
-  const tb=document.getElementById('tb-log'); if(!tb) return;
-  if(!rows.length){tb.innerHTML=`<tr><td colspan="10"><div class="empty"><div class="empty-ico">🚛</div><div class="empty-t">Nenhuma rota registrada</div></div></td></tr>`;return}
-  tb.innerHTML=rows.map(l=>`<tr>
-    <td>${fd(l.data_saida)} ${l.hora_saida||''}</td>
-    <td style="font-weight:600">${l.motorista}</td>
-    <td>${l.veiculo||'—'}</td>
-    <td style="font-family:'JetBrains Mono',monospace;font-size:11px">${l.placa||'—'}</td>
-    <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l.rota||'—'}</td>
-    <td><span class="badge bb">${l.tipo_combustivel||'—'}</span></td>
-    <td>${l.litros||0}L</td>
-    <td style="font-weight:700">${fm(l.valor_total)}</td>
-    <td>${l.data_retorno?fd(l.data_retorno)+' '+l.hora_retorno:'—'}</td>
-    <td style="white-space:nowrap">
-      <button class="btn btn-ghost btn-xs" onclick="openLogistica('${l.id}')">Editar</button>
-      <button class="btn btn-info btn-xs" onclick="printLogRel('${l.id}')">🖨</button>
-      <button class="btn btn-danger btn-xs" onclick="delLog('${l.id}')">×</button>
-    </td>
+
+// ── ABASTECIMENTO ──
+function calcAbast() {
+  const lit=+document.getElementById('ab-lit').value||0, vlitro=+document.getElementById('ab-vlitro').value||0;
+  if(lit&&vlitro) document.getElementById('ab-vtotal').value=(lit*vlitro).toFixed(2);
+}
+function openAbast(id) {
+  document.getElementById('m-abast-title').textContent = id?'Editar Abastecimento':'Registrar Abastecimento';
+  const mots=[...new Set((G.logistica||[]).map(l=>l.motorista).filter(Boolean))];
+  ['ab-mot-list'].forEach(dlId=>{ const dl=document.getElementById(dlId); if(dl) dl.innerHTML=mots.map(m=>`<option value="${m}">`).join(''); });
+  if(id) {
+    const a=G.abastecimento.find(x=>x.id===id); if(!a) return;
+    ['ab-id','ab-data','ab-hora','ab-mot','ab-vei','ab-placa','ab-posto'].forEach(f=>document.getElementById(f).value=a[f.replace('ab-','')]||'');
+    document.getElementById('ab-id').value=a.id; document.getElementById('ab-data').value=a.data||''; document.getElementById('ab-hora').value=a.hora||'';
+    document.getElementById('ab-mot').value=a.motorista||''; document.getElementById('ab-vei').value=a.veiculo||'';
+    document.getElementById('ab-placa').value=a.placa||''; document.getElementById('ab-posto').value=a.posto||'';
+    document.getElementById('ab-tipo').value=a.tipo||'Gasolina'; document.getElementById('ab-lit').value=a.litros||0;
+    document.getElementById('ab-vlitro').value=a.valor_litro||0; document.getElementById('ab-vtotal').value=a.valor_total||0;
+    document.getElementById('ab-odo').value=a.odometro||0; document.getElementById('ab-obs').value=a.obs||'';
+  } else {
+    document.getElementById('ab-id').value=''; document.getElementById('ab-data').value=today(); document.getElementById('ab-hora').value=nowT();
+    ['ab-mot','ab-vei','ab-placa','ab-posto','ab-obs'].forEach(f=>document.getElementById(f).value='');
+    ['ab-lit','ab-vlitro','ab-vtotal','ab-odo'].forEach(f=>document.getElementById(f).value=0);
+    document.getElementById('ab-tipo').value='Gasolina';
+  }
+  openM('m-abast');
+}
+async function saveAbast() {
+  const data=document.getElementById('ab-data').value; if(!data){alert('Informe a data.');return}
+  const eid=document.getElementById('ab-id').value;
+  const body={data,hora:document.getElementById('ab-hora').value,motorista:document.getElementById('ab-mot').value,veiculo:document.getElementById('ab-vei').value,placa:document.getElementById('ab-placa').value.toUpperCase(),posto:document.getElementById('ab-posto').value,tipo:document.getElementById('ab-tipo').value,litros:+document.getElementById('ab-lit').value||0,valor_litro:+document.getElementById('ab-vlitro').value||0,valor_total:+document.getElementById('ab-vtotal').value||0,odometro:+document.getElementById('ab-odo').value||0,obs:document.getElementById('ab-obs').value};
+  try { if(eid) await api('PUT',`/api/abastecimento/${eid}`,body); else await api('POST','/api/abastecimento',body);
+    await loadAll(); closeM('m-abast'); renderAbast(); } catch(e){alert(e.message)}
+}
+function renderAbast() {
+  const tb=document.getElementById('tb-abast'); if(!tb) return;
+  const rows=G.abastecimento||[];
+  if(!rows.length){tb.innerHTML=`<tr><td colspan="10"><div class="empty"><div class="empty-ico">⛽</div><div class="empty-t">Nenhum abastecimento</div></div></td></tr>`;return}
+  tb.innerHTML=rows.map(a=>`<tr>
+    <td>${fd(a.data)} ${a.hora||''}</td><td>${a.motorista||'—'}</td>
+    <td>${a.veiculo||'—'}<br><span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--tx3)">${a.placa||''}</span></td>
+    <td>${a.posto||'—'}</td><td><span class="badge bb">${a.tipo||'—'}</span></td>
+    <td style="font-weight:600">${a.litros||0}L</td>
+    <td>${a.valor_litro?'R$'+a.valor_litro.toFixed(2):'—'}</td>
+    <td style="font-weight:700">${fm(a.valor_total)}</td>
+    <td style="font-family:'JetBrains Mono',monospace">${a.odometro?a.odometro.toLocaleString('pt-BR')+' km':'—'}</td>
+    <td style="white-space:nowrap"><button class="btn btn-ghost btn-xs" onclick="openAbast('${a.id}')">Editar</button> <button class="btn btn-danger btn-xs" onclick="delAbast('${a.id}')">×</button></td>
   </tr>`).join('');
+}
+async function delAbast(id){if(confirm('Excluir?')){await api('DELETE',`/api/abastecimento/${id}`);await loadAll();renderAbast();}}
+
+// ── CHECKLIST ──
+function buildCkItems(prefix, values=[]) {
+  const el=document.getElementById(prefix+'-items'); if(!el) return;
+  el.innerHTML=CK_ITENS.map((item,i)=>{
+    const ok=values[i]==='ok', nok=values[i]==='nok';
+    return `<div style="display:flex;align-items:center;gap:6px;padding:4px 6px;background:${ok?'var(--gnbg)':nok?'var(--rdbg)':'var(--sf2)'};border-radius:6px;border:1px solid ${ok?'var(--gnbd)':nok?'var(--rdbd)':'var(--bd)'}">
+      <span style="flex:1;font-size:11px">${item}</span>
+      <label style="font-size:10px;cursor:pointer"><input type="radio" name="${prefix}-${i}" value="ok" ${ok?'checked':''} onchange="updateCkStyle(this,'${prefix}',${i})"> ✅</label>
+      <label style="font-size:10px;cursor:pointer"><input type="radio" name="${prefix}-${i}" value="nok" ${nok?'checked':''} onchange="updateCkStyle(this,'${prefix}',${i})"> ❌</label>
+    </div>`;
+  }).join('');
+}
+function updateCkStyle(el, prefix, i) {
+  const row=el.closest('div');
+  if(el.value==='ok'){row.style.background='var(--gnbg)';row.style.borderColor='var(--gnbd)';}
+  else{row.style.background='var(--rdbg)';row.style.borderColor='var(--rdbd)';}
+}
+function getCkValues(prefix) {
+  return CK_ITENS.map((_,i)=>{
+    const r=document.querySelector(`input[name="${prefix}-${i}"]:checked`); return r?r.value:'';
+  });
+}
+function openCheck(id) {
+  document.getElementById('m-check-title').textContent=id?'Editar Checklist':'Novo Checklist';
+  const mots=[...new Set((G.logistica||[]).map(l=>l.motorista).filter(Boolean))];
+  const dl=document.getElementById('ck-mot-list'); if(dl) dl.innerHTML=mots.map(m=>`<option value="${m}">`).join('');
+  if(id) {
+    const c=G.checklist.find(x=>x.id===id); if(!c) return;
+    document.getElementById('ck-id').value=c.id; document.getElementById('ck-data').value=c.data||'';
+    document.getElementById('ck-mot').value=c.motorista||''; document.getElementById('ck-vei').value=c.veiculo||'';
+    document.getElementById('ck-placa').value=c.placa||''; document.getElementById('ck-obs-sai').value=c.obs_saida||''; document.getElementById('ck-obs-ret').value=c.obs_retorno||'';
+    buildCkItems('ck-saida',c.itens_saida||[]); buildCkItems('ck-ret',c.itens_retorno||[]);
+  } else {
+    document.getElementById('ck-id').value=''; document.getElementById('ck-data').value=today();
+    ['ck-mot','ck-vei','ck-placa','ck-obs-sai','ck-obs-ret'].forEach(f=>document.getElementById(f).value='');
+    buildCkItems('ck-saida',[]); buildCkItems('ck-ret',[]);
+  }
+  openM('m-check');
+}
+async function saveCheck() {
+  const data=document.getElementById('ck-data').value; if(!data){alert('Informe a data.');return}
+  const eid=document.getElementById('ck-id').value;
+  const body={data,motorista:document.getElementById('ck-mot').value,veiculo:document.getElementById('ck-vei').value,placa:document.getElementById('ck-placa').value.toUpperCase(),itens_saida:getCkValues('ck-saida'),itens_retorno:getCkValues('ck-ret'),obs_saida:document.getElementById('ck-obs-sai').value,obs_retorno:document.getElementById('ck-obs-ret').value};
+  try { if(eid) await api('PUT',`/api/checklist/${eid}`,body); else await api('POST','/api/checklist',body);
+    await loadAll(); closeM('m-check'); renderCheck(); } catch(e){alert(e.message)}
+}
+function renderCheck() {
+  const tb=document.getElementById('tb-check'); if(!tb) return;
+  const rows=G.checklist||[];
+  if(!rows.length){tb.innerHTML=`<tr><td colspan="7"><div class="empty"><div class="empty-ico">✅</div><div class="empty-t">Nenhum checklist</div></div></td></tr>`;return}
+  const resumo=(itens,label)=>{
+    if(!itens||!itens.length) return '—';
+    const ok=itens.filter(x=>x==='ok').length, nok=itens.filter(x=>x==='nok').length;
+    return `<span style="color:var(--gn)">✅${ok}</span> <span style="color:var(--rd)">❌${nok}</span>`;
+  };
+  tb.innerHTML=rows.map(c=>`<tr>
+    <td>${fd(c.data)}</td><td>${c.motorista||'—'}</td>
+    <td>${c.veiculo||'—'}<br><span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--tx3)">${c.placa||''}</span></td>
+    <td>${resumo(c.itens_saida,'saída')}</td>
+    <td>${resumo(c.itens_retorno,'retorno')}</td>
+    <td style="font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.obs_saida||c.obs_retorno||'—'}</td>
+    <td style="white-space:nowrap"><button class="btn btn-ghost btn-xs" onclick="openCheck('${c.id}')">Editar</button> <button class="btn btn-danger btn-xs" onclick="delCheck('${c.id}')">×</button></td>
+  </tr>`).join('');
+}
+async function delCheck(id){if(confirm('Excluir?')){await api('DELETE',`/api/checklist/${id}`);await loadAll();renderCheck();}}
+
+// ── MANUTENÇÃO ──
+function openManut(id) {
+  document.getElementById('m-manut-title').textContent=id?'Editar Manutenção':'Registrar Manutenção';
+  if(id) {
+    const m=G.manutencao.find(x=>x.id===id); if(!m) return;
+    document.getElementById('mn-id').value=m.id; document.getElementById('mn-data').value=m.data||'';
+    document.getElementById('mn-vei').value=m.veiculo||''; document.getElementById('mn-placa').value=m.placa||'';
+    document.getElementById('mn-tipo').value=m.tipo||'Troca de óleo'; document.getElementById('mn-desc').value=m.descricao||'';
+    document.getElementById('mn-km').value=m.km_atual||0; document.getElementById('mn-kmprox').value=m.km_proxima||0;
+    document.getElementById('mn-dtprox').value=m.data_proxima||''; document.getElementById('mn-val').value=m.valor||0;
+    document.getElementById('mn-ofic').value=m.oficina||''; document.getElementById('mn-obs').value=m.obs||'';
+  } else {
+    document.getElementById('mn-id').value=''; document.getElementById('mn-data').value=today();
+    ['mn-vei','mn-placa','mn-desc','mn-dtprox','mn-ofic','mn-obs'].forEach(f=>document.getElementById(f).value='');
+    ['mn-km','mn-kmprox','mn-val'].forEach(f=>document.getElementById(f).value=0);
+    document.getElementById('mn-tipo').value='Troca de óleo';
+  }
+  openM('m-manut');
+}
+async function saveManut() {
+  const data=document.getElementById('mn-data').value; if(!data){alert('Informe a data.');return}
+  const eid=document.getElementById('mn-id').value;
+  const body={data,veiculo:document.getElementById('mn-vei').value,placa:document.getElementById('mn-placa').value.toUpperCase(),tipo:document.getElementById('mn-tipo').value,descricao:document.getElementById('mn-desc').value,km_atual:+document.getElementById('mn-km').value||0,km_proxima:+document.getElementById('mn-kmprox').value||0,data_proxima:document.getElementById('mn-dtprox').value,valor:+document.getElementById('mn-val').value||0,oficina:document.getElementById('mn-ofic').value,obs:document.getElementById('mn-obs').value};
+  try { if(eid) await api('PUT',`/api/manutencao/${eid}`,body); else await api('POST','/api/manutencao',body);
+    await loadAll(); closeM('m-manut'); renderManut(); renderLogistica(); } catch(e){alert(e.message)}
+}
+function renderManut() {
+  const tb=document.getElementById('tb-manut'); if(!tb) return;
+  const rows=G.manutencao||[];
+  if(!rows.length){tb.innerHTML=`<tr><td colspan="10"><div class="empty"><div class="empty-ico">🔧</div><div class="empty-t">Nenhuma manutenção</div></div></td></tr>`;return}
+  const hoje=today();
+  tb.innerHTML=rows.map(m=>{
+    const atrasada=m.data_proxima&&m.data_proxima<hoje;
+    const proxima=m.data_proxima&&m.data_proxima>=hoje&&m.data_proxima<=(hoje.slice(0,7)+'-99');
+    return `<tr style="${atrasada?'background:var(--rdbg)':''}">
+      <td>${fd(m.data)}</td>
+      <td>${m.veiculo||'—'}<br><span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--tx3)">${m.placa||''}</span></td>
+      <td><span class="badge bb">${m.tipo}</span></td>
+      <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.descricao||'—'}</td>
+      <td style="font-family:'JetBrains Mono',monospace">${m.km_atual?m.km_atual.toLocaleString('pt-BR')+' km':'—'}</td>
+      <td style="font-family:'JetBrains Mono',monospace">${m.km_proxima?m.km_proxima.toLocaleString('pt-BR')+' km':'—'}</td>
+      <td style="${atrasada?'color:var(--rd);font-weight:700':''}">
+        ${m.data_proxima?fd(m.data_proxima)+(atrasada?' ⚠':''):'—'}
+      </td>
+      <td style="font-weight:700">${m.valor?fm(m.valor):'—'}</td>
+      <td>${m.oficina||'—'}</td>
+      <td style="white-space:nowrap"><button class="btn btn-ghost btn-xs" onclick="openManut('${m.id}')">Editar</button> <button class="btn btn-danger btn-xs" onclick="delManut('${m.id}')">×</button></td>
+    </tr>`;
+  }).join('');
+}
+async function delManut(id){if(confirm('Excluir?')){await api('DELETE',`/api/manutencao/${id}`);await loadAll();renderManut();renderLogistica();}}
+
+// ── EXPORTAR LOGÍSTICA EXCEL ──
+function exportLogExcel() {
+  const rows=G.logistica||[];
+  const esc=v=>`"${String(v||'').replace(/"/g,'""')}"`;
+  const cols=['Data Saída','Hora Saída','Motorista','Veículo','Placa','Km Inicial','Km Final','Km Rodado','Rota','OS Vinculadas','Pedágio','Combustível R$','Alimentação','Hospedagem','Outros','Total R$','Litros','Tipo Comb.','Retorno'];
+  const lines=[cols.map(esc).join(';')];
+  rows.forEach(l=>{
+    const km=(l.km_final||0)-(l.km_inicial||0);
+    const osNums=(l.os_ids||[]).map(id=>G.ordens.find(x=>x.id===id)?.num||id).join(', ');
+    lines.push([l.data_saida,l.hora_saida,l.motorista,l.veiculo,l.placa,l.km_inicial,l.km_final,km,l.rota,osNums,l.pedagio,l.combustivel,l.alimentacao,l.hospedagem,l.outros,l.valor_total,l.litros,l.tipo_combustivel,l.data_retorno?l.data_retorno+' '+l.hora_retorno:''].map(esc).join(';'));
+  });
+  const blob=new Blob(['\uFEFF'+lines.join('\n')],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`Logistica_${today()}.csv`; a.click();
 }
 function printLogRel(id) {
   const l = G.logistica.find(x => x.id === id);
