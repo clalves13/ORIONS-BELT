@@ -178,10 +178,68 @@ app.put('/api/ordens/:id', requireAuth, async (req,res) => {
 app.delete('/api/ordens/:id', requireAuth, async (req,res) => { try{await col('ordens').deleteOne({_id:new ObjectId(req.params.id)}); res.json({ok:true});}catch(e){res.status(500).json({error:e.message});} });
 
 // LABORATORIO
+// LABORATÓRIO — BANCADA
 app.get('/api/laboratorio', requireAuth, async (req,res) => { const d=await col('laboratorio').find().sort({data_entrada:-1}).toArray(); res.json(d.map(x=>({...x,id:x._id.toString()}))); });
-app.post('/api/laboratorio', requireAuth, async (req,res) => { try{const b=req.body; const total=(b.gPecas||0)+(b.gSupr||0)+(b.gOutros||0); await col('laboratorio').insertOne({data_entrada:b.dataEntrada,data_saida:b.dataSaida||'',tecnico_id:b.tecnicoId||'',nome:b.nome,marca:b.marca||'',modelo:b.modelo||'',nserie:b.nserie||'',contador_entrada:b.contadorEntrada||'',tempo_horas:b.tempoHoras||0,problemas:b.problemas||'',procedimento:b.procedimento||'',pecas:b.pecas||'',suprimentos:b.suprimentos||'',g_pecas:b.gPecas||0,g_supr:b.gSupr||0,g_outros:b.gOutros||0,total,checklist:b.checklist||[],status_final:b.statusFinal||'',obs:b.obs||'',created_at:now()}); res.json({ok:true});}catch(e){res.status(500).json({error:e.message});} });
-app.put('/api/laboratorio/:id', requireAuth, async (req,res) => { try{const b=req.body; const total=(b.gPecas||0)+(b.gSupr||0)+(b.gOutros||0); await col('laboratorio').updateOne({_id:new ObjectId(req.params.id)},{$set:{data_entrada:b.dataEntrada,data_saida:b.dataSaida||'',tecnico_id:b.tecnicoId||'',nome:b.nome,marca:b.marca||'',modelo:b.modelo||'',nserie:b.nserie||'',contador_entrada:b.contadorEntrada||'',tempo_horas:b.tempoHoras||0,problemas:b.problemas||'',procedimento:b.procedimento||'',pecas:b.pecas||'',suprimentos:b.suprimentos||'',g_pecas:b.gPecas||0,g_supr:b.gSupr||0,g_outros:b.gOutros||0,total,checklist:b.checklist||[],status_final:b.statusFinal||'',obs:b.obs||''}}); res.json({ok:true});}catch(e){res.status(500).json({error:e.message});} });
+app.post('/api/laboratorio', requireAuth, async (req,res) => {
+  try {
+    const b=req.body; const total=(b.gPecas||0)+(b.gSupr||0)+(b.gOutros||0);
+    const r=await col('laboratorio').insertOne({data_entrada:b.dataEntrada,data_saida:b.dataSaida||'',tecnico_id:b.tecnicoId||'',os_id:b.osId||'',origem:b.origem||'campo',nome:b.nome,marca:b.marca||'',modelo:b.modelo||'',nserie:b.nserie||'',contador_entrada:b.contadorEntrada||'',contador_saida:b.contadorSaida||'',tipo_manutencao:b.tipoManutencao||'Corretiva',tempo_horas:b.tempoHoras||0,problemas:b.problemas||'',procedimento:b.procedimento||'',pecas_retiradas:b.pecasRetiradas||'',obs_retiradas:b.obsRetiradas||'',escopo:b.escopo||[],g_pecas:b.gPecas||0,g_supr:b.gSupr||0,g_outros:b.gOutros||0,total,checklist:b.checklist||[],status:b.status||'Em análise',status_final:b.statusFinal||'',obs:b.obs||'',created_at:now()});
+    res.json({ok:true,id:r.insertedId.toString()});
+  }catch(e){res.status(500).json({error:e.message});}
+});
+app.put('/api/laboratorio/:id', requireAuth, async (req,res) => {
+  try {
+    const b=req.body; const total=(b.gPecas||0)+(b.gSupr||0)+(b.gOutros||0);
+    await col('laboratorio').updateOne({_id:new ObjectId(req.params.id)},{$set:{data_entrada:b.dataEntrada,data_saida:b.dataSaida||'',tecnico_id:b.tecnicoId||'',os_id:b.osId||'',origem:b.origem||'campo',nome:b.nome,marca:b.marca||'',modelo:b.modelo||'',nserie:b.nserie||'',contador_entrada:b.contadorEntrada||'',contador_saida:b.contadorSaida||'',tipo_manutencao:b.tipoManutencao||'Corretiva',tempo_horas:b.tempoHoras||0,problemas:b.problemas||'',procedimento:b.procedimento||'',pecas_retiradas:b.pecasRetiradas||'',obs_retiradas:b.obsRetiradas||'',escopo:b.escopo||[],g_pecas:b.gPecas||0,g_supr:b.gSupr||0,g_outros:b.gOutros||0,total,checklist:b.checklist||[],status:b.status||'Em análise',status_final:b.statusFinal||'',obs:b.obs||''}});
+    res.json({ok:true});
+  }catch(e){res.status(500).json({error:e.message});}
+});
 app.delete('/api/laboratorio/:id', requireAuth, async (req,res) => { try{await col('laboratorio').deleteOne({_id:new ObjectId(req.params.id)}); res.json({ok:true});}catch(e){res.status(500).json({error:e.message});} });
+
+// LABORATÓRIO — PEDIDOS DE PEÇAS
+app.get('/api/pedidos-pecas', requireAuth, async (req,res) => { const d=await col('pedidos_pecas').find().sort({created_at:-1}).toArray(); res.json(d.map(x=>({...x,id:x._id.toString()}))); });
+app.post('/api/pedidos-pecas', requireAuth, async (req,res) => {
+  try {
+    const b=req.body;
+    const r=await col('pedidos_pecas').insertOne({lab_id:b.labId||'',os_id:b.osId||'',tecnico_id:b.tecnicoId||'',estoque_id:b.estoqueId||'',nome_peca:b.nomePeca||'',quantidade:+(b.quantidade||1),status:'Solicitado',obs:b.obs||'',created_at:now()});
+    res.json({ok:true,id:r.insertedId.toString()});
+  }catch(e){res.status(500).json({error:e.message});}
+});
+app.put('/api/pedidos-pecas/:id', requireAuth, async (req,res) => {
+  try {
+    const b=req.body; const pid=req.params.id;
+    // Se confirmando uso → dar baixa no estoque
+    if(b.status==='Utilizado' && b.estoqueId) {
+      const item=await col('estoque').findOne({_id:new ObjectId(b.estoqueId)});
+      if(item) {
+        const novaQtd=Math.max(0,(item.quantidade||0)-(b.quantidade||1));
+        await col('estoque').updateOne({_id:new ObjectId(b.estoqueId)},{$set:{quantidade:novaQtd}});
+        await col('estoque_movs').insertOne({estoque_id:b.estoqueId,tipo:'saida',quantidade:b.quantidade||1,motivo:`Pedido #${pid} — ${b.osId?'OS':'Lab'}`,data:now(),created_at:now()});
+      }
+    }
+    await col('pedidos_pecas').updateOne({_id:new ObjectId(pid)},{$set:{status:b.status||'Solicitado',obs:b.obs||'',data_uso:b.status==='Utilizado'?now():''}});
+    res.json({ok:true});
+  }catch(e){res.status(500).json({error:e.message});}
+});
+app.delete('/api/pedidos-pecas/:id', requireAuth, async (req,res) => { try{await col('pedidos_pecas').deleteOne({_id:new ObjectId(req.params.id)});res.json({ok:true});}catch(e){res.status(500).json({error:e.message});} });
+
+// LABORATÓRIO — EQUIPAMENTOS BAIXADOS
+app.get('/api/eq-baixados', requireAuth, async (req,res) => { const d=await col('eq_baixados').find().sort({data:-1}).toArray(); res.json(d.map(x=>({...x,id:x._id.toString()}))); });
+app.post('/api/eq-baixados', requireAuth, async (req,res) => {
+  try {
+    const b=req.body;
+    const r=await col('eq_baixados').insertOne({data:b.data||'',nome:b.nome||'',marca:b.marca||'',modelo:b.modelo||'',nserie:b.nserie||'',contador_final:b.contadorFinal||'',motivo:b.motivo||'',destino:b.destino||'Descarte',os_id:b.osId||'',lab_id:b.labId||'',pecas_aproveitadas:b.pecasAproveitadas||'',obs:b.obs||'',created_at:now()});
+    res.json({ok:true,id:r.insertedId.toString()});
+  }catch(e){res.status(500).json({error:e.message});}
+});
+app.put('/api/eq-baixados/:id', requireAuth, async (req,res) => {
+  try {
+    const b=req.body;
+    await col('eq_baixados').updateOne({_id:new ObjectId(req.params.id)},{$set:{data:b.data||'',nome:b.nome||'',marca:b.marca||'',modelo:b.modelo||'',nserie:b.nserie||'',contador_final:b.contadorFinal||'',motivo:b.motivo||'',destino:b.destino||'Descarte',os_id:b.osId||'',lab_id:b.labId||'',pecas_aproveitadas:b.pecasAproveitadas||'',obs:b.obs||''}});
+    res.json({ok:true});
+  }catch(e){res.status(500).json({error:e.message});}
+});
+app.delete('/api/eq-baixados/:id', requireAuth, async (req,res) => { try{await col('eq_baixados').deleteOne({_id:new ObjectId(req.params.id)});res.json({ok:true});}catch(e){res.status(500).json({error:e.message});} });
 
 // HISTORICO
 app.get('/api/historico', requireAuth, async (req,res) => { const d=await col('historico').find().sort({created_at:-1}).toArray(); res.json(d.map(x=>({...x,id:x._id.toString()}))); });

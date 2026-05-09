@@ -653,19 +653,279 @@ tr:hover td{background:var(--sf2)}
 </div></div>
 
 <!-- LABORATÓRIO -->
+<!-- LABORATÓRIO -->
 <div id="page-lab" class="page">
-  <div class="topbar"><div><div class="tb-title">Laboratório</div><div class="tb-sub">Manutenção interna</div></div>
+  <div class="topbar">
+    <div><div class="tb-title">Laboratório Técnico</div><div class="tb-sub">Bancada · Peças · Escopo · Baixados</div></div>
     <div class="tb-right">
       <div class="swrap"><span style="color:var(--tx3)">🔍</span><input type="text" placeholder="Buscar..." id="s-lab" oninput="renderLab()"></div>
-      <button class="btn btn-info btn-sm" onclick="printRelatorio('lab')">🖨 Relatório</button>
-      <button class="btn btn-accent" onclick="openLab(null)">+ Nova Entrada</button>
+      <button class="btn btn-ghost btn-sm" onclick="printRelatorio('lab')">🖨 PDF</button>
+      <button class="btn btn-ghost btn-sm" onclick="exportLabExcel()">📊 Excel</button>
+      <button class="btn btn-accent" id="btn-nova-lab" onclick="openLab(null)">+ Nova Entrada</button>
     </div>
   </div>
-  <div class="content"><div class="card" style="padding:0"><div class="twrap"><table>
-    <thead><tr><th>#</th><th>Entrada</th><th>Técnico</th><th>Equipamento</th><th>Nº Série</th><th>Modelo</th><th>Status Final</th><th>Tempo</th><th>Ações</th></tr></thead>
-    <tbody id="tb-lab"></tbody>
-  </table></div></div></div>
+  <div class="content">
+
+    <!-- KPIs -->
+    <div class="sgrid" style="grid-template-columns:repeat(5,1fr);margin-bottom:14px">
+      <div class="scard"><div class="sico" style="background:var(--bl2bg);color:var(--bl2)">🔬</div><div class="slabel">Na Bancada</div><div class="sval" id="lab-kpi-total">0</div><div class="ssub">Equipamentos</div></div>
+      <div class="scard"><div class="sico" style="background:var(--orbg);color:var(--or)">⏳</div><div class="slabel">Em Análise</div><div class="sval" id="lab-kpi-analise">0</div><div class="ssub">Aguardando</div></div>
+      <div class="scard"><div class="sico" style="background:var(--pubg);color:var(--pu)">🔧</div><div class="slabel">Em Reparo</div><div class="sval" id="lab-kpi-reparo">0</div><div class="ssub">Em execução</div></div>
+      <div class="scard"><div class="sico" style="background:var(--rdbg);color:var(--rd)">📦</div><div class="slabel">Aguard. Peça</div><div class="sval" id="lab-kpi-aguard">0</div><div class="ssub">Pedidos abertos</div></div>
+      <div class="scard"><div class="sico" style="background:var(--rdbg);color:var(--rd)">🗑</div><div class="slabel">Baixados</div><div class="sval" id="lab-kpi-baixados">0</div><div class="ssub">Equipamentos</div></div>
+    </div>
+
+    <!-- Abas -->
+    <div style="display:flex;border-bottom:2px solid var(--bd);margin-bottom:14px">
+      <button class="log-tab active" id="ltab-bancada" onclick="labTab('bancada',this)">🔬 Bancada</button>
+      <button class="log-tab" id="ltab-pedidos"  onclick="labTab('pedidos',this)">🔩 Pedidos de Peças</button>
+      <button class="log-tab" id="ltab-escopo"   onclick="labTab('escopo',this)">📋 Escopo</button>
+      <button class="log-tab" id="ltab-baixados" onclick="labTab('baixados',this)">🗑 Baixados</button>
+    </div>
+
+    <!-- ABA BANCADA -->
+    <div id="ltab-panel-bancada">
+      <div class="card" style="padding:10px 14px;margin-bottom:10px">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+          <div style="display:flex;align-items:center;gap:5px">
+            <span style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase">Status</span>
+            <select id="f-lab-status" onchange="renderLab()" style="font-size:11px;padding:4px 7px;border:1.5px solid var(--bd2);border-radius:7px;font-family:inherit">
+              <option value="">Todos</option>
+              <option>Em análise</option><option>Em reparo</option><option>Aguardando peça</option><option>Concluído</option><option>Baixado</option>
+            </select>
+          </div>
+          <div style="display:flex;align-items:center;gap:5px">
+            <span style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase">Técnico</span>
+            <select id="f-lab-tec" onchange="renderLab()" style="font-size:11px;padding:4px 7px;border:1.5px solid var(--bd2);border-radius:7px;font-family:inherit"><option value="">Todos</option></select>
+          </div>
+          <button class="btn btn-ghost btn-xs" onclick="limparFiltrosLab()">✕ Limpar</button>
+          <span id="lab-count" style="margin-left:auto;font-size:11px;color:var(--tx3)"></span>
+        </div>
+      </div>
+      <div class="card" style="padding:0"><div class="twrap"><table>
+        <thead><tr><th>#</th><th>Entrada</th><th>Técnico</th><th>Equipamento</th><th>Nº Série</th><th>Modelo</th><th>Tipo</th><th>Origem</th><th>Status</th><th>Tempo</th><th>Ações</th></tr></thead>
+        <tbody id="tb-lab"></tbody>
+      </table></div></div>
+    </div>
+
+    <!-- ABA PEDIDOS DE PEÇAS -->
+    <div id="ltab-panel-pedidos" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div style="font-size:11px;color:var(--tx3)">A baixa no estoque só ocorre ao confirmar "Utilizado" na OS ou no lab.</div>
+        <button class="btn btn-accent btn-sm" onclick="openPedido(null)">+ Solicitar Peça</button>
+      </div>
+      <!-- Box estoque disponível -->
+      <div class="card" style="margin-bottom:12px">
+        <div class="card-hd"><div class="card-title">📦 Estoque Disponível</div><div class="swrap" style="width:200px"><input type="text" placeholder="Filtrar peça..." id="s-est-ped" oninput="renderEstoqueBox()" style="width:100%"></div></div>
+        <div id="estoque-box" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:7px;padding:4px 0;max-height:220px;overflow-y:auto"></div>
+      </div>
+      <div class="card" style="padding:0"><div class="twrap"><table>
+        <thead><tr><th>Data</th><th>Peça Solicitada</th><th>Qtd</th><th>Lab / OS</th><th>Técnico</th><th>Status</th><th>Ações</th></tr></thead>
+        <tbody id="tb-pedidos"></tbody>
+      </table></div></div>
+    </div>
+
+    <!-- ABA ESCOPO -->
+    <div id="ltab-panel-escopo" style="display:none">
+      <div style="font-size:11px;color:var(--tx3);margin-bottom:10px">Checklist técnico do que foi executado por entrada de laboratório.</div>
+      <div id="escopo-list"></div>
+    </div>
+
+    <!-- ABA BAIXADOS -->
+    <div id="ltab-panel-baixados" style="display:none">
+      <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+        <button class="btn btn-accent btn-sm" onclick="openBaixado(null)">+ Registrar Baixa</button>
+      </div>
+      <div class="card" style="padding:0"><div class="twrap"><table>
+        <thead><tr><th>Data</th><th>Equipamento</th><th>Nº Série</th><th>Modelo</th><th>Contador Final</th><th>Motivo</th><th>Destino</th><th>OS / Lab</th><th>Ações</th></tr></thead>
+        <tbody id="tb-baixados"></tbody>
+      </table></div></div>
+    </div>
+
+  </div>
 </div>
+
+<!-- MODAL LAB BANCADA (com abas) -->
+<div class="mov" id="m-lab">
+<div class="modal" style="max-width:760px">
+  <div class="mhd">
+    <div><div class="mhd-title" id="m-lab-title">Nova Entrada — Laboratório</div><div style="font-size:10px;color:var(--tx3);margin-top:2px" id="m-lab-sub"></div></div>
+    <div style="display:flex;gap:6px">
+      <button class="btn btn-ghost btn-sm" id="btn-baixar-eq" style="display:none" onclick="baixarEquipamentoDoLab()">🗑 Dar Baixa</button>
+      <button class="btn btn-info btn-sm" id="btn-print-lab" style="display:none" onclick="printChecklist()">🖨 Checklist</button>
+      <button class="btnx" onclick="closeM('m-lab')">×</button>
+    </div>
+  </div>
+  <!-- mini abas -->
+  <div style="display:flex;border-bottom:1px solid var(--bd);padding:0 20px;background:var(--sf2)">
+    <button class="os-tab active" onclick="labFormTab('ident',this)">📋 Identificação</button>
+    <button class="os-tab" onclick="labFormTab('diag',this)">🔧 Diagnóstico</button>
+    <button class="os-tab" onclick="labFormTab('pecas',this)">🔩 Peças</button>
+    <button class="os-tab" onclick="labFormTab('escopo',this)">✅ Escopo</button>
+  </div>
+  <div class="mbody" style="padding:14px 20px">
+    <input type="hidden" id="l-id">
+
+    <!-- Aba Identificação -->
+    <div id="lft-ident">
+      <div class="fgrid fg3" style="margin-bottom:10px">
+        <div class="fg"><label>Data Entrada</label><input type="date" id="l-dent"></div>
+        <div class="fg"><label>Data Saída</label><input type="date" id="l-dsai"></div>
+        <div class="fg"><label>Técnico</label><select id="l-tec"></select></div>
+      </div>
+      <div class="fgrid fg3" style="margin-bottom:10px">
+        <div class="fg"><label>Origem</label>
+          <select id="l-origem"><option value="campo">Campo (via OS)</option><option value="cliente">Cliente direto</option><option value="interno">Uso interno</option></select>
+        </div>
+        <div class="fg"><label>OS Vinculada</label>
+          <select id="l-os"><option value="">Nenhuma</option></select>
+        </div>
+        <div class="fg"><label>Tipo de Manutenção</label>
+          <select id="l-tipo"><option>Corretiva</option><option>Preventiva</option><option>Reforma</option><option>Análise / Diagnóstico</option><option>Recuperação de peça</option></select>
+        </div>
+      </div>
+      <div class="fgrid fg2" style="margin-bottom:10px">
+        <div class="fg"><label>Equipamento / Tipo *</label><input type="text" id="l-nome" placeholder="Ex: Impressora, Placa, Fusor..."></div>
+        <div class="fg"><label>Marca</label><input type="text" id="l-marca"></div>
+        <div class="fg"><label>Modelo</label><input type="text" id="l-modelo"></div>
+        <div class="fg"><label>Nº Série</label><input type="text" id="l-nserie"></div>
+        <div class="fg"><label>Contador Entrada</label><input type="text" id="l-cont"></div>
+        <div class="fg"><label>Contador Saída</label><input type="text" id="l-conts"></div>
+        <div class="fg"><label>Tempo Gasto (horas)</label><input type="number" id="l-tempo" step="0.5" value="0"></div>
+        <div class="fg"><label>Status</label>
+          <select id="l-status">
+            <option>Em análise</option><option>Em reparo</option><option>Aguardando peça</option>
+            <option>Concluído</option><option>Baixado</option>
+          </select>
+        </div>
+      </div>
+      <div class="fgrid fg3">
+        <div class="fg"><label>Custo Peças R$</label><input type="number" id="l-gpec" value="0" step="0.01" oninput="calcL()"></div>
+        <div class="fg"><label>Custo Suprimentos R$</label><input type="number" id="l-gsup" value="0" step="0.01" oninput="calcL()"></div>
+        <div class="fg"><label>Outros R$</label><input type="number" id="l-gout" value="0" step="0.01" oninput="calcL()"></div>
+      </div>
+      <div class="totbox" style="margin-top:8px"><span class="totbox-label">Total</span><span class="totbox-val" id="l-tot">R$ 0,00</span></div>
+    </div>
+
+    <!-- Aba Diagnóstico -->
+    <div id="lft-diag" style="display:none">
+      <div class="fg" style="margin-bottom:10px"><label>Defeito / Problema Relatado</label><textarea id="l-prob" rows="3" placeholder="Descreva o defeito apresentado..."></textarea></div>
+      <div class="fg" style="margin-bottom:10px"><label>Laudo Técnico / Procedimento Realizado</label><textarea id="l-proc" rows="5" placeholder="Descreva o que foi verificado e executado..."></textarea></div>
+      <div class="fg"><label>Observações Finais</label><textarea id="l-obs" rows="2"></textarea></div>
+    </div>
+
+    <!-- Aba Peças -->
+    <div id="lft-pecas" style="display:none">
+      <div class="fg" style="margin-bottom:12px">
+        <label>Peças Retiradas do Equipamento</label>
+        <textarea id="l-pecas-ret" rows="3" placeholder="Liste as peças retiradas (uma por linha)..."></textarea>
+        <div style="font-size:10px;color:var(--tx3);margin-top:3px">Informe se cada peça é: reaproveitável, descarte ou retorno ao estoque</div>
+      </div>
+      <div class="fg" style="margin-bottom:12px">
+        <label>Obs sobre peças retiradas</label>
+        <textarea id="l-obs-ret" rows="2" placeholder="Estado das peças, destino..."></textarea>
+      </div>
+      <div style="background:var(--sf2);border-radius:8px;padding:10px 13px">
+        <div style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;margin-bottom:8px">📦 Solicitar Peça do Estoque</div>
+        <div id="lab-estoque-mini" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:6px;max-height:160px;overflow-y:auto;margin-bottom:8px"></div>
+        <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap">
+          <div class="fg" style="min-width:200px"><label>Peça Selecionada</label><input type="text" id="l-peca-sel" readonly placeholder="Clique em uma peça acima" style="background:var(--sf)"></div>
+          <input type="hidden" id="l-peca-id">
+          <div class="fg" style="width:80px"><label>Qtd</label><input type="number" id="l-peca-qtd" value="1" min="1"></div>
+          <button class="btn btn-accent btn-sm" onclick="solicitarPecaDoLab()">+ Solicitar</button>
+        </div>
+        <div id="l-pedidos-vinc" style="margin-top:8px"></div>
+      </div>
+    </div>
+
+    <!-- Aba Escopo -->
+    <div id="lft-escopo" style="display:none">
+      <div style="font-size:11px;color:var(--tx3);margin-bottom:10px">Marque o que foi realizado neste equipamento:</div>
+      <div id="chk-wrap" style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:10px"></div>
+      <div class="fg"><label>Status Final</label>
+        <select id="l-status-final">
+          <option>Aprovado — Funcionando Normalmente</option>
+          <option>Aprovado com Ressalvas</option>
+          <option>Reprovado — Requer Peças</option>
+          <option>Reprovado — Sem Conserto</option>
+          <option>Em Aguardo de Peças</option>
+          <option>Encaminhado para Baixa</option>
+        </select>
+      </div>
+    </div>
+  </div>
+  <div class="mfoot">
+    <button class="btn btn-ghost" onclick="closeM('m-lab')">Cancelar</button>
+    <button class="btn btn-primary" onclick="saveLab()">Salvar</button>
+  </div>
+</div></div>
+
+<!-- MODAL PEDIDO DE PEÇA -->
+<div class="mov" id="m-pedido">
+<div class="modal" style="max-width:520px">
+  <div class="mhd"><div class="mhd-title">Solicitar Peça do Estoque</div><button class="btnx" onclick="closeM('m-pedido')">×</button></div>
+  <div class="mbody">
+    <input type="hidden" id="ped-id">
+    <div style="margin-bottom:10px">
+      <div class="fsec" style="margin-bottom:8px">📦 Selecione a Peça</div>
+      <div class="swrap" style="margin-bottom:8px"><input type="text" id="s-ped-est" placeholder="Buscar no estoque..." oninput="renderPedidoEstBox()"></div>
+      <div id="ped-est-box" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:6px;max-height:200px;overflow-y:auto;background:var(--sf2);border-radius:8px;padding:8px"></div>
+    </div>
+    <div class="fgrid fg2" style="margin-top:10px">
+      <div class="fg"><label>Peça Selecionada</label><input type="text" id="ped-peca-nome" readonly style="background:var(--sf2);font-weight:600"></div>
+      <input type="hidden" id="ped-est-id">
+      <div class="fg"><label>Quantidade *</label><input type="number" id="ped-qtd" value="1" min="1"></div>
+      <div class="fg"><label>Vincular à OS</label><select id="ped-os"><option value="">Nenhuma</option></select></div>
+      <div class="fg"><label>Vincular ao Lab</label><select id="ped-lab"><option value="">Nenhum</option></select></div>
+      <div class="fg" style="grid-column:1/-1"><label>Observação</label><textarea id="ped-obs" rows="2"></textarea></div>
+    </div>
+  </div>
+  <div class="mfoot">
+    <button class="btn btn-ghost" onclick="closeM('m-pedido')">Cancelar</button>
+    <button class="btn btn-accent" onclick="savePedido()">Solicitar</button>
+  </div>
+</div></div>
+
+<!-- MODAL EQUIPAMENTO BAIXADO -->
+<div class="mov" id="m-baixado">
+<div class="modal" style="max-width:560px">
+  <div class="mhd"><div class="mhd-title" id="m-baixado-title">Registrar Baixa de Equipamento</div><button class="btnx" onclick="closeM('m-baixado')">×</button></div>
+  <div class="mbody">
+    <input type="hidden" id="bx-id">
+    <div style="background:var(--rdbg);border:1px solid var(--rdbd);border-radius:8px;padding:10px 13px;margin-bottom:12px;font-size:12px">
+      ⚠ Equipamento baixado é registrado permanentemente. Peças aproveitadas podem ser adicionadas ao estoque.
+    </div>
+    <div class="fgrid fg2">
+      <div class="fg"><label>Data da Baixa *</label><input type="date" id="bx-data"></div>
+      <div class="fg"><label>Equipamento / Tipo *</label><input type="text" id="bx-nome"></div>
+      <div class="fg"><label>Marca</label><input type="text" id="bx-marca"></div>
+      <div class="fg"><label>Modelo</label><input type="text" id="bx-modelo"></div>
+      <div class="fg"><label>Nº Série</label><input type="text" id="bx-nserie" style="font-family:'JetBrains Mono',monospace"></div>
+      <div class="fg"><label>Contador Final</label><input type="text" id="bx-cont"></div>
+      <div class="fg"><label>Motivo da Baixa *</label>
+        <select id="bx-motivo">
+          <option>Sucateamento</option><option>Substituição por novo</option>
+          <option>Dano irreparável</option><option>Perda / Sinistro</option>
+          <option>Devolução ao cliente</option><option>Outro</option>
+        </select>
+      </div>
+      <div class="fg"><label>Destino</label>
+        <select id="bx-destino">
+          <option>Descarte</option><option>Peças aproveitadas</option>
+          <option>Devolvido ao cliente</option><option>Doação</option>
+        </select>
+      </div>
+      <div class="fg"><label>OS Relacionada</label><select id="bx-os"><option value="">Nenhuma</option></select></div>
+      <div class="fg"><label>Lab Relacionado</label><select id="bx-lab"><option value="">Nenhum</option></select></div>
+      <div class="fg" style="grid-column:1/-1"><label>Peças Aproveitadas (liste para referência)</label><textarea id="bx-pecas" rows="2" placeholder="Ex: Fusor OK, Placa principal, Rolo de transferência..."></textarea></div>
+      <div class="fg" style="grid-column:1/-1"><label>Observações</label><textarea id="bx-obs" rows="2"></textarea></div>
+    </div>
+  </div>
+  <div class="mfoot">
+    <button class="btn btn-ghost" onclick="closeM('m-baixado')">Cancelar</button>
+    <button class="btn btn-danger" onclick="saveBaixado()">🗑 Confirmar Baixa</button>
+  </div>
+</div></div>
 
 <!-- HISTÓRICO -->
 <div id="page-historico" class="page">
@@ -1045,38 +1305,7 @@ tr:hover td{background:var(--sf2)}
 </div></div>
 
 <!-- Laboratório -->
-<div class="mov" id="m-lab">
-<div class="modal">
-  <div class="mhd"><div class="mhd-title" id="m-lab-title">Nova Entrada — Laboratório</div><button class="btnx" onclick="closeM('m-lab')">×</button></div>
-  <div class="mbody">
-    <input type="hidden" id="l-id">
-    <div style="margin-bottom:13px"><div class="fsec">Identificação</div>
-      <div class="fgrid fg3"><div class="fg"><label>Data Entrada</label><input type="date" id="l-dent"></div><div class="fg"><label>Data Saída</label><input type="date" id="l-dsai"></div><div class="fg"><label>Técnico</label><select id="l-tec"></select></div></div>
-    </div>
-    <div style="margin-bottom:13px"><div class="fsec">Equipamento</div>
-      <div class="fgrid fg2"><div class="fg"><label>Nome/Tipo *</label><input type="text" id="l-nome"></div><div class="fg"><label>Marca</label><input type="text" id="l-marca"></div><div class="fg"><label>Modelo</label><input type="text" id="l-modelo"></div><div class="fg"><label>Nº Série</label><input type="text" id="l-nserie"></div><div class="fg"><label>Contador Entrada</label><input type="text" id="l-cont"></div><div class="fg"><label>Tempo (horas)</label><input type="number" id="l-tempo" step="0.5" value="0"></div></div>
-    </div>
-    <div style="margin-bottom:13px"><div class="fsec">Diagnóstico</div>
-      <div class="fgrid"><div class="fg"><label>Problemas Apresentados</label><textarea id="l-prob" rows="3"></textarea></div><div class="fg"><label>Procedimento Realizado</label><textarea id="l-proc" rows="4"></textarea></div></div>
-    </div>
-    <div style="margin-bottom:13px"><div class="fsec">Peças e Suprimentos</div>
-      <div class="fgrid fg2"><div class="fg"><label>Peças Utilizadas</label><textarea id="l-pecas" rows="3"></textarea></div><div class="fg"><label>Suprimentos Utilizados</label><textarea id="l-supr" rows="3"></textarea></div></div>
-    </div>
-    <div style="margin-bottom:13px"><div class="fsec">Gastos</div>
-      <div class="fgrid fg3"><div class="fg"><label>Peças R$</label><input type="number" id="l-gpec" value="0" step="0.01" oninput="calcL()"></div><div class="fg"><label>Suprimentos R$</label><input type="number" id="l-gsup" value="0" step="0.01" oninput="calcL()"></div><div class="fg"><label>Outros R$</label><input type="number" id="l-gout" value="0" step="0.01" oninput="calcL()"></div></div>
-      <div class="totbox"><span class="totbox-label">Total</span><span class="totbox-val" id="l-tot">R$ 0,00</span></div>
-    </div>
-    <div><div class="fsec">Checklist — Status Final</div>
-      <div id="chk-wrap" style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:10px"></div>
-      <div class="fgrid fg2"><div class="fg"><label>Status Final</label><select id="l-status"><option>Aprovado — Funcionando Normalmente</option><option>Aprovado com Ressalvas</option><option>Reprovado — Requer Peças</option><option>Reprovado — Sem Conserto</option><option>Em Aguardo de Peças</option></select></div><div class="fg"><label>Obs Finais</label><textarea id="l-obs" rows="2"></textarea></div></div>
-    </div>
-  </div>
-  <div class="mfoot">
-    <button class="btn btn-ghost" onclick="closeM('m-lab')">Cancelar</button>
-    <button class="btn btn-info" id="btn-print-lab" style="display:none" onclick="printChecklist()">🖨 Checklist</button>
-    <button class="btn btn-primary" onclick="saveLab()">Salvar</button>
-  </div>
-</div></div>
+<!-- modais lab acima -->
 
 <!-- Cliente -->
 <div class="mov" id="m-cli">
@@ -1233,7 +1462,7 @@ tr:hover td{background:var(--sf2)}
 
 
 <script>
-let G = { user: null, tecnicos: [], clientes: [], equipamentos: [], atendimentos: [], ordens: [], laboratorio: [], historico: [], estoque: [], suprCli: [], logistica: [], abastecimento: [], checklist: [], manutencao: [], currentOSData: null, currentLabData: null };
+let G = { user: null, tecnicos: [], clientes: [], equipamentos: [], atendimentos: [], ordens: [], laboratorio: [], historico: [], estoque: [], suprCli: [], logistica: [], abastecimento: [], checklist: [], manutencao: [], pedidosPecas: [], eqBaixados: [], currentOSData: null, currentLabData: null };
 
 const fm = v => 'R$ ' + (+v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 const fd = d => { if(!d)return''; const p=d.split('-'); return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:d; };
@@ -1280,16 +1509,18 @@ async function doLogout() {
 }
 
 async function loadAll() {
-  const [tec, cli, eq, os, lab, hist, est, supr, log, abast, ck, manut] = await Promise.all([
+  const [tec, cli, eq, os, lab, hist, est, supr, log, abast, ck, manut, ped, baix] = await Promise.all([
     api('GET','/api/tecnicos'), api('GET','/api/clientes'), api('GET','/api/equipamentos'),
     api('GET','/api/ordens'), api('GET','/api/laboratorio'),
     api('GET','/api/historico'), api('GET','/api/estoque'), api('GET','/api/estoque-supr'),
     api('GET','/api/logistica'), api('GET','/api/abastecimento'),
-    api('GET','/api/checklist'), api('GET','/api/manutencao')
+    api('GET','/api/checklist'), api('GET','/api/manutencao'),
+    api('GET','/api/pedidos-pecas'), api('GET','/api/eq-baixados')
   ]);
   G.tecnicos=tec; G.clientes=cli; G.equipamentos=eq;
   G.atendimentos=os; G.ordens=os; G.laboratorio=lab; G.historico=hist; G.estoque=est; G.suprCli=supr;
   G.logistica=log||[]; G.abastecimento=abast||[]; G.checklist=ck||[]; G.manutencao=manut||[];
+  G.pedidosPecas=ped||[]; G.eqBaixados=baix||[];
   updateBadges();
 }
 
@@ -1762,52 +1993,373 @@ function buildChk(checked=[]) {
 function togChk(el,i){el.classList.toggle('on');el.querySelector('.chk-box').textContent=el.classList.contains('on')?'✓':'';}
 function getChkd(){return CHK_ITEMS.map((_,i)=>document.getElementById('chk-'+i)?.classList.contains('on')?i:-1).filter(x=>x>=0)}
 
+// ─── LABORATÓRIO ──────────────────────────────────────────
+const ESCOPO_ITEMS = ['Limpeza interna geral','Limpeza do conjunto de impressão','Lubrificação de rolamentos','Lubrificação de engrenagens','Troca de fusor','Troca de rolo de transferência','Troca de rolo de captura','Troca de placa principal','Troca de cabeça de impressão','Troca de fita de impressão','Troca de sensor','Calibração de impressão','Alinhamento de cabeça','Teste de qualidade de impressão','Reset de contador','Atualização de firmware','Substituição de peça elétrica','Reparo de placa eletrônica','Troca de cabo/flat','Teste final completo'];
+
+function labTab(tab, btn) {
+  ['bancada','pedidos','escopo','baixados'].forEach(t => {
+    const p=document.getElementById('ltab-panel-'+t), b=document.getElementById('ltab-'+t);
+    if(p) p.style.display=t===tab?'block':'none';
+    if(b) b.classList.toggle('active',t===tab);
+  });
+  const btnNova=document.getElementById('btn-nova-lab');
+  const acts={bancada:['+ Nova Entrada','openLab(null)'],pedidos:['+ Solicitar Peça','openPedido(null)'],escopo:['+ Nova Entrada','openLab(null)'],baixados:['+ Registrar Baixa','openBaixado(null)']};
+  if(btnNova&&acts[tab]){btnNova.textContent=acts[tab][0];btnNova.setAttribute('onclick',acts[tab][1]);}
+  if(tab==='pedidos'){renderPedidos();renderEstoqueBox();}
+  if(tab==='escopo'){renderEscopoList();}
+  if(tab==='baixados'){renderBaixados();}
+}
+
+function labFormTab(tab, btn) {
+  ['ident','diag','pecas','escopo'].forEach(t=>{
+    const p=document.getElementById('lft-'+t); if(p) p.style.display=t===tab?'block':'none';
+  });
+  document.querySelectorAll('#m-lab .os-tab').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  if(tab==='pecas') renderLabEstoqueMini();
+  if(tab==='escopo') buildChk(getChkd());
+}
+
+function limparFiltrosLab(){
+  ['f-lab-status','f-lab-tec','s-lab'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  renderLab();
+}
+
+function renderLab() {
+  // populate tec filter
+  const fTecSel=document.getElementById('f-lab-tec');
+  if(fTecSel){const cur=fTecSel.value;fTecSel.innerHTML='<option value="">Todos</option>'+G.tecnicos.map(t=>`<option value="${t.id}">${t.nome}</option>`).join('');fTecSel.value=cur;}
+
+  const q=(document.getElementById('s-lab')?.value||'').toLowerCase();
+  const fSt=document.getElementById('f-lab-status')?.value||'';
+  const fTec=document.getElementById('f-lab-tec')?.value||'';
+  const rows=G.laboratorio.filter(l=>{
+    if(q&&![l.nome,l.modelo,l.nserie,l.marca].join(' ').toLowerCase().includes(q))return false;
+    if(fSt&&l.status!==fSt)return false;
+    if(fTec&&l.tecnico_id!==fTec)return false;
+    return true;
+  });
+
+  // KPIs
+  document.getElementById('lab-kpi-total').textContent    = G.laboratorio.filter(l=>l.status!=='Concluído'&&l.status!=='Baixado').length;
+  document.getElementById('lab-kpi-analise').textContent  = G.laboratorio.filter(l=>l.status==='Em análise').length;
+  document.getElementById('lab-kpi-reparo').textContent   = G.laboratorio.filter(l=>l.status==='Em reparo').length;
+  document.getElementById('lab-kpi-aguard').textContent   = G.pedidosPecas.filter(p=>p.status==='Solicitado').length;
+  document.getElementById('lab-kpi-baixados').textContent = G.eqBaixados.length;
+
+  const countEl=document.getElementById('lab-count'); if(countEl)countEl.textContent=`${rows.length} entrada${rows.length!==1?'s':''}`;
+  const tb=document.getElementById('tb-lab'); if(!tb)return;
+  if(!rows.length){tb.innerHTML=`<tr><td colspan="11"><div class="empty"><div class="empty-ico">🔬</div><div class="empty-t">Nenhuma entrada</div></div></td></tr>`;return;}
+  const SCOR={  'Em análise':'bo','Em reparo':'bb','Aguardando peça':'bo','Concluído':'bg','Baixado':'br'};
+  tb.innerHTML=rows.map((l,i)=>{
+    const t=G.tecnicos.find(x=>x.id===l.tecnico_id);
+    const os=G.ordens.find(x=>x.id===l.os_id);
+    const pedVinc=G.pedidosPecas.filter(p=>p.lab_id===l.id&&p.status==='Solicitado').length;
+    return`<tr>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--tx3)">#${i+1}</td>
+      <td>${fd(l.data_entrada)}</td>
+      <td>${t?.nome?.split(' ')[0]||'—'}</td>
+      <td style="font-weight:600">${l.nome}</td>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:11px">${l.nserie||'—'}</td>
+      <td>${l.modelo||'—'}</td>
+      <td><span class="badge bb" style="font-size:9px">${l.tipo_manutencao||'—'}</span></td>
+      <td style="font-size:11px;color:var(--tx3)">${l.origem==='campo'?'Campo':'Cliente'}</td>
+      <td>
+        <span class="badge ${SCOR[l.status]||'bo'}">${l.status||'—'}</span>
+        ${pedVinc?`<span style="font-size:9px;color:var(--rd);margin-left:3px">📦${pedVinc}</span>`:''}
+      </td>
+      <td>${l.tempo_horas||0}h</td>
+      <td style="white-space:nowrap;display:flex;gap:3px">
+        <button class="btn btn-ghost btn-xs" onclick="openLab('${l.id}')">Editar</button>
+        <button class="btn btn-success btn-xs" onclick="printChecklistById('${l.id}')">🖨</button>
+        <button class="btn btn-danger btn-xs" onclick="delLab('${l.id}')">×</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
 function openLab(id) {
   popTec(['l-tec']);
+  // Preenche selects de OS
+  const osSel=document.getElementById('l-os');
+  if(osSel){osSel.innerHTML='<option value="">Nenhuma</option>'+G.ordens.map(o=>{const c=G.clientes.find(x=>x.id===o.cliente_id);return`<option value="${o.id}">${o.num} — ${c?.nome||'—'}</option>`;}).join('');}
+
   document.getElementById('m-lab-title').textContent=id?'Editar Entrada':'Nova Entrada — Laboratório';
+  document.getElementById('m-lab-sub').textContent='';
   document.getElementById('btn-print-lab').style.display='none';
+  document.getElementById('btn-baixar-eq').style.display='none';
+  labFormTab('ident',document.querySelector('#m-lab .os-tab'));
+
   if(id){
     const lab=G.laboratorio.find(x=>x.id===id); if(!lab) return;
     document.getElementById('l-id').value=lab.id;
     document.getElementById('l-dent').value=lab.data_entrada||''; document.getElementById('l-dsai').value=lab.data_saida||'';
-    document.getElementById('l-tec').value=lab.tecnico_id||''; document.getElementById('l-nome').value=lab.nome||'';
-    document.getElementById('l-marca').value=lab.marca||''; document.getElementById('l-modelo').value=lab.modelo||'';
-    document.getElementById('l-nserie').value=lab.nserie||''; document.getElementById('l-cont').value=lab.contador_entrada||'';
-    document.getElementById('l-tempo').value=lab.tempo_horas||0; document.getElementById('l-prob').value=lab.problemas||'';
-    document.getElementById('l-proc').value=lab.procedimento||''; document.getElementById('l-pecas').value=lab.pecas||'';
-    document.getElementById('l-supr').value=lab.suprimentos||'';
+    document.getElementById('l-tec').value=lab.tecnico_id||''; document.getElementById('l-os').value=lab.os_id||'';
+    document.getElementById('l-origem').value=lab.origem||'campo'; document.getElementById('l-tipo').value=lab.tipo_manutencao||'Corretiva';
+    document.getElementById('l-nome').value=lab.nome||''; document.getElementById('l-marca').value=lab.marca||'';
+    document.getElementById('l-modelo').value=lab.modelo||''; document.getElementById('l-nserie').value=lab.nserie||'';
+    document.getElementById('l-cont').value=lab.contador_entrada||''; document.getElementById('l-conts').value=lab.contador_saida||'';
+    document.getElementById('l-tempo').value=lab.tempo_horas||0; document.getElementById('l-status').value=lab.status||'Em análise';
     document.getElementById('l-gpec').value=lab.g_pecas||0; document.getElementById('l-gsup').value=lab.g_supr||0; document.getElementById('l-gout').value=lab.g_outros||0;
-    document.getElementById('l-status').value=lab.status_final||CHK_ITEMS[0]; document.getElementById('l-obs').value=lab.obs||'';
-    let chk=[]; try{ const raw=lab.checklist||[]; chk=Array.isArray(raw)?raw:JSON.parse(raw); }catch(e){chk=[];}
+    document.getElementById('l-prob').value=lab.problemas||''; document.getElementById('l-proc').value=lab.procedimento||''; document.getElementById('l-obs').value=lab.obs||'';
+    document.getElementById('l-pecas-ret').value=lab.pecas_retiradas||''; document.getElementById('l-obs-ret').value=lab.obs_retiradas||'';
+    document.getElementById('l-status-final').value=lab.status_final||'Aprovado — Funcionando Normalmente';
+    let chk=[]; try{chk=Array.isArray(lab.checklist)?lab.checklist:JSON.parse(lab.checklist||'[]');}catch(e){chk=[];}
     buildChk(chk); calcL();
-    G.currentLabData=lab; document.getElementById('btn-print-lab').style.display='inline-flex';
+    G.currentLabData=lab;
+    document.getElementById('btn-print-lab').style.display='inline-flex';
+    if(lab.status!=='Concluído'&&lab.status!=='Baixado') document.getElementById('btn-baixar-eq').style.display='inline-flex';
+    document.getElementById('m-lab-sub').textContent=`Nº Série: ${lab.nserie||'—'} · ${lab.modelo||'—'}`;
+    renderLabPedidosVinc(id);
   } else {
     document.getElementById('l-id').value=''; document.getElementById('l-dent').value=today();
-    ['l-dsai','l-tec','l-nome','l-marca','l-modelo','l-nserie','l-cont','l-prob','l-proc','l-pecas','l-supr','l-obs'].forEach(f=>document.getElementById(f).value='');
+    ['l-dsai','l-nome','l-marca','l-modelo','l-nserie','l-cont','l-conts','l-prob','l-proc','l-obs','l-pecas-ret','l-obs-ret'].forEach(f=>document.getElementById(f).value='');
     document.getElementById('l-tempo').value=0; ['l-gpec','l-gsup','l-gout'].forEach(f=>document.getElementById(f).value=0);
-    document.getElementById('l-status').value='Aprovado — Funcionando Normalmente'; document.getElementById('l-tot').textContent='R$ 0,00';
-    buildChk([]);
+    document.getElementById('l-status').value='Em análise'; document.getElementById('l-tot').textContent='R$ 0,00';
+    document.getElementById('l-status-final').value='Aprovado — Funcionando Normalmente';
+    buildChk([]); document.getElementById('l-pedidos-vinc').innerHTML='';
   }
   openM('m-lab');
 }
+
 async function saveLab() {
   const nome=document.getElementById('l-nome').value.trim(); if(!nome){alert('Informe o equipamento.');return}
   const eid=document.getElementById('l-id').value;
-  const body={dataEntrada:document.getElementById('l-dent').value,dataSaida:document.getElementById('l-dsai').value,tecnicoId:document.getElementById('l-tec').value,nome,marca:document.getElementById('l-marca').value,modelo:document.getElementById('l-modelo').value,nserie:document.getElementById('l-nserie').value,contadorEntrada:document.getElementById('l-cont').value,tempoHoras:+document.getElementById('l-tempo').value||0,problemas:document.getElementById('l-prob').value,procedimento:document.getElementById('l-proc').value,pecas:document.getElementById('l-pecas').value,suprimentos:document.getElementById('l-supr').value,gPecas:+document.getElementById('l-gpec').value||0,gSupr:+document.getElementById('l-gsup').value||0,gOutros:+document.getElementById('l-gout').value||0,checklist:getChkd(),statusFinal:document.getElementById('l-status').value,obs:document.getElementById('l-obs').value};
+  const body={dataEntrada:document.getElementById('l-dent').value,dataSaida:document.getElementById('l-dsai').value,tecnicoId:document.getElementById('l-tec').value,osId:document.getElementById('l-os').value,origem:document.getElementById('l-origem').value,tipoManutencao:document.getElementById('l-tipo').value,nome,marca:document.getElementById('l-marca').value,modelo:document.getElementById('l-modelo').value,nserie:document.getElementById('l-nserie').value,contadorEntrada:document.getElementById('l-cont').value,contadorSaida:document.getElementById('l-conts').value,tempoHoras:+document.getElementById('l-tempo').value||0,status:document.getElementById('l-status').value,problemas:document.getElementById('l-prob').value,procedimento:document.getElementById('l-proc').value,obs:document.getElementById('l-obs').value,pecasRetiradas:document.getElementById('l-pecas-ret').value,obsRetiradas:document.getElementById('l-obs-ret').value,gPecas:+document.getElementById('l-gpec').value||0,gSupr:+document.getElementById('l-gsup').value||0,gOutros:+document.getElementById('l-gout').value||0,checklist:getChkd(),statusFinal:document.getElementById('l-status-final').value};
   try{
     if(eid) await api('PUT',`/api/laboratorio/${eid}`,body); else await api('POST','/api/laboratorio',body);
     await loadAll(); closeM('m-lab'); renderLab(); loadDash();
   }catch(e){alert(e.message)}
 }
-function renderLab() {
-  const q=(document.getElementById('s-lab')?.value||'').toLowerCase();
-  const rows=G.laboratorio.filter(l=>!q||[l.nome,l.modelo,l.nserie,l.marca].join(' ').toLowerCase().includes(q));
-  const tb=document.getElementById('tb-lab');
-  if(!rows.length){tb.innerHTML=`<tr><td colspan="9"><div class="empty"><div class="empty-ico">🔬</div><div class="empty-t">Nenhuma entrada</div></div></td></tr>`;return}
-  tb.innerHTML=rows.map((l,i)=>{const t=G.tecnicos.find(x=>x.id===l.tecnico_id);const sf=l.status_final||'';const sb=sf.startsWith('Aprovado')?(sf.includes('Ressalvas')?'bo':'bg'):(sf.includes('Aguardo')?'bb':'br');
-  return`<tr><td style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--tx3)">#${i+1}</td><td>${fd(l.data_entrada)}</td><td>${t?.nome||'—'}</td><td style="font-weight:600">${l.nome}</td><td style="font-family:'JetBrains Mono',monospace;font-size:11px">${l.nserie||'—'}</td><td>${l.modelo||'—'}</td><td><span class="badge ${sb}">${sf||'—'}</span></td><td>${l.tempo_horas||0}h</td><td style="white-space:nowrap"><button class="btn btn-ghost btn-xs" onclick="openLab('${l.id}')">Editar</button> <button class="btn btn-info btn-xs" onclick="printChecklistById('${l.id}')">🖨</button> <button class="btn btn-danger btn-xs" onclick="delLab('${l.id}')">×</button></td></tr>`}).join('');
+
+async function delLab(id){if(confirm('Excluir entrada?')){await api('DELETE',`/api/laboratorio/${id}`);await loadAll();renderLab();loadDash();}}
+
+function calcL(){const t=(+document.getElementById('l-gpec').value||0)+(+document.getElementById('l-gsup').value||0)+(+document.getElementById('l-gout').value||0);document.getElementById('l-tot').textContent=fm(t);}
+
+// ── Estoque Box (no modal pedidos) ──
+function renderEstoqueBox() {
+  const q=(document.getElementById('s-est-ped')?.value||'').toLowerCase();
+  const items=G.estoque.filter(e=>!q||[e.nome,e.categoria,e.marca].join(' ').toLowerCase().includes(q));
+  const el=document.getElementById('estoque-box'); if(!el)return;
+  el.innerHTML=items.length?items.map(e=>`<div onclick="selecionarPecaPedido('${e.id}','${e.nome.replace(/'/g,"\\'")}','${e.quantidade}')" style="cursor:pointer;background:${e.quantidade<=e.quantidade_min?'var(--rdbg)':'var(--sf)'};border:1.5px solid ${e.quantidade<=e.quantidade_min?'var(--rdbd)':'var(--bd)'};border-radius:8px;padding:7px 10px;transition:all .15s" onmouseover="this.style.borderColor='var(--ac)'" onmouseout="this.style.borderColor='${e.quantidade<=e.quantidade_min?'var(--rdbd)':'var(--bd)'}'">
+    <div style="font-size:11px;font-weight:600;color:var(--tx)">${e.nome}</div>
+    <div style="font-size:10px;color:var(--tx3)">${e.categoria||''} · ${e.localizacao||'—'}</div>
+    <div style="font-size:13px;font-weight:700;color:${e.quantidade<=e.quantidade_min?'var(--rd)':'var(--gn)'};margin-top:3px">${e.quantidade} un.</div>
+  </div>`).join(''):`<div style="font-size:11px;color:var(--tx3);padding:10px">Nenhum item encontrado.</div>`;
 }
-async function delLab(id){if(confirm('Excluir?')){await api('DELETE',`/api/laboratorio/${id}`);await loadAll();renderLab();loadDash()}}
+
+function selecionarPecaPedido(id,nome,qtd) {
+  document.getElementById('ped-est-id').value=id;
+  document.getElementById('ped-peca-nome').value=nome;
+}
+
+// ── Mini estoque dentro do modal lab ──
+function renderLabEstoqueMini() {
+  const el=document.getElementById('lab-estoque-mini'); if(!el)return;
+  el.innerHTML=G.estoque.map(e=>`<div onclick="selecionarPecaLab('${e.id}','${e.nome.replace(/'/g,"\\'")}','${e.quantidade}')" style="cursor:pointer;background:${e.quantidade<=e.quantidade_min?'var(--rdbg)':'var(--sf2)'};border:1.5px solid ${e.quantidade<=e.quantidade_min?'var(--rdbd)':'var(--bd)'};border-radius:7px;padding:6px 8px">
+    <div style="font-size:10px;font-weight:600">${e.nome}</div>
+    <div style="font-size:10px;color:var(--tx3)">${e.categoria||''}</div>
+    <div style="font-size:12px;font-weight:700;color:${e.quantidade<=e.quantidade_min?'var(--rd)':'var(--gn)'}">${e.quantidade} un.</div>
+  </div>`).join('');
+}
+
+function selecionarPecaLab(id,nome,qtd) {
+  document.getElementById('l-peca-id').value=id;
+  document.getElementById('l-peca-sel').value=nome;
+}
+
+async function solicitarPecaDoLab() {
+  const labId=document.getElementById('l-id').value;
+  const estId=document.getElementById('l-peca-id').value; if(!estId){alert('Selecione uma peça.');return;}
+  const qtd=+document.getElementById('l-peca-qtd').value||1;
+  const nome=document.getElementById('l-peca-sel').value;
+  const tecId=document.getElementById('l-tec').value;
+  const osId=document.getElementById('l-os').value;
+  try{
+    await api('POST','/api/pedidos-pecas',{labId,osId,tecnicoId:tecId,estoqueId:estId,nomePeca:nome,quantidade:qtd});
+    await loadAll(); renderLabPedidosVinc(labId);
+    document.getElementById('l-peca-id').value=''; document.getElementById('l-peca-sel').value=''; document.getElementById('l-peca-qtd').value=1;
+    alert(`✅ Peça "${nome}" solicitada! A baixa no estoque ocorrerá quando confirmado o uso na OS.`);
+  }catch(e){alert(e.message);}
+}
+
+function renderLabPedidosVinc(labId) {
+  const el=document.getElementById('l-pedidos-vinc'); if(!el)return;
+  const peds=G.pedidosPecas.filter(p=>p.lab_id===labId);
+  if(!peds.length){el.innerHTML='';return;}
+  el.innerHTML=`<div style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;margin-bottom:5px">Peças Solicitadas</div>`
+    +peds.map(p=>`<div style="display:flex;align-items:center;justify-content:space-between;background:${p.status==='Utilizado'?'var(--gnbg)':p.status==='Cancelado'?'var(--rdbg)':'var(--sf2)'};border-radius:6px;padding:5px 9px;margin-bottom:4px;font-size:11px">
+      <span style="font-weight:600">${p.nome_peca}</span>
+      <span style="color:var(--tx3)">${p.quantidade} un.</span>
+      <span class="badge ${p.status==='Utilizado'?'bg':p.status==='Cancelado'?'br':'bo'}" style="font-size:9px">${p.status}</span>
+      ${p.status==='Solicitado'?`<button class="btn btn-ghost btn-xs" onclick="confirmarUsoPeca('${p.id}','${p.estoque_id}',${p.quantidade})">✓ Confirmar uso</button>`:''}
+    </div>`).join('');
+}
+
+async function confirmarUsoPeca(pedId, estId, qtd) {
+  if(!confirm(`Confirmar uso da peça? Isso dará baixa automática no estoque.`)) return;
+  try{
+    await api('PUT',`/api/pedidos-pecas/${pedId}`,{status:'Utilizado',estoqueId:estId,quantidade:qtd});
+    await loadAll(); renderLab(); renderPedidos();
+    alert('✅ Uso confirmado! Baixa no estoque realizada automaticamente.');
+  }catch(e){alert(e.message);}
+}
+
+// ── PEDIDOS ──
+function renderPedidoEstBox() { renderEstoqueBox(); }
+
+function openPedido(id) {
+  const osSel=document.getElementById('ped-os');
+  const labSel=document.getElementById('ped-lab');
+  if(osSel) osSel.innerHTML='<option value="">Nenhuma</option>'+G.ordens.map(o=>{const c=G.clientes.find(x=>x.id===o.cliente_id);return`<option value="${o.id}">${o.num} — ${c?.nome?.split(' ')[0]||'—'}</option>`;}).join('');
+  if(labSel) labSel.innerHTML='<option value="">Nenhum</option>'+G.laboratorio.map(l=>`<option value="${l.id}">${l.nome} — ${l.nserie||l.modelo||'—'}</option>`).join('');
+  document.getElementById('ped-id').value='';
+  document.getElementById('ped-peca-nome').value=''; document.getElementById('ped-est-id').value='';
+  document.getElementById('ped-qtd').value=1; document.getElementById('ped-obs').value='';
+  renderEstoqueBox();
+  openM('m-pedido');
+}
+
+async function savePedido() {
+  const estId=document.getElementById('ped-est-id').value; if(!estId){alert('Selecione uma peça do estoque.');return;}
+  const nome=document.getElementById('ped-peca-nome').value;
+  const qtd=+document.getElementById('ped-qtd').value||1;
+  try{
+    await api('POST','/api/pedidos-pecas',{estoqueId:estId,nomePeca:nome,quantidade:qtd,osId:document.getElementById('ped-os').value,labId:document.getElementById('ped-lab').value,obs:document.getElementById('ped-obs').value});
+    await loadAll(); closeM('m-pedido'); renderPedidos();
+    alert(`✅ Peça "${nome}" solicitada com sucesso!`);
+  }catch(e){alert(e.message);}
+}
+
+function renderPedidos() {
+  const tb=document.getElementById('tb-pedidos'); if(!tb)return;
+  const rows=G.pedidosPecas;
+  if(!rows.length){tb.innerHTML=`<tr><td colspan="7"><div class="empty"><div class="empty-ico">🔩</div><div class="empty-t">Nenhum pedido</div></div></td></tr>`;return;}
+  const SCOR={Solicitado:'bo',Utilizado:'bg',Cancelado:'br'};
+  tb.innerHTML=rows.map(p=>{
+    const t=G.tecnicos.find(x=>x.id===p.tecnico_id);
+    const os=G.ordens.find(x=>x.id===p.os_id);
+    const lab=G.laboratorio.find(x=>x.id===p.lab_id);
+    const est=G.estoque.find(x=>x.id===p.estoque_id);
+    return`<tr>
+      <td style="font-size:11px">${fd(p.created_at?.slice?.(0,10))}</td>
+      <td style="font-weight:600">${p.nome_peca}</td>
+      <td style="text-align:center;font-weight:700">${p.quantidade}</td>
+      <td style="font-size:11px">${lab?`🔬 ${lab.nome?.slice(0,20)}`:os?`📋 ${os.num}`:est?`📦 ${est.nome?.slice(0,20)}`:'—'}</td>
+      <td>${t?.nome?.split(' ')[0]||'—'}</td>
+      <td><span class="badge ${SCOR[p.status]||'bo'}">${p.status}</span></td>
+      <td style="white-space:nowrap">
+        ${p.status==='Solicitado'?`<button class="btn btn-success btn-xs" onclick="confirmarUsoPeca('${p.id}','${p.estoque_id}',${p.quantidade})">✓ Confirmar</button> <button class="btn btn-danger btn-xs" onclick="cancelarPedido('${p.id}')">✕</button>`:''}
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+async function cancelarPedido(id){if(confirm('Cancelar pedido?')){await api('PUT',`/api/pedidos-pecas/${id}`,{status:'Cancelado'});await loadAll();renderPedidos();}}
+
+// ── ESCOPO LIST ──
+function renderEscopoList() {
+  const el=document.getElementById('escopo-list'); if(!el)return;
+  const labs=G.laboratorio.filter(l=>l.checklist&&(Array.isArray(l.checklist)?l.checklist:JSON.parse(l.checklist||'[]')).length>0);
+  if(!labs.length){el.innerHTML=`<div class="empty"><div class="empty-ico">📋</div><div class="empty-t">Nenhum escopo registrado</div><div class="empty-s">Edite uma entrada do laboratório e preencha a aba Escopo</div></div>`;return;}
+  el.innerHTML=labs.map(l=>{
+    const t=G.tecnicos.find(x=>x.id===l.tecnico_id);
+    let chk=[]; try{chk=Array.isArray(l.checklist)?l.checklist:JSON.parse(l.checklist||'[]');}catch(e){}
+    const itens=CHK_ITEMS.filter((_,i)=>chk.includes(i));
+    return`<div class="card" style="margin-bottom:10px;padding:12px 16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div><div style="font-weight:700;font-size:13px">${l.nome} — ${l.modelo||'—'}</div>
+          <div style="font-size:11px;color:var(--tx3)">Nº Série: ${l.nserie||'—'} · Técnico: ${t?.nome||'—'} · ${fd(l.data_entrada)}</div>
+        </div>
+        <button class="btn btn-ghost btn-xs" onclick="openLab('${l.id}')">Editar</button>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px">${itens.map(it=>`<span style="background:var(--gnbg);color:var(--gn);border:1px solid var(--gnbd);border-radius:5px;padding:2px 8px;font-size:10px">✅ ${it}</span>`).join('')}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── BAIXADOS ──
+function openBaixado(id, prefill) {
+  const osSel=document.getElementById('bx-os');
+  const labSel=document.getElementById('bx-lab');
+  if(osSel) osSel.innerHTML='<option value="">Nenhuma</option>'+G.ordens.map(o=>{const c=G.clientes.find(x=>x.id===o.cliente_id);return`<option value="${o.id}">${o.num} — ${c?.nome?.split(' ')[0]||'—'}</option>`;}).join('');
+  if(labSel) labSel.innerHTML='<option value="">Nenhum</option>'+G.laboratorio.map(l=>`<option value="${l.id}">${l.nome} — ${l.nserie||'—'}</option>`).join('');
+  document.getElementById('m-baixado-title').textContent=id?'Editar Baixa':'Registrar Baixa de Equipamento';
+  if(id){
+    const bx=G.eqBaixados.find(x=>x.id===id); if(!bx)return;
+    document.getElementById('bx-id').value=bx.id; document.getElementById('bx-data').value=bx.data||'';
+    document.getElementById('bx-nome').value=bx.nome||''; document.getElementById('bx-marca').value=bx.marca||'';
+    document.getElementById('bx-modelo').value=bx.modelo||''; document.getElementById('bx-nserie').value=bx.nserie||'';
+    document.getElementById('bx-cont').value=bx.contador_final||''; document.getElementById('bx-motivo').value=bx.motivo||'Sucateamento';
+    document.getElementById('bx-destino').value=bx.destino||'Descarte'; document.getElementById('bx-os').value=bx.os_id||'';
+    document.getElementById('bx-lab').value=bx.lab_id||''; document.getElementById('bx-pecas').value=bx.pecas_aproveitadas||'';
+    document.getElementById('bx-obs').value=bx.obs||'';
+  } else {
+    document.getElementById('bx-id').value=''; document.getElementById('bx-data').value=today();
+    ['bx-nome','bx-marca','bx-modelo','bx-obs','bx-pecas'].forEach(f=>document.getElementById(f).value='');
+    document.getElementById('bx-nserie').value=prefill?.nserie||''; document.getElementById('bx-cont').value=prefill?.cont||'';
+    document.getElementById('bx-lab').value=prefill?.labId||''; document.getElementById('bx-os').value=prefill?.osId||'';
+    document.getElementById('bx-nome').value=prefill?.nome||''; document.getElementById('bx-modelo').value=prefill?.modelo||'';
+    document.getElementById('bx-motivo').value='Sucateamento'; document.getElementById('bx-destino').value='Descarte';
+  }
+  openM('m-baixado');
+}
+
+async function saveBaixado() {
+  const data=document.getElementById('bx-data').value,nome=document.getElementById('bx-nome').value.trim();
+  if(!data||!nome){alert('Informe data e equipamento.');return;}
+  const eid=document.getElementById('bx-id').value;
+  const body={data,nome,marca:document.getElementById('bx-marca').value,modelo:document.getElementById('bx-modelo').value,nserie:document.getElementById('bx-nserie').value,contadorFinal:document.getElementById('bx-cont').value,motivo:document.getElementById('bx-motivo').value,destino:document.getElementById('bx-destino').value,osId:document.getElementById('bx-os').value,labId:document.getElementById('bx-lab').value,pecasAproveitadas:document.getElementById('bx-pecas').value,obs:document.getElementById('bx-obs').value};
+  try{
+    if(eid) await api('PUT',`/api/eq-baixados/${eid}`,body); else await api('POST','/api/eq-baixados',body);
+    await loadAll(); closeM('m-baixado'); renderBaixados(); renderLab();
+  }catch(e){alert(e.message);}
+}
+
+function renderBaixados() {
+  const tb=document.getElementById('tb-baixados'); if(!tb)return;
+  const rows=G.eqBaixados;
+  if(!rows.length){tb.innerHTML=`<tr><td colspan="9"><div class="empty"><div class="empty-ico">🗑</div><div class="empty-t">Nenhum equipamento baixado</div></div></td></tr>`;return;}
+  const DEST={Descarte:'br','Peças aproveitadas':'bo','Devolvido ao cliente':'bg','Doação':'bb'};
+  tb.innerHTML=rows.map(bx=>{
+    const os=G.ordens.find(x=>x.id===bx.os_id);
+    return`<tr>
+      <td>${fd(bx.data)}</td>
+      <td style="font-weight:600">${bx.nome}</td>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:11px">${bx.nserie||'—'}</td>
+      <td>${bx.modelo||'—'}</td>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:11px">${bx.contador_final||'—'}</td>
+      <td style="font-size:11px">${bx.motivo||'—'}</td>
+      <td><span class="badge ${DEST[bx.destino]||'bb'}">${bx.destino||'—'}</span></td>
+      <td style="font-size:11px">${os?`📋 ${os.num}`:bx.lab_id?'🔬 Lab':'—'}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-ghost btn-xs" onclick="openBaixado('${bx.id}')">Editar</button>
+        <button class="btn btn-danger btn-xs" onclick="delBaixado('${bx.id}')">×</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+async function delBaixado(id){if(confirm('Excluir registro?')){await api('DELETE',`/api/eq-baixados/${id}`);await loadAll();renderBaixados();}}
+
+function baixarEquipamentoDoLab() {
+  const lab=G.currentLabData; if(!lab)return;
+  openBaixado(null,{nserie:lab.nserie,cont:lab.contador_saida||lab.contador_entrada,nome:lab.nome,modelo:lab.modelo,labId:lab.id,osId:lab.os_id});
+}
+
+function exportLabExcel() {
+  const rows=G.laboratorio;
+  const esc=v=>`"${String(v||'').replace(/"/g,'""')}"`;
+  const cols=['Data Entrada','Data Saída','Técnico','Equipamento','Marca','Modelo','Nº Série','Contador Entrada','Contador Saída','Tipo','Origem','Status','Tempo(h)','Defeito','Procedimento','Peças Retiradas','Custo Peças','Custo Supr','Outros','Total','Status Final'];
+  const lines=[cols.map(esc).join(';')];
+  rows.forEach(l=>{
+    const t=G.tecnicos.find(x=>x.id===l.tecnico_id);
+    const tot=(l.g_pecas||0)+(l.g_supr||0)+(l.g_outros||0);
+    lines.push([l.data_entrada,l.data_saida,t?.nome,l.nome,l.marca,l.modelo,l.nserie,l.contador_entrada,l.contador_saida,l.tipo_manutencao,l.origem,l.status,l.tempo_horas,l.problemas,l.procedimento,l.pecas_retiradas,l.g_pecas,l.g_supr,l.g_outros,tot,l.status_final].map(esc).join(';'));
+  });
+  const blob=new Blob(['\uFEFF'+lines.join('\n')],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`Lab_${today()}.csv`;a.click();
+}
 
 function buildChecklistDoc(lab) {
   const t=G.tecnicos.find(x=>x.id===lab.tecnico_id);
