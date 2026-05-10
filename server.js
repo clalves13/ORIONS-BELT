@@ -246,9 +246,55 @@ app.get('/api/historico', requireAuth, async (req,res) => { const d=await col('h
 
 // ESTOQUE
 app.get('/api/estoque', requireAuth, async (req,res) => { const d=await col('estoque').find().sort({categoria:1,nome:1}).toArray(); res.json(d.map(x=>({...x,id:x._id.toString()}))); });
-app.post('/api/estoque', requireAuth, async (req,res) => { const b=req.body; await col('estoque').insertOne({nome:b.nome,categoria:b.categoria||'Peça',marca:b.marca||'',modelo_compat:b.modeloCompat||'',condicao:b.condicao||'Nova',testada:b.testada?1:0,quantidade:b.quantidade||0,quantidade_min:b.quantidadeMin||1,custo:b.custo||0,localizacao:b.localizacao||'',obs:b.obs||'',created_at:now()}); res.json({ok:true}); });
-app.put('/api/estoque/:id', requireAuth, async (req,res) => { try{const b=req.body; await col('estoque').updateOne({_id:new ObjectId(req.params.id)},{$set:{nome:b.nome,categoria:b.categoria||'Peça',marca:b.marca||'',modelo_compat:b.modeloCompat||'',condicao:b.condicao||'Nova',testada:b.testada?1:0,quantidade:b.quantidade||0,quantidade_min:b.quantidadeMin||1,custo:b.custo||0,localizacao:b.localizacao||'',obs:b.obs||''}}); res.json({ok:true});}catch(e){res.status(500).json({error:e.message});} });
+app.post('/api/estoque', requireAuth, async (req,res) => {
+  try {
+    const b=req.body;
+    const r=await col('estoque').insertOne({nome:b.nome,categoria:b.categoria||'Peça',marca:b.marca||'',modelo_compat:b.modeloCompat||'',condicao:b.condicao||'Nova',testada:b.testada?1:0,quantidade:+(b.quantidade||0),quantidade_min:+(b.quantidadeMin||1),custo:+(b.custo||0),localizacao:b.localizacao||'',obs:b.obs||'',created_at:now()});
+    const eid=r.insertedId.toString();
+    if(+(b.quantidade||0)>0){
+      await col('estoque_movs').insertOne({estoque_id:eid,nome_item:b.nome,tipo:'entrada',quantidade:+(b.quantidade||0),motivo:'Cadastro inicial',usuario:req.session.user?.nome||'',data:now().slice(0,10),obs:b.obs||'',created_at:now()});
+    }
+    res.json({ok:true,id:eid});
+  }catch(e){res.status(500).json({error:e.message});}
+});
+app.put('/api/estoque/:id', requireAuth, async (req,res) => {
+  try {
+    const b=req.body;
+    const old=await col('estoque').findOne({_id:new ObjectId(req.params.id)});
+    await col('estoque').updateOne({_id:new ObjectId(req.params.id)},{$set:{nome:b.nome,categoria:b.categoria||'Peça',marca:b.marca||'',modelo_compat:b.modeloCompat||'',condicao:b.condicao||'Nova',testada:b.testada?1:0,quantidade:+(b.quantidade||0),quantidade_min:+(b.quantidadeMin||1),custo:+(b.custo||0),localizacao:b.localizacao||'',obs:b.obs||''}});
+    // Registrar movimentação se quantidade mudou
+    if(old && +(b.quantidade||0) !== +(old.quantidade||0)) {
+      const diff = +(b.quantidade||0) - +(old.quantidade||0);
+      await col('estoque_movs').insertOne({estoque_id:req.params.id,nome_item:b.nome,tipo:diff>0?'entrada':'saida',quantidade:Math.abs(diff),motivo:b.motivo_mov||'Ajuste manual',usuario:req.session.user?.nome||'',data:now().slice(0,10),obs:b.obs_mov||'',created_at:now()});
+    }
+    res.json({ok:true});
+  }catch(e){res.status(500).json({error:e.message});}
+});
 app.delete('/api/estoque/:id', requireAuth, async (req,res) => { try{await col('estoque').deleteOne({_id:new ObjectId(req.params.id)}); res.json({ok:true});}catch(e){res.status(500).json({error:e.message});} });
+
+// ESTOQUE — MOVIMENTAÇÕES
+app.get('/api/estoque-movs', requireAuth, async (req,res) => {
+  try {
+    const {estoque_id, limit=200} = req.query;
+    const filter = estoque_id ? {estoque_id} : {};
+    const d=await col('estoque_movs').find(filter).sort({created_at:-1}).limit(+limit).toArray();
+    res.json(d.map(x=>({...x,id:x._id.toString()})));
+  }catch(e){res.status(500).json({error:e.message});}
+});
+app.post('/api/estoque-movs', requireAuth, async (req,res) => {
+  try {
+    const b=req.body;
+    const item=await col('estoque').findOne({_id:new ObjectId(b.estoqueId)});
+    if(!item) return res.status(404).json({error:'Item não encontrado'});
+    const qtd=+(b.quantidade||1);
+    const tipo=b.tipo||'entrada';
+    const delta = tipo==='entrada' ? qtd : -qtd;
+    const novaQtd = Math.max(0, (item.quantidade||0)+delta);
+    await col('estoque').updateOne({_id:new ObjectId(b.estoqueId)},{$set:{quantidade:novaQtd}});
+    const r=await col('estoque_movs').insertOne({estoque_id:b.estoqueId,nome_item:item.nome,tipo,quantidade:qtd,motivo:b.motivo||'',usuario:req.session.user?.nome||'',data:b.data||now().slice(0,10),obs:b.obs||'',created_at:now()});
+    res.json({ok:true,id:r.insertedId.toString(),nova_quantidade:novaQtd});
+  }catch(e){res.status(500).json({error:e.message});}
+});
 
 // SUPRIMENTOS CLIENTE
 app.get('/api/estoque-supr', requireAuth, async (req,res) => {
@@ -339,12 +385,13 @@ app.get('/api/dashboard', requireAuth, async (req,res) => {
 // BACKUP
 app.get('/api/backup', requireAuth, requireAdmin, async (req,res) => {
   try {
-    const [users,tecnicos,clientes,equipamentos,ordens,laboratorio,historico,estoque,suprCli,suprMovs]=await Promise.all([
+    const [users,tecnicos,clientes,equipamentos,ordens,laboratorio,historico,estoque,suprCli,suprMovs,estMovs]=await Promise.all([
       col('users').find().toArray(),col('tecnicos').find().toArray(),col('clientes').find().toArray(),
       col('equipamentos').find().toArray(),col('ordens').find().toArray(),col('laboratorio').find().toArray(),col('logistica').find().toArray(),
-      col('historico').find().toArray(),col('estoque').find().toArray(),col('supr_cli').find().toArray(),col('supr_movs').find().toArray()
+      col('historico').find().toArray(),col('estoque').find().toArray(),col('supr_cli').find().toArray(),col('supr_movs').find().toArray(),
+      col('estoque_movs').find().toArray()
     ]);
-    const backup={version:'4.0',gerado_em:now(),usuarios:users.map(u=>({...u,senha_hash:undefined})),tecnicos,clientes,equipamentos,ordens,laboratorio,historico,estoque,estoque_supr:suprCli,estoque_movs:suprMovs};
+    const backup={version:'5.0',gerado_em:now(),usuarios:users.map(u=>({...u,senha_hash:undefined})),tecnicos,clientes,equipamentos,ordens,laboratorio,historico,estoque,estoque_movs:estMovs,estoque_supr:suprCli,estoque_movs_supr:suprMovs};
     res.setHeader('Content-Disposition',`attachment; filename="theikos_backup_${new Date().toISOString().slice(0,10)}.json"`);
     res.json(backup);
   }catch(e){res.status(500).json({error:e.message});}
