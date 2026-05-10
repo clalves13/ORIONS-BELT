@@ -426,13 +426,14 @@ app.get('/api/dashboard', requireAuth, async (req,res) => {
 // BACKUP
 app.get('/api/backup', requireAuth, requireAdmin, async (req,res) => {
   try {
-    const [users,tecnicos,clientes,equipamentos,ordens,laboratorio,historico,estoque,suprCli,suprMovs,estMovs,lancamentos]=await Promise.all([
+    const [users,tecnicos,clientes,equipamentos,ordens,laboratorio,historico,estoque,suprCli,suprMovs,estMovs,lancamentos,contratos,financeiro]=await Promise.all([
       col('users').find().toArray(),col('tecnicos').find().toArray(),col('clientes').find().toArray(),
       col('equipamentos').find().toArray(),col('ordens').find().toArray(),col('laboratorio').find().toArray(),col('logistica').find().toArray(),
       col('historico').find().toArray(),col('estoque').find().toArray(),col('supr_cli').find().toArray(),col('supr_movs').find().toArray(),
-      col('estoque_movs').find().toArray(), col('lancamentos').find().toArray()
+      col('estoque_movs').find().toArray(),col('lancamentos').find().toArray(),
+      col('contratos').find().toArray(),col('financeiro').find().toArray()
     ]);
-    const backup={version:'5.0',gerado_em:now(),usuarios:users.map(u=>({...u,senha_hash:undefined})),tecnicos,clientes,equipamentos,ordens,laboratorio,historico,estoque,estoque_movs:estMovs,estoque_supr:suprCli,estoque_movs_supr:suprMovs,lancamentos_manuais:lancamentos};
+    const backup={version:'5.1',gerado_em:now(),usuarios:users.map(u=>({...u,senha_hash:undefined})),tecnicos,clientes,equipamentos,ordens,laboratorio,historico,estoque,estoque_movs:estMovs,estoque_supr:suprCli,estoque_movs_supr:suprMovs,lancamentos_manuais:lancamentos,contratos,financeiro};
     res.setHeader('Content-Disposition',`attachment; filename="theikos_backup_${new Date().toISOString().slice(0,10)}.json"`);
     res.json(backup);
   }catch(e){res.status(500).json({error:e.message});}
@@ -469,6 +470,38 @@ app.post('/api/atendimentos', requireAuth, async (req,res) => { try{ const b=req
 app.put('/api/atendimentos/:id', requireAuth, async (req,res) => { try{ const b=req.body; const total=(b.viag||0)+(b.alim||0)+(b.hosp||0)+(b.comb||0)+(b.ped||0)+(b.outros||0); await col('ordens').updateOne({_id:new ObjectId(req.params.id)},{$set:{data_ab:b.data||b.data_ab||'',tecnico_id:b.tecnicoId||'',cliente_id:b.clienteId||'',equip_id:b.equipId||'',modelo:b.modelo||'',nserie:b.nserie||'',contador:b.contador||'',defeito:b.descricao||b.defeito||'',procedimento:b.procedimento||'',pecas:b.pecas||'',obs:b.obs||'',viag:b.viag||0,alim:b.alim||0,hosp:b.hosp||0,comb:b.comb||0,ped:b.ped||0,outros:b.outros||0,total,status:b.status||'Aberta',checklist:b.checklist||[],sig_tec:b.sig_tec||'',sig_cli:b.sig_cli||''}}); res.json({ok:true});}catch(e){res.status(500).json({error:e.message});} });
 app.delete('/api/atendimentos/:id', requireAuth, async (req,res) => { try{await col('ordens').deleteOne({_id:new ObjectId(req.params.id)});res.json({ok:true});}catch(e){res.status(500).json({error:e.message});} });
 
+
+// CONTRATOS
+app.get('/api/contratos', requireAuth, async (req,res) => { const d=await col('contratos').find().sort({vencimento:1}).toArray(); res.json(d.map(x=>({...x,id:x._id.toString()}))); });
+app.post('/api/contratos', requireAuth, async (req,res) => {
+  try{const b=req.body;
+    const r=await col('contratos').insertOne({cliente_id:b.cliente_id,tipo:b.tipo||'Fixo Mensal',equipamentos:b.equipamentos||'',valor_mensal:+(b.valor_mensal||0),franq_pb:+(b.franq_pb||0),exc_pb:+(b.exc_pb||0),franq_cor:+(b.franq_cor||0),exc_cor:+(b.exc_cor||0),inicio:b.inicio||'',vencimento:b.vencimento||'',periodicidade:b.periodicidade||'Mensal',status:b.status||'Ativo',obs:b.obs||'',created_at:now()});
+    res.json({ok:true,id:r.insertedId.toString()});
+  }catch(e){res.status(500).json({error:e.message});}
+});
+app.put('/api/contratos/:id', requireAuth, async (req,res) => {
+  try{const b=req.body;
+    await col('contratos').updateOne({_id:new ObjectId(req.params.id)},{$set:{cliente_id:b.cliente_id,tipo:b.tipo,equipamentos:b.equipamentos||'',valor_mensal:+(b.valor_mensal||0),franq_pb:+(b.franq_pb||0),exc_pb:+(b.exc_pb||0),franq_cor:+(b.franq_cor||0),exc_cor:+(b.exc_cor||0),inicio:b.inicio||'',vencimento:b.vencimento||'',periodicidade:b.periodicidade,status:b.status,obs:b.obs||''}});
+    res.json({ok:true});
+  }catch(e){res.status(500).json({error:e.message});}
+});
+app.delete('/api/contratos/:id', requireAuth, async (req,res) => { try{await col('contratos').deleteOne({_id:new ObjectId(req.params.id)});res.json({ok:true});}catch(e){res.status(500).json({error:e.message});} });
+
+// FINANCEIRO
+app.get('/api/financeiro', requireAuth, async (req,res) => { const d=await col('financeiro').find().sort({data:-1}).toArray(); res.json(d.map(x=>({...x,id:x._id.toString()}))); });
+app.post('/api/financeiro', requireAuth, async (req,res) => {
+  try{const b=req.body;
+    const r=await col('financeiro').insertOne({tipo:b.tipo||'receita',data:b.data||'',categoria:b.categoria||'Outros',descricao:b.descricao||'',valor:+(b.valor||0),cliente_id:b.cliente_id||'',ref:b.ref||'',forma:b.forma||'',obs:b.obs||'',created_at:now()});
+    res.json({ok:true,id:r.insertedId.toString()});
+  }catch(e){res.status(500).json({error:e.message});}
+});
+app.put('/api/financeiro/:id', requireAuth, async (req,res) => {
+  try{const b=req.body;
+    await col('financeiro').updateOne({_id:new ObjectId(req.params.id)},{$set:{tipo:b.tipo,data:b.data||'',categoria:b.categoria,descricao:b.descricao,valor:+(b.valor||0),cliente_id:b.cliente_id||'',ref:b.ref||'',forma:b.forma||'',obs:b.obs||''}});
+    res.json({ok:true});
+  }catch(e){res.status(500).json({error:e.message});}
+});
+app.delete('/api/financeiro/:id', requireAuth, async (req,res) => { try{await col('financeiro').deleteOne({_id:new ObjectId(req.params.id)});res.json({ok:true});}catch(e){res.status(500).json({error:e.message});} });
 
 // LANÇAMENTOS MANUAIS (histórico sem OS)
 app.get('/api/lancamentos', requireAuth, async (req,res) => {

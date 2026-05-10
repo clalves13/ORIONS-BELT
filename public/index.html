@@ -295,6 +295,10 @@ tr:hover td{background:var(--sf2)}
     <div class="ni" data-modulo="clientes" onclick="nav('clientes',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>Clientes / Equip.</div>
     <div class="ni" data-modulo="tecnicos" onclick="nav('tecnicos',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Técnicos</div>
     <div class="ni" id="ni-usr" onclick="nav('usuarios',this)" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>Usuários</div>
+    <div class="nav-sec">Gestão</div>
+    <div class="ni" data-modulo="contratos" onclick="nav('contratos',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10,9 9,9 8,9"/></svg>Contratos<span class="ni-badge" id="b-contratos" style="display:none">0</span></div>
+    <div class="ni" data-modulo="financeiro" onclick="nav('financeiro',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>Financeiro</div>
+    <div class="ni" data-modulo="notificacoes" onclick="nav('notificacoes',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>Notificações<span class="ni-badge" id="b-notif" style="background:var(--rd)">0</span></div>
   </div>
   <div class="sb-footer">
     <div id="sb-backup-wrap" style="display:none;margin-bottom:8px"><button onclick="openM('m-backup')" style="width:100%;padding:7px;background:rgba(224,120,24,0.15);color:var(--ac2);border:1px solid rgba(224,120,24,0.3);border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">💾 Backup / Restaurar</button></div>
@@ -1004,6 +1008,102 @@ tr:hover td{background:var(--sf2)}
   </div>
 </div>
 
+<!-- CONTRATOS -->
+<div id="page-contratos" class="page">
+  <div class="topbar">
+    <div><div class="tb-title">Contratos</div><div class="tb-sub">Fixo mensal e franquia de cópias</div></div>
+    <div class="tb-right">
+      <button class="btn btn-ghost btn-sm" onclick="exportContratosExcel()">📊 Excel</button>
+      <button class="btn btn-accent" onclick="openContrato(null)">+ Novo Contrato</button>
+    </div>
+  </div>
+  <div class="content">
+    <div id="cont-kpis" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:10px;margin-bottom:14px"></div>
+    <div style="border-bottom:2px solid var(--bd);margin-bottom:12px;display:flex;gap:0">
+      <button class="log-tab active" id="ctab-ativos" onclick="switchContTab('ativos')">✅ Ativos</button>
+      <button class="log-tab" id="ctab-avencer" onclick="switchContTab('avencer')">⚠️ A Vencer</button>
+      <button class="log-tab" id="ctab-vencidos" onclick="switchContTab('vencidos')">🔴 Vencidos</button>
+      <button class="log-tab" id="ctab-todos" onclick="switchContTab('todos')">📋 Todos</button>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center">
+      <div class="swrap" style="flex:1;min-width:180px"><span style="color:var(--tx3)">🔍</span><input type="text" id="s-cont" placeholder="Buscar cliente, contrato..." oninput="renderContratos()"></div>
+      <select id="f-cont-tipo" onchange="renderContratos()" style="height:34px;padding:0 10px;border:1px solid var(--bd);border-radius:7px;font-size:13px;background:var(--sf);color:var(--tx)">
+        <option value="">Todos os tipos</option><option>Fixo Mensal</option><option>Franquia</option>
+      </select>
+    </div>
+    <div id="cont-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px"></div>
+  </div>
+</div>
+
+<!-- FINANCEIRO -->
+<div id="page-financeiro" class="page">
+  <div class="topbar">
+    <div><div class="tb-title">Financeiro</div><div class="tb-sub">Receitas, despesas e DRE</div></div>
+    <div class="tb-right">
+      <button class="btn btn-ghost btn-sm" onclick="exportFinExcel()">📊 Excel</button>
+      <button class="btn btn-success btn-sm" onclick="openLancFin('receita')">+ Receita</button>
+      <button class="btn btn-danger btn-sm" onclick="openLancFin('despesa')">− Despesa</button>
+    </div>
+  </div>
+  <div class="content">
+    <div id="fin-kpis" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:10px;margin-bottom:14px"></div>
+    <div style="border-bottom:2px solid var(--bd);margin-bottom:12px;display:flex;gap:0">
+      <button class="log-tab active" id="ftab-lancamentos" onclick="switchFinTab('lancamentos')">📒 Lançamentos</button>
+      <button class="log-tab" id="ftab-dre" onclick="switchFinTab('dre')">📊 DRE</button>
+      <button class="log-tab" id="ftab-fluxo" onclick="switchFinTab('fluxo')">📈 Fluxo de Caixa</button>
+    </div>
+    <!-- Filtros período -->
+    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
+      <div class="swrap" style="flex:1;min-width:160px"><span style="color:var(--tx3)">🔍</span><input type="text" id="s-fin" placeholder="Buscar descrição, categoria..." oninput="renderFinLanc()"></div>
+      <select id="f-fin-tipo" onchange="renderFinLanc()" style="height:34px;padding:0 10px;border:1px solid var(--bd);border-radius:7px;font-size:13px;background:var(--sf);color:var(--tx)"><option value="">Receitas e Despesas</option><option value="receita">Receitas</option><option value="despesa">Despesas</option></select>
+      <select id="f-fin-cat" onchange="renderFinLanc()" style="height:34px;padding:0 10px;border:1px solid var(--bd);border-radius:7px;font-size:13px;background:var(--sf);color:var(--tx)">
+        <option value="">Todas as categorias</option>
+        <option>OS / Atendimento</option><option>Contrato</option><option>Implantação</option>
+        <option>Peças / Material</option><option>Combustível</option><option>Salários</option>
+        <option>Aluguel</option><option>Serviços Terceiros</option><option>Impostos</option><option>Outros</option>
+      </select>
+      <input type="date" id="f-fin-de" onchange="renderFinLanc()" style="height:34px;padding:0 8px;border:1px solid var(--bd);border-radius:7px;font-size:13px;background:var(--sf);color:var(--tx)">
+      <input type="date" id="f-fin-ate" onchange="renderFinLanc()" style="height:34px;padding:0 8px;border:1px solid var(--bd);border-radius:7px;font-size:13px;background:var(--sf);color:var(--tx)">
+    </div>
+    <!-- Aba Lançamentos -->
+    <div id="fin-tab-lancamentos">
+      <div class="card" style="padding:0"><div class="twrap"><table>
+        <thead><tr><th>Data</th><th>Tipo</th><th>Categoria</th><th>Descrição</th><th>Valor R$</th><th>Ref.</th><th>Ações</th></tr></thead>
+        <tbody id="tb-fin"></tbody>
+      </table></div></div>
+    </div>
+    <!-- Aba DRE -->
+    <div id="fin-tab-dre" style="display:none">
+      <div id="fin-dre-content"></div>
+    </div>
+    <!-- Aba Fluxo -->
+    <div id="fin-tab-fluxo" style="display:none">
+      <div id="fin-fluxo-content"></div>
+    </div>
+  </div>
+</div>
+
+<!-- NOTIFICAÇÕES -->
+<div id="page-notificacoes" class="page">
+  <div class="topbar">
+    <div><div class="tb-title">Central de Notificações</div><div class="tb-sub">Alertas automáticos do sistema</div></div>
+    <div class="tb-right">
+      <button class="btn btn-ghost btn-sm" onclick="gerarNotificacoes()">🔄 Atualizar</button>
+      <button class="btn btn-ghost btn-sm" onclick="marcarTodasLidas()">✓ Marcar todas como lidas</button>
+    </div>
+  </div>
+  <div class="content">
+    <div id="notif-kpis" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-bottom:14px"></div>
+    <div style="border-bottom:2px solid var(--bd);margin-bottom:12px;display:flex;gap:0">
+      <button class="log-tab active" id="ntab-todas" onclick="switchNotifTab('todas')">🔔 Todas</button>
+      <button class="log-tab" id="ntab-criticas" onclick="switchNotifTab('criticas')">🔴 Críticas</button>
+      <button class="log-tab" id="ntab-avisos" onclick="switchNotifTab('avisos')">🟡 Avisos</button>
+      <button class="log-tab" id="ntab-info" onclick="switchNotifTab('info')">🔵 Informações</button>
+    </div>
+    <div id="notif-list" style="display:flex;flex-direction:column;gap:8px"></div>
+  </div>
+</div>
+
 <!-- ESTOQUE -->
 <div id="page-estoque" class="page">
   <div class="topbar"><div><div class="tb-title">Estoque de Peças e Suprimentos</div><div class="tb-sub">Entradas, saídas e alertas</div></div>
@@ -1694,6 +1794,73 @@ tr:hover td{background:var(--sf2)}
   <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('m-est')">Cancelar</button><button class="btn btn-primary" onclick="saveEstoque()">Salvar</button></div>
 </div></div>
 
+<!-- Modal Contrato -->
+<div class="mov" id="m-cont">
+<div class="modal" style="max-width:680px">
+  <div class="mhd"><div class="mhd-title" id="m-cont-title">Novo Contrato</div><button class="btnx" onclick="closeM('m-cont')">×</button></div>
+  <div class="mbody">
+    <input type="hidden" id="cont-id">
+    <div class="fgrid fg2">
+      <div class="fg"><label>Cliente *</label><select id="cont-cli"><option value="">— Selecione —</option></select></div>
+      <div class="fg"><label>Tipo de Contrato *</label>
+        <select id="cont-tipo" onchange="toggleContTipo()">
+          <option value="Fixo Mensal">Fixo Mensal</option>
+          <option value="Franquia">Franquia de Cópias</option>
+        </select>
+      </div>
+      <div class="fg" style="grid-column:1/-1"><label>Equipamentos Cobertos</label>
+        <input type="text" id="cont-equips" placeholder="Ex: Bizhub C368 NS:A0X123, Bizhub C458...">
+      </div>
+      <!-- Campos Fixo Mensal -->
+      <div class="fg" id="cont-fixo-wrap"><label>Valor Mensal R$</label><input type="number" id="cont-valor-mensal" value="0" step="0.01" min="0"></div>
+      <!-- Campos Franquia -->
+      <div class="fg" id="cont-franq-wrap" style="display:none"><label>Franquia P&B (cópias/mês)</label><input type="number" id="cont-franq-pb" value="0"></div>
+      <div class="fg" id="cont-franq-wrap2" style="display:none"><label>Valor Excedente P&B R$/cópia</label><input type="number" id="cont-exc-pb" value="0" step="0.001"></div>
+      <div class="fg" id="cont-franq-wrap3" style="display:none"><label>Franquia Color (cópias/mês)</label><input type="number" id="cont-franq-cor" value="0"></div>
+      <div class="fg" id="cont-franq-wrap4" style="display:none"><label>Valor Excedente Color R$/cópia</label><input type="number" id="cont-exc-cor" value="0" step="0.001"></div>
+      <div class="fg"><label>Início do Contrato</label><input type="date" id="cont-inicio"></div>
+      <div class="fg"><label>Vencimento / Renovação</label><input type="date" id="cont-venc"></div>
+      <div class="fg"><label>Periodicidade</label>
+        <select id="cont-periodo"><option>Mensal</option><option>Trimestral</option><option>Semestral</option><option>Anual</option></select>
+      </div>
+      <div class="fg"><label>Status</label>
+        <select id="cont-status"><option>Ativo</option><option>Suspenso</option><option>Cancelado</option></select>
+      </div>
+      <div class="fg" style="grid-column:1/-1"><label>Observações</label><textarea id="cont-obs" rows="2" placeholder="SLA, condições especiais..."></textarea></div>
+    </div>
+  </div>
+  <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('m-cont')">Cancelar</button><button class="btn btn-primary" onclick="saveContrato()">Salvar Contrato</button></div>
+</div></div>
+
+<!-- Modal Lançamento Financeiro -->
+<div class="mov" id="m-fin">
+<div class="modal" style="max-width:520px">
+  <div class="mhd"><div class="mhd-title" id="m-fin-title">Nova Receita</div><button class="btnx" onclick="closeM('m-fin')">×</button></div>
+  <div class="mbody">
+    <input type="hidden" id="fin-id">
+    <input type="hidden" id="fin-tipo-val">
+    <div class="fgrid fg2">
+      <div class="fg"><label>Data *</label><input type="date" id="fin-data"></div>
+      <div class="fg"><label>Categoria *</label>
+        <select id="fin-cat">
+          <option>OS / Atendimento</option><option>Contrato</option><option>Implantação</option>
+          <option>Peças / Material</option><option>Combustível</option><option>Salários</option>
+          <option>Aluguel</option><option>Serviços Terceiros</option><option>Impostos</option><option>Outros</option>
+        </select>
+      </div>
+      <div class="fg" style="grid-column:1/-1"><label>Descrição *</label><input type="text" id="fin-desc" placeholder="Ex: OS #0042 — Cliente X"></div>
+      <div class="fg"><label>Valor R$ *</label><input type="number" id="fin-valor" value="0" step="0.01" min="0"></div>
+      <div class="fg"><label>Cliente (opcional)</label><select id="fin-cli"><option value="">— Selecione —</option></select></div>
+      <div class="fg"><label>Referência (OS, Contrato...)</label><input type="text" id="fin-ref" placeholder="Ex: OS #0042"></div>
+      <div class="fg"><label>Forma de Pagamento</label>
+        <select id="fin-forma"><option>Transferência</option><option>PIX</option><option>Boleto</option><option>Dinheiro</option><option>Cartão</option><option>Outro</option></select>
+      </div>
+      <div class="fg" style="grid-column:1/-1"><label>Observações</label><textarea id="fin-obs" rows="2"></textarea></div>
+    </div>
+  </div>
+  <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('m-fin')">Cancelar</button><button class="btn btn-primary" id="fin-save-btn" onclick="saveLancFin()">Salvar</button></div>
+</div></div>
+
 <!-- Modal Timeline do Atendimento -->
 <div class="mov" id="m-hist-timeline">
 <div class="modal" style="max-width:680px;max-height:88vh;overflow:hidden;display:flex;flex-direction:column">
@@ -1845,6 +2012,8 @@ async function doLogin() {
     await loadAll();
     applyPermissoes(res.user);
     document.getElementById('dev-footer').style.display='flex';
+    // Gerar notificações automáticas ao logar
+    setTimeout(()=>gerarNotificacoes().catch(()=>{}), 800);
   } catch(e) {
     const el = document.getElementById('lerr');
     el.textContent = e.message; el.style.display = 'block';
@@ -1887,7 +2056,7 @@ function nav(p, el) {
   document.querySelectorAll('.ni').forEach(x=>x.classList.remove('active'));
   const pg = document.getElementById('page-'+p); if(pg) pg.classList.add('active');
   if(el) el.classList.add('active');
-  const renders = { os:renderOS, logistica:renderLogistica, lab:renderLab, clientes:renderClientes, tecnicos:renderTec, usuarios:renderUsers, historico:renderHist, estoque:async()=>{await loadEstMovs();renderEstoque();renderEstKpis();}, 'supr-cli':renderSuprCli, dashboard:loadDash };
+  const renders = { os:renderOS, logistica:renderLogistica, lab:renderLab, clientes:renderClientes, tecnicos:renderTec, usuarios:renderUsers, historico:renderHist, estoque:async()=>{await loadEstMovs();renderEstoque();renderEstKpis();}, 'supr-cli':renderSuprCli, dashboard:loadDash, contratos:async()=>{await loadContratos();renderContratos();}, financeiro:async()=>{await loadFinanceiro();renderFinLanc();renderFinKpis();}, notificacoes:async()=>{await gerarNotificacoes();} };
   if(renders[p]) renders[p]();
 }
 
@@ -3804,6 +3973,571 @@ async function delUser(id){
   if(confirm('Excluir usuário?')){await api('DELETE',`/api/users/${id}`);renderUsers();}
 }
 
+
+// ─── CONTRATOS ────────────────────────────────────────────
+let G_contratos = [];
+
+async function loadContratos() {
+  try { G_contratos = await api('GET','/api/contratos'); } catch(e) { G_contratos=[]; }
+}
+
+function toggleContTipo() {
+  const t = document.getElementById('cont-tipo').value;
+  const fixo = t==='Fixo Mensal';
+  document.getElementById('cont-fixo-wrap').style.display = fixo?'':'none';
+  ['cont-franq-wrap','cont-franq-wrap2','cont-franq-wrap3','cont-franq-wrap4'].forEach(id=>
+    document.getElementById(id).style.display = fixo?'none':'');
+}
+
+function switchContTab(tab) {
+  ['ativos','avencer','vencidos','todos'].forEach(t=>{
+    document.getElementById(`ctab-${t}`).classList.toggle('active',t===tab);
+  });
+  renderContratos(tab);
+}
+
+function renderContKpis() {
+  const el=document.getElementById('cont-kpis');if(!el)return;
+  const hoje=today();
+  const em30=new Date();em30.setDate(em30.getDate()+30);const em30s=em30.toISOString().slice(0,10);
+  const ativos=G_contratos.filter(c=>c.status==='Ativo').length;
+  const avencer=G_contratos.filter(c=>c.status==='Ativo'&&c.vencimento>=hoje&&c.vencimento<=em30s).length;
+  const vencidos=G_contratos.filter(c=>c.status==='Ativo'&&c.vencimento<hoje).length;
+  const mrr=G_contratos.filter(c=>c.status==='Ativo'&&c.tipo==='Fixo Mensal').reduce((s,c)=>s+(c.valor_mensal||0),0);
+  const badge=document.getElementById('b-contratos');
+  if(badge){const urg=avencer+vencidos;badge.textContent=urg;badge.style.display=urg>0?'':'none';}
+  el.innerHTML=[
+    {icon:'📋',val:ativos,lab:'Contratos Ativos',cor:''},
+    {icon:'⚠️',val:avencer,lab:'Vencem em 30d',cor:avencer>0?'color:var(--or)':''},
+    {icon:'🔴',val:vencidos,lab:'Vencidos',cor:vencidos>0?'color:var(--rd)':''},
+    {icon:'💰',val:fm(mrr),lab:'MRR (Fixo Mensal)',cor:''},
+  ].map(k=>`<div class="scard"><div class="snum" style="${k.cor}">${k.icon} ${k.val}</div><div class="slabel">${k.lab}</div></div>`).join('');
+}
+
+function renderContratos(tab) {
+  renderContKpis();
+  const q=(document.getElementById('s-cont')?.value||'').toLowerCase();
+  const tipo=(document.getElementById('f-cont-tipo')?.value||'');
+  const hoje=today();
+  const em30=new Date();em30.setDate(em30.getDate()+30);const em30s=em30.toISOString().slice(0,10);
+  const activeTab=tab||document.querySelector('.log-tab.active[id^="ctab-"]')?.id?.replace('ctab-','')||'ativos';
+
+  let rows=[...G_contratos].filter(c=>{
+    const cli=G.clientes.find(x=>x.id===c.cliente_id);
+    if(tipo&&c.tipo!==tipo)return false;
+    if(q&&![cli?.nome,c.tipo,c.equipamentos,c.obs].join(' ').toLowerCase().includes(q))return false;
+    if(activeTab==='ativos')return c.status==='Ativo'&&(!c.vencimento||c.vencimento>=hoje||c.vencimento>=em30s);
+    if(activeTab==='avencer')return c.status==='Ativo'&&c.vencimento&&c.vencimento>=hoje&&c.vencimento<=em30s;
+    if(activeTab==='vencidos')return c.status==='Ativo'&&c.vencimento&&c.vencimento<hoje;
+    return true;
+  }).sort((a,b)=>(a.vencimento||'').localeCompare(b.vencimento||''));
+
+  const el=document.getElementById('cont-list');
+  if(!rows.length){el.innerHTML=`<div class="empty" style="grid-column:1/-1"><div class="empty-ico">📋</div><div class="empty-t">Nenhum contrato encontrado</div></div>`;return;}
+
+  el.innerHTML=rows.map(c=>{
+    const cli=G.clientes.find(x=>x.id===c.cliente_id);
+    const hoje2=today();
+    const venc=c.vencimento||'';
+    const diasRestantes=venc?Math.ceil((new Date(venc)-new Date(hoje2))/(1000*60*60*24)):null;
+    const vencido=venc&&venc<hoje2;
+    const urgente=!vencido&&diasRestantes!==null&&diasRestantes<=30;
+    const borderCor=vencido?'var(--rd)':urgente?'var(--or)':'var(--bd)';
+    const ini=cli?.nome?.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase()||'?';
+
+    return`<div class="card" style="padding:0;overflow:hidden;border:1.5px solid ${borderCor}">
+      <div style="height:4px;background:${vencido?'var(--rd)':urgente?'var(--or)':'var(--gn)'}"></div>
+      <div style="padding:14px">
+        <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px">
+          <div style="width:40px;height:40px;border-radius:50%;background:var(--ac1);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0">${ini}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:700;font-size:13px;color:var(--nv);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${cli?.nome||'Cliente não definido'}</div>
+            <div style="display:flex;gap:6px;margin-top:3px;flex-wrap:wrap">
+              <span class="badge bgr" style="font-size:10px">${c.tipo}</span>
+              <span class="badge ${c.status==='Ativo'?'bg':c.status==='Suspenso'?'bo':'br'}" style="font-size:10px">${c.status}</span>
+              ${vencido?`<span class="badge br" style="font-size:10px">🔴 Vencido há ${Math.abs(diasRestantes)}d</span>`:urgente?`<span class="badge bo" style="font-size:10px">⚠ Vence em ${diasRestantes}d</span>`:''}
+            </div>
+          </div>
+        </div>
+        ${c.equipamentos?`<div style="font-size:11px;color:var(--tx3);margin-bottom:8px;padding:6px 8px;background:var(--sf2);border-radius:6px">🖨 ${c.equipamentos}</div>`:''}
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
+          ${c.tipo==='Fixo Mensal'?`
+            <div style="text-align:center;padding:7px;background:var(--sf2);border-radius:6px">
+              <div style="font-size:18px;font-weight:800;color:var(--gn)">${fm(c.valor_mensal||0)}</div>
+              <div style="font-size:10px;color:var(--tx3)">Mensalidade</div>
+            </div>`:
+          `<div style="text-align:center;padding:7px;background:var(--sf2);border-radius:6px">
+              <div style="font-size:14px;font-weight:700">P&B: ${c.franq_pb||0}</div>
+              <div style="font-size:10px;color:var(--tx3)">Franquia cópias/mês</div>
+            </div>`}
+          <div style="text-align:center;padding:7px;background:var(--sf2);border-radius:6px">
+            <div style="font-size:14px;font-weight:700">${c.vencimento?fd(c.vencimento):'—'}</div>
+            <div style="font-size:10px;color:var(--tx3)">Vencimento</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-ghost btn-xs" style="flex:1" onclick="openContrato('${c.id}')">✏️ Editar</button>
+          <button class="btn btn-success btn-xs" onclick="renovarContrato('${c.id}')">🔄 Renovar</button>
+          <button class="btn btn-danger btn-xs" onclick="delContrato('${c.id}')">×</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openContrato(id) {
+  document.getElementById('m-cont-title').textContent=id?'Editar Contrato':'Novo Contrato';
+  document.getElementById('cont-cli').innerHTML=`<option value="">— Selecione —</option>`+G.clientes.map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
+  if(id){
+    const c=G_contratos.find(x=>x.id===id);if(!c)return;
+    document.getElementById('cont-id').value=c.id;
+    document.getElementById('cont-cli').value=c.cliente_id||'';
+    document.getElementById('cont-tipo').value=c.tipo||'Fixo Mensal';
+    document.getElementById('cont-equips').value=c.equipamentos||'';
+    document.getElementById('cont-valor-mensal').value=c.valor_mensal||0;
+    document.getElementById('cont-franq-pb').value=c.franq_pb||0;
+    document.getElementById('cont-exc-pb').value=c.exc_pb||0;
+    document.getElementById('cont-franq-cor').value=c.franq_cor||0;
+    document.getElementById('cont-exc-cor').value=c.exc_cor||0;
+    document.getElementById('cont-inicio').value=c.inicio||'';
+    document.getElementById('cont-venc').value=c.vencimento||'';
+    document.getElementById('cont-periodo').value=c.periodicidade||'Mensal';
+    document.getElementById('cont-status').value=c.status||'Ativo';
+    document.getElementById('cont-obs').value=c.obs||'';
+  } else {
+    ['cont-id','cont-equips','cont-obs'].forEach(f=>document.getElementById(f).value='');
+    document.getElementById('cont-cli').value='';
+    document.getElementById('cont-tipo').value='Fixo Mensal';
+    document.getElementById('cont-valor-mensal').value=0;
+    ['cont-franq-pb','cont-exc-pb','cont-franq-cor','cont-exc-cor'].forEach(f=>document.getElementById(f).value=0);
+    document.getElementById('cont-inicio').value=today();
+    document.getElementById('cont-venc').value='';
+    document.getElementById('cont-periodo').value='Mensal';
+    document.getElementById('cont-status').value='Ativo';
+  }
+  toggleContTipo();
+  openM('m-cont');
+}
+
+async function saveContrato() {
+  const cid=document.getElementById('cont-cli').value;
+  if(!cid){alert('Selecione o cliente.');return;}
+  const eid=document.getElementById('cont-id').value;
+  const body={
+    cliente_id:cid, tipo:document.getElementById('cont-tipo').value,
+    equipamentos:document.getElementById('cont-equips').value,
+    valor_mensal:+document.getElementById('cont-valor-mensal').value||0,
+    franq_pb:+document.getElementById('cont-franq-pb').value||0,
+    exc_pb:+document.getElementById('cont-exc-pb').value||0,
+    franq_cor:+document.getElementById('cont-franq-cor').value||0,
+    exc_cor:+document.getElementById('cont-exc-cor').value||0,
+    inicio:document.getElementById('cont-inicio').value,
+    vencimento:document.getElementById('cont-venc').value,
+    periodicidade:document.getElementById('cont-periodo').value,
+    status:document.getElementById('cont-status').value,
+    obs:document.getElementById('cont-obs').value
+  };
+  try {
+    if(eid) await api('PUT',`/api/contratos/${eid}`,body);
+    else {
+      const r=await api('POST','/api/contratos',body);
+      // Gera receita automática no financeiro se fixo mensal
+      if(body.tipo==='Fixo Mensal'&&body.valor_mensal>0){
+        const cli=G.clientes.find(x=>x.id===cid);
+        await api('POST','/api/financeiro',{tipo:'receita',data:today(),categoria:'Contrato',
+          descricao:`Contrato Fixo — ${cli?.nome||''}`,valor:body.valor_mensal,
+          cliente_id:cid,ref:`Contrato #${r?.id||''}`,forma:'Transferência',obs:'Gerado automaticamente'});
+      }
+    }
+    await loadContratos();closeM('m-cont');renderContratos();
+  } catch(e){alert(e.message);}
+}
+
+async function renovarContrato(id) {
+  const c=G_contratos.find(x=>x.id===id);if(!c)return;
+  const novaData=prompt('Nova data de vencimento (AAAA-MM-DD):',c.vencimento||today());
+  if(!novaData)return;
+  try{
+    await api('PUT',`/api/contratos/${id}`,{...c,vencimento:novaData,status:'Ativo'});
+    // Lança receita de renovação se fixo
+    if(c.tipo==='Fixo Mensal'&&c.valor_mensal>0){
+      const cli=G.clientes.find(x=>x.id===c.cliente_id);
+      await api('POST','/api/financeiro',{tipo:'receita',data:today(),categoria:'Contrato',
+        descricao:`Renovação — ${cli?.nome||''}`,valor:c.valor_mensal,cliente_id:c.cliente_id,
+        ref:`Contrato renovado`,forma:'Transferência',obs:'Gerado automaticamente na renovação'});
+    }
+    await loadContratos();renderContratos();await loadFinanceiro();
+  }catch(e){alert(e.message);}
+}
+
+async function delContrato(id){
+  if(confirm('Excluir este contrato?')){
+    await api('DELETE',`/api/contratos/${id}`);
+    await loadContratos();renderContratos();
+  }
+}
+
+function exportContratosExcel(){
+  const esc=v=>`"${String(v||'').replace(/"/g,'""')}"`;
+  const cols=['Cliente','Tipo','Equipamentos','Valor Mensal','Franq P&B','Exc P&B','Franq Color','Exc Color','Início','Vencimento','Periodicidade','Status'];
+  const lines=[cols.map(esc).join(';')];
+  G_contratos.forEach(c=>{
+    const cli=G.clientes.find(x=>x.id===c.cliente_id);
+    lines.push([cli?.nome,c.tipo,c.equipamentos,(c.valor_mensal||0).toFixed(2).replace('.',','),
+      c.franq_pb,c.exc_pb,c.franq_cor,c.exc_cor,c.inicio,c.vencimento,c.periodicidade,c.status].map(esc).join(';'));
+  });
+  const blob=new Blob(['\uFEFF'+lines.join('\n')],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`Contratos_${today()}.csv`;a.click();
+}
+
+// ─── FINANCEIRO ───────────────────────────────────────────
+let G_financeiro = [];
+
+async function loadFinanceiro() {
+  try { G_financeiro = await api('GET','/api/financeiro'); } catch(e) { G_financeiro=[]; }
+}
+
+// Receita automática ao concluir OS (chamada do módulo OS)
+async function lancarReceitaOS(os) {
+  try {
+    const cli=G.clientes.find(x=>x.id===os.cliente_id);
+    const custo=os.total_os||os.total||0;
+    if(custo>0) {
+      await api('POST','/api/financeiro',{tipo:'receita',data:today(),categoria:'OS / Atendimento',
+        descricao:`OS ${os.num||''} — ${cli?.nome||''}`,valor:custo,
+        cliente_id:os.cliente_id,ref:`OS ${os.num||''}`,forma:'A definir',obs:'Gerado automaticamente ao concluir OS'});
+    }
+  } catch(e){ console.log('Erro ao lançar receita OS:',e); }
+}
+
+function switchFinTab(tab) {
+  ['lancamentos','dre','fluxo'].forEach(t=>{
+    document.getElementById(`fin-tab-${t}`).style.display=t===tab?'':'none';
+    document.getElementById(`ftab-${t}`).classList.toggle('active',t===tab);
+  });
+  if(tab==='dre')renderFinDRE();
+  if(tab==='fluxo')renderFinFluxo();
+}
+
+function renderFinKpis() {
+  const el=document.getElementById('fin-kpis');if(!el)return;
+  const mesAtual=today().slice(0,7);
+  const doMes=G_financeiro.filter(l=>l.data?.slice(0,7)===mesAtual);
+  const recMes=doMes.filter(l=>l.tipo==='receita').reduce((s,l)=>s+(l.valor||0),0);
+  const despMes=doMes.filter(l=>l.tipo==='despesa').reduce((s,l)=>s+(l.valor||0),0);
+  const saldoMes=recMes-despMes;
+  const recTotal=G_financeiro.filter(l=>l.tipo==='receita').reduce((s,l)=>s+(l.valor||0),0);
+  const despTotal=G_financeiro.filter(l=>l.tipo==='despesa').reduce((s,l)=>s+(l.valor||0),0);
+  el.innerHTML=[
+    {icon:'📈',val:fm(recMes),lab:'Receitas (mês)',cor:'color:var(--gn)'},
+    {icon:'📉',val:fm(despMes),lab:'Despesas (mês)',cor:'color:var(--rd)'},
+    {icon:'💰',val:fm(saldoMes),lab:'Saldo do Mês',cor:`color:${saldoMes>=0?'var(--gn)':'var(--rd)'}`},
+    {icon:'🏦',val:fm(recTotal-despTotal),lab:'Saldo Geral',cor:`color:${(recTotal-despTotal)>=0?'var(--gn)':'var(--rd)'}`},
+  ].map(k=>`<div class="scard"><div class="snum" style="${k.cor}">${k.icon} ${k.val}</div><div class="slabel">${k.lab}</div></div>`).join('');
+}
+
+function renderFinLanc() {
+  renderFinKpis();
+  const q=(document.getElementById('s-fin')?.value||'').toLowerCase();
+  const tipo=(document.getElementById('f-fin-tipo')?.value||'');
+  const cat=(document.getElementById('f-fin-cat')?.value||'');
+  const de=(document.getElementById('f-fin-de')?.value||'');
+  const ate=(document.getElementById('f-fin-ate')?.value||'');
+  let rows=[...G_financeiro].sort((a,b)=>(b.data||'').localeCompare(a.data||''));
+  rows=rows.filter(l=>{
+    if(tipo&&l.tipo!==tipo)return false;
+    if(cat&&l.categoria!==cat)return false;
+    if(de&&l.data<de)return false;
+    if(ate&&l.data>ate)return false;
+    const cli=G.clientes.find(x=>x.id===l.cliente_id);
+    if(q&&![l.descricao,l.categoria,cli?.nome,l.ref,l.obs].join(' ').toLowerCase().includes(q))return false;
+    return true;
+  });
+  const tb=document.getElementById('tb-fin');
+  if(!rows.length){tb.innerHTML=`<tr><td colspan="7"><div class="empty"><div class="empty-ico">💰</div><div class="empty-t">Nenhum lançamento</div></div></td></tr>`;return;}
+  tb.innerHTML=rows.map(l=>{
+    const cli=G.clientes.find(x=>x.id===l.cliente_id);
+    const isRec=l.tipo==='receita';
+    return`<tr>
+      <td style="font-size:12px;white-space:nowrap">${fd(l.data)}</td>
+      <td><span class="badge ${isRec?'bg':'br'}" style="font-size:10px">${isRec?'▲ Receita':'▼ Despesa'}</span></td>
+      <td style="font-size:11px"><span class="badge bgr">${l.categoria||'—'}</span></td>
+      <td style="font-size:12px;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${l.descricao||''}">${l.descricao||'—'}${l.obs==='Gerado automaticamente'||l.obs?.includes('automaticamente')?` <span style="font-size:9px;color:var(--tx3)">⚙ auto</span>`:''}</td>
+      <td style="font-weight:700;font-size:14px;color:${isRec?'var(--gn)':'var(--rd)'};white-space:nowrap">${isRec?'+':'-'}${fm(l.valor||0)}</td>
+      <td style="font-size:11px;color:var(--tx3)">${l.ref||cli?.nome||'—'}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-ghost btn-xs" onclick="openLancFin('${l.tipo}','${l.id}')">Editar</button>
+        <button class="btn btn-danger btn-xs" onclick="delLancFin('${l.id}')">×</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function renderFinDRE() {
+  const el=document.getElementById('fin-dre-content');if(!el)return;
+  // Agrupa por mês
+  const meses={};
+  G_financeiro.forEach(l=>{
+    const m=(l.data||'').slice(0,7);if(!m)return;
+    if(!meses[m])meses[m]={rec:0,desp:0,cats:{}};
+    if(l.tipo==='receita')meses[m].rec+=l.valor||0;
+    else meses[m].desp+=l.valor||0;
+    const cat=l.categoria||'Outros';
+    if(!meses[m].cats[cat])meses[m].cats[cat]={rec:0,desp:0};
+    if(l.tipo==='receita')meses[m].cats[cat].rec+=l.valor||0;
+    else meses[m].cats[cat].desp+=l.valor||0;
+  });
+  const mesesOrd=Object.keys(meses).sort().reverse();
+  if(!mesesOrd.length){el.innerHTML=`<div class="empty"><div class="empty-ico">📊</div><div class="empty-t">Sem dados suficientes</div></div>`;return;}
+  el.innerHTML=mesesOrd.map(m=>{
+    const d=meses[m];const saldo=d.rec-d.desp;
+    const mLabel=new Date(m+'-01').toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+    return`<div class="card" style="margin-bottom:12px;padding:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+        <div style="font-weight:700;font-size:15px;color:var(--nv);text-transform:capitalize">${mLabel}</div>
+        <div style="display:flex;gap:12px">
+          <span style="color:var(--gn);font-weight:700">▲ ${fm(d.rec)}</span>
+          <span style="color:var(--rd);font-weight:700">▼ ${fm(d.desp)}</span>
+          <span style="color:${saldo>=0?'var(--gn)':'var(--rd)'};font-weight:800;font-size:15px">= ${fm(saldo)}</span>
+        </div>
+      </div>
+      <div style="background:var(--sf2);border-radius:8px;overflow:hidden">
+        <div style="height:8px;display:flex">
+          <div style="background:var(--gn);width:${d.rec>0?Math.min(100,(d.rec/(d.rec+d.desp))*100):0}%"></div>
+          <div style="background:var(--rd);flex:1"></div>
+        </div>
+      </div>
+      <div style="margin-top:10px;display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:6px">
+        ${Object.entries(d.cats).map(([cat,v])=>`<div style="padding:6px 8px;background:var(--sf2);border-radius:6px;font-size:11px">
+          <div style="color:var(--tx3);margin-bottom:2px">${cat}</div>
+          ${v.rec>0?`<div style="color:var(--gn)">▲ ${fm(v.rec)}</div>`:''}
+          ${v.desp>0?`<div style="color:var(--rd)">▼ ${fm(v.desp)}</div>`:''}
+        </div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderFinFluxo() {
+  const el=document.getElementById('fin-fluxo-content');if(!el)return;
+  const meses={};
+  G_financeiro.forEach(l=>{
+    const m=(l.data||'').slice(0,7);if(!m)return;
+    if(!meses[m])meses[m]={rec:0,desp:0};
+    if(l.tipo==='receita')meses[m].rec+=l.valor||0;
+    else meses[m].desp+=l.valor||0;
+  });
+  const mesesOrd=Object.keys(meses).sort();
+  if(mesesOrd.length<2){el.innerHTML=`<div class="empty"><div class="empty-ico">📈</div><div class="empty-t">Dados insuficientes para o gráfico</div><div class="empty-s">Registre lançamentos de pelo menos 2 meses</div></div>`;return;}
+  const maxVal=Math.max(...mesesOrd.map(m=>Math.max(meses[m].rec,meses[m].desp)),1);
+  const barW=Math.max(30,Math.min(80,Math.floor(500/mesesOrd.length)-10));
+  el.innerHTML=`<div class="card" style="padding:16px;overflow-x:auto">
+    <div style="font-weight:700;font-size:13px;color:var(--nv);margin-bottom:16px">Fluxo de Caixa — Receitas vs Despesas</div>
+    <div style="display:flex;align-items:flex-end;gap:6px;height:200px;min-width:${mesesOrd.length*(barW+6)}px">
+      ${mesesOrd.map(m=>{
+        const d=meses[m];
+        const rH=Math.max(4,Math.round((d.rec/maxVal)*180));
+        const dH=Math.max(4,Math.round((d.desp/maxVal)*180));
+        const mLabel=new Date(m+'-01').toLocaleDateString('pt-BR',{month:'short'});
+        return`<div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;min-width:${barW}px">
+          <div style="display:flex;gap:2px;align-items:flex-end;height:185px">
+            <div style="width:${barW/2-1}px;background:var(--gn);border-radius:3px 3px 0 0;height:${rH}px" title="Receita: ${fm(d.rec)}"></div>
+            <div style="width:${barW/2-1}px;background:var(--rd);border-radius:3px 3px 0 0;height:${dH}px" title="Despesa: ${fm(d.desp)}"></div>
+          </div>
+          <div style="font-size:10px;color:var(--tx3);text-align:center">${mLabel}</div>
+        </div>`;
+      }).join('')}
+    </div>
+    <div style="display:flex;gap:16px;margin-top:10px;font-size:11px">
+      <span><span style="display:inline-block;width:10px;height:10px;background:var(--gn);border-radius:2px;margin-right:4px"></span>Receitas</span>
+      <span><span style="display:inline-block;width:10px;height:10px;background:var(--rd);border-radius:2px;margin-right:4px"></span>Despesas</span>
+    </div>
+  </div>`;
+}
+
+function openLancFin(tipo, id) {
+  document.getElementById('fin-tipo-val').value=tipo;
+  document.getElementById('m-fin-title').textContent=tipo==='receita'?'▲ Nova Receita':'▼ Nova Despesa';
+  document.getElementById('fin-save-btn').className=`btn ${tipo==='receita'?'btn-success':'btn-danger'}`;
+  document.getElementById('fin-cli').innerHTML=`<option value="">— Selecione —</option>`+G.clientes.map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
+  if(id){
+    const l=G_financeiro.find(x=>x.id===id);if(!l)return;
+    document.getElementById('fin-id').value=l.id;
+    document.getElementById('fin-data').value=l.data||'';
+    document.getElementById('fin-cat').value=l.categoria||'Outros';
+    document.getElementById('fin-desc').value=l.descricao||'';
+    document.getElementById('fin-valor').value=l.valor||0;
+    document.getElementById('fin-cli').value=l.cliente_id||'';
+    document.getElementById('fin-ref').value=l.ref||'';
+    document.getElementById('fin-forma').value=l.forma||'Transferência';
+    document.getElementById('fin-obs').value=l.obs||'';
+  } else {
+    ['fin-id','fin-desc','fin-ref','fin-obs'].forEach(f=>document.getElementById(f).value='');
+    document.getElementById('fin-data').value=today();
+    document.getElementById('fin-cat').value=tipo==='receita'?'OS / Atendimento':'Outros';
+    document.getElementById('fin-valor').value=0;
+    document.getElementById('fin-cli').value='';
+    document.getElementById('fin-forma').value='Transferência';
+  }
+  openM('m-fin');
+}
+
+async function saveLancFin(){
+  const desc=document.getElementById('fin-desc').value.trim();
+  const val=+document.getElementById('fin-valor').value;
+  if(!desc){alert('Informe a descrição.');return;}
+  if(!val){alert('Informe o valor.');return;}
+  const eid=document.getElementById('fin-id').value;
+  const body={tipo:document.getElementById('fin-tipo-val').value,data:document.getElementById('fin-data').value,
+    categoria:document.getElementById('fin-cat').value,descricao:desc,valor:val,
+    cliente_id:document.getElementById('fin-cli').value,ref:document.getElementById('fin-ref').value,
+    forma:document.getElementById('fin-forma').value,obs:document.getElementById('fin-obs').value};
+  try{
+    if(eid)await api('PUT',`/api/financeiro/${eid}`,body);
+    else await api('POST','/api/financeiro',body);
+    await loadFinanceiro();closeM('m-fin');renderFinLanc();
+  }catch(e){alert(e.message);}
+}
+
+async function delLancFin(id){
+  if(confirm('Excluir este lançamento?')){
+    await api('DELETE',`/api/financeiro/${id}`);
+    await loadFinanceiro();renderFinLanc();
+  }
+}
+
+function exportFinExcel(){
+  const esc=v=>`"${String(v||'').replace(/"/g,'""')}"`;
+  const cols=['Data','Tipo','Categoria','Descrição','Valor R$','Cliente','Referência','Forma','Obs'];
+  const lines=[cols.map(esc).join(';')];
+  [...G_financeiro].sort((a,b)=>(b.data||'').localeCompare(a.data||'')).forEach(l=>{
+    const cli=G.clientes.find(x=>x.id===l.cliente_id);
+    lines.push([l.data,l.tipo,l.categoria,l.descricao,(l.valor||0).toFixed(2).replace('.',','),
+      cli?.nome,l.ref,l.forma,l.obs].map(esc).join(';'));
+  });
+  const blob=new Blob(['\uFEFF'+lines.join('\n')],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`Financeiro_${today()}.csv`;a.click();
+}
+
+// ─── NOTIFICAÇÕES ─────────────────────────────────────────
+let G_notifs = [];
+
+async function gerarNotificacoes() {
+  const notifs=[];
+  const hoje=today();
+  const em7=new Date();em7.setDate(em7.getDate()+7);const em7s=em7.toISOString().slice(0,10);
+  const em30=new Date();em30.setDate(em30.getDate()+30);const em30s=em30.toISOString().slice(0,10);
+
+  // 1. Estoque crítico
+  if(!G.estoque?.length){ try{ G.estoque=await api('GET','/api/estoque'); }catch(e){} }
+  G.estoque?.forEach(e=>{
+    if(e.quantidade===0) notifs.push({nivel:'critico',categoria:'Estoque',icon:'🚫',
+      titulo:`${e.nome} — zerado`,desc:`Localização: ${e.localizacao||'—'}`,data:hoje,link:'estoque'});
+    else if(e.quantidade<=e.quantidade_min) notifs.push({nivel:'aviso',categoria:'Estoque',icon:'⚠️',
+      titulo:`${e.nome} — abaixo do mínimo`,desc:`Qtd: ${e.quantidade} / Mín: ${e.quantidade_min}`,data:hoje,link:'estoque'});
+  });
+
+  // 2. Contratos vencidos ou a vencer
+  if(!G_contratos.length){ try{ G_contratos=await api('GET','/api/contratos'); }catch(e){} }
+  G_contratos.filter(c=>c.status==='Ativo').forEach(c=>{
+    const cli=G.clientes.find(x=>x.id===c.cliente_id);
+    if(!c.vencimento)return;
+    if(c.vencimento<hoje) notifs.push({nivel:'critico',categoria:'Contratos',icon:'📋',
+      titulo:`Contrato vencido — ${cli?.nome||'—'}`,desc:`Venceu em ${fd(c.vencimento)}`,data:hoje,link:'contratos'});
+    else if(c.vencimento<=em30s) notifs.push({nivel:'aviso',categoria:'Contratos',icon:'📋',
+      titulo:`Contrato a vencer — ${cli?.nome||'—'}`,desc:`Vence em ${fd(c.vencimento)}`,data:hoje,link:'contratos'});
+  });
+
+  // 3. OS paradas há mais de 7 dias
+  G.ordens?.filter(o=>o.status==='Aberta'||o.status==='Em andamento').forEach(o=>{
+    if(o.data_ab&&o.data_ab<em7s.slice(0,10)){
+      const cli=G.clientes.find(x=>x.id===o.cliente_id);
+      const dias=Math.ceil((new Date(hoje)-new Date(o.data_ab))/(1000*60*60*24));
+      notifs.push({nivel:'aviso',categoria:'OS',icon:'🔧',
+        titulo:`OS ${o.num} parada há ${dias} dias`,desc:`${cli?.nome||'—'} — ${o.status}`,data:hoje,link:'os'});
+    }
+  });
+
+  // 4. Manutenções de veículos vencidas
+  if(G.manutencao?.length){
+    G.manutencao.forEach(m=>{
+      if(m.proxima_data&&m.proxima_data<hoje)
+        notifs.push({nivel:'aviso',categoria:'Logística',icon:'🚗',
+          titulo:`Manutenção vencida — ${m.veiculo||'Veículo'}`,desc:`Tipo: ${m.tipo||'—'} · Venceu: ${fd(m.proxima_data)}`,data:hoje,link:'logistica'});
+    });
+  }
+
+  // 5. Info: OS concluídas hoje
+  const conclHoje=G.ordens?.filter(o=>o.status==='Concluída'&&(o.data_atend||'').slice(0,10)===hoje).length||0;
+  if(conclHoje>0) notifs.push({nivel:'info',categoria:'OS',icon:'✅',
+    titulo:`${conclHoje} OS concluída(s) hoje`,desc:'Atendimentos finalizados no dia',data:hoje,link:'os'});
+
+  G_notifs=[...notifs];
+
+  // Atualizar badge no menu
+  const badge=document.getElementById('b-notif');
+  const criticas=G_notifs.filter(n=>n.nivel==='critico').length;
+  const total=G_notifs.length;
+  if(badge){badge.textContent=total;badge.style.display=total>0?'':'none';
+    badge.style.background=criticas>0?'var(--rd)':'var(--or)';}
+
+  renderNotificacoes();
+}
+
+function switchNotifTab(tab){
+  ['todas','criticas','avisos','info'].forEach(t=>{
+    document.getElementById(`ntab-${t}`).classList.toggle('active',t===tab);
+  });
+  renderNotificacoes(tab);
+}
+
+function renderNotificacoes(tab){
+  // KPIs
+  const kEl=document.getElementById('notif-kpis');
+  if(kEl){
+    const crit=G_notifs.filter(n=>n.nivel==='critico').length;
+    const avis=G_notifs.filter(n=>n.nivel==='aviso').length;
+    const inf=G_notifs.filter(n=>n.nivel==='info').length;
+    kEl.innerHTML=[
+      {icon:'🔴',val:crit,lab:'Críticas',cor:crit>0?'color:var(--rd)':''},
+      {icon:'🟡',val:avis,lab:'Avisos',cor:avis>0?'color:var(--or)':''},
+      {icon:'🔵',val:inf,lab:'Informações',cor:''},
+      {icon:'🔔',val:G_notifs.length,lab:'Total'},
+    ].map(k=>`<div class="scard"><div class="snum" style="${k.cor||''}">${k.icon} ${k.val}</div><div class="slabel">${k.lab}</div></div>`).join('');
+  }
+
+  const activeTab=tab||document.querySelector('.log-tab.active[id^="ntab-"]')?.id?.replace('ntab-','')||'todas';
+  const COR={critico:'var(--rd)',aviso:'var(--or)',info:'var(--bl2)'};
+  const rows=G_notifs.filter(n=>{
+    if(activeTab==='criticas')return n.nivel==='critico';
+    if(activeTab==='avisos')return n.nivel==='aviso';
+    if(activeTab==='info')return n.nivel==='info';
+    return true;
+  });
+
+  const el=document.getElementById('notif-list');
+  if(!rows.length){el.innerHTML=`<div class="empty"><div class="empty-ico">✅</div><div class="empty-t">Nenhuma notificação${activeTab!=='todas'?' nesta categoria':''}</div><div class="empty-s">O sistema está em dia!</div></div>`;return;}
+
+  el.innerHTML=rows.map((n,i)=>`<div style="display:flex;gap:12px;align-items:flex-start;padding:12px 14px;background:var(--sf);border:1.5px solid ${COR[n.nivel]||'var(--bd)'}33;border-left:4px solid ${COR[n.nivel]||'var(--bd)'};border-radius:8px">
+    <div style="font-size:22px;flex-shrink:0;margin-top:2px">${n.icon}</div>
+    <div style="flex:1;min-width:0">
+      <div style="font-weight:700;font-size:13px;color:var(--tx);margin-bottom:2px">${n.titulo}</div>
+      <div style="font-size:12px;color:var(--tx3);margin-bottom:6px">${n.desc}</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <span class="badge bgr" style="font-size:10px">${n.categoria}</span>
+        <span style="font-size:10px;color:var(--tx3)">${fd(n.data)}</span>
+      </div>
+    </div>
+    ${n.link?`<button class="btn btn-ghost btn-xs" onclick="nav('${n.link}',document.querySelector('[data-modulo=${n.link}]'))" style="white-space:nowrap;flex-shrink:0">Ver →</button>`:''}
+  </div>`).join('');
+}
+
+function marcarTodasLidas(){
+  G_notifs=[];
+  const badge=document.getElementById('b-notif');
+  if(badge)badge.style.display='none';
+  renderNotificacoes();
+}
 
 // ─── DASHBOARD ────────────────────────────────────────────
 function dashFiltroRapido(dias) {
