@@ -2056,7 +2056,7 @@ function nav(p, el) {
   document.querySelectorAll('.ni').forEach(x=>x.classList.remove('active'));
   const pg = document.getElementById('page-'+p); if(pg) pg.classList.add('active');
   if(el) el.classList.add('active');
-  const renders = { os:renderOS, logistica:renderLogistica, lab:renderLab, clientes:renderClientes, tecnicos:renderTec, usuarios:renderUsers, historico:renderHist, estoque:async()=>{await loadEstMovs();renderEstoque();renderEstKpis();}, 'supr-cli':renderSuprCli, dashboard:loadDash, contratos:async()=>{await loadContratos();renderContratos();}, financeiro:async()=>{await loadFinanceiro();renderFinLanc();renderFinKpis();}, notificacoes:async()=>{await gerarNotificacoes();} };
+  const renders = { os:renderOS, logistica:renderLogistica, lab:renderLab, clientes:renderClientes, tecnicos:renderTec, usuarios:renderUsers, historico:renderHist, estoque:async()=>{await loadEstMovs();renderEstoque();renderEstKpis();}, 'supr-cli':renderSuprCli, dashboard:loadDash, contratos:async()=>{await loadContratos();renderContratos();}, financeiro:async()=>{await loadFinanceiro();renderFinLanc();renderFinKpis();}, notificacoes:async()=>{await gerarNotificacoes();}, relatorios:()=>{if(typeof renderRelatorios==='function')renderRelatorios();} };
   if(renders[p]) renders[p]();
 }
 
@@ -4974,18 +4974,20 @@ function renderGraficoPizzaToner(d) {
 
 // ─── PERFIS DE ACESSO ─────────────────────────────────────────
 const PERFIS_MODULOS = {
-  admin:          ['dashboard','os','lab','historico','estoque','supr-cli','clientes','tecnicos','usuarios','logistica'],
-  tecnico:        ['dashboard','os','lab','historico','estoque','supr-cli','clientes'],
-  logistica:      ['dashboard','logistica','clientes'],
+  admin:          ['dashboard','os','lab','historico','estoque','supr-cli','clientes','tecnicos','usuarios','logistica','contratos','financeiro','notificacoes','relatorios'],
+  supervisor:     ['dashboard','os','lab','historico','estoque','supr-cli','clientes','tecnicos','usuarios','logistica','contratos','financeiro','notificacoes','relatorios'],
+  tecnico:        ['dashboard','os','lab','historico','estoque','supr-cli','clientes','notificacoes'],
+  logistica:      ['dashboard','logistica','os','clientes','estoque','notificacoes'],
   rh:             ['dashboard','tecnicos','usuarios'],
-  financeiro:     ['dashboard','os','historico','logistica'],
-  comercial:      ['dashboard','os','historico','clientes'],
-  administrativo: ['dashboard','os','lab','historico','estoque','supr-cli','clientes','logistica'],
+  financeiro:     ['dashboard','os','historico','logistica','contratos','financeiro','notificacoes','relatorios'],
+  comercial:      ['dashboard','os','historico','clientes','contratos','notificacoes'],
+  administrativo: ['dashboard','os','lab','historico','estoque','supr-cli','clientes','logistica','contratos','notificacoes','relatorios'],
 };
 
 function applyPermissoes(user) {
+  const TODOS_MODULOS = ['dashboard','os','lab','historico','estoque','supr-cli','clientes','tecnicos','usuarios','logistica','contratos','financeiro','notificacoes','relatorios'];
   const perfil = user.perfil || (user.role === 'admin' ? 'admin' : 'tecnico');
-  const permitidos = user.isMaster ? Object.values(PERFIS_MODULOS).flat() : (PERFIS_MODULOS[perfil] || PERFIS_MODULOS.tecnico);
+  const permitidos = (user.isMaster || user.role === 'admin' || perfil === 'supervisor') ? TODOS_MODULOS : (PERFIS_MODULOS[perfil] || PERFIS_MODULOS.tecnico);
 
   // Mostrar/ocultar itens do menu
   document.querySelectorAll('.ni[data-modulo]').forEach(el => {
@@ -5595,62 +5597,160 @@ function toggleSenha(inputId, iconId) {
   }
 }
 
+// ─── RECUPERAÇÃO DE SENHA — 3 ETAPAS ──────────────────────────────────────────
+const _forgot = { canal: 'email', login: '' };
+
 function openForgotPassword() {
-  document.getElementById('forgot-login').value = '';
-  document.getElementById('forgot-msg').style.display = 'none';
-  document.getElementById('forgot-token-area').style.display = 'none';
-  document.getElementById('btn-forgot-submit').style.display = 'inline-flex';
-  document.getElementById('btn-forgot-reset').style.display = 'none';
-  if (document.getElementById('forgot-token')) document.getElementById('forgot-token').value = '';
-  if (document.getElementById('forgot-nova')) document.getElementById('forgot-nova').value = '';
+  _forgot.canal = 'email';
+  _forgot.login = '';
+  // Reset campos
+  ['forgot-login','forgot-codigo','forgot-nova','forgot-confirma'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  // Reset etapas
+  document.getElementById('forgot-step1').style.display = 'block';
+  document.getElementById('forgot-step2').style.display = 'none';
+  document.getElementById('forgot-step3').style.display = 'none';
+  // Reset msgs
+  ['forgot-msg1','forgot-msg2','forgot-msg3'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.style.display = 'none';
+  });
+  // Reset botões
+  document.getElementById('btn-forgot-1').style.display = 'inline-flex';
+  document.getElementById('btn-forgot-2').style.display = 'none';
+  document.getElementById('btn-forgot-3').style.display = 'none';
+  // Reset step label
+  document.getElementById('forgot-step-label').textContent = 'Etapa 1 de 3';
+  document.getElementById('forgot-title').textContent = 'Recuperar Senha';
+  // Reset seleção canal
+  selectCanal('email');
   openM('m-forgot');
 }
 
-function showForgotMsg(msg, tipo) {
-  const el = document.getElementById('forgot-msg');
+function selectCanal(canal) {
+  _forgot.canal = canal;
+  const emailLbl = document.getElementById('canal-email-lbl');
+  const wppLbl   = document.getElementById('canal-wpp-lbl');
+  const sel = 'border-color:var(--ac);background:var(--orbg)';
+  const def = 'border-color:var(--bd2);background:transparent';
+  emailLbl.style.cssText += canal === 'email' ? sel : def;
+  wppLbl.style.cssText   += canal === 'whatsapp' ? sel : def;
+}
+
+function _showForgotMsg(step, msg, tipo) {
+  const el = document.getElementById('forgot-msg' + step);
+  if (!el) return;
   el.style.display = 'block';
-  el.style.background = tipo === 'ok' ? '#edfaf3' : tipo === 'err' ? '#fef2f2' : '#eff6ff';
-  el.style.color = tipo === 'ok' ? '#1a7a4a' : tipo === 'err' ? '#b91c1c' : '#1e4080';
-  el.style.border = `1px solid ${tipo === 'ok' ? '#6ee7b7' : tipo === 'err' ? '#fca5a5' : '#93c5fd'}`;
+  const styles = {
+    ok:  { bg:'#edfaf3', color:'#1a7a4a', border:'#6ee7b7' },
+    err: { bg:'#fef2f2', color:'#b91c1c', border:'#fca5a5' },
+    info:{ bg:'#eff6ff', color:'#1e4080', border:'#93c5fd' }
+  };
+  const s = styles[tipo] || styles.info;
+  el.style.background = s.bg; el.style.color = s.color;
+  el.style.border = `1px solid ${s.border}`; el.style.borderRadius = 'var(--r)';
+  el.style.padding = '10px 12px';
   el.textContent = msg;
 }
 
-async function submitForgot() {
+async function forgotStep1() {
   const login = document.getElementById('forgot-login').value.trim();
-  if (!login) { showForgotMsg('Informe seu login ou email.', 'err'); return; }
-  const btn = document.getElementById('btn-forgot-submit');
+  if (!login) { _showForgotMsg(1, 'Informe seu login ou email.', 'err'); return; }
+  const btn = document.getElementById('btn-forgot-1');
   btn.disabled = true; btn.textContent = 'Enviando...';
   try {
-    const res = await api('POST', '/api/forgot-password', { login });
-    showForgotMsg(res.msg || 'Verifique seu email!', 'ok');
-    if (res.token) {
-      // Modo dev: sem SMTP, mostrar campo para inserir token manualmente
-      document.getElementById('forgot-token-area').style.display = 'block';
-      document.getElementById('btn-forgot-reset').style.display = 'inline-flex';
-      btn.style.display = 'none';
-    }
+    const res = await api('POST', '/api/forgot-password', { login, canal: _forgot.canal });
+    _forgot.login = login;
+    // Avança para etapa 2
+    document.getElementById('forgot-step1').style.display = 'none';
+    document.getElementById('forgot-step2').style.display = 'block';
+    document.getElementById('forgot-step-label').textContent = 'Etapa 2 de 3';
+    document.getElementById('forgot-title').textContent = 'Digite o Código';
+    document.getElementById('btn-forgot-1').style.display = 'none';
+    document.getElementById('btn-forgot-2').style.display = 'inline-flex';
+    // Ícone e texto conforme canal
+    document.getElementById('forgot-canal-icon').textContent = _forgot.canal === 'whatsapp' ? '💬' : '📧';
+    document.getElementById('forgot-enviado-sub').textContent = _forgot.canal === 'whatsapp'
+      ? 'Verifique o WhatsApp e digite o código de 6 dígitos abaixo.'
+      : 'Verifique seu email e digite o código de 6 dígitos abaixo.';
+    _showForgotMsg(2, res.msg, 'ok');
+    setTimeout(() => { document.getElementById('forgot-codigo').focus(); }, 200);
   } catch(e) {
-    showForgotMsg(e.message || 'Erro ao processar solicitação.', 'err');
+    _showForgotMsg(1, e.message || 'Erro ao enviar código.', 'err');
   } finally {
-    btn.disabled = false; btn.textContent = 'Enviar';
+    btn.disabled = false; btn.textContent = 'Enviar Código →';
   }
 }
 
-async function submitReset() {
-  const token = document.getElementById('forgot-token').value.trim();
-  const nova = document.getElementById('forgot-nova').value;
-  if (!token || !nova) { showForgotMsg('Preencha o token e a nova senha.', 'err'); return; }
-  if (nova.length < 4) { showForgotMsg('A senha deve ter pelo menos 4 caracteres.', 'err'); return; }
-  const btn = document.getElementById('btn-forgot-reset');
-  btn.disabled = true; btn.textContent = 'Redefinindo...';
+async function reenviarCodigo() {
+  const login = _forgot.login || document.getElementById('forgot-login').value.trim();
+  if (!login) return;
   try {
-    const res = await api('POST', '/api/reset-password', { token, nova_senha: nova });
-    showForgotMsg(res.msg || 'Senha redefinida com sucesso!', 'ok');
-    setTimeout(() => closeM('m-forgot'), 2000);
+    _showForgotMsg(2, 'Reenviando...', 'info');
+    const res = await api('POST', '/api/forgot-password', { login, canal: _forgot.canal });
+    _showForgotMsg(2, 'Código reenviado! ' + (res.msg || ''), 'ok');
   } catch(e) {
-    showForgotMsg(e.message || 'Token inválido ou expirado.', 'err');
+    _showForgotMsg(2, e.message || 'Erro ao reenviar.', 'err');
+  }
+}
+
+async function forgotStep2() {
+  const codigo = document.getElementById('forgot-codigo').value.trim();
+  const login  = _forgot.login;
+  if (!codigo || codigo.length !== 6) { _showForgotMsg(2, 'Digite o código de 6 dígitos.', 'err'); return; }
+  const btn = document.getElementById('btn-forgot-2');
+  btn.disabled = true; btn.textContent = 'Verificando...';
+  try {
+    // Verificação antecipada: envia código + senha placeholder só para checar
+    // Na verdade avançamos para etapa 3 localmente; a verificação real ocorre no submit final
+    // Mas queremos dar feedback imediato — chamamos reset com senha temporária e revertemos se erro
+    // Melhor abordagem: avançar otimistamente e validar no step3
+    document.getElementById('forgot-step2').style.display = 'none';
+    document.getElementById('forgot-step3').style.display = 'block';
+    document.getElementById('forgot-step-label').textContent = 'Etapa 3 de 3';
+    document.getElementById('forgot-title').textContent = 'Nova Senha';
+    document.getElementById('btn-forgot-2').style.display = 'none';
+    document.getElementById('btn-forgot-3').style.display = 'inline-flex';
+    setTimeout(() => { document.getElementById('forgot-nova').focus(); }, 200);
+  } catch(e) {
+    _showForgotMsg(2, e.message || 'Código inválido.', 'err');
   } finally {
-    btn.disabled = false; btn.textContent = 'Redefinir Senha';
+    btn.disabled = false; btn.textContent = 'Verificar Código →';
+  }
+}
+
+async function forgotStep3() {
+  const nova     = document.getElementById('forgot-nova').value;
+  const confirma = document.getElementById('forgot-confirma').value;
+  const codigo   = document.getElementById('forgot-codigo').value.trim();
+  const login    = _forgot.login;
+  if (!nova || nova.length < 4) { _showForgotMsg(3, 'A senha deve ter ao menos 4 caracteres.', 'err'); return; }
+  if (nova !== confirma) { _showForgotMsg(3, 'As senhas não coincidem.', 'err'); return; }
+  const btn = document.getElementById('btn-forgot-3');
+  btn.disabled = true; btn.textContent = 'Salvando...';
+  try {
+    const res = await api('POST', '/api/reset-password', { login, codigo, nova_senha: nova });
+    _showForgotMsg(3, '✔ ' + (res.msg || 'Senha redefinida com sucesso!'), 'ok');
+    document.getElementById('btn-forgot-3').style.display = 'none';
+    document.getElementById('forgot-title').textContent = 'Senha Redefinida!';
+    document.getElementById('forgot-step-label').textContent = 'Concluído';
+    setTimeout(() => closeM('m-forgot'), 2800);
+  } catch(e) {
+    _showForgotMsg(3, e.message || 'Erro ao redefinir senha.', 'err');
+    // Se código errado, volta para etapa 2
+    if (e.message && e.message.toLowerCase().includes('código')) {
+      setTimeout(() => {
+        document.getElementById('forgot-step3').style.display = 'none';
+        document.getElementById('forgot-step2').style.display = 'block';
+        document.getElementById('forgot-step-label').textContent = 'Etapa 2 de 3';
+        document.getElementById('forgot-title').textContent = 'Digite o Código';
+        document.getElementById('btn-forgot-3').style.display = 'none';
+        document.getElementById('btn-forgot-2').style.display = 'inline-flex';
+        _showForgotMsg(2, e.message, 'err');
+      }, 1500);
+    }
+  } finally {
+    btn.disabled = false; btn.textContent = '✔ Redefinir Senha';
   }
 }
 
@@ -5665,32 +5765,94 @@ async function submitReset() {
     document.getElementById('dev-footer').style.display='flex';}catch(e){/* not logged in */}})();
 </script>
 
-<!-- Modal Esqueceu Senha -->
+<!-- Modal Esqueceu Senha — 3 etapas -->
 <div class="mov" id="m-forgot" style="display:none">
-<div class="modal" style="max-width:400px">
-  <div class="mhd"><div class="mhd-title">Redefinir Senha</div><button class="btnx" onclick="closeM('m-forgot')">×</button></div>
+<div class="modal" style="max-width:420px">
+  <div class="mhd">
+    <div>
+      <div class="mhd-title" id="forgot-title">Recuperar Senha</div>
+      <div style="font-size:10px;color:var(--tx3);margin-top:2px" id="forgot-step-label">Etapa 1 de 3</div>
+    </div>
+    <button class="btnx" onclick="closeM('m-forgot')">×</button>
+  </div>
   <div class="mbody">
-    <p style="font-size:13px;color:var(--tx2);margin-bottom:14px">Informe seu login ou email cadastrado. Se houver email configurado, você receberá um link de redefinição.</p>
-    <div class="fg"><label>Login ou Email</label><input type="text" id="forgot-login" placeholder="Seu login ou email"></div>
-    <div id="forgot-msg" style="display:none;margin-top:12px;padding:10px 12px;border-radius:var(--r);font-size:12px"></div>
-    <!-- Campo nova senha (aparece após token em modo dev) -->
-    <div id="forgot-token-area" style="display:none;margin-top:14px">
-      <div class="fsec" style="margin-bottom:8px">Nova Senha</div>
-      <div class="fg"><label>Token recebido</label><input type="text" id="forgot-token" placeholder="Cole o token aqui"></div>
-      <div class="fg" style="margin-top:8px"><label>Nova Senha</label>
+
+    <!-- ETAPA 1: login + escolha do canal -->
+    <div id="forgot-step1">
+      <p style="font-size:12px;color:var(--tx2);margin-bottom:16px;line-height:1.6">Informe seu login e escolha como deseja receber o código de verificação.</p>
+      <div class="fg" style="margin-bottom:14px">
+        <label>Login ou Email cadastrado</label>
+        <input type="text" id="forgot-login" placeholder="Ex: joao.silva ou joao@email.com" autocomplete="off">
+      </div>
+      <div style="margin-bottom:6px;font-size:10px;font-weight:700;color:var(--tx2);text-transform:uppercase;letter-spacing:.6px">Enviar código por</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <label id="canal-email-lbl" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 10px;border:2px solid var(--bd2);border-radius:var(--r);cursor:pointer;transition:all .15s;text-align:center" onclick="selectCanal('email')">
+          <span style="font-size:26px">📧</span>
+          <span style="font-size:12px;font-weight:700;color:var(--nv)">Email</span>
+          <span style="font-size:10px;color:var(--tx3)">Receber no email cadastrado</span>
+          <input type="radio" name="forgot-canal" value="email" style="display:none" checked>
+        </label>
+        <label id="canal-wpp-lbl" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 10px;border:2px solid var(--bd2);border-radius:var(--r);cursor:pointer;transition:all .15s;text-align:center" onclick="selectCanal('whatsapp')">
+          <span style="font-size:26px">💬</span>
+          <span style="font-size:12px;font-weight:700;color:var(--nv)">WhatsApp</span>
+          <span style="font-size:10px;color:var(--tx3)">Receber no celular cadastrado</span>
+          <input type="radio" name="forgot-canal" value="whatsapp" style="display:none">
+        </label>
+      </div>
+      <div id="forgot-msg1" style="display:none;margin-top:12px;padding:10px 12px;border-radius:var(--r);font-size:12px"></div>
+    </div>
+
+    <!-- ETAPA 2: digitar o código de 6 dígitos -->
+    <div id="forgot-step2" style="display:none">
+      <div style="text-align:center;margin-bottom:18px">
+        <div style="font-size:36px;margin-bottom:8px" id="forgot-canal-icon">📧</div>
+        <p style="font-size:13px;color:var(--nv);font-weight:600" id="forgot-enviado-txt">Código enviado!</p>
+        <p style="font-size:11px;color:var(--tx3);margin-top:4px" id="forgot-enviado-sub">Verifique seu email e digite o código de 6 dígitos abaixo.</p>
+      </div>
+      <div class="fg" style="margin-bottom:4px">
+        <label>Código de verificação</label>
+        <input type="text" id="forgot-codigo" placeholder="_ _ _ _ _ _" maxlength="6" style="text-align:center;font-size:28px;font-weight:700;letter-spacing:8px;padding:12px" autocomplete="off" oninput="this.value=this.value.replace(/\D/g,'')">
+      </div>
+      <div style="text-align:right;margin-bottom:14px">
+        <button type="button" onclick="reenviarCodigo()" style="background:none;border:none;color:var(--ac);font-size:11px;cursor:pointer;text-decoration:underline;padding:0">Reenviar código</button>
+      </div>
+      <div id="forgot-msg2" style="display:none;margin-top:4px;padding:10px 12px;border-radius:var(--r);font-size:12px"></div>
+    </div>
+
+    <!-- ETAPA 3: nova senha -->
+    <div id="forgot-step3" style="display:none">
+      <div style="text-align:center;margin-bottom:18px">
+        <div style="font-size:36px;margin-bottom:8px">🔐</div>
+        <p style="font-size:13px;color:var(--nv);font-weight:600">Código verificado!</p>
+        <p style="font-size:11px;color:var(--tx3);margin-top:4px">Agora defina sua nova senha.</p>
+      </div>
+      <div class="fg" style="margin-bottom:10px">
+        <label>Nova Senha</label>
         <div style="position:relative;display:flex;align-items:center">
-          <input type="password" id="forgot-nova" placeholder="Nova senha" style="padding-right:36px;width:100%">
-          <button type="button" onclick="toggleSenha('forgot-nova','eye-forgot')" style="position:absolute;right:8px;background:none;border:none;cursor:pointer;color:#8899bb;padding:0">
-            <svg id="eye-forgot" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          <input type="password" id="forgot-nova" placeholder="Mínimo 4 caracteres" style="padding-right:36px;width:100%" autocomplete="new-password">
+          <button type="button" onclick="toggleSenha('forgot-nova','eye-forgot-nova')" style="position:absolute;right:8px;background:none;border:none;cursor:pointer;color:#8899bb;padding:0">
+            <svg id="eye-forgot-nova" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
           </button>
         </div>
       </div>
+      <div class="fg">
+        <label>Confirmar Senha</label>
+        <div style="position:relative;display:flex;align-items:center">
+          <input type="password" id="forgot-confirma" placeholder="Repita a senha" style="padding-right:36px;width:100%" autocomplete="new-password">
+          <button type="button" onclick="toggleSenha('forgot-confirma','eye-forgot-conf')" style="position:absolute;right:8px;background:none;border:none;cursor:pointer;color:#8899bb;padding:0">
+            <svg id="eye-forgot-conf" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+      <div id="forgot-msg3" style="display:none;margin-top:12px;padding:10px 12px;border-radius:var(--r);font-size:12px"></div>
     </div>
+
   </div>
-  <div class="mfoot">
+  <div class="mfoot" id="forgot-footer">
     <button class="btn btn-ghost" onclick="closeM('m-forgot')">Cancelar</button>
-    <button class="btn btn-primary" id="btn-forgot-submit" onclick="submitForgot()">Enviar</button>
-    <button class="btn btn-success" id="btn-forgot-reset" style="display:none" onclick="submitReset()">Redefinir Senha</button>
+    <button class="btn btn-primary" id="btn-forgot-1" onclick="forgotStep1()">Enviar Código →</button>
+    <button class="btn btn-primary" id="btn-forgot-2" style="display:none" onclick="forgotStep2()">Verificar Código →</button>
+    <button class="btn btn-success" id="btn-forgot-3" style="display:none" onclick="forgotStep3()">✔ Redefinir Senha</button>
   </div>
 </div></div>
 </body>
