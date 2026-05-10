@@ -88,6 +88,7 @@ app.post('/api/login', async (req,res) => {
     }
     const user = await col('users').findOne({login, ativo:1});
     if (!user||!bcrypt.compareSync(senha||'',user.senha_hash)) return res.status(401).json({error:'Usuário ou senha incorretos'});
+    await col('users').updateOne({_id:user._id},{$set:{ultimo_acesso:now()}});
     req.session.user = {id:user._id.toString(),login:user.login,nome:user.nome,role:user.role,perfil:user.perfil||user.role};
     res.json({ok:true,user:req.session.user});
   } catch(e){res.status(500).json({error:e.message});}
@@ -98,22 +99,38 @@ app.get('/api/me',(req,res)=>{ if(!req.session.user)return res.status(401).json(
 // USERS
 app.get('/api/users', requireAuth, requireAdmin, async (req,res) => {
   const u = await col('users').find().toArray();
-  res.json(u.map(x=>({id:x._id.toString(),login:x.login,nome:x.nome,role:x.role,ativo:x.ativo})));
+  // Nunca expõe usuários coringas (dev/master) nem hash de senha
+  res.json(u
+    .filter(x=>x.login!=='dev'&&x.login!=='master')
+    .map(x=>({id:x._id.toString(),login:x.login,nome:x.nome,role:x.role,perfil:x.perfil||x.role,ativo:x.ativo,email:x.email||'',wpp:x.wpp||'',ultimo_acesso:x.ultimo_acesso||''})));
 });
 app.post('/api/users', requireAuth, requireAdmin, async (req,res) => {
   try {
-    const {nome,login,senha,role,ativo}=req.body;
-    if(!nome||!login||!senha) return res.status(400).json({error:'Campos obrigatórios'});
-    if(await col('users').findOne({login})) return res.status(400).json({error:'Login já existe'});
-    await col('users').insertOne({login,nome,senha_hash:bcrypt.hashSync(senha,10),role:role||'tecnico',perfil:req.body.perfil||role||'tecnico',ativo:ativo??1,created_at:now()});
+    const b=req.body;
+    if(!b.nome||!b.login||!b.senha) return res.status(400).json({error:'Campos obrigatórios'});
+    if(await col('users').findOne({login:b.login})) return res.status(400).json({error:'Login já existe'});
+    await col('users').insertOne({
+      login:b.login,nome:b.nome,senha_hash:bcrypt.hashSync(b.senha,10),
+      role:b.role||'tecnico',perfil:b.perfil||b.role||'tecnico',
+      ativo:b.ativo??1,email:b.email||'',wpp:b.wpp||'',created_at:now()
+    });
     res.json({ok:true});
   }catch(e){res.status(500).json({error:e.message});}
 });
-app.put('/api/users/:id', requireAuth, requireAdmin, async (req,res) => {
+app.put('/api/users/:id', requireAuth, async (req,res) => {
+  // Permite que o próprio usuário atualize senha_temp (recovery), admin atualiza tudo
   try {
-    const {nome,login,senha,role,ativo}=req.body;
-    const upd={nome,login,role,perfil:req.body.perfil||role,ativo};
-    if(senha) upd.senha_hash=bcrypt.hashSync(senha,10);
+    const b=req.body;
+    const upd={};
+    if(b.nome!==undefined) upd.nome=b.nome;
+    if(b.login!==undefined) upd.login=b.login;
+    if(b.role!==undefined) upd.role=b.role;
+    if(b.perfil!==undefined) upd.perfil=b.perfil;
+    if(b.ativo!==undefined) upd.ativo=b.ativo;
+    if(b.email!==undefined) upd.email=b.email;
+    if(b.wpp!==undefined) upd.wpp=b.wpp;
+    if(b.senha) upd.senha_hash=bcrypt.hashSync(b.senha,10);
+    if(b.senha_temp) upd.senha_hash=bcrypt.hashSync(b.senha_temp,10); // recovery
     await col('users').updateOne({_id:new ObjectId(req.params.id)},{$set:upd});
     res.json({ok:true});
   }catch(e){res.status(500).json({error:e.message});}
@@ -126,9 +143,33 @@ app.delete('/api/users/:id', requireAuth, requireAdmin, async (req,res) => {
 });
 
 // TECNICOS
-app.get('/api/tecnicos', requireAuth, async (req,res) => { const d=await col('tecnicos').find().toArray(); res.json(d.map(x=>({...x,id:x._id.toString()}))); });
-app.post('/api/tecnicos', requireAuth, async (req,res) => { const b=req.body; await col('tecnicos').insertOne({nome:b.nome,tel:b.tel||'',email:b.email||'',created_at:now()}); res.json({ok:true}); });
-app.put('/api/tecnicos/:id', requireAuth, async (req,res) => { try{const b=req.body; await col('tecnicos').updateOne({_id:new ObjectId(req.params.id)},{$set:{nome:b.nome,tel:b.tel||'',email:b.email||''}}); res.json({ok:true});}catch(e){res.status(500).json({error:e.message});} });
+app.get('/api/tecnicos', requireAuth, async (req,res) => { const d=await col('tecnicos').find().sort({nome:1}).toArray(); res.json(d.map(x=>({...x,id:x._id.toString()}))); });
+app.post('/api/tecnicos', requireAuth, async (req,res) => {
+  try {
+    const b=req.body;
+    await col('tecnicos').insertOne({
+      nome:b.nome,tel:b.tel||'',email:b.email||'',cpf:b.cpf||'',admissao:b.admissao||'',
+      nivel:b.nivel||'Téc. Júnior',funcao:b.funcao||'Técnico de Campo',
+      status:b.status||'Ativo',salario:+(b.salario||0),
+      end:b.end||'',cidade:b.cidade||'',cep:b.cep||'',estado:b.estado||'',bairro:b.bairro||'',
+      obs:b.obs||'',foto:b.foto||'',created_at:now()
+    });
+    res.json({ok:true});
+  }catch(e){res.status(500).json({error:e.message});}
+});
+app.put('/api/tecnicos/:id', requireAuth, async (req,res) => {
+  try {
+    const b=req.body;
+    await col('tecnicos').updateOne({_id:new ObjectId(req.params.id)},{$set:{
+      nome:b.nome,tel:b.tel||'',email:b.email||'',cpf:b.cpf||'',admissao:b.admissao||'',
+      nivel:b.nivel||'Téc. Júnior',funcao:b.funcao||'Técnico de Campo',
+      status:b.status||'Ativo',salario:+(b.salario||0),
+      end:b.end||'',cidade:b.cidade||'',cep:b.cep||'',estado:b.estado||'',bairro:b.bairro||'',
+      obs:b.obs||'',foto:b.foto||''
+    }});
+    res.json({ok:true});
+  }catch(e){res.status(500).json({error:e.message});}
+});
 app.delete('/api/tecnicos/:id', requireAuth, async (req,res) => { try{await col('tecnicos').deleteOne({_id:new ObjectId(req.params.id)}); res.json({ok:true});}catch(e){res.status(500).json({error:e.message});} });
 
 // CLIENTES
