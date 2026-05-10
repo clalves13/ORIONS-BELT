@@ -153,6 +153,9 @@ tr:hover td{background:var(--sf2)}
 .tl-date{font-size:10px;color:var(--tx3);margin-bottom:3px}
 .tl-title{font-size:12px;font-weight:700;color:var(--nv);margin-bottom:2px}
 .tl-desc{font-size:11px;color:var(--tx2);line-height:1.5}
+.tl-dot.gn{background:var(--gn)}.tl-dot.or{background:var(--or)}.tl-dot.nv{background:var(--nv)}.tl-dot.bl2{background:var(--bl2)}
+.htl-icon{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.htl-line{width:2px;flex:1;background:var(--bd);min-height:24px;margin:4px 0}
 
 /* CLIENT TREE */
 .cli-card{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rlg);margin-bottom:9px;overflow:hidden}
@@ -929,12 +932,76 @@ tr:hover td{background:var(--sf2)}
 
 <!-- HISTÓRICO -->
 <div id="page-historico" class="page">
-  <div class="topbar"><div><div class="tb-title">Histórico de Atendimentos</div><div class="tb-sub">Chamados e atendimentos concluídos</div></div>
+  <div class="topbar">
+    <div><div class="tb-title">Histórico de Atendimentos</div><div class="tb-sub">OS finalizadas e lançamentos manuais</div></div>
     <div class="tb-right">
-      <button class="btn btn-info btn-sm" onclick="printRelatorio('historico')">🖨 Imprimir Histórico</button>
+      <button class="btn btn-ghost btn-sm" onclick="exportHistExcel()">📊 Excel</button>
+      <button class="btn btn-ghost btn-sm" onclick="printRelatorio('historico')">🖨 Imprimir</button>
+      <button class="btn btn-accent" id="btn-novo-lanc" onclick="openLancManual(null)" style="display:none">+ Lançamento Manual</button>
     </div>
   </div>
-  <div class="content"><div id="hist-list"></div></div>
+  <div class="content">
+    <!-- Abas -->
+    <div style="border-bottom:2px solid var(--bd);margin-bottom:14px;display:flex;gap:0">
+      <button class="log-tab active" id="htab-os" onclick="switchHistTab('os')">✅ OS Finalizadas</button>
+      <button class="log-tab" id="htab-manual" onclick="switchHistTab('manual')">📝 Lançamentos Manuais</button>
+    </div>
+
+    <!-- === ABA OS FINALIZADAS === -->
+    <div id="hist-tab-os">
+      <!-- Filtros -->
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
+        <div class="swrap" style="flex:1;min-width:180px">
+          <span style="color:var(--tx3)">🔍</span>
+          <input type="text" placeholder="Buscar cliente, técnico, NS, modelo, defeito..." id="s-hist-os" oninput="renderHistOS()">
+        </div>
+        <select id="f-hist-tec" onchange="renderHistOS()" style="height:34px;padding:0 10px;border:1px solid var(--bd);border-radius:7px;font-size:13px;background:var(--sf);color:var(--tx)">
+          <option value="">Todos os técnicos</option>
+        </select>
+        <input type="date" id="f-hist-de" onchange="renderHistOS()" style="height:34px;padding:0 8px;border:1px solid var(--bd);border-radius:7px;font-size:13px;background:var(--sf);color:var(--tx)" title="Data início">
+        <input type="date" id="f-hist-ate" onchange="renderHistOS()" style="height:34px;padding:0 8px;border:1px solid var(--bd);border-radius:7px;font-size:13px;background:var(--sf);color:var(--tx)" title="Data fim">
+        <button class="btn btn-ghost btn-xs" onclick="limparFiltrosHist()">Limpar</button>
+      </div>
+      <!-- KPIs rápidos -->
+      <div id="hist-os-kpis" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-bottom:14px"></div>
+      <!-- Tabela -->
+      <div class="card" style="padding:0">
+        <div class="twrap"><table>
+          <thead><tr>
+            <th>OS</th><th>Data</th><th>Cliente</th><th>Equipamento / NS</th>
+            <th>Técnico</th><th>Defeito</th><th>Custo R$</th><th>Ações</th>
+          </tr></thead>
+          <tbody id="tb-hist-os"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- === ABA LANÇAMENTOS MANUAIS === -->
+    <div id="hist-tab-manual" style="display:none">
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
+        <div class="swrap" style="flex:1;min-width:180px">
+          <span style="color:var(--tx3)">🔍</span>
+          <input type="text" placeholder="Buscar cliente, técnico, descrição..." id="s-hist-man" oninput="renderHistManual()">
+        </div>
+        <select id="f-hist-man-tipo" onchange="renderHistManual()" style="height:34px;padding:0 10px;border:1px solid var(--bd);border-radius:7px;font-size:13px;background:var(--sf);color:var(--tx)">
+          <option value="">Todos os tipos</option>
+          <option>Visita Técnica</option><option>Consultoria</option><option>Instalação</option>
+          <option>Treinamento</option><option>Contato Remoto</option><option>Outro</option>
+        </select>
+        <input type="date" id="f-hist-man-de" onchange="renderHistManual()" style="height:34px;padding:0 8px;border:1px solid var(--bd);border-radius:7px;font-size:13px;background:var(--sf);color:var(--tx)">
+        <input type="date" id="f-hist-man-ate" onchange="renderHistManual()" style="height:34px;padding:0 8px;border:1px solid var(--bd);border-radius:7px;font-size:13px;background:var(--sf);color:var(--tx)">
+      </div>
+      <div class="card" style="padding:0">
+        <div class="twrap"><table>
+          <thead><tr>
+            <th>Data</th><th>Tipo</th><th>Cliente</th><th>Equipamento / NS</th>
+            <th>Técnico</th><th>Descrição</th><th>Custo R$</th><th>Status</th><th>Ações</th>
+          </tr></thead>
+          <tbody id="tb-hist-manual"></tbody>
+        </table></div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- ESTOQUE -->
@@ -1458,6 +1525,52 @@ tr:hover td{background:var(--sf2)}
     </div>
   </div>
   <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('m-est')">Cancelar</button><button class="btn btn-primary" onclick="saveEstoque()">Salvar</button></div>
+</div></div>
+
+<!-- Modal Timeline do Atendimento -->
+<div class="mov" id="m-hist-timeline">
+<div class="modal" style="max-width:680px;max-height:88vh;overflow:hidden;display:flex;flex-direction:column">
+  <div class="mhd"><div><div class="mhd-title" id="m-htl-title">Timeline do Atendimento</div><div id="m-htl-sub" style="font-size:11px;color:var(--tx3);margin-top:2px"></div></div><button class="btnx" onclick="closeM('m-hist-timeline')">×</button></div>
+  <div class="mbody" id="m-htl-body" style="overflow-y:auto;flex:1"></div>
+</div></div>
+
+<!-- Modal Lançamento Manual -->
+<div class="mov" id="m-lanc">
+<div class="modal" style="max-width:640px">
+  <div class="mhd"><div class="mhd-title" id="m-lanc-title">Novo Lançamento</div><button class="btnx" onclick="closeM('m-lanc')">×</button></div>
+  <div class="mbody">
+    <input type="hidden" id="lanc-id">
+    <div class="fgrid fg2">
+      <div class="fg"><label>Data *</label><input type="date" id="lanc-data"></div>
+      <div class="fg"><label>Tipo *</label>
+        <select id="lanc-tipo">
+          <option>Visita Técnica</option><option>Consultoria</option><option>Instalação</option>
+          <option>Treinamento</option><option>Contato Remoto</option><option>Outro</option>
+        </select>
+      </div>
+      <div class="fg"><label>Cliente</label>
+        <select id="lanc-cli"><option value="">— Selecione —</option></select>
+      </div>
+      <div class="fg"><label>Técnico</label>
+        <select id="lanc-tec"><option value="">— Selecione —</option></select>
+      </div>
+      <div class="fg"><label>Equipamento / Modelo</label><input type="text" id="lanc-equip" placeholder="Ex: Bizhub C368"></div>
+      <div class="fg"><label>Nº Série</label><input type="text" id="lanc-ns" placeholder="Ex: A0X7012345"></div>
+      <div class="fg" style="grid-column:1/-1"><label>Descrição / Problema *</label><textarea id="lanc-desc" rows="3" placeholder="Descreva o atendimento ou observação..."></textarea></div>
+      <div class="fg" style="grid-column:1/-1"><label>Procedimento Realizado</label><textarea id="lanc-proc" rows="2" placeholder="O que foi feito..."></textarea></div>
+      <div class="fg"><label>Custo R$</label><input type="number" id="lanc-custo" value="0" step="0.01" min="0"></div>
+      <div class="fg"><label>Status</label>
+        <select id="lanc-status">
+          <option>Concluído</option><option>Em andamento</option><option>Pendente</option><option>Cancelado</option>
+        </select>
+      </div>
+      <div class="fg" style="grid-column:1/-1"><label>Observações</label><textarea id="lanc-obs" rows="2" placeholder="Observações adicionais..."></textarea></div>
+    </div>
+  </div>
+  <div class="mfoot">
+    <button class="btn btn-ghost" onclick="closeM('m-lanc')">Cancelar</button>
+    <button class="btn btn-primary" onclick="saveLancManual()">Salvar Lançamento</button>
+  </div>
 </div></div>
 
 <!-- Modal Movimentação de Estoque -->
@@ -2466,10 +2579,298 @@ function printChecklist() { if(G.currentLabData) printChecklistById(G.currentLab
 function printChecklistById(id) { const lab=G.laboratorio.find(x=>x.id===id); if(!lab) return; openPrintWindow(buildChecklistDoc(lab),''); }
 
 // ─── HISTÓRICO ────────────────────────────────────────────
+let G_lancamentos = [];
+
+async function loadLancamentos() {
+  try { G_lancamentos = await api('GET', '/api/lancamentos'); } catch(e) { G_lancamentos = []; }
+}
+
+function switchHistTab(tab) {
+  ['os','manual'].forEach(t => {
+    document.getElementById(`hist-tab-${t}`).style.display = t===tab ? '' : 'none';
+    document.getElementById(`htab-${t}`).classList.toggle('active', t===tab);
+  });
+  document.getElementById('btn-novo-lanc').style.display = tab==='manual' ? '' : 'none';
+  if(tab==='os') renderHistOS();
+  if(tab==='manual') renderHistManual();
+}
+
+function limparFiltrosHist() {
+  ['s-hist-os','f-hist-tec','f-hist-de','f-hist-ate'].forEach(id => {
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  renderHistOS();
+}
+
 function renderHist() {
-  const el=document.getElementById('hist-list');
-  if(!G.historico.length){el.innerHTML=`<div class="empty"><div class="empty-ico">📂</div><div class="empty-t">Nenhum registro</div><div class="empty-s">Gerado ao criar e concluir OS</div></div>`;return}
-  el.innerHTML=`<div class="timeline">`+G.historico.map(h=>`<div class="tl-item"><div class="tl-dot ${h.tipo==='atendimento'?'g':'o'}"></div><div class="tl-box"><div class="tl-date">${fd(h.data)} · <span class="badge ${h.tipo==='atendimento'?'bg':'bo'}" style="font-size:9px">${h.tipo==='atendimento'?'✓ Concluído':'📞 Chamado'}</span> · OS ${h.os_num}</div><div class="tl-title">${h.cliente} — ${h.modelo||'Equip.'}</div><div class="tl-desc"><b>Nº Série:</b> ${h.nserie||'—'} · <b>Técnico:</b> ${h.tecnico||'—'}<br><b>Defeito:</b> ${h.defeito||'—'}${h.procedimento?`<br><b>Procedimento:</b> ${h.procedimento}`:''}${h.pecas?`<br><b>Peças:</b> ${h.pecas}`:''}</div></div></div>`).join('')+`</div>`;
+  // Popular select de técnicos
+  const selTec=document.getElementById('f-hist-tec');
+  if(selTec) {
+    const opts=G.tecnicos.map(t=>`<option value="${t.nome}">${t.nome}</option>`).join('');
+    selTec.innerHTML=`<option value="">Todos os técnicos</option>${opts}`;
+  }
+  loadLancamentos().then(()=>{ renderHistOS(); renderHistManual(); });
+}
+
+function renderHistOS() {
+  const q=(document.getElementById('s-hist-os')?.value||'').toLowerCase();
+  const tec=(document.getElementById('f-hist-tec')?.value||'');
+  const de=(document.getElementById('f-hist-de')?.value||'');
+  const ate=(document.getElementById('f-hist-ate')?.value||'');
+
+  // Apenas OS concluídas — derivado de G.ordens
+  let rows = G.ordens.filter(o => o.status==='Concluída').sort((a,b)=>(b.data_ab||'').localeCompare(a.data_ab||''));
+  rows = rows.filter(o => {
+    const tObj = G.tecnicos.find(x=>x.id===o.tecnico_id);
+    const tecNome = tObj?.nome||'';
+    const cli = G.clientes.find(x=>x.id===o.cliente_id);
+    const cliNome = cli?.nome||'';
+    const data = o.data_atend||o.data_ab||'';
+    if(tec && tecNome!==tec) return false;
+    if(de && data<de) return false;
+    if(ate && data>ate) return false;
+    if(q && ![o.num,cliNome,tecNome,o.modelo,o.nserie,o.defeito,o.procedimento].join(' ').toLowerCase().includes(q)) return false;
+    return true;
+  });
+
+  // KPIs
+  const kEl=document.getElementById('hist-os-kpis');
+  if(kEl) {
+    const totalCusto=rows.reduce((s,o)=>(s+(o.total_os||o.total||0)),0);
+    const uniqCli=new Set(rows.map(o=>o.cliente_id)).size;
+    const uniqTec=new Set(rows.map(o=>o.tecnico_id).filter(Boolean)).size;
+    kEl.innerHTML=[
+      {icon:'✅',val:rows.length,lab:'OS Concluídas'},
+      {icon:'👥',val:uniqCli,lab:'Clientes atendidos'},
+      {icon:'🔧',val:uniqTec,lab:'Técnicos envolvidos'},
+      {icon:'💰',val:fm(totalCusto),lab:'Custo total'},
+    ].map(k=>`<div class="scard"><div class="snum">${k.icon} ${k.val}</div><div class="slabel">${k.lab}</div></div>`).join('');
+  }
+
+  const tb=document.getElementById('tb-hist-os');
+  if(!rows.length){tb.innerHTML=`<tr><td colspan="8"><div class="empty"><div class="empty-ico">📂</div><div class="empty-t">Nenhum atendimento encontrado</div></div></td></tr>`;return;}
+  tb.innerHTML=rows.map(o=>{
+    const tObj=G.tecnicos.find(x=>x.id===o.tecnico_id);
+    const cli=G.clientes.find(x=>x.id===o.cliente_id);
+    const custo=o.total_os||o.total||0;
+    const data=o.data_atend||o.data_ab||'';
+    return `<tr>
+      <td style="font-weight:700;color:var(--nv);white-space:nowrap">${o.num||'—'}</td>
+      <td style="white-space:nowrap;font-size:12px">${fd(data)}</td>
+      <td style="font-weight:600">${cli?.nome||'—'}</td>
+      <td style="font-size:12px">${o.modelo||'—'}${o.nserie?`<br><span style="color:var(--tx3);font-size:10px">NS: ${o.nserie}</span>`:''}</td>
+      <td style="font-size:12px">${tObj?.nome||'<span style="color:var(--tx3)">—</span>'}</td>
+      <td style="font-size:12px;max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${o.defeito||''}">${o.defeito||'—'}</td>
+      <td style="font-weight:600;white-space:nowrap">${custo>0?fm(custo):'—'}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-ghost btn-xs" onclick="abrirTimeline('${o.id}')">📋 Timeline</button>
+        <button class="btn btn-ghost btn-xs" onclick="abrirOSDoHist('${o.id}')">🔗 OS</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function renderHistManual() {
+  const q=(document.getElementById('s-hist-man')?.value||'').toLowerCase();
+  const tipo=(document.getElementById('f-hist-man-tipo')?.value||'');
+  const de=(document.getElementById('f-hist-man-de')?.value||'');
+  const ate=(document.getElementById('f-hist-man-ate')?.value||'');
+
+  let rows=[...G_lancamentos].sort((a,b)=>(b.data||'').localeCompare(a.data||''));
+  rows=rows.filter(l=>{
+    if(tipo && l.tipo!==tipo) return false;
+    if(de && l.data<de) return false;
+    if(ate && l.data>ate) return false;
+    const cli=G.clientes.find(x=>x.id===l.cliente_id);
+    const tec=G.tecnicos.find(x=>x.id===l.tecnico_id);
+    if(q && ![cli?.nome,tec?.nome,l.descricao,l.equipamento,l.nserie,l.tipo].join(' ').toLowerCase().includes(q)) return false;
+    return true;
+  });
+
+  const tb=document.getElementById('tb-hist-manual');
+  if(!rows.length){tb.innerHTML=`<tr><td colspan="9"><div class="empty"><div class="empty-ico">📝</div><div class="empty-t">Nenhum lançamento manual ainda</div><div class="empty-s">Use "+ Lançamento Manual" para registrar atendimentos sem OS</div></div></td></tr>`;return;}
+  const stCls={Concluído:'bg','Em andamento':'bb',Pendente:'bo',Cancelado:'br'};
+  tb.innerHTML=rows.map(l=>{
+    const cli=G.clientes.find(x=>x.id===l.cliente_id);
+    const tec=G.tecnicos.find(x=>x.id===l.tecnico_id);
+    return `<tr>
+      <td style="white-space:nowrap;font-size:12px">${fd(l.data)}</td>
+      <td><span class="badge bgr" style="font-size:10px">${l.tipo||'—'}</span></td>
+      <td style="font-weight:600">${cli?.nome||l.cliente_nome||'—'}</td>
+      <td style="font-size:12px">${l.equipamento||'—'}${l.nserie?`<br><span style="color:var(--tx3);font-size:10px">NS: ${l.nserie}</span>`:''}</td>
+      <td style="font-size:12px">${tec?.nome||l.tecnico_nome||'—'}</td>
+      <td style="font-size:12px;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${l.descricao||''}">${l.descricao||'—'}</td>
+      <td style="font-weight:600;white-space:nowrap">${(l.custo||0)>0?fm(l.custo):'—'}</td>
+      <td><span class="badge ${stCls[l.status]||'bgr'}" style="font-size:10px">${l.status||'—'}</span></td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-ghost btn-xs" onclick="openLancManual('${l.id}')">Editar</button>
+        <button class="btn btn-danger btn-xs" onclick="delLanc('${l.id}')">×</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Timeline do atendimento (modal) ──
+function abrirTimeline(osId) {
+  const os=G.ordens.find(x=>x.id===osId); if(!os) return;
+  const cli=G.clientes.find(x=>x.id===os.cliente_id);
+  const tec=G.tecnicos.find(x=>x.id===os.tecnico_id);
+  const custo=os.total_os||os.total||0;
+
+  document.getElementById('m-htl-title').textContent=`Timeline — ${os.num||'OS'}`;
+  document.getElementById('m-htl-sub').textContent=`${cli?.nome||'—'} · ${os.modelo||'Equip.'} · NS: ${os.nserie||'—'}`;
+
+  // Montar eventos cronológicos
+  const eventos=[];
+  if(os.data_chamado||os.data_ab) eventos.push({data:os.data_chamado||os.data_ab,hora:'',tipo:'chamado',titulo:'📞 Chamado Aberto',desc:`Defeito: ${os.defeito||'—'}`,cor:'or',badge:'bo',badgeTxt:'Abertura'});
+  if(os.data_atend||os.hora_chegada) eventos.push({data:os.data_atend||os.data_ab,hora:os.hora_chegada||'',tipo:'chegada',titulo:'🚗 Chegada do Técnico',desc:`Técnico: ${tec?.nome||'—'}${os.hora_chegada?` · Chegada: ${os.hora_chegada}`:''}`,cor:'bl2',badge:'bb',badgeTxt:'Em Andamento'});
+  if(os.procedimento) eventos.push({data:os.data_atend||os.data_ab,hora:os.hora_saida||'',tipo:'procedimento',titulo:'🔧 Atendimento Realizado',desc:`Procedimento: ${os.procedimento}${os.pecas?`\nPeças: ${os.pecas}`:''}${os.contador?`\nContador: ${os.contador}`:''}`,cor:'nv',badge:'bgr',badgeTxt:'Procedimento'});
+  if(os.status==='Concluída') eventos.push({data:os.data_atend||os.data_ab,hora:os.hora_saida||'',tipo:'concluido',titulo:'✅ OS Concluída',desc:`${custo>0?`Custo total: ${fm(custo)}`:''}${os.sig_tec?' · Assinatura técnico: ✓':''}${os.sig_cli?' · Assinatura cliente: ✓':''}`,cor:'gn',badge:'bg',badgeTxt:'Concluído'});
+
+  // Histórico do equipamento (outras OS com mesmo NS)
+  const histEq=os.nserie?G.ordens.filter(o=>o.nserie===os.nserie&&o.id!==osId&&o.status==='Concluída').sort((a,b)=>(b.data_ab||'').localeCompare(a.data_ab||'')).slice(0,3):[];
+
+  const timelineHTML=eventos.map((ev,i)=>`
+    <div style="display:flex;gap:14px;margin-bottom:${i<eventos.length-1?'0':'0'}">
+      <div style="display:flex;flex-direction:column;align-items:center;width:32px;flex-shrink:0">
+        <div style="width:32px;height:32px;border-radius:50%;background:var(--${ev.cor});display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;z-index:1">${ev.titulo.split(' ')[0]}</div>
+        ${i<eventos.length-1?`<div style="width:2px;flex:1;background:var(--bd);min-height:24px;margin:4px 0"></div>`:''}
+      </div>
+      <div style="flex:1;padding-bottom:20px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap">
+          <span style="font-weight:700;font-size:13px;color:var(--tx)">${ev.titulo.substring(ev.titulo.indexOf(' ')+1)}</span>
+          <span class="badge ${ev.badge}" style="font-size:9px">${ev.badgeTxt}</span>
+          <span style="font-size:11px;color:var(--tx3);margin-left:auto">${fd(ev.data)}${ev.hora?' · '+ev.hora:''}</span>
+        </div>
+        <div style="background:var(--sf);border:1px solid var(--bd);border-radius:8px;padding:10px 14px">
+          ${ev.desc.split('\n').map(d=>`<div style="font-size:12px;color:var(--tx2);line-height:1.6">${d}</div>`).join('')}
+        </div>
+      </div>
+    </div>`).join('');
+
+  const gastosHTML=custo>0?`
+    <div style="margin-top:16px;padding:12px 14px;background:var(--sf2);border:1px solid var(--bd);border-radius:8px">
+      <div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px">💰 Custos do Atendimento</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:6px">
+        ${[['Viagem',os.viag],['Alimentação',os.alim],['Hospedagem',os.hosp],['Combustível',os.comb],['Pedágio',os.ped],['Outros',os.outros]].filter(([,v])=>v>0).map(([l,v])=>`<div style="text-align:center;padding:6px 8px;background:var(--sf);border:1px solid var(--bd);border-radius:6px"><div style="font-size:10px;color:var(--tx3)">${l}</div><div style="font-weight:700;font-size:13px">${fm(v)}</div></div>`).join('')}
+        <div style="text-align:center;padding:6px 8px;background:var(--ac1);border-radius:6px"><div style="font-size:10px;color:rgba(255,255,255,.8)">TOTAL</div><div style="font-weight:800;font-size:14px;color:#fff">${fm(custo)}</div></div>
+      </div>
+    </div>`:'';
+
+  const histEqHTML=histEq.length?`
+    <div style="margin-top:16px">
+      <div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px">🔁 Histórico do Equipamento (NS: ${os.nserie})</div>
+      ${histEq.map(h=>{const tc=G.tecnicos.find(x=>x.id===h.tecnico_id);return`<div style="padding:8px 12px;background:var(--sf);border:1px solid var(--bd);border-radius:7px;margin-bottom:6px;font-size:12px"><span style="font-weight:600;color:var(--nv)">${h.num}</span> · ${fd(h.data_ab)} · <span style="color:var(--tx3)">${tc?.nome||'—'}</span><br><span style="color:var(--tx2)">${h.defeito||'—'}</span></div>`;}).join('')}
+    </div>`:'';
+
+  document.getElementById('m-htl-body').innerHTML=`<div style="padding:4px 0">${timelineHTML}${gastosHTML}${histEqHTML}</div>`;
+  openM('m-hist-timeline');
+}
+
+function abrirOSDoHist(osId) {
+  // Navega para OS e abre o modal de edição
+  nav('os', document.querySelector('[data-modulo=os]'));
+  setTimeout(()=>{ openOS(osId); }, 400);
+}
+
+// ── Lançamentos Manuais ──
+function openLancManual(id) {
+  // Popular selects
+  document.getElementById('lanc-cli').innerHTML=`<option value="">— Selecione —</option>`+G.clientes.map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
+  document.getElementById('lanc-tec').innerHTML=`<option value="">— Selecione —</option>`+G.tecnicos.map(t=>`<option value="${t.id}">${t.nome}</option>`).join('');
+
+  if(id) {
+    const l=G_lancamentos.find(x=>x.id===id); if(!l) return;
+    document.getElementById('m-lanc-title').textContent='Editar Lançamento';
+    document.getElementById('lanc-id').value=l.id;
+    document.getElementById('lanc-data').value=l.data||'';
+    document.getElementById('lanc-tipo').value=l.tipo||'Visita Técnica';
+    document.getElementById('lanc-cli').value=l.cliente_id||'';
+    document.getElementById('lanc-tec').value=l.tecnico_id||'';
+    document.getElementById('lanc-equip').value=l.equipamento||'';
+    document.getElementById('lanc-ns').value=l.nserie||'';
+    document.getElementById('lanc-desc').value=l.descricao||'';
+    document.getElementById('lanc-proc').value=l.procedimento||'';
+    document.getElementById('lanc-custo').value=l.custo||0;
+    document.getElementById('lanc-status').value=l.status||'Concluído';
+    document.getElementById('lanc-obs').value=l.obs||'';
+  } else {
+    document.getElementById('m-lanc-title').textContent='Novo Lançamento';
+    ['lanc-id','lanc-equip','lanc-ns','lanc-desc','lanc-proc','lanc-obs'].forEach(f=>document.getElementById(f).value='');
+    document.getElementById('lanc-data').value=today();
+    document.getElementById('lanc-tipo').value='Visita Técnica';
+    document.getElementById('lanc-cli').value='';
+    document.getElementById('lanc-tec').value='';
+    document.getElementById('lanc-custo').value=0;
+    document.getElementById('lanc-status').value='Concluído';
+  }
+  openM('m-lanc');
+}
+
+async function saveLancManual() {
+  const desc=document.getElementById('lanc-desc').value.trim();
+  const data=document.getElementById('lanc-data').value;
+  if(!desc){alert('Informe a descrição do atendimento.');return;}
+  if(!data){alert('Informe a data.');return;}
+  const lid=document.getElementById('lanc-id').value;
+  const cliId=document.getElementById('lanc-cli').value;
+  const tecId=document.getElementById('lanc-tec').value;
+  const cli=G.clientes.find(x=>x.id===cliId);
+  const tec=G.tecnicos.find(x=>x.id===tecId);
+  const body={
+    data, tipo:document.getElementById('lanc-tipo').value,
+    cliente_id:cliId, cliente_nome:cli?.nome||'',
+    tecnico_id:tecId, tecnico_nome:tec?.nome||'',
+    equipamento:document.getElementById('lanc-equip').value,
+    nserie:document.getElementById('lanc-ns').value,
+    descricao:desc, procedimento:document.getElementById('lanc-proc').value,
+    custo:+document.getElementById('lanc-custo').value||0,
+    status:document.getElementById('lanc-status').value,
+    obs:document.getElementById('lanc-obs').value
+  };
+  try {
+    if(lid) await api('PUT',`/api/lancamentos/${lid}`,body);
+    else await api('POST','/api/lancamentos',body);
+    await loadLancamentos();
+    closeM('m-lanc');
+    renderHistManual();
+  } catch(e){alert(e.message);}
+}
+
+async function delLanc(id) {
+  if(!confirm('Excluir este lançamento?')) return;
+  try {
+    await api('DELETE',`/api/lancamentos/${id}`);
+    await loadLancamentos();
+    renderHistManual();
+  } catch(e){alert(e.message);}
+}
+
+function exportHistExcel() {
+  const tab=document.getElementById('hist-tab-os').style.display!=='none'?'os':'manual';
+  const esc=v=>`"${String(v||'').replace(/"/g,'""')}"`;
+  let lines,blob,nome;
+  if(tab==='os') {
+    const cols=['OS','Data','Cliente','Modelo','NS','Técnico','Defeito','Procedimento','Peças','Custo R$'];
+    lines=[cols.map(esc).join(';')];
+    G.ordens.filter(o=>o.status==='Concluída').sort((a,b)=>(b.data_ab||'').localeCompare(a.data_ab||'')).forEach(o=>{
+      const tec=G.tecnicos.find(x=>x.id===o.tecnico_id);
+      const cli=G.clientes.find(x=>x.id===o.cliente_id);
+      lines.push([o.num,o.data_atend||o.data_ab,cli?.nome,o.modelo,o.nserie,tec?.nome,o.defeito,o.procedimento,o.pecas,(o.total_os||o.total||0).toFixed(2).replace('.',',')].map(esc).join(';'));
+    });
+    nome=`Historico_OS_${today()}.csv`;
+  } else {
+    const cols=['Data','Tipo','Cliente','Técnico','Equipamento','NS','Descrição','Procedimento','Custo R$','Status'];
+    lines=[cols.map(esc).join(';')];
+    G_lancamentos.sort((a,b)=>(b.data||'').localeCompare(a.data||'')).forEach(l=>{
+      const cli=G.clientes.find(x=>x.id===l.cliente_id);
+      const tec=G.tecnicos.find(x=>x.id===l.tecnico_id);
+      lines.push([l.data,l.tipo,cli?.nome||l.cliente_nome,tec?.nome||l.tecnico_nome,l.equipamento,l.nserie,l.descricao,l.procedimento,(l.custo||0).toFixed(2).replace('.',','),l.status].map(esc).join(';'));
+    });
+    nome=`Lancamentos_Manuais_${today()}.csv`;
+  }
+  blob=new Blob(['\uFEFF'+lines.join('\n')],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=nome;a.click();
 }
 
 // ─── ESTOQUE ─────────────────────────────────────────────
@@ -2926,7 +3327,18 @@ function printRelatorio(tipo){
     html=`<h2 style="color:#0d1f3c;margin-bottom:14px">${title}</h2><table style="width:100%;border-collapse:collapse;font-size:11px"><thead><tr style="background:#0d1f3c;color:#fff"><th style="padding:6px 8px">Entrada</th><th>Técnico</th><th>Equipamento</th><th>Modelo</th><th>Nº Série</th><th>Status Final</th><th>Tempo</th></tr></thead><tbody>${G.laboratorio.map(l=>{const t=G.tecnicos.find(x=>x.id===l.tecnico_id);return`<tr style="border-bottom:1px solid #eee"><td style="padding:5px 8px">${fd(l.data_entrada)}</td><td>${t?.nome||'—'}</td><td style="font-weight:600">${l.nome}</td><td>${l.modelo||'—'}</td><td style="font-family:monospace">${l.nserie||'—'}</td><td>${l.status_final||'—'}</td><td>${l.tempo_horas||0}h</td></tr>`}).join('')}</tbody></table>`;
   } else if(tipo==='historico'){
     title='Histórico de Atendimentos';
-    html=`<h2 style="color:#0d1f3c;margin-bottom:14px">${title}</h2>`+G.historico.map(h=>`<div style="border:1px solid #dde3ee;border-radius:6px;padding:8px 12px;margin-bottom:8px"><div style="font-size:9px;color:#667;margin-bottom:4px">${fd(h.data)} · ${h.tipo==='atendimento'?'✓ Concluído':'📞 Chamado'} · OS ${h.os_num}</div><div style="font-size:12px;font-weight:700;color:#0d1f3c;margin-bottom:3px">${h.cliente} — ${h.modelo||'Equip.'}</div><div style="font-size:10px;color:#445;line-height:1.6"><b>Nº Série:</b> ${h.nserie||'—'} · <b>Técnico:</b> ${h.tecnico||'—'}<br><b>Defeito:</b> ${h.defeito||'—'}${h.procedimento?`<br><b>Procedimento:</b> ${h.procedimento}`:''}${h.pecas?`<br><b>Peças:</b> ${h.pecas}`:''}</div></div>`).join('');
+    const osConc=G.ordens.filter(o=>o.status==='Concluída').sort((a,b)=>(b.data_ab||'').localeCompare(a.data_ab||''));
+    html=`<h2 style="color:#0d1f3c;margin-bottom:6px">${title}</h2>
+    <p style="font-size:10px;color:#667;margin-bottom:14px">OS Finalizadas: ${osConc.length} · Lançamentos Manuais: ${G_lancamentos.length}</p>
+    <h3 style="color:#0d1f3c;font-size:12px;margin-bottom:8px;border-bottom:2px solid #0d1f3c;padding-bottom:4px">✅ OS Finalizadas</h3>
+    <table style="width:100%;border-collapse:collapse;font-size:10px;margin-bottom:20px"><thead><tr style="background:#0d1f3c;color:#fff"><th style="padding:5px 8px">OS</th><th>Data</th><th>Cliente</th><th>Equipamento</th><th>NS</th><th>Técnico</th><th>Defeito</th><th>Custo</th></tr></thead><tbody>
+    ${osConc.map(o=>{const t=G.tecnicos.find(x=>x.id===o.tecnico_id);const c=G.clientes.find(x=>x.id===o.cliente_id);const custo=o.total_os||o.total||0;return`<tr style="border-bottom:1px solid #eee"><td style="padding:4px 8px;font-weight:700">${o.num||'—'}</td><td style="white-space:nowrap">${fd(o.data_atend||o.data_ab)}</td><td>${c?.nome||'—'}</td><td>${o.modelo||'—'}</td><td style="font-family:monospace;font-size:9px">${o.nserie||'—'}</td><td>${t?.nome||'—'}</td><td style="max-width:180px">${o.defeito||'—'}</td><td style="font-weight:700;white-space:nowrap">${custo>0?fm(custo):'—'}</td></tr>`;}).join('')}
+    </tbody></table>
+    <h3 style="color:#0d1f3c;font-size:12px;margin-bottom:8px;border-bottom:2px solid #0d1f3c;padding-bottom:4px">📝 Lançamentos Manuais</h3>
+    ${G_lancamentos.length?`<table style="width:100%;border-collapse:collapse;font-size:10px"><thead><tr style="background:#0d1f3c;color:#fff"><th style="padding:5px 8px">Data</th><th>Tipo</th><th>Cliente</th><th>Técnico</th><th>Equipamento</th><th>Descrição</th><th>Custo</th><th>Status</th></tr></thead><tbody>
+    ${G_lancamentos.sort((a,b)=>(b.data||'').localeCompare(a.data||'')).map(l=>{const c=G.clientes.find(x=>x.id===l.cliente_id);const t=G.tecnicos.find(x=>x.id===l.tecnico_id);return`<tr style="border-bottom:1px solid #eee"><td style="padding:4px 8px;white-space:nowrap">${fd(l.data)}</td><td>${l.tipo||'—'}</td><td>${c?.nome||l.cliente_nome||'—'}</td><td>${t?.nome||l.tecnico_nome||'—'}</td><td>${l.equipamento||'—'}</td><td style="max-width:160px">${l.descricao||'—'}</td><td style="white-space:nowrap">${(l.custo||0)>0?fm(l.custo):'—'}</td><td>${l.status||'—'}</td></tr>`;}).join('')}
+    </tbody></table>`:'<p style="color:#888;font-size:11px;font-style:italic">Nenhum lançamento manual registrado.</p>'}`;
+
   } else if(tipo==='estoque'){
     title='Relatório de Estoque';
     html=`<h2 style="color:#0d1f3c;margin-bottom:14px">${title}</h2><table style="width:100%;border-collapse:collapse;font-size:11px"><thead><tr style="background:#0d1f3c;color:#fff"><th style="padding:6px 8px">Nome</th><th>Categoria</th><th>Condição</th><th>Testada</th><th>Qtd</th><th>Custo</th><th>Local</th></tr></thead><tbody>${G.estoque.map(e=>`<tr style="border-bottom:1px solid #eee${e.quantidade<=e.quantidade_min?';background:#fff8f0':''}"><td style="padding:5px 8px;font-weight:600">${e.nome}${e.quantidade<=e.quantidade_min?' ⚠':''}</td><td>${e.categoria}</td><td>${e.condicao}</td><td>${e.testada?'Sim':'—'}</td><td style="font-weight:700">${e.quantidade}</td><td>${fm(e.custo)}</td><td>${e.localizacao||'—'}</td></tr>`).join('')}</tbody></table>`;

@@ -385,13 +385,13 @@ app.get('/api/dashboard', requireAuth, async (req,res) => {
 // BACKUP
 app.get('/api/backup', requireAuth, requireAdmin, async (req,res) => {
   try {
-    const [users,tecnicos,clientes,equipamentos,ordens,laboratorio,historico,estoque,suprCli,suprMovs,estMovs]=await Promise.all([
+    const [users,tecnicos,clientes,equipamentos,ordens,laboratorio,historico,estoque,suprCli,suprMovs,estMovs,lancamentos]=await Promise.all([
       col('users').find().toArray(),col('tecnicos').find().toArray(),col('clientes').find().toArray(),
       col('equipamentos').find().toArray(),col('ordens').find().toArray(),col('laboratorio').find().toArray(),col('logistica').find().toArray(),
       col('historico').find().toArray(),col('estoque').find().toArray(),col('supr_cli').find().toArray(),col('supr_movs').find().toArray(),
-      col('estoque_movs').find().toArray()
+      col('estoque_movs').find().toArray(), col('lancamentos').find().toArray()
     ]);
-    const backup={version:'5.0',gerado_em:now(),usuarios:users.map(u=>({...u,senha_hash:undefined})),tecnicos,clientes,equipamentos,ordens,laboratorio,historico,estoque,estoque_movs:estMovs,estoque_supr:suprCli,estoque_movs_supr:suprMovs};
+    const backup={version:'5.0',gerado_em:now(),usuarios:users.map(u=>({...u,senha_hash:undefined})),tecnicos,clientes,equipamentos,ordens,laboratorio,historico,estoque,estoque_movs:estMovs,estoque_supr:suprCli,estoque_movs_supr:suprMovs,lancamentos_manuais:lancamentos};
     res.setHeader('Content-Disposition',`attachment; filename="theikos_backup_${new Date().toISOString().slice(0,10)}.json"`);
     res.json(backup);
   }catch(e){res.status(500).json({error:e.message});}
@@ -428,6 +428,45 @@ app.post('/api/atendimentos', requireAuth, async (req,res) => { try{ const b=req
 app.put('/api/atendimentos/:id', requireAuth, async (req,res) => { try{ const b=req.body; const total=(b.viag||0)+(b.alim||0)+(b.hosp||0)+(b.comb||0)+(b.ped||0)+(b.outros||0); await col('ordens').updateOne({_id:new ObjectId(req.params.id)},{$set:{data_ab:b.data||b.data_ab||'',tecnico_id:b.tecnicoId||'',cliente_id:b.clienteId||'',equip_id:b.equipId||'',modelo:b.modelo||'',nserie:b.nserie||'',contador:b.contador||'',defeito:b.descricao||b.defeito||'',procedimento:b.procedimento||'',pecas:b.pecas||'',obs:b.obs||'',viag:b.viag||0,alim:b.alim||0,hosp:b.hosp||0,comb:b.comb||0,ped:b.ped||0,outros:b.outros||0,total,status:b.status||'Aberta',checklist:b.checklist||[],sig_tec:b.sig_tec||'',sig_cli:b.sig_cli||''}}); res.json({ok:true});}catch(e){res.status(500).json({error:e.message});} });
 app.delete('/api/atendimentos/:id', requireAuth, async (req,res) => { try{await col('ordens').deleteOne({_id:new ObjectId(req.params.id)});res.json({ok:true});}catch(e){res.status(500).json({error:e.message});} });
 
+
+// LANÇAMENTOS MANUAIS (histórico sem OS)
+app.get('/api/lancamentos', requireAuth, async (req,res) => {
+  const d=await col('lancamentos').find().sort({data:-1}).toArray();
+  res.json(d.map(x=>({...x,id:x._id.toString()})));
+});
+app.post('/api/lancamentos', requireAuth, async (req,res) => {
+  try {
+    const b=req.body;
+    const r=await col('lancamentos').insertOne({
+      data:b.data||'', tipo:b.tipo||'Visita Técnica',
+      cliente_id:b.cliente_id||'', cliente_nome:b.cliente_nome||'',
+      tecnico_id:b.tecnico_id||'', tecnico_nome:b.tecnico_nome||'',
+      equipamento:b.equipamento||'', nserie:b.nserie||'',
+      descricao:b.descricao||'', procedimento:b.procedimento||'',
+      custo:+(b.custo||0), status:b.status||'Concluído',
+      obs:b.obs||'', created_at:now()
+    });
+    res.json({ok:true,id:r.insertedId.toString()});
+  }catch(e){res.status(500).json({error:e.message});}
+});
+app.put('/api/lancamentos/:id', requireAuth, async (req,res) => {
+  try {
+    const b=req.body;
+    await col('lancamentos').updateOne({_id:new ObjectId(req.params.id)},{$set:{
+      data:b.data||'', tipo:b.tipo||'Visita Técnica',
+      cliente_id:b.cliente_id||'', cliente_nome:b.cliente_nome||'',
+      tecnico_id:b.tecnico_id||'', tecnico_nome:b.tecnico_nome||'',
+      equipamento:b.equipamento||'', nserie:b.nserie||'',
+      descricao:b.descricao||'', procedimento:b.procedimento||'',
+      custo:+(b.custo||0), status:b.status||'Concluído', obs:b.obs||''
+    }});
+    res.json({ok:true});
+  }catch(e){res.status(500).json({error:e.message});}
+});
+app.delete('/api/lancamentos/:id', requireAuth, async (req,res) => {
+  try{await col('lancamentos').deleteOne({_id:new ObjectId(req.params.id)});res.json({ok:true});}
+  catch(e){res.status(500).json({error:e.message});}
+});
 
 // RESET DE SENHA
 app.post('/api/forgot-password', async (req,res) => {
