@@ -89,6 +89,23 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--tx);font-siz
 .sval{font-size:22px;font-weight:700;color:var(--nv);margin-top:2px;line-height:1}
 .ssub{font-size:9px;color:var(--tx3);margin-top:3px}
 
+/* DASHBOARD KPI CARDS — grandes com gradiente */
+.dkpi-card{border-radius:16px;padding:20px 22px;color:#fff;position:relative;overflow:hidden;transition:transform .15s,box-shadow .15s}
+.dkpi-card:hover{transform:translateY(-2px);box-shadow:0 12px 36px rgba(13,31,60,.22)}
+.dkpi-card::after{content:'';position:absolute;right:-20px;bottom:-20px;width:100px;height:100px;border-radius:50%;background:rgba(255,255,255,.07)}
+.dkpi-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px}
+.dkpi-label{font-size:11px;font-weight:600;opacity:.85;text-transform:uppercase;letter-spacing:.8px}
+.dkpi-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.dkpi-val{font-size:32px;font-weight:800;line-height:1;margin-bottom:10px;letter-spacing:-1px}
+.dkpi-sub{font-size:11px;opacity:.8}
+
+/* DASHBOARD KPI CARDS — mini faixa */
+.dkpi-mini{background:var(--sf);border:1px solid var(--bd);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:10px;transition:all .15s}
+.dkpi-mini:hover{border-color:var(--bl);box-shadow:0 4px 16px rgba(13,31,60,.08)}
+.dkpi-mini-ico{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.dkpi-mini-val{font-size:18px;font-weight:800;color:var(--nv);line-height:1}
+.dkpi-mini-lbl{font-size:10px;color:var(--tx3);font-weight:600;text-transform:uppercase;letter-spacing:.6px;margin-top:2px}
+
 /* TABLE */
 .twrap{overflow-x:auto}
 table{width:100%;border-collapse:collapse;font-size:12px}
@@ -316,7 +333,10 @@ tr:hover td{background:var(--sf2)}
 <!-- DASHBOARD -->
 <div id="page-dashboard" class="page active">
   <div class="topbar">
-    <div><div class="tb-title">Dashboard</div><div class="tb-sub" id="d-lastupdate">Visão geral operacional</div></div>
+    <div>
+      <div class="tb-title">Dashboard</div>
+      <div class="tb-sub" id="d-lastupdate">Visão geral operacional</div>
+    </div>
     <div class="tb-right">
       <div class="swrap">
         <span style="color:var(--tx3);font-size:11px">📅 De</span>
@@ -331,147 +351,250 @@ tr:hover td{background:var(--sf2)}
       <button class="btn btn-ghost btn-sm" onclick="printRelatorio('dashboard')">🖨 Exportar</button>
     </div>
   </div>
-  <div class="content">
+  <div class="content" style="padding:20px 24px">
 
-    <!-- KPIs linha 1: Operações -->
-    <div style="margin-bottom:6px;font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:1px">⚙ Operações Técnicas</div>
-    <div class="sgrid" style="grid-template-columns:repeat(6,1fr);margin-bottom:16px">
-      <div class="scard" style="cursor:pointer" onclick="nav('os',document.querySelector('[data-modulo=os]'))">
-        <div class="sico" style="background:var(--bl2bg);color:var(--bl2)">📋</div>
-        <div class="slabel">OS Total</div>
-        <div class="sval" id="d-atend">0</div>
-        <div class="ssub">Registradas</div>
-      </div>
-      <div class="scard" style="cursor:pointer" onclick="nav('os',document.querySelector('[data-modulo=os]'))">
-        <div class="sico" style="background:var(--orbg);color:var(--or)">🔓</div>
-        <div class="slabel">OS Abertas</div>
-        <div class="sval" id="d-osab">0</div>
-        <div class="ssub">Aguardando</div>
-      </div>
-      <div class="scard">
-        <div class="sico" style="background:var(--bl2bg);color:var(--bl2)">⏳</div>
-        <div class="slabel">Em Andamento</div>
-        <div class="sval" id="d-osand">0</div>
-        <div class="ssub">Em execução</div>
-      </div>
-      <div class="scard">
-        <div class="sico" style="background:var(--gnbg);color:var(--gn)">✅</div>
-        <div class="slabel">Concluídas</div>
-        <div class="sval" id="d-osok">0</div>
-        <div class="ssub">Finalizadas</div>
-      </div>
-      <div class="scard" style="cursor:pointer" onclick="nav('lab',document.querySelector('[data-modulo=lab]'))">
-        <div class="sico" style="background:var(--pubg);color:var(--pu)">🔬</div>
-        <div class="slabel">Laboratório</div>
-        <div class="sval" id="d-lab">0</div>
-        <div class="ssub">Entradas</div>
-      </div>
-      <div class="scard">
-        <div class="sico" style="background:var(--rdbg);color:var(--rd)">⚠</div>
-        <div class="slabel">Retrabalhos</div>
-        <div class="sval" id="d-retqtd">0</div>
-        <div class="ssub">Equipamentos</div>
-      </div>
-    </div>
+    <!-- ── KPIs PRINCIPAIS: 4 cards com gradiente ───────────────────── -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px">
 
-    <!-- KPIs linha 2: Logística e Estoque -->
-    <div style="margin-bottom:6px;font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:1px">🚛 Logística / Estoque / Financeiro</div>
-    <div class="sgrid" style="grid-template-columns:repeat(5,1fr);margin-bottom:16px">
-      <div class="scard" style="cursor:pointer" onclick="nav('logistica',document.querySelector('[data-modulo=logistica]'))">
-        <div class="sico" style="background:var(--bl2bg);color:var(--bl2)">🚚</div>
-        <div class="slabel">Rotas</div>
-        <div class="sval" id="d-rotas">0</div>
-        <div class="ssub">Registradas</div>
-      </div>
-      <div class="scard">
-        <div class="sico" style="background:var(--orbg);color:var(--or)">⛽</div>
-        <div class="slabel">Combustível</div>
-        <div class="sval" id="d-litros">0L</div>
-        <div class="ssub">Total abastecido</div>
-      </div>
-      <div class="scard">
-        <div class="sico" style="background:var(--rdbg);color:var(--rd)">💰</div>
-        <div class="slabel">Gasto Total</div>
-        <div class="sval" id="d-gastoT" style="font-size:14px">R$0</div>
-        <div class="ssub">Rota + OS</div>
-      </div>
-      <div class="scard" style="cursor:pointer" onclick="nav('estoque',document.querySelector('[data-modulo=estoque]'))">
-        <div class="sico" style="background:var(--gnbg);color:var(--gn)">📦</div>
-        <div class="slabel">Itens Estoque</div>
-        <div class="sval" id="d-estqtd">0</div>
-        <div class="ssub">Cadastrados</div>
-      </div>
-      <div class="scard">
-        <div class="sico" style="background:var(--rdbg);color:var(--rd)">🔴</div>
-        <div class="slabel">Est. Baixo</div>
-        <div class="sval" id="d-estbaixo">0</div>
-        <div class="ssub">Abaixo do mín.</div>
-      </div>
-    </div>
-
-    <!-- Linha de gráficos principais -->
-    <div style="display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-bottom:12px">
-      <!-- Evolução mensal OS -->
-      <div class="card">
-        <div class="card-hd">
-          <div class="card-title">📈 Evolução de Atendimentos por Técnico / Mês</div>
-          <div style="display:flex;gap:6px" id="d-leg-tec"></div>
+      <!-- OS Abertas -->
+      <div class="dkpi-card" style="background:linear-gradient(135deg,#1e4080 0%,#2a5fc4 100%);cursor:pointer" onclick="nav('os',document.querySelector('[data-modulo=os]'))">
+        <div class="dkpi-top">
+          <div class="dkpi-label">OS Abertas</div>
+          <div class="dkpi-icon" style="background:rgba(255,255,255,.15)">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          </div>
         </div>
-        <canvas id="chart-atend-linha" height="200" style="width:100%;display:block"></canvas>
+        <div class="dkpi-val" id="d-osab">0</div>
+        <div class="dkpi-sub">
+          <span id="d-osand-mini" style="background:rgba(255,255,255,.18);padding:2px 8px;border-radius:20px;font-size:10px"><span id="d-osand">0</span> em andamento</span>
+        </div>
       </div>
-      <!-- Pizza status OS -->
-      <div class="card">
-        <div class="card-hd"><div class="card-title">Status das OS</div></div>
-        <canvas id="chart-os-pizza" height="200" style="width:100%;display:block"></canvas>
+
+      <!-- Concluídas -->
+      <div class="dkpi-card" style="background:linear-gradient(135deg,#0f7a45 0%,#1aaa60 100%)">
+        <div class="dkpi-top">
+          <div class="dkpi-label">Concluídas</div>
+          <div class="dkpi-icon" style="background:rgba(255,255,255,.15)">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          </div>
+        </div>
+        <div class="dkpi-val" id="d-osok">0</div>
+        <div class="dkpi-sub">
+          <span style="background:rgba(255,255,255,.18);padding:2px 8px;border-radius:20px;font-size:10px">de <span id="d-atend">0</span> OS no período</span>
+        </div>
       </div>
+
+      <!-- Gasto Total -->
+      <div class="dkpi-card" style="background:linear-gradient(135deg,#7c3aed 0%,#a855f7 100%)">
+        <div class="dkpi-top">
+          <div class="dkpi-label">Gasto Total</div>
+          <div class="dkpi-icon" style="background:rgba(255,255,255,.15)">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+          </div>
+        </div>
+        <div class="dkpi-val" id="d-gastoT" style="font-size:22px">R$0</div>
+        <div class="dkpi-sub">
+          <span style="background:rgba(255,255,255,.18);padding:2px 8px;border-radius:20px;font-size:10px">Rotas + OS no período</span>
+        </div>
+      </div>
+
+      <!-- Estoque Crítico -->
+      <div class="dkpi-card" style="background:linear-gradient(135deg,#c0392b 0%,#e74c3c 100%)">
+        <div class="dkpi-top">
+          <div class="dkpi-label">Estoque Crítico</div>
+          <div class="dkpi-icon" style="background:rgba(255,255,255,.15)">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </div>
+        </div>
+        <div class="dkpi-val" id="d-estbaixo">0</div>
+        <div class="dkpi-sub">
+          <span style="background:rgba(255,255,255,.18);padding:2px 8px;border-radius:20px;font-size:10px">itens abaixo do mínimo</span>
+        </div>
+      </div>
+
     </div>
 
-    <!-- Linha de gráficos secundários -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+    <!-- ── FAIXA COMPACTA: KPIs secundários ─────────────────────────── -->
+    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:20px">
+
+      <div class="dkpi-mini" onclick="nav('os',document.querySelector('[data-modulo=os]'))" style="cursor:pointer">
+        <div class="dkpi-mini-ico" style="background:#e8f0fe;color:#1a50b0">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+        </div>
+        <div>
+          <div class="dkpi-mini-val" id="d-atend-mini">0</div>
+          <div class="dkpi-mini-lbl">OS Total</div>
+        </div>
+      </div>
+
+      <div class="dkpi-mini" onclick="nav('lab',document.querySelector('[data-modulo=lab]'))" style="cursor:pointer">
+        <div class="dkpi-mini-ico" style="background:#f3eeff;color:#6b3fa0">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v11l-4 4m4-4h10m0 0l-4 4M9 17h10"/></svg>
+        </div>
+        <div>
+          <div class="dkpi-mini-val" id="d-lab">0</div>
+          <div class="dkpi-mini-lbl">Laboratório</div>
+        </div>
+      </div>
+
+      <div class="dkpi-mini">
+        <div class="dkpi-mini-ico" style="background:#fdf0ee;color:#b83030">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+        <div>
+          <div class="dkpi-mini-val" id="d-retqtd">0</div>
+          <div class="dkpi-mini-lbl">Retrabalhos</div>
+        </div>
+      </div>
+
+      <div class="dkpi-mini" onclick="nav('logistica',document.querySelector('[data-modulo=logistica]'))" style="cursor:pointer">
+        <div class="dkpi-mini-ico" style="background:#e8f0fe;color:#1a50b0">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+        </div>
+        <div>
+          <div class="dkpi-mini-val" id="d-rotas">0</div>
+          <div class="dkpi-mini-lbl">Rotas</div>
+        </div>
+      </div>
+
+      <div class="dkpi-mini">
+        <div class="dkpi-mini-ico" style="background:#fff4e6;color:#c06010">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+        </div>
+        <div>
+          <div class="dkpi-mini-val" id="d-litros">0L</div>
+          <div class="dkpi-mini-lbl">Combustível</div>
+        </div>
+      </div>
+
+      <div class="dkpi-mini" onclick="nav('estoque',document.querySelector('[data-modulo=estoque]'))" style="cursor:pointer">
+        <div class="dkpi-mini-ico" style="background:#e6f5ee;color:#1a7a4a">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+        </div>
+        <div>
+          <div class="dkpi-mini-val" id="d-estqtd">0</div>
+          <div class="dkpi-mini-lbl">Itens Estoque</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── GRÁFICOS PRINCIPAIS ───────────────────────────────────────── -->
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px">
+
+      <!-- Evolução de atendimentos -->
+      <div class="card" style="border:none;box-shadow:0 2px 20px rgba(13,31,60,.07)">
+        <div class="card-hd" style="border-bottom:none;padding-bottom:0;margin-bottom:16px">
+          <div>
+            <div class="card-title" style="font-size:13px;color:var(--nv)">Evolução de Atendimentos por Técnico</div>
+            <div style="font-size:10px;color:var(--tx3);margin-top:2px">Quantidade mensal por profissional</div>
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap" id="d-leg-tec"></div>
+        </div>
+        <canvas id="chart-atend-linha" height="185" style="width:100%;display:block"></canvas>
+      </div>
+
+      <!-- Status das OS (pizza) -->
+      <div class="card" style="border:none;box-shadow:0 2px 20px rgba(13,31,60,.07)">
+        <div class="card-hd" style="border-bottom:none;padding-bottom:0;margin-bottom:16px">
+          <div>
+            <div class="card-title" style="font-size:13px;color:var(--nv)">Status das OS</div>
+            <div style="font-size:10px;color:var(--tx3);margin-top:2px">Distribuição por situação</div>
+          </div>
+        </div>
+        <canvas id="chart-os-pizza" height="185" style="width:100%;display:block"></canvas>
+      </div>
+
+    </div>
+
+    <!-- ── GRÁFICOS SECUNDÁRIOS ─────────────────────────────────────── -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px">
+
       <!-- Gastos em rota -->
-      <div class="card">
-        <div class="card-hd"><div class="card-title">💸 Evolução de Gastos em Rota (R$)</div></div>
-        <canvas id="chart-gastos-linha" height="190" style="width:100%;display:block"></canvas>
+      <div class="card" style="border:none;box-shadow:0 2px 20px rgba(13,31,60,.07)">
+        <div class="card-hd" style="border-bottom:none;padding-bottom:0;margin-bottom:12px">
+          <div>
+            <div class="card-title" style="font-size:13px">Gastos em Rota</div>
+            <div style="font-size:10px;color:var(--tx3);margin-top:2px">Evolução mensal (R$)</div>
+          </div>
+        </div>
+        <canvas id="chart-gastos-linha" height="160" style="width:100%;display:block"></canvas>
       </div>
-      <!-- Consumo toner pizza -->
-      <div class="card">
-        <div class="card-hd"><div class="card-title">🖨 Consumo de Suprimentos por Tipo</div></div>
-        <canvas id="chart-toner-pizza" height="190" style="width:100%;display:block"></canvas>
+
+      <!-- Atendimentos por técnico (barras) -->
+      <div class="card" style="border:none;box-shadow:0 2px 20px rgba(13,31,60,.07)">
+        <div class="card-hd" style="border-bottom:none;padding-bottom:0;margin-bottom:12px">
+          <div>
+            <div class="card-title" style="font-size:13px">Por Técnico</div>
+            <div style="font-size:10px;color:var(--tx3);margin-top:2px">Atendimentos realizados</div>
+          </div>
+        </div>
+        <div id="d-bartec" class="barchart" style="margin-top:4px"></div>
       </div>
+
+      <!-- Top Clientes -->
+      <div class="card" style="border:none;box-shadow:0 2px 20px rgba(13,31,60,.07)">
+        <div class="card-hd" style="border-bottom:none;padding-bottom:0;margin-bottom:12px">
+          <div>
+            <div class="card-title" style="font-size:13px">Top Clientes</div>
+            <div style="font-size:10px;color:var(--tx3);margin-top:2px">Por volume de OS</div>
+          </div>
+        </div>
+        <div id="d-topcli" class="barchart" style="margin-top:4px"></div>
+      </div>
+
     </div>
 
-    <!-- Linha inferior: barras + retrabalho -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
-      <!-- Barra por técnico -->
-      <div class="card">
-        <div class="card-hd"><div class="card-title">👷 Atendimentos por Técnico</div></div>
-        <div id="d-bartec" class="barchart"></div>
-      </div>
-      <!-- Barra gastos -->
-      <div class="card">
-        <div class="card-hd"><div class="card-title">💳 Gastos por Categoria</div></div>
-        <div id="d-bargasto" class="barchart"></div>
-      </div>
-    </div>
+    <!-- ── LINHA INFERIOR: Suprimentos + Gastos categoria + Retrabalho ── -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px">
 
-    <!-- Linha: retrabalho + top clientes -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+      <!-- Consumo de suprimentos -->
+      <div class="card" style="border:none;box-shadow:0 2px 20px rgba(13,31,60,.07)">
+        <div class="card-hd" style="border-bottom:none;padding-bottom:0;margin-bottom:12px">
+          <div>
+            <div class="card-title" style="font-size:13px">Suprimentos</div>
+            <div style="font-size:10px;color:var(--tx3);margin-top:2px">Consumo por tipo</div>
+          </div>
+        </div>
+        <canvas id="chart-toner-pizza" height="160" style="width:100%;display:block"></canvas>
+      </div>
+
+      <!-- Gastos por categoria -->
+      <div class="card" style="border:none;box-shadow:0 2px 20px rgba(13,31,60,.07)">
+        <div class="card-hd" style="border-bottom:none;padding-bottom:0;margin-bottom:12px">
+          <div>
+            <div class="card-title" style="font-size:13px">Gastos por Categoria</div>
+            <div style="font-size:10px;color:var(--tx3);margin-top:2px">Distribuição de custos</div>
+          </div>
+        </div>
+        <div id="d-bargasto" class="barchart" style="margin-top:4px"></div>
+      </div>
+
       <!-- Retrabalho -->
-      <div class="card">
-        <div class="card-hd"><div class="card-title">⚠ Retrabalho — Equipamentos com Recorrência</div></div>
+      <div class="card" style="border:none;box-shadow:0 2px 20px rgba(13,31,60,.07)">
+        <div class="card-hd" style="border-bottom:none;padding-bottom:0;margin-bottom:12px">
+          <div>
+            <div class="card-title" style="font-size:13px">Retrabalho</div>
+            <div style="font-size:10px;color:var(--tx3);margin-top:2px">Equipamentos com recorrência</div>
+          </div>
+        </div>
         <div id="d-ret"></div>
       </div>
-      <!-- Top clientes por OS -->
-      <div class="card">
-        <div class="card-hd"><div class="card-title">🏆 Top Clientes por OS</div></div>
-        <div id="d-topcli" class="barchart"></div>
-      </div>
+
     </div>
 
-    <!-- Alertas de estoque baixo -->
-    <div class="card" id="d-alerta-est-wrap" style="margin-bottom:12px;display:none">
-      <div class="card-hd">
-        <div class="card-title" style="color:var(--rd)">🔴 Alertas de Estoque Abaixo do Mínimo</div>
+    <!-- ── ALERTAS ESTOQUE ─────────────────────────────────────────── -->
+    <div class="card" id="d-alerta-est-wrap" style="display:none;border:none;box-shadow:0 2px 20px rgba(184,48,48,.12);border-left:4px solid var(--rd);margin-bottom:4px">
+      <div class="card-hd" style="border-bottom:none;padding-bottom:0;margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="width:28px;height:28px;background:var(--rdbg);border-radius:6px;display:flex;align-items:center;justify-content:center">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#b83030" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </div>
+          <div>
+            <div class="card-title" style="color:var(--rd);font-size:13px">Alertas de Estoque Abaixo do Mínimo</div>
+            <div style="font-size:10px;color:#c06060;margin-top:1px">Itens que precisam de reposição</div>
+          </div>
+        </div>
         <button class="btn btn-ghost btn-xs" onclick="nav('estoque',document.querySelector('[data-modulo=estoque]'))">Ver Estoque →</button>
       </div>
       <div id="d-alerta-est"></div>
@@ -4582,6 +4705,8 @@ async function loadDash(){
 
     // ── Preenche KPIs ──
     document.getElementById('d-atend').textContent   = osF.length;
+    const dAtendMini = document.getElementById('d-atend-mini');
+    if(dAtendMini) dAtendMini.textContent = osF.length;
     document.getElementById('d-osab').textContent    = osAb;
     document.getElementById('d-osand').textContent   = osAnd;
     document.getElementById('d-osok').textContent    = osOk;
@@ -5766,7 +5891,7 @@ async function forgotStep3() {
 </script>
 
 <!-- Modal Esqueceu Senha — 3 etapas -->
-<div class="mov" id="m-forgot" style="display:none">
+<div class="mov" id="m-forgot">
 <div class="modal" style="max-width:420px">
   <div class="mhd">
     <div>
