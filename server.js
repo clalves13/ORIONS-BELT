@@ -543,152 +543,49 @@ app.delete('/api/lancamentos/:id', requireAuth, async (req,res) => {
 });
 
 // RESET DE SENHA
-// ─── RECUPERAÇÃO DE SENHA ────────────────────────────────────────────────────
-// Gera código de 6 dígitos numéricos (mais amigável que token hex)
-function gerarCodigo() {
-  return String(Math.floor(100000 + Math.random() * 900000));
-}
-
-// Envia email via Yahoo SMTP
-async function enviarEmail(destinatario, nome, codigo) {
-  const nodemailer = require('nodemailer');
-  const smtpUser = process.env.SMTP_USER || 'clairtonalves@yahoo.com.br';
-  const smtpPass = process.env.SMTP_PASS; // Senha de app Yahoo em variável de ambiente
-  if (!smtpPass) throw new Error('SMTP_PASS não configurado nas variáveis de ambiente.');
-  const transporter = nodemailer.createTransport({
-    host: 'smtp.mail.yahoo.com',
-    port: 587,
-    secure: false,
-    auth: { user: smtpUser, pass: smtpPass },
-    tls: { rejectUnauthorized: false }
-  });
-  await transporter.sendMail({
-    from: `"Theikós AT" <${smtpUser}>`,
-    to: destinatario,
-    subject: '🔐 Código de Recuperação — Theikós AT',
-    html: `
-      <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:24px;border:1px solid #ddd;border-radius:10px">
-        <div style="text-align:center;margin-bottom:20px">
-          <div style="background:#0d1f3c;display:inline-block;padding:10px 20px;border-radius:8px">
-            <span style="color:#e07818;font-size:20px;font-weight:800;letter-spacing:2px">THEIKÓS AT</span>
-          </div>
-        </div>
-        <p style="color:#333;font-size:15px">Olá, <b>${nome}</b>!</p>
-        <p style="color:#555;font-size:14px">Recebemos uma solicitação para redefinir sua senha. Use o código abaixo:</p>
-        <div style="background:#f4f6fb;border:2px dashed #1e4080;border-radius:10px;text-align:center;padding:24px;margin:20px 0">
-          <span style="font-size:40px;font-weight:900;letter-spacing:10px;color:#0d1f3c">${codigo}</span>
-        </div>
-        <p style="color:#888;font-size:12px">⏱ Este código expira em <b>15 minutos</b>.</p>
-        <p style="color:#888;font-size:12px">Se você não solicitou isso, ignore este email.</p>
-        <hr style="border:none;border-top:1px solid #eee;margin:20px 0">
-        <p style="color:#aaa;font-size:11px;text-align:center">Theikós Soluções — Sistema de Assistência Técnica</p>
-      </div>
-    `
-  });
-}
-
-// Envia WhatsApp via Callmebot (gratuito, sem conta)
-// O usuário precisa ter ativado o Callmebot no WhatsApp dele previamente:
-// Enviar "I allow callmebot to send me messages" para +34 644 65 21 28
-async function enviarWhatsApp(numero, nome, codigo) {
-  const https = require('https');
-  // Limpa número: mantém só dígitos, adiciona 55 se não tiver DDI
-  let tel = numero.replace(/\D/g, '');
-  if (!tel.startsWith('55')) tel = '55' + tel;
-  // Chave Callmebot — pode ser configurada por variável de ambiente ou usar a default do sistema
-  const apiKey = process.env.CALLMEBOT_KEY || '';
-  if (!apiKey) throw new Error('CALLMEBOT_KEY não configurada. Acesse callmebot.com para obter sua chave pessoal.');
-  const msg = encodeURIComponent(
-    `🔐 *Theikós AT — Recuperação de Senha*\n\nOlá, ${nome}!\n\nSeu código de verificação é:\n\n*${codigo}*\n\n⏱ Expira em 15 minutos.\n\nSe não foi você, ignore esta mensagem.`
-  );
-  const url = `https://api.callmebot.com/whatsapp.php?phone=${tel}&text=${msg}&apikey=${apiKey}`;
-  return new Promise((resolve, reject) => {
-    https.get(url, (r) => {
-      let data = '';
-      r.on('data', d => data += d);
-      r.on('end', () => {
-        if (r.statusCode === 200) resolve(data);
-        else reject(new Error(`Callmebot retornou status ${r.statusCode}: ${data}`));
-      });
-    }).on('error', reject);
-  });
-}
-
-app.post('/api/forgot-password', async (req, res) => {
+app.post('/api/forgot-password', async (req,res) => {
   try {
-    const { login, canal } = req.body; // canal: 'email' | 'whatsapp'
-    if (!login) return res.status(400).json({ error: 'Informe o login ou email.' });
-    const user = await col('users').findOne({ $or: [{ login }, { email: login }] });
-    // Segurança: não revelar se usuário existe
-    if (!user) return res.json({ ok: true, msg: 'Se o cadastro for encontrado, o código será enviado.' });
-
-    const codigo = gerarCodigo();
-    const expiry = Date.now() + 15 * 60 * 1000; // 15 min
-    await col('users').updateOne(
-      { _id: user._id },
-      { $set: { reset_codigo: codigo, reset_expiry: expiry, reset_tentativas: 0 } }
-    );
-
-    if (canal === 'whatsapp') {
-      const tel = user.wpp || '';
-      if (!tel) return res.status(400).json({ error: 'Este usuário não tem WhatsApp cadastrado no sistema. Tente pelo email.' });
+    const {login} = req.body;
+    if(!login) return res.status(400).json({error:'Informe o login ou email.'});
+    const user = await col('users').findOne({$or:[{login},{email:login}]});
+    if(!user) return res.json({ok:true,msg:'Se o usuário existir, o email será enviado.'});
+    const token = require('crypto').randomBytes(20).toString('hex');
+    const expiry = Date.now() + 3600000; // 1h
+    await col('users').updateOne({_id:user._id},{$set:{reset_token:token,reset_expiry:expiry}});
+    // Tente enviar email se SMTP configurado
+    const smtpUser = process.env.SMTP_USER;
+    const smtpPass = process.env.SMTP_PASS;
+    if(smtpUser && smtpPass) {
       try {
-        await enviarWhatsApp(tel, user.nome, codigo);
-        const telMask = tel.replace(/\D/g,'').slice(-4);
-        return res.json({ ok: true, msg: `Código enviado para o WhatsApp com final *${telMask}. Verifique seu celular!` });
+        const nodemailer = require('nodemailer');
+        const transporter = nodemailer.createTransport({service:'gmail',auth:{user:smtpUser,pass:smtpPass}});
+        const appUrl = process.env.APP_URL || 'https://theikos-at-production.up.railway.app';
+        await transporter.sendMail({
+          from:`"Theikós AT" <${smtpUser}>`,
+          to: user.email || smtpUser,
+          subject:'Redefinição de Senha — Theikós AT',
+          html:`<p>Olá, <b>${user.nome}</b>!</p><p>Clique no link para redefinir sua senha:</p><p><a href="${appUrl}/reset?token=${token}">${appUrl}/reset?token=${token}</a></p><p>O link expira em 1 hora.</p>`
+        });
+        return res.json({ok:true,msg:'Email enviado! Verifique sua caixa de entrada.'});
       } catch(e) {
-        console.error('WhatsApp error:', e.message);
-        return res.status(500).json({ error: 'Erro ao enviar WhatsApp: ' + e.message });
-      }
-    } else {
-      // Canal email (padrão)
-      const emailDest = user.email || '';
-      if (!emailDest) return res.status(400).json({ error: 'Este usuário não tem email cadastrado. Tente pelo WhatsApp.' });
-      try {
-        await enviarEmail(emailDest, user.nome, codigo);
-        // Mascarar email: c***@yahoo.com.br
-        const [eu, ed] = emailDest.split('@');
-        const emailMask = eu[0] + '***@' + ed;
-        return res.json({ ok: true, msg: `Código enviado para ${emailMask}. Verifique sua caixa de entrada!` });
-      } catch(e) {
-        console.error('Email error:', e.message);
-        return res.status(500).json({ error: 'Erro ao enviar email: ' + e.message });
+        console.error('Email error:',e.message);
       }
     }
-  } catch(e) { res.status(500).json({ error: e.message }); }
+    // Se não tem SMTP, retorna o token para exibir (modo dev)
+    res.json({ok:true,token,msg:'SMTP não configurado. Token gerado: '+token});
+  } catch(e) { res.status(500).json({error:e.message}); }
 });
 
-app.post('/api/reset-password', async (req, res) => {
+app.post('/api/reset-password', async (req,res) => {
   try {
-    const { login, codigo, nova_senha } = req.body;
-    if (!login || !codigo || !nova_senha) return res.status(400).json({ error: 'Dados incompletos.' });
-    if (nova_senha.length < 4) return res.status(400).json({ error: 'A senha deve ter ao menos 4 caracteres.' });
-    const user = await col('users').findOne({ $or: [{ login }, { email: login }] });
-    if (!user) return res.status(400).json({ error: 'Usuário não encontrado.' });
-    // Verificar expiração
-    if (!user.reset_codigo || !user.reset_expiry || Date.now() > user.reset_expiry) {
-      return res.status(400).json({ error: 'Código expirado. Solicite um novo.' });
-    }
-    // Limitar tentativas (máx 5)
-    const tentativas = (user.reset_tentativas || 0) + 1;
-    if (tentativas > 5) {
-      await col('users').updateOne({ _id: user._id }, { $unset: { reset_codigo: '', reset_expiry: '', reset_tentativas: '' } });
-      return res.status(400).json({ error: 'Muitas tentativas. Solicite um novo código.' });
-    }
-    if (user.reset_codigo !== String(codigo).trim()) {
-      await col('users').updateOne({ _id: user._id }, { $set: { reset_tentativas: tentativas } });
-      return res.status(400).json({ error: `Código incorreto. Tentativa ${tentativas}/5.` });
-    }
-    // Código correto — atualiza senha e limpa campos de reset
-    await col('users').updateOne(
-      { _id: user._id },
-      {
-        $set: { senha_hash: bcrypt.hashSync(nova_senha, 10) },
-        $unset: { reset_codigo: '', reset_expiry: '', reset_tentativas: '' }
-      }
-    );
-    res.json({ ok: true, msg: 'Senha redefinida com sucesso! Você já pode fazer login.' });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+    const {token, nova_senha} = req.body;
+    if(!token||!nova_senha) return res.status(400).json({error:'Dados inválidos.'});
+    const user = await col('users').findOne({reset_token:token,reset_expiry:{$gt:Date.now()}});
+    if(!user) return res.status(400).json({error:'Token inválido ou expirado.'});
+    const bcrypt = require('bcryptjs');
+    await col('users').updateOne({_id:user._id},{$set:{senha_hash:bcrypt.hashSync(nova_senha,10),$unset:{reset_token:'',reset_expiry:''}}});
+    res.json({ok:true,msg:'Senha redefinida com sucesso!'});
+  } catch(e) { res.status(500).json({error:e.message}); }
 });
 
 // Debug route
