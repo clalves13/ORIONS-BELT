@@ -38,7 +38,22 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--tx);font-siz
 .lbtn:hover{background:var(--bl)}
 
 /* SIDEBAR */
-#sidebar{position:fixed;left:0;top:0;width:220px;height:100vh;background:var(--nv);display:flex;flex-direction:column;z-index:100;overflow-y:auto}
+#sidebar{position:fixed;left:0;top:0;width:220px;height:100vh;background:var(--nv);display:flex;flex-direction:column;z-index:100;overflow-y:auto;overflow-x:hidden;transition:width .22s cubic-bezier(.4,0,.2,1)}
+#sidebar.collapsed{width:56px;overflow:visible}
+#sidebar.collapsed .logo-name,#sidebar.collapsed .logo-sub,#sidebar.collapsed .nav-sec,#sidebar.collapsed .ni-badge,#sidebar.collapsed .ni span:not(.ni-badge),#sidebar.collapsed .sb-name,#sidebar.collapsed .sb-role,#sidebar.collapsed .sb-backup-txt{display:none}
+#sidebar.collapsed .logo-wrap{padding:18px 11px 14px}
+#sidebar.collapsed .logo-row{justify-content:center}
+#sidebar.collapsed .ni{padding:10px;justify-content:center;gap:0;position:relative}
+#sidebar.collapsed .ni:hover::after{content:attr(data-tip);position:absolute;left:62px;background:#1a2340;color:#fff;font-size:11px;white-space:nowrap;padding:5px 10px;border-radius:7px;z-index:999;pointer-events:none;box-shadow:0 4px 16px rgba(0,0,0,.25)}
+#sidebar.collapsed .sb-footer{padding:12px 8px}
+#sidebar.collapsed .sb-user{flex-direction:column;gap:5px;align-items:center}
+#sidebar.collapsed .btn-logout{margin-left:0}
+#sidebar.collapsed #sb-backup-wrap button{padding:7px 5px;font-size:9px}
+#sidebar.collapsed .sb-av{width:32px;height:32px}
+.sb-toggle{position:absolute;right:-12px;top:22px;width:24px;height:24px;background:var(--sf);border:1.5px solid var(--bd);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:101;box-shadow:0 2px 8px rgba(13,31,60,.12);transition:all .15s;color:var(--nv)}
+.sb-toggle:hover{background:var(--sf2)}
+.sb-toggle svg{transition:transform .22s}
+#sidebar.collapsed .sb-toggle svg{transform:rotate(180deg)}
 .logo-wrap{padding:18px 16px 14px;border-bottom:1px solid rgba(255,255,255,.07);flex-shrink:0}
 .logo-row{display:flex;align-items:center;gap:9px}
 .logo-ico{width:34px;height:34px;background:var(--ac);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
@@ -59,7 +74,8 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--tx);font-siz
 .btn-logout:hover{color:var(--rd)}
 
 /* MAIN */
-#main{margin-left:220px;min-height:100vh;padding-bottom:32px}
+#main{margin-left:220px;min-height:100vh;padding-bottom:32px;transition:margin-left .22s cubic-bezier(.4,0,.2,1)}
+#main.sb-collapsed{margin-left:56px}
 .topbar{background:var(--sf);border-bottom:1px solid var(--bd);padding:0 24px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
 .tb-title{font-size:14px;font-weight:700;color:var(--nv)}
 .tb-sub{font-size:10px;color:var(--tx3);margin-top:1px}
@@ -74,7 +90,49 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--tx);font-siz
 .btn-danger{background:var(--rdbg);color:var(--rd);border:1px solid var(--rdbd)}.btn-danger:hover{background:#f5d8d4}
 .btn-success{background:var(--gnbg);color:var(--gn);border:1px solid var(--gnbd)}.btn-success:hover{background:#cce8d8}
 .btn-info{background:var(--pubg);color:var(--pu);border:1px solid #c8a8f0}.btn-info:hover{background:#e8d8fc}
-.btn-sm{padding:5px 10px;font-size:11px}.btn-xs{padding:3px 7px;font-size:10px}
+/* SLA BADGES */
+.sla-ok{display:inline-flex;align-items:center;gap:4px;background:#e6f5ee;color:#1a7a4a;border:1px solid #9ddcba;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700}
+.sla-warn{display:inline-flex;align-items:center;gap:4px;background:#fff4e6;color:#c06010;border:1px solid #fac878;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700}
+.sla-late{display:inline-flex;align-items:center;gap:4px;background:#fdf0ee;color:#b83030;border:1px solid #f0b8b0;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;animation:sla-pulse 2s infinite}
+@keyframes sla-pulse{0%,100%{opacity:1}50%{opacity:.6}}
+.sla-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.sla-dot.ok{background:#1a7a4a}.sla-dot.warn{background:#c06010}.sla-dot.late{background:#b83030}
+
+/* NOTIFICATION BELL */
+.notif-bell{position:relative;width:36px;height:36px;background:var(--sf2);border:1px solid var(--bd);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--tx2);transition:all .15s}
+.notif-bell:hover{background:var(--sf);border-color:var(--bl2bd)}
+.notif-count{position:absolute;top:-5px;right:-5px;background:var(--rd);color:#fff;font-size:9px;font-weight:700;min-width:16px;height:16px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 3px;display:none}
+.notif-count.show{display:flex}
+.notif-panel{position:absolute;top:44px;right:0;width:340px;background:var(--sf);border:1px solid var(--bd);border-radius:var(--rlg);box-shadow:0 8px 32px rgba(13,31,60,.16);z-index:200;display:none}
+.notif-panel.open{display:block}
+.notif-panel-hd{padding:14px 16px 10px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between}
+.notif-panel-title{font-size:13px;font-weight:700;color:var(--nv)}
+.notif-item{padding:10px 16px;border-bottom:1px solid var(--bd);cursor:pointer;transition:background .1s}
+.notif-item:hover{background:var(--sf2)}
+.notif-item:last-child{border-bottom:none}
+.notif-item-title{font-size:12px;font-weight:600;color:var(--nv);margin-bottom:2px}
+.notif-item-sub{font-size:11px;color:var(--tx3)}
+.notif-item.late{border-left:3px solid var(--rd)}
+.notif-item.warn{border-left:3px solid var(--or)}
+
+/* HELP BUTTON */
+.help-btn{width:36px;height:36px;background:var(--bl2bg);border:1px solid var(--bl2bd);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--bl2);font-size:15px;font-weight:800;transition:all .15s;flex-shrink:0}
+.help-btn:hover{background:var(--bl2);color:#fff}
+
+/* HELP MODAL */
+.help-nav{display:flex;flex-direction:column;gap:2px;width:160px;flex-shrink:0}
+.help-nav-item{padding:8px 12px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:500;color:var(--tx2);transition:all .12s;display:flex;align-items:center;gap:7px}
+.help-nav-item:hover{background:var(--sf2)}
+.help-nav-item.active{background:var(--bl2bg);color:var(--bl2);font-weight:700}
+.help-topic{display:none}.help-topic.active{display:block}
+.help-topic h3{font-size:13px;font-weight:700;color:var(--nv);margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--bd)}
+.help-topic h4{font-size:12px;font-weight:700;color:var(--bl);margin:12px 0 5px}
+.help-topic p,.help-topic li{font-size:12px;color:var(--tx2);line-height:1.7}
+.help-topic ul{padding-left:16px;margin-top:4px}
+.help-tip{background:var(--bl2bg);border-left:3px solid var(--bl2);border-radius:0 7px 7px 0;padding:8px 12px;margin:10px 0;font-size:11px;color:var(--bl2)}
+
+/* TOPBAR EXTRA */
+.tb-right-group{display:flex;align-items:center;gap:7px;position:relative}
 
 /* CARDS */
 .card{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rlg);padding:18px}
@@ -291,6 +349,10 @@ tr:hover td{background:var(--sf2)}
 
 <!-- SIDEBAR -->
 <div id="sidebar" style="display:none">
+  <!-- Toggle recolher -->
+  <div class="sb-toggle" onclick="toggleSidebar()" title="Recolher menu">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+  </div>
   <div class="logo-wrap">
     <div class="logo-row">
       <img src="data:image/png;base64,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" style="width:34px;height:34px;object-fit:contain;border-radius:6px">
@@ -299,23 +361,23 @@ tr:hover td{background:var(--sf2)}
   </div>
   <div style="flex:1">
     <div class="nav-sec">Principal</div>
-    <div class="ni active" data-modulo="dashboard" onclick="nav('dashboard',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Dashboard</div>
-    <div class="ni" data-modulo="os" onclick="nav('os',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="2"/></svg>OS / Atendimento<span class="ni-badge" id="b-os">0</span></div>
-    <div class="ni" data-modulo="logistica" onclick="nav('logistica',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16,8 20,8 23,11 23,16 16,16 16,8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>Logística</div>
-    <div class="ni" data-modulo="lab" onclick="nav('lab',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/></svg>Laboratório</div>
+    <div class="ni active" data-modulo="dashboard" data-tip="Dashboard" onclick="nav('dashboard',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg><span>Dashboard</span></div>
+    <div class="ni" data-modulo="os" data-tip="OS / Atendimento" onclick="nav('os',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="2"/></svg><span>OS / Atendimento</span><span class="ni-badge" id="b-os">0</span></div>
+    <div class="ni" data-modulo="logistica" data-tip="Logística" onclick="nav('logistica',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16,8 20,8 23,11 23,16 16,16 16,8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg><span>Logística</span></div>
+    <div class="ni" data-modulo="lab" data-tip="Laboratório" onclick="nav('lab',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/></svg><span>Laboratório</span></div>
     <div class="nav-sec">Histórico</div>
-    <div class="ni" data-modulo="historico" onclick="nav('historico',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>Histórico de Atend.</div>
+    <div class="ni" data-modulo="historico" data-tip="Histórico" onclick="nav('historico',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg><span>Histórico de Atend.</span></div>
     <div class="nav-sec">Estoque</div>
-    <div class="ni" data-modulo="estoque" onclick="nav('estoque',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>Peças e Suprimentos</div>
-    <div class="ni" data-modulo="supr-cli" onclick="nav('supr-cli',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16,8 20,8 23,11 23,16 16,16 16,8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>Suprimentos Cliente</div>
+    <div class="ni" data-modulo="estoque" data-tip="Peças e Suprimentos" onclick="nav('estoque',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg><span>Peças e Suprimentos</span></div>
+    <div class="ni" data-modulo="supr-cli" data-tip="Suprimentos Cliente" onclick="nav('supr-cli',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16,8 20,8 23,11 23,16 16,16 16,8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg><span>Suprimentos Cliente</span></div>
     <div class="nav-sec">Cadastros</div>
-    <div class="ni" data-modulo="clientes" onclick="nav('clientes',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>Clientes / Equip.</div>
-    <div class="ni" data-modulo="tecnicos" onclick="nav('tecnicos',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Técnicos</div>
-    <div class="ni" id="ni-usr" onclick="nav('usuarios',this)" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>Usuários</div>
+    <div class="ni" data-modulo="clientes" data-tip="Clientes / Equip." onclick="nav('clientes',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg><span>Clientes / Equip.</span></div>
+    <div class="ni" data-modulo="tecnicos" data-tip="Técnicos" onclick="nav('tecnicos',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Técnicos</span></div>
+    <div class="ni" id="ni-usr" data-tip="Usuários" onclick="nav('usuarios',this)" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg><span>Usuários</span></div>
     <div class="nav-sec">Gestão</div>
-    <div class="ni" data-modulo="contratos" onclick="nav('contratos',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10,9 9,9 8,9"/></svg>Contratos<span class="ni-badge" id="b-contratos" style="display:none">0</span></div>
-    <div class="ni" data-modulo="financeiro" onclick="nav('financeiro',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>Financeiro</div>
-    <div class="ni" data-modulo="notificacoes" onclick="nav('notificacoes',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>Notificações<span class="ni-badge" id="b-notif" style="background:var(--rd)">0</span></div>
+    <div class="ni" data-modulo="contratos" data-tip="Contratos" onclick="nav('contratos',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10,9 9,9 8,9"/></svg><span>Contratos</span><span class="ni-badge" id="b-contratos" style="display:none">0</span></div>
+    <div class="ni" data-modulo="financeiro" data-tip="Financeiro" onclick="nav('financeiro',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg><span>Financeiro</span></div>
+    <div class="ni" data-modulo="notificacoes" data-tip="Notificações SLA" onclick="nav('notificacoes',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg><span>Notificações</span><span class="ni-badge" id="b-notif" style="background:var(--rd)">0</span></div>
   </div>
   <div class="sb-footer">
     <div id="sb-backup-wrap" style="display:none;margin-bottom:8px"><button onclick="openM('m-backup')" style="width:100%;padding:7px;background:rgba(224,120,24,0.15);color:var(--ac2);border:1px solid rgba(224,120,24,0.3);border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">💾 Backup / Restaurar</button></div>
@@ -349,6 +411,22 @@ tr:hover td{background:var(--sf2)}
       <button class="btn btn-ghost btn-sm" onclick="dashFiltroRapido(90)">90d</button>
       <button class="btn btn-primary btn-sm" onclick="loadDash()">↻ Atualizar</button>
       <button class="btn btn-ghost btn-sm" onclick="printRelatorio('dashboard')">🖨 Exportar</button>
+      <!-- Sino SLA -->
+      <div class="tb-right-group">
+        <div class="notif-bell" onclick="toggleNotifPanel()" id="notif-bell-btn" title="Alertas de SLA">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+          <div class="notif-count" id="notif-count">0</div>
+        </div>
+        <div class="notif-panel" id="notif-panel">
+          <div class="notif-panel-hd">
+            <div class="notif-panel-title">🔔 Alertas de SLA</div>
+            <button onclick="nav('os',document.querySelector('[data-modulo=os]'))" style="background:none;border:none;font-size:11px;color:var(--bl2);cursor:pointer;font-weight:600">Ver todas →</button>
+          </div>
+          <div id="notif-panel-list"><div style="padding:16px;text-align:center;color:var(--tx3);font-size:12px">Nenhum alerta no momento</div></div>
+        </div>
+      </div>
+      <!-- Botão Ajuda -->
+      <div class="help-btn" onclick="openHelp()" title="Central de Ajuda">?</div>
     </div>
   </div>
   <div class="content" style="padding:20px 24px">
@@ -671,7 +749,7 @@ tr:hover td{background:var(--sf2)}
     <div class="card" style="padding:0"><div class="twrap"><table>
       <thead><tr>
         <th>Nº OS</th><th>Abertura</th><th>Cliente</th><th>Equipamento</th><th>Nº Série</th>
-        <th>Defeito</th><th>Técnico</th><th>Status</th><th>Ações</th>
+        <th>Defeito</th><th>Técnico</th><th>SLA</th><th>Status</th><th>Ações</th>
       </tr></thead>
       <tbody id="tb-os"></tbody>
     </table></div></div>
@@ -1685,6 +1763,33 @@ tr:hover td{background:var(--sf2)}
       <div class="fgrid fg2"><div class="fg"><label>Equipamento</label><select id="o-eq" onchange="fillEq('o')"></select></div><div class="fg"><label>Modelo</label><input type="text" id="o-modelo"></div><div class="fg"><label>Nº Série</label><input type="text" id="o-nserie"></div><div class="fg"><label>Contador</label><input type="text" id="o-cont"></div></div>
     </div>
     <div style="margin-bottom:13px"><div class="fsec">Chamado</div>
+      <div class="fgrid fg3" style="margin-bottom:10px">
+        <div class="fg"><label>Tipo de OS</label>
+          <select id="o-tipo" onchange="calcSLADeadline()">
+            <option value="">Selecione...</option>
+            <option value="Corretiva">Corretiva</option>
+            <option value="Preventiva">Preventiva</option>
+            <option value="Urgente">Urgente</option>
+            <option value="Instalação">Instalação</option>
+            <option value="Outros">Outros</option>
+          </select>
+        </div>
+        <div class="fg"><label>Prazo SLA</label>
+          <select id="o-sla-prazo" onchange="calcSLADeadline()">
+            <option value="">Sem SLA</option>
+            <option value="12">12 horas</option>
+            <option value="24">24 horas</option>
+            <option value="48">48 horas</option>
+            <option value="manual">Manual</option>
+          </select>
+        </div>
+        <div class="fg" id="o-sla-manual-wrap" style="display:none"><label>Deadline manual</label>
+          <input type="datetime-local" id="o-sla-manual" onchange="calcSLADeadline()">
+        </div>
+        <div class="fg" id="o-sla-deadline-wrap" style="display:none"><label>Deadline calculado</label>
+          <input type="text" id="o-sla-deadline-txt" readonly style="background:var(--sf2);font-weight:600">
+        </div>
+      </div>
       <div class="fgrid"><div class="fg"><label>Defeito Relatado *</label><textarea id="o-defeito" rows="3"></textarea></div><div class="fg"><label>Procedimento Técnico</label><textarea id="o-proc" rows="3"></textarea></div><div class="fg"><label>Peças Trocadas</label><textarea id="o-pecas" rows="2"></textarea></div><div class="fg"><label>Observações</label><textarea id="o-obs" rows="2"></textarea></div></div>
     </div>
     <div style="margin-bottom:13px"><div class="fsec">Gastos</div>
@@ -2271,6 +2376,14 @@ function openOS(id) {
     document.getElementById('o-dcham').value=os.data_chamado||''; document.getElementById('o-datend').value=os.data_atend||''; document.getElementById('o-hcheg').value=os.hora_chegada||''; document.getElementById('o-hsai').value=os.hora_saida||'';
     document.getElementById('o-viag').value=os.viag||0; document.getElementById('o-alim').value=os.alim||0; document.getElementById('o-hosp').value=os.hosp||0; document.getElementById('o-comb').value=os.comb||0; document.getElementById('o-ped').value=os.ped||0; document.getElementById('o-out').value=os.outros||0;
     document.getElementById('o-status').value=os.status||'Aberta'; calcOS();
+    // SLA
+    document.getElementById('o-tipo').value=os.tipo||'';
+    document.getElementById('o-sla-prazo').value=os.sla_prazo||'';
+    if (os.sla_deadline) {
+      document.getElementById('o-sla-deadline-wrap').style.display='block';
+      document.getElementById('o-sla-deadline-txt').value=new Date(os.sla_deadline).toLocaleString('pt-BR');
+    }
+    calcSLADeadline();
     document.getElementById('btn-prev').style.display='inline-flex';
     // Mostrar botão de troca de série só se OS não estiver encerrada
     if (os.status !== 'Concluída' && os.status !== 'Cancelada' && os.nserie) {
@@ -2284,6 +2397,9 @@ function openOS(id) {
     ['o-contato','o-tel','o-end','o-modelo','o-nserie','o-cont','o-defeito','o-proc','o-pecas','o-obs','o-datend','o-hcheg','o-hsai'].forEach(f=>document.getElementById(f).value='');
     ['o-viag','o-alim','o-hosp','o-comb','o-ped','o-out'].forEach(f=>document.getElementById(f).value=0);
     document.getElementById('o-status').value='Aberta'; document.getElementById('o-tot').textContent='R$ 0,00';
+    document.getElementById('o-tipo').value=''; document.getElementById('o-sla-prazo').value='';
+    document.getElementById('o-sla-manual-wrap').style.display='none';
+    document.getElementById('o-sla-deadline-wrap').style.display='none';
   }
   setTimeout(()=>{sigOSInit();sigOSClear('tec');sigOSClear('cli');},80);
   openM('m-os');
@@ -2307,7 +2423,14 @@ async function saveOS() {
     }
   }
 
-  const body={dataAb:document.getElementById('o-dab').value,tecnicoId:document.getElementById('o-tec').value,clienteId:cid,contato:document.getElementById('o-contato').value,tel:document.getElementById('o-tel').value,end:document.getElementById('o-end').value,equipId:document.getElementById('o-eq').value,modelo:document.getElementById('o-modelo').value,nserie,contador:document.getElementById('o-cont').value,defeito:document.getElementById('o-defeito').value,procedimento:document.getElementById('o-proc').value,pecas:document.getElementById('o-pecas').value,obs:document.getElementById('o-obs').value,dataChamado:document.getElementById('o-dcham').value,dataAtend:document.getElementById('o-datend').value,horaChegada:document.getElementById('o-hcheg').value,horaSaida:document.getElementById('o-hsai').value,viag:+document.getElementById('o-viag').value||0,alim:+document.getElementById('o-alim').value||0,hosp:+document.getElementById('o-hosp').value||0,comb:+document.getElementById('o-comb').value||0,ped:+document.getElementById('o-ped').value||0,outros:+document.getElementById('o-out').value||0,status:document.getElementById('o-status').value,sig_tec:sigOSGet('tec'),sig_cli:sigOSGet('cli')};
+  const slaDeadline = (() => {
+    const prazo = document.getElementById('o-sla-prazo').value;
+    if (!prazo) return null;
+    if (prazo === 'manual') return document.getElementById('o-sla-manual').value || null;
+    const base = document.getElementById('o-dab').value || new Date().toISOString().slice(0,10);
+    return new Date(new Date(base).getTime() + parseInt(prazo)*3600000).toISOString();
+  })();
+  const body={dataAb:document.getElementById('o-dab').value,tecnicoId:document.getElementById('o-tec').value,clienteId:cid,contato:document.getElementById('o-contato').value,tel:document.getElementById('o-tel').value,end:document.getElementById('o-end').value,equipId:document.getElementById('o-eq').value,modelo:document.getElementById('o-modelo').value,nserie,contador:document.getElementById('o-cont').value,defeito:document.getElementById('o-defeito').value,procedimento:document.getElementById('o-proc').value,pecas:document.getElementById('o-pecas').value,obs:document.getElementById('o-obs').value,dataChamado:document.getElementById('o-dcham').value,dataAtend:document.getElementById('o-datend').value,horaChegada:document.getElementById('o-hcheg').value,horaSaida:document.getElementById('o-hsai').value,viag:+document.getElementById('o-viag').value||0,alim:+document.getElementById('o-alim').value||0,hosp:+document.getElementById('o-hosp').value||0,comb:+document.getElementById('o-comb').value||0,ped:+document.getElementById('o-ped').value||0,outros:+document.getElementById('o-out').value||0,status:document.getElementById('o-status').value,sig_tec:sigOSGet('tec'),sig_cli:sigOSGet('cli'),tipo:document.getElementById('o-tipo').value,sla_prazo:document.getElementById('o-sla-prazo').value,sla_deadline:slaDeadline};
   try {
     if(eid){ await api('PUT',`/api/ordens/${eid}`,body); } else { const res=await api('POST','/api/ordens',body); document.getElementById('o-id').value=res.id; document.getElementById('o-num-val').value=res.num; document.getElementById('o-num').value=res.num; document.getElementById('btn-prev').style.display='inline-flex'; }
     await loadAll(); renderOS(); loadDash(); closeM('m-os');
@@ -2346,7 +2469,7 @@ function renderOS() {
 
   const tb = document.getElementById('tb-os'); if (!tb) return;
   if (!rows.length) {
-    tb.innerHTML=`<tr><td colspan="9"><div class="empty"><div class="empty-ico">📝</div><div class="empty-t">Nenhuma OS encontrada</div><div class="empty-s">Tente ajustar os filtros</div></div></td></tr>`;
+    tb.innerHTML=`<tr><td colspan="10"><div class="empty"><div class="empty-ico">📝</div><div class="empty-t">Nenhuma OS encontrada</div><div class="empty-s">Tente ajustar os filtros</div></div></td></tr>`;
     return;
   }
   tb.innerHTML = rows.map(os => {
@@ -2354,11 +2477,23 @@ function renderOS() {
     const t  = G.tecnicos.find(x=>x.id===os.tecnico_id);
     const sb = os.status==='Concluída'?'bg':os.status==='Cancelada'?'br':os.status==='Em andamento'?'bb':'bo';
     const encerrada = os.status==='Concluída'||os.status==='Cancelada';
-    // Botões de mudança rápida de status
     const proximoStatus = os.status==='Aberta'?'Em andamento':os.status==='Em andamento'?'Concluída':null;
     const btnStatus = proximoStatus
       ? `<button class="btn btn-xs" style="background:var(--gnbg);color:var(--gn);border:1px solid var(--gnbd)" onclick="mudarStatusOS('${os.id}','${proximoStatus}')" title="Avançar para ${proximoStatus}">▶ ${proximoStatus==='Em andamento'?'Iniciar':'Concluir'}</button>`
       : '';
+    // SLA badge
+    const slaBadge = (() => {
+      if (encerrada || !os.sla_deadline) return '<span style="color:var(--tx3);font-size:10px">—</span>';
+      const now = Date.now();
+      const dl  = new Date(os.sla_deadline).getTime();
+      const diff = dl - now;
+      const hrs  = Math.round(diff / 3600000);
+      if (diff < 0) return `<span class="sla-late"><span class="sla-dot late"></span>Atrasado</span>`;
+      const total = os.sla_prazo ? os.sla_prazo * 3600000 : (dl - new Date(os.data_ab).getTime());
+      const pct   = diff / total;
+      if (pct < 0.3) return `<span class="sla-warn"><span class="sla-dot warn"></span>${hrs}h restantes</span>`;
+      return `<span class="sla-ok"><span class="sla-dot ok"></span>${hrs}h restantes</span>`;
+    })();
     return `<tr>
       <td style="font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--nv)">${os.num}</td>
       <td>${fd(os.data_ab)}</td>
@@ -2367,6 +2502,7 @@ function renderOS() {
       <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--tx3)">${os.nserie||'—'}</td>
       <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${os.defeito||''}">${os.defeito||'—'}</td>
       <td>${t?.nome?.split(' ')[0]||'—'}</td>
+      <td>${slaBadge}</td>
       <td><span class="badge ${sb}">${os.status}</span></td>
       <td style="white-space:nowrap;display:flex;gap:3px;flex-wrap:wrap">
         ${btnStatus}
@@ -4769,6 +4905,8 @@ async function loadDash(){
 
     // ── Gráficos ──
     renderGraficos(d, osF, logF);
+    // ── Atualiza painel de notificações SLA ──
+    updateNotifPanel();
   } catch(e){ console.error(e) }
 }
 
@@ -5888,9 +6026,327 @@ async function forgotStep3() {
     if(dEl)dEl.value=fmt(de90);if(aEl)aEl.value=fmt(hoje);
     await loadAll(); applyPermissoes(me);
     document.getElementById('dev-footer').style.display='flex';}catch(e){/* not logged in */}})();
+// ─── SIDEBAR TOGGLE ──────────────────────────────────────────────────────────
+function toggleSidebar() {
+  const sb = document.getElementById('sidebar');
+  const mn = document.getElementById('main');
+  sb.classList.toggle('collapsed');
+  mn.classList.toggle('sb-collapsed');
+  localStorage.setItem('sb_collapsed', sb.classList.contains('collapsed') ? '1' : '0');
+}
+// Restaura estado do menu ao carregar
+(function() {
+  if (localStorage.getItem('sb_collapsed') === '1') {
+    const sb = document.getElementById('sidebar');
+    const mn = document.getElementById('main');
+    if (sb) sb.classList.add('collapsed');
+    if (mn) mn.classList.add('sb-collapsed');
+  }
+})();
+
+// ─── SLA ─────────────────────────────────────────────────────────────────────
+function calcSLADeadline() {
+  const prazo = document.getElementById('o-sla-prazo')?.value;
+  const manualWrap = document.getElementById('o-sla-manual-wrap');
+  const deadlineWrap = document.getElementById('o-sla-deadline-wrap');
+  const deadlineTxt  = document.getElementById('o-sla-deadline-txt');
+  if (!prazo) {
+    if (manualWrap) manualWrap.style.display = 'none';
+    if (deadlineWrap) deadlineWrap.style.display = 'none';
+    return;
+  }
+  if (prazo === 'manual') {
+    if (manualWrap) manualWrap.style.display = 'block';
+    if (deadlineWrap) deadlineWrap.style.display = 'none';
+    return;
+  }
+  if (manualWrap) manualWrap.style.display = 'none';
+  const base = document.getElementById('o-dab')?.value;
+  if (!base) { if (deadlineWrap) deadlineWrap.style.display = 'none'; return; }
+  const dl = new Date(new Date(base).getTime() + parseInt(prazo) * 3600000);
+  if (deadlineWrap) deadlineWrap.style.display = 'block';
+  if (deadlineTxt)  deadlineTxt.value = dl.toLocaleString('pt-BR');
+}
+
+function slaStatus(os) {
+  if (!os.sla_deadline) return null;
+  const now  = Date.now();
+  const dl   = new Date(os.sla_deadline).getTime();
+  const diff = dl - now;
+  if (diff < 0) return 'late';
+  const total = os.sla_prazo ? os.sla_prazo * 3600000 : (dl - new Date(os.data_ab).getTime());
+  return (diff / total) < 0.3 ? 'warn' : 'ok';
+}
+
+// ─── NOTIFICAÇÕES SLA ────────────────────────────────────────────────────────
+function toggleNotifPanel() {
+  const panel = document.getElementById('notif-panel');
+  panel.classList.toggle('open');
+  if (panel.classList.contains('open')) updateNotifPanel();
+  // Fecha ao clicar fora
+  if (panel.classList.contains('open')) {
+    setTimeout(() => {
+      document.addEventListener('click', function closePanel(e) {
+        if (!document.getElementById('notif-bell-btn').contains(e.target) && !panel.contains(e.target)) {
+          panel.classList.remove('open');
+          document.removeEventListener('click', closePanel);
+        }
+      });
+    }, 10);
+  }
+}
+
+function updateNotifPanel() {
+  if (!G?.ordens) return;
+  const alertas = G.ordens.filter(os => {
+    if (os.status === 'Concluída' || os.status === 'Cancelada') return false;
+    if (!os.sla_deadline) return false;
+    const dl   = new Date(os.sla_deadline).getTime();
+    const diff = dl - Date.now();
+    return diff < 0 || diff < 2 * 3600000; // atrasado ou menos de 2h
+  }).sort((a, b) => new Date(a.sla_deadline) - new Date(b.sla_deadline));
+
+  const count = document.getElementById('notif-count');
+  const list  = document.getElementById('notif-panel-list');
+  count.textContent = alertas.length;
+  count.classList.toggle('show', alertas.length > 0);
+
+  if (!alertas.length) {
+    list.innerHTML = '<div style="padding:16px;text-align:center;color:var(--tx3);font-size:12px">✅ Todas as OS estão dentro do prazo</div>';
+    return;
+  }
+  list.innerHTML = alertas.map(os => {
+    const t    = G.tecnicos.find(x => x.id === os.tecnico_id);
+    const c    = G.clientes.find(x => x.id === os.cliente_id);
+    const dl   = new Date(os.sla_deadline);
+    const diff = dl - Date.now();
+    const atrasado = diff < 0;
+    const hrs  = Math.abs(Math.round(diff / 3600000));
+    return `<div class="notif-item ${atrasado ? 'late' : 'warn'}" onclick="openOS('${os.id}');toggleNotifPanel()">
+      <div class="notif-item-title">OS ${os.num} — ${c?.nome || '—'}</div>
+      <div class="notif-item-sub">${atrasado ? `⛔ Atrasada há ${hrs}h` : `⚠ Vence em ${hrs}h`} · Técnico: ${t?.nome?.split(' ')[0] || '—'}</div>
+    </div>`;
+  }).join('');
+}
+
+// Atualiza painel de notificações a cada minuto
+setInterval(() => {
+  if (document.getElementById('notif-panel')?.classList.contains('open')) updateNotifPanel();
+  // Atualiza contador sempre
+  if (G?.ordens) {
+    const n = G.ordens.filter(os => {
+      if (os.status === 'Concluída' || os.status === 'Cancelada' || !os.sla_deadline) return false;
+      const diff = new Date(os.sla_deadline).getTime() - Date.now();
+      return diff < 0 || diff < 2 * 3600000;
+    }).length;
+    const count = document.getElementById('notif-count');
+    if (count) { count.textContent = n; count.classList.toggle('show', n > 0); }
+  }
+}, 60000);
+
+// ─── CENTRAL DE AJUDA ────────────────────────────────────────────────────────
+function openHelp(topico) {
+  openM('m-help');
+  showHelp(topico || 'geral');
+}
+
+function showHelp(id) {
+  document.querySelectorAll('.help-topic').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.help-nav-item').forEach(el => el.classList.remove('active'));
+  const topic = document.getElementById('help-' + id);
+  if (topic) topic.classList.add('active');
+  // Ativa item do nav correspondente
+  document.querySelectorAll('.help-nav-item').forEach(el => {
+    if (el.getAttribute('onclick')?.includes("'"+id+"'")) el.classList.add('active');
+  });
+}
 </script>
 
-<!-- Modal Esqueceu Senha — 3 etapas -->
+<!-- Modal Ajuda -->
+<div class="mov" id="m-help">
+<div class="modal" style="max-width:720px;height:80vh;display:flex;flex-direction:column">
+  <div class="mhd">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="width:32px;height:32px;background:var(--bl2bg);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--bl2);font-weight:800;font-size:16px">?</div>
+      <div><div class="mhd-title">Central de Ajuda — Theikós AT</div><div style="font-size:10px;color:var(--tx3)">Selecione um módulo para ver as instruções</div></div>
+    </div>
+    <button class="btnx" onclick="closeM('m-help')">×</button>
+  </div>
+  <div style="display:flex;flex:1;overflow:hidden">
+    <!-- Nav lateral -->
+    <div style="width:170px;flex-shrink:0;background:var(--sf2);border-right:1px solid var(--bd);padding:12px 8px;overflow-y:auto">
+      <div class="help-nav">
+        <div class="help-nav-item active" onclick="showHelp('geral')">🏠 Visão Geral</div>
+        <div class="help-nav-item" onclick="showHelp('dashboard')">📊 Dashboard</div>
+        <div class="help-nav-item" onclick="showHelp('os')">📋 OS / Atendimento</div>
+        <div class="help-nav-item" onclick="showHelp('sla')">⏱ SLA</div>
+        <div class="help-nav-item" onclick="showHelp('logistica')">🚛 Logística</div>
+        <div class="help-nav-item" onclick="showHelp('lab')">🔬 Laboratório</div>
+        <div class="help-nav-item" onclick="showHelp('estoque')">📦 Estoque</div>
+        <div class="help-nav-item" onclick="showHelp('clientes')">👥 Clientes</div>
+        <div class="help-nav-item" onclick="showHelp('usuarios')">🔐 Usuários</div>
+      </div>
+    </div>
+    <!-- Conteúdo -->
+    <div style="flex:1;overflow-y:auto;padding:20px 24px">
+
+      <div class="help-topic active" id="help-geral">
+        <h3>Bem-vindo ao Theikós AT</h3>
+        <p>O Theikós AT é um sistema completo de gerenciamento de assistência técnica. Ele centraliza OS, logística, laboratório, estoque e clientes em um único lugar.</p>
+        <h4>Navegação</h4>
+        <p>Use o menu lateral esquerdo para acessar cada módulo. Você pode recolher o menu clicando no botão <b>‹</b> que aparece na borda da sidebar, ganhando mais espaço de tela.</p>
+        <h4>Acesso rápido</h4>
+        <ul>
+          <li>Clique nos KPIs do Dashboard para ir direto ao módulo correspondente</li>
+          <li>O sino 🔔 no topo mostra OS com SLA atrasado ou próximo do vencimento</li>
+          <li>O botão <b>?</b> abre esta central de ajuda de qualquer tela</li>
+        </ul>
+        <div class="help-tip">💡 Dica: use os botões de período rápido (7d / 30d / 90d) no Dashboard para filtrar rapidamente os dados.</div>
+      </div>
+
+      <div class="help-topic" id="help-dashboard">
+        <h3>Dashboard</h3>
+        <p>O Dashboard apresenta uma visão geral de todas as operações em tempo real, com filtro por período.</p>
+        <h4>KPIs principais (topo)</h4>
+        <ul>
+          <li><b>OS Abertas</b> — total de ordens aguardando atendimento ou em andamento</li>
+          <li><b>Concluídas</b> — OS finalizadas no período selecionado</li>
+          <li><b>Gasto Total</b> — soma dos gastos em rota + OS no período</li>
+          <li><b>Estoque Crítico</b> — itens abaixo da quantidade mínima cadastrada</li>
+        </ul>
+        <h4>Faixa de indicadores secundários</h4>
+        <p>Mostra OS total, entradas no laboratório, retrabalhos, rotas, combustível e total de itens no estoque. Clique em qualquer um para ir ao módulo.</p>
+        <h4>Gráficos</h4>
+        <ul>
+          <li>Evolução mensal de atendimentos por técnico</li>
+          <li>Distribuição por status das OS (pizza)</li>
+          <li>Evolução de gastos em rota (linha)</li>
+          <li>Ranking de atendimentos por técnico e top clientes</li>
+        </ul>
+        <div class="help-tip">💡 Clique em "Exportar" para gerar um PDF completo do Dashboard.</div>
+      </div>
+
+      <div class="help-topic" id="help-os">
+        <h3>OS / Atendimentos</h3>
+        <p>Módulo central do sistema. Gerencia todo o ciclo de vida das ordens de serviço.</p>
+        <h4>Criar uma OS</h4>
+        <ul>
+          <li>Clique em <b>+ Nova OS</b></li>
+          <li>Selecione o cliente e o equipamento</li>
+          <li>Defina o técnico responsável</li>
+          <li>Escolha o tipo e prazo de SLA</li>
+          <li>Descreva o problema relatado</li>
+        </ul>
+        <h4>Fluxo de status</h4>
+        <ul>
+          <li><b>Aberta</b> → <b>Em Andamento</b> → <b>Concluída</b></li>
+          <li>Use os botões ▶ diretamente na tabela para avançar o status</li>
+          <li>Uma OS não pode ser aberta para um equipamento com OS já em aberto</li>
+        </ul>
+        <h4>Modal de OS (5 abas)</h4>
+        <ul>
+          <li><b>Resumo</b> — dados gerais, status, SLA</li>
+          <li><b>Técnico</b> — registro de trabalho e gastos</li>
+          <li><b>Gastos</b> — peças, deslocamento, mão de obra</li>
+          <li><b>Histórico</b> — atendimentos anteriores do equipamento</li>
+          <li><b>Assinaturas</b> — assinatura digital do cliente</li>
+        </ul>
+        <div class="help-tip">💡 Use "Exportar CSV" para gerar relatório com os filtros ativos aplicados.</div>
+      </div>
+
+      <div class="help-topic" id="help-sla">
+        <h3>SLA — Acordo de Nível de Serviço</h3>
+        <p>O SLA define o prazo máximo para conclusão de uma OS. O sistema calcula automaticamente o deadline e emite alertas visuais.</p>
+        <h4>Como funciona</h4>
+        <ul>
+          <li>Ao abrir uma OS, selecione o prazo: <b>12h, 24h ou 48h</b>, ou defina um prazo manual</li>
+          <li>O sistema calcula o <b>deadline</b> (data/hora limite)</li>
+          <li>Na lista de OS aparece um indicador colorido em tempo real</li>
+        </ul>
+        <h4>Indicadores visuais</h4>
+        <ul>
+          <li><span class="sla-ok"><span class="sla-dot ok"></span>No Prazo</span> — mais de 30% do tempo restante</li>
+          <li><span class="sla-warn"><span class="sla-dot warn"></span>Atenção</span> — menos de 30% do tempo restante</li>
+          <li><span class="sla-late"><span class="sla-dot late"></span>Atrasado</span> — prazo estourado</li>
+        </ul>
+        <h4>Notificações (sino 🔔)</h4>
+        <p>O sino no topo do Dashboard mostra todas as OS com SLA atrasado ou com menos de 2 horas restantes. Clique em uma notificação para ir direto à OS.</p>
+        <h4>Painel de SLA (módulo Notificações)</h4>
+        <p>No menu lateral, acesse "Notificações" para ver o painel completo de SLA ordenado por urgência, com técnico responsável e tempo restante calculado em tempo real.</p>
+        <div class="help-tip">💡 OS concluídas ou canceladas não aparecem nos alertas de SLA.</div>
+      </div>
+
+      <div class="help-topic" id="help-logistica">
+        <h3>Logística</h3>
+        <p>Gerencia toda a operação de campo: rotas, abastecimento, checklists e manutenções dos veículos.</p>
+        <h4>4 abas do módulo</h4>
+        <ul>
+          <li><b>🚛 Rotas</b> — saída/retorno, km rodados, motorista, OS vinculadas, gastos e assinatura</li>
+          <li><b>⛽ Abastecimento</b> — posto, litros, preço/litro, odômetro por veículo</li>
+          <li><b>✅ Checklist</b> — 10 itens de verificação do veículo na saída e retorno</li>
+          <li><b>🔧 Manutenção</b> — agendamento por km/data, alerta visual quando vencida</li>
+        </ul>
+        <div class="help-tip">💡 O gasto de combustível é separado do gasto da rota — ambos aparecem no Dashboard.</div>
+      </div>
+
+      <div class="help-topic" id="help-lab">
+        <h3>Laboratório Técnico</h3>
+        <p>Controla equipamentos na bancada, pedidos de peças e baixas.</p>
+        <h4>4 abas do módulo</h4>
+        <ul>
+          <li><b>🔬 Bancada</b> — entrada do equipamento, vínculo à OS, diagnóstico e status</li>
+          <li><b>🔩 Pedidos de Peças</b> — solicita peças do estoque; baixa só ao confirmar uso</li>
+          <li><b>📋 Escopo</b> — checklist técnico de 20 itens (limpeza, troca, calibração etc.)</li>
+          <li><b>🗑 Baixados</b> — equipamentos descartados com motivo e destino</li>
+        </ul>
+        <h4>Dar Baixa em equipamento</h4>
+        <p>Acesse o modal do equipamento na bancada → botão "Dar Baixa" → informe motivo e destino. O equipamento vai para a aba Baixados.</p>
+      </div>
+
+      <div class="help-topic" id="help-estoque">
+        <h3>Estoque — Peças e Suprimentos</h3>
+        <p>Controla o inventário de peças, suprimentos e insumos.</p>
+        <h4>Funcionalidades</h4>
+        <ul>
+          <li>Cadastro de itens com quantidade mínima e atual</li>
+          <li>Movimentos de entrada e saída com registro de motivo</li>
+          <li>Alertas automáticos no Dashboard quando abaixo do mínimo</li>
+          <li>Baixa automática ao confirmar uso de peça no Laboratório</li>
+        </ul>
+        <div class="help-tip">💡 Defina sempre a quantidade mínima para cada item — assim o sistema alerta quando precisar repor.</div>
+      </div>
+
+      <div class="help-topic" id="help-clientes">
+        <h3>Clientes / Equipamentos</h3>
+        <p>Cadastro e histórico de clientes e seus equipamentos.</p>
+        <h4>Estrutura</h4>
+        <ul>
+          <li>Cada cliente pode ter múltiplos equipamentos</li>
+          <li>Cada equipamento tem número de série único</li>
+          <li>O histórico de OS do equipamento fica acessível dentro do modal de OS (aba Histórico)</li>
+        </ul>
+        <h4>Troca de número de série</h4>
+        <p>No modal da OS → aba Técnico → "Trocar Nº Série". O equipamento antigo volta ao estoque como "Em manutenção" e um novo é cadastrado.</p>
+      </div>
+
+      <div class="help-topic" id="help-usuarios">
+        <h3>Usuários e Acesso</h3>
+        <p>Gerencia quem pode acessar o sistema e com quais permissões.</p>
+        <h4>Perfis de acesso</h4>
+        <ul>
+          <li><b>Admin</b> — acesso total, inclusive ao módulo de Usuários e Backup</li>
+          <li><b>Gerente</b> — acesso a todos os módulos operacionais</li>
+          <li><b>Técnico</b> — acesso às OS, Laboratório e Logística</li>
+          <li><b>Atendente</b> — abertura de OS e consulta de clientes</li>
+        </ul>
+        <h4>Recuperação de senha</h4>
+        <p>Na tela de login, clique em "Esqueceu a senha?". Informe o login, escolha receber o código por email ou WhatsApp, e siga as 3 etapas para redefinir.</p>
+        <div class="help-tip">💡 Para o WhatsApp funcionar, o número deve estar cadastrado no perfil do usuário e a integração Callmebot deve estar ativa.</div>
+      </div>
+
+    </div>
+  </div>
+</div></div>
 <div class="mov" id="m-forgot">
 <div class="modal" style="max-width:420px">
   <div class="mhd">
