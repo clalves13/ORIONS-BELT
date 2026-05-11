@@ -39,21 +39,23 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--tx);font-siz
 
 /* SIDEBAR */
 #sidebar{position:fixed;left:0;top:0;width:220px;height:100vh;background:var(--nv);display:flex;flex-direction:column;z-index:100;overflow-y:auto;overflow-x:hidden;transition:width .22s cubic-bezier(.4,0,.2,1)}
-#sidebar.collapsed{width:56px;overflow:visible}
-#sidebar.collapsed .logo-name,#sidebar.collapsed .logo-sub,#sidebar.collapsed .nav-sec,#sidebar.collapsed .ni-badge,#sidebar.collapsed .ni span:not(.ni-badge),#sidebar.collapsed .sb-name,#sidebar.collapsed .sb-role,#sidebar.collapsed .sb-backup-txt{display:none}
+#sidebar.collapsed{width:56px}
+#sidebar.collapsed .logo-name,#sidebar.collapsed .logo-sub,#sidebar.collapsed .nav-sec,#sidebar.collapsed .ni-badge,#sidebar.collapsed .ni span:not(.ni-badge),#sidebar.collapsed .sb-name,#sidebar.collapsed .sb-role{display:none!important}
+#sidebar.collapsed #sb-backup-wrap{display:none!important}
 #sidebar.collapsed .logo-wrap{padding:18px 11px 14px}
 #sidebar.collapsed .logo-row{justify-content:center}
 #sidebar.collapsed .ni{padding:10px;justify-content:center;gap:0;position:relative}
-#sidebar.collapsed .ni:hover::after{content:attr(data-tip);position:absolute;left:62px;background:#1a2340;color:#fff;font-size:11px;white-space:nowrap;padding:5px 10px;border-radius:7px;z-index:999;pointer-events:none;box-shadow:0 4px 16px rgba(0,0,0,.25)}
+#sidebar.collapsed .ni:hover::after{content:attr(data-tip);position:fixed;left:60px;background:#1a2340;color:#fff;font-size:11px;white-space:nowrap;padding:5px 10px;border-radius:7px;z-index:9999;pointer-events:none;box-shadow:0 4px 16px rgba(0,0,0,.25)}
 #sidebar.collapsed .sb-footer{padding:12px 8px}
 #sidebar.collapsed .sb-user{flex-direction:column;gap:5px;align-items:center}
 #sidebar.collapsed .btn-logout{margin-left:0}
-#sidebar.collapsed #sb-backup-wrap button{padding:7px 5px;font-size:9px}
 #sidebar.collapsed .sb-av{width:32px;height:32px}
-.sb-toggle{position:absolute;right:-12px;top:22px;width:24px;height:24px;background:var(--sf);border:1.5px solid var(--bd);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:101;box-shadow:0 2px 8px rgba(13,31,60,.12);transition:all .15s;color:var(--nv)}
+/* Toggle button — fixed position, moves with sidebar */
+.sb-toggle{position:fixed;top:16px;left:208px;width:24px;height:24px;background:var(--sf);border:1.5px solid var(--bd);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:200;box-shadow:0 2px 8px rgba(13,31,60,.15);transition:left .22s cubic-bezier(.4,0,.2,1);color:var(--nv)}
 .sb-toggle:hover{background:var(--sf2)}
 .sb-toggle svg{transition:transform .22s}
-#sidebar.collapsed .sb-toggle svg{transform:rotate(180deg)}
+.sb-toggle.collapsed-pos{left:44px}
+.sb-toggle.collapsed-pos svg{transform:rotate(180deg)}
 .logo-wrap{padding:18px 16px 14px;border-bottom:1px solid rgba(255,255,255,.07);flex-shrink:0}
 .logo-row{display:flex;align-items:center;gap:9px}
 .logo-ico{width:34px;height:34px;background:var(--ac);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
@@ -82,7 +84,32 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--tx);font-siz
 .tb-right{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
 .content{padding:20px 24px}
 
-/* BUTTONS */
+/* ═══ RESET GLOBAL — garante consistência em TODOS inputs/selects/buttons ═══ */
+input,select,textarea,button{font-family:'Sora',sans-serif!important;font-size:12px!important;box-sizing:border-box}
+input:not([type=range]),select,textarea{
+  padding:8px 10px!important;
+  border:1.5px solid var(--bd2)!important;
+  border-radius:var(--r)!important;
+  color:var(--tx)!important;
+  background:var(--sf)!important;
+  transition:border .15s!important;
+  line-height:1.4!important;
+  height:auto!important;
+  outline:none!important;
+}
+input:not([type=range]):focus,select:focus,textarea:focus{border-color:var(--bl)!important}
+input[readonly],input[disabled]{background:var(--sf2)!important;color:var(--tx2)!important;cursor:default!important}
+input[type=date],input[type=time],input[type=datetime-local]{padding:6px 10px!important}
+textarea{resize:vertical!important;height:auto!important;min-height:60px!important}
+/* Sobrescreve inline styles problemáticos nos filtros */
+.filter-row input,.filter-row select{height:34px!important;padding:0 10px!important}
+/* Botões — forma geométrica precisa e tipografia consistente */
+button:not(.btn):not(.btnx):not(.lbtn):not(.btn-logout):not(.sb-toggle):not(.chk):not(.os-tab):not(.lab-tab):not(.log-tab){
+  font-family:'Sora',sans-serif!important;
+  font-size:12px!important;
+  cursor:pointer!important;
+}
+
 .btn{display:inline-flex;align-items:center;gap:5px;padding:6px 13px;border-radius:var(--r);border:none;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;font-family:inherit}
 .btn-primary{background:var(--nv);color:#fff}.btn-primary:hover{background:var(--bl)}
 .btn-accent{background:var(--ac);color:#fff}.btn-accent:hover{background:var(--ac2)}
@@ -133,6 +160,25 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--tx);font-siz
 
 /* TOPBAR EXTRA */
 .tb-right-group{display:flex;align-items:center;gap:7px;position:relative}
+
+/* CONFIGURAÇÕES */
+.cfg-nav-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:500;color:rgba(255,255,255,.55);transition:all .12s;margin-bottom:2px}
+.cfg-nav-item:hover{background:rgba(255,255,255,.06);color:#fff}
+.cfg-nav-item.active{background:rgba(224,120,24,.15);color:var(--ac2);font-weight:600}
+.cfg-nav-item svg{flex-shrink:0;opacity:.7}
+.cfg-nav-item.active svg{opacity:1}
+/* Versão dentro do card (fundo branco) */
+.card .cfg-nav-item{color:var(--tx2)}
+.card .cfg-nav-item:hover{background:var(--sf2);color:var(--nv)}
+.card .cfg-nav-item.active{background:var(--bl2bg);color:var(--bl2)}
+.cfg-alerta-row{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:var(--sf2);border:1px solid var(--bd);border-radius:var(--r)}
+/* Toggle switch */
+.cfg-toggle{position:relative;display:inline-block;width:38px;height:20px;flex-shrink:0}
+.cfg-toggle input{opacity:0;width:0;height:0}
+.cfg-toggle span{position:absolute;cursor:pointer;inset:0;background:var(--bd2);border-radius:20px;transition:.2s}
+.cfg-toggle span::before{content:'';position:absolute;width:14px;height:14px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s}
+.cfg-toggle input:checked+span{background:var(--gn)}
+.cfg-toggle input:checked+span::before{transform:translateX(18px)}
 
 /* CARDS */
 .card{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rlg);padding:18px}
@@ -349,10 +395,6 @@ tr:hover td{background:var(--sf2)}
 
 <!-- SIDEBAR -->
 <div id="sidebar" style="display:none">
-  <!-- Toggle recolher -->
-  <div class="sb-toggle" onclick="toggleSidebar()" title="Recolher menu">
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
-  </div>
   <div class="logo-wrap">
     <div class="logo-row">
       <img src="data:image/png;base64,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" style="width:34px;height:34px;object-fit:contain;border-radius:6px">
@@ -378,6 +420,7 @@ tr:hover td{background:var(--sf2)}
     <div class="ni" data-modulo="contratos" data-tip="Contratos" onclick="nav('contratos',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10,9 9,9 8,9"/></svg><span>Contratos</span><span class="ni-badge" id="b-contratos" style="display:none">0</span></div>
     <div class="ni" data-modulo="financeiro" data-tip="Financeiro" onclick="nav('financeiro',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg><span>Financeiro</span></div>
     <div class="ni" data-modulo="notificacoes" data-tip="Notificações SLA" onclick="nav('notificacoes',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg><span>Notificações</span><span class="ni-badge" id="b-notif" style="background:var(--rd)">0</span></div>
+    <div class="ni" data-modulo="configuracoes" data-tip="Configurações" onclick="nav('configuracoes',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg><span>Configurações</span></div>
   </div>
   <div class="sb-footer">
     <div id="sb-backup-wrap" style="display:none;margin-bottom:8px"><button onclick="openM('m-backup')" style="width:100%;padding:7px;background:rgba(224,120,24,0.15);color:var(--ac2);border:1px solid rgba(224,120,24,0.3);border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">💾 Backup / Restaurar</button></div>
@@ -387,6 +430,11 @@ tr:hover td{background:var(--sf2)}
       <button class="btn-logout" onclick="doLogout()" title="Sair">⏻</button>
     </div>
   </div>
+</div>
+
+<!-- Toggle sidebar — fixo, fora da sidebar -->
+<div class="sb-toggle" id="sb-toggle-btn" onclick="toggleSidebar()" title="Recolher/Expandir menu">
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
 </div>
 
 <!-- MAIN -->
@@ -1437,7 +1485,7 @@ tr:hover td{background:var(--sf2)}
   <div class="topbar">
     <div><div class="tb-title">Usuários do Sistema</div><div class="tb-sub">Controle de acesso e perfis</div></div>
     <div class="tb-right">
-      <button class="btn btn-ghost btn-sm" onclick="switchUsrTab('recovery')" id="btn-recovery-tab">🔑 Recuperação de Senha</button>
+      <button class="btn btn-ghost btn-sm" onclick="switchUsrTab('recovery')" id="btn-recovery-tab">🔑 Reset de Senha (Admin)</button>
       <button class="btn btn-accent" onclick="openUser(null)">+ Novo Usuário</button>
     </div>
   </div>
@@ -1496,6 +1544,153 @@ tr:hover td{background:var(--sf2)}
           <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--nv)">📋 Log de Recuperações Recentes</div>
           <div id="rec-log" style="font-size:12px;color:var(--tx3)">Nenhuma recuperação registrada nesta sessão.</div>
         </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIGURAÇÕES -->
+<div id="page-configuracoes" class="page">
+  <div class="topbar">
+    <div><div class="tb-title">Configurações</div><div class="tb-sub">Preferências do sistema</div></div>
+  </div>
+  <div class="content">
+    <div style="display:grid;grid-template-columns:200px 1fr;gap:20px;align-items:start">
+
+      <!-- Nav lateral de configurações -->
+      <div class="card" style="padding:10px">
+        <div style="font-size:9px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:1px;padding:8px 10px 4px">Sistema</div>
+        <div class="cfg-nav-item active" onclick="cfgTab('empresa')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>
+          Dados da Empresa
+        </div>
+        <div class="cfg-nav-item" onclick="cfgTab('email')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          Envio de E-mail
+        </div>
+        <div class="cfg-nav-item" onclick="cfgTab('whatsapp')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+          WhatsApp
+        </div>
+        <div style="font-size:9px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:1px;padding:12px 10px 4px">Operacional</div>
+        <div class="cfg-nav-item" onclick="cfgTab('sla')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
+          Prazos de SLA
+        </div>
+        <div class="cfg-nav-item" onclick="cfgTab('alertas')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+          Alertas
+        </div>
+      </div>
+
+      <!-- Conteúdo das abas -->
+      <div>
+
+        <!-- Empresa -->
+        <div class="cfg-panel active" id="cfg-empresa">
+          <div class="card">
+            <div class="card-hd"><div class="card-title">Dados da Empresa</div></div>
+            <div class="fgrid fg2">
+              <div class="fg"><label>Nome da Empresa</label><input type="text" id="cfg-nome-empresa" placeholder="Theikós Soluções"></div>
+              <div class="fg"><label>CNPJ</label><input type="text" id="cfg-cnpj" placeholder="00.000.000/0001-00"></div>
+              <div class="fg"><label>Telefone</label><input type="text" id="cfg-tel-empresa"></div>
+              <div class="fg"><label>E-mail</label><input type="text" id="cfg-email-empresa"></div>
+              <div class="fg" style="grid-column:1/-1"><label>Endereço</label><input type="text" id="cfg-end-empresa"></div>
+              <div class="fg"><label>Cidade</label><input type="text" id="cfg-cidade"></div>
+              <div class="fg"><label>Estado</label><input type="text" id="cfg-estado" placeholder="SP"></div>
+            </div>
+            <div style="margin-top:16px;display:flex;justify-content:flex-end">
+              <button class="btn btn-primary" onclick="saveCfg('empresa')">💾 Salvar</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Email -->
+        <div class="cfg-panel" id="cfg-email" style="display:none">
+          <div class="card">
+            <div class="card-hd"><div class="card-title">Configuração de E-mail (SMTP)</div></div>
+            <div class="help-tip" style="margin-bottom:16px">
+              📧 Configurado para Yahoo: <b>smtp.mail.yahoo.com</b> porta 587. Para a senha, use uma "Senha de App" gerada em: Conta Yahoo → Segurança → Senhas de App.
+            </div>
+            <div class="fgrid fg2">
+              <div class="fg"><label>Servidor SMTP</label><input type="text" id="cfg-smtp-host" value="smtp.mail.yahoo.com" readonly></div>
+              <div class="fg"><label>Porta</label><input type="text" id="cfg-smtp-port" value="587" readonly></div>
+              <div class="fg"><label>E-mail remetente</label><input type="text" id="cfg-smtp-user" value="clairtonalves@yahoo.com.br"></div>
+              <div class="fg"><label>Senha de App</label><input type="password" id="cfg-smtp-pass" placeholder="••••••••••••"></div>
+            </div>
+            <div style="margin-top:16px;display:flex;gap:8px;justify-content:flex-end">
+              <button class="btn btn-ghost" onclick="testEmail()">📤 Enviar e-mail de teste</button>
+              <button class="btn btn-primary" onclick="saveCfg('email')">💾 Salvar</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- WhatsApp -->
+        <div class="cfg-panel" id="cfg-whatsapp" style="display:none">
+          <div class="card">
+            <div class="card-hd"><div class="card-title">Integração WhatsApp (Callmebot)</div></div>
+            <div class="help-tip" style="margin-bottom:16px">
+              💬 O Callmebot é gratuito e não precisa de conta. Para ativar, cada usuário deve enviar a mensagem <b>"I allow callmebot to send me messages"</b> para o número <b>+34 644 65 21 28</b> no WhatsApp e guardar a chave recebida.
+            </div>
+            <div class="fgrid fg2">
+              <div class="fg"><label>Chave Callmebot do Sistema</label><input type="text" id="cfg-callmebot-key" placeholder="Ex: 123456"></div>
+              <div class="fg"><label>Número de teste (com DDI)</label><input type="text" id="cfg-wpp-test" placeholder="5511999999999"></div>
+            </div>
+            <div style="margin-top:16px;display:flex;gap:8px;justify-content:flex-end">
+              <button class="btn btn-ghost" onclick="testWhatsApp()">📲 Enviar mensagem de teste</button>
+              <button class="btn btn-primary" onclick="saveCfg('whatsapp')">💾 Salvar</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- SLA -->
+        <div class="cfg-panel" id="cfg-sla" style="display:none">
+          <div class="card">
+            <div class="card-hd"><div class="card-title">Prazos Padrão de SLA por Tipo de OS</div></div>
+            <p style="font-size:12px;color:var(--tx3);margin-bottom:16px">Define o prazo padrão sugerido ao abrir uma OS de cada tipo. O atendente pode ajustar manualmente.</p>
+            <div class="fgrid fg2">
+              <div class="fg"><label>Corretiva (horas)</label><input type="number" id="cfg-sla-corretiva" value="24" min="1"></div>
+              <div class="fg"><label>Preventiva (horas)</label><input type="number" id="cfg-sla-preventiva" value="48" min="1"></div>
+              <div class="fg"><label>Urgente (horas)</label><input type="number" id="cfg-sla-urgente" value="4" min="1"></div>
+              <div class="fg"><label>Instalação (horas)</label><input type="number" id="cfg-sla-instalacao" value="48" min="1"></div>
+              <div class="fg"><label>Outros (horas)</label><input type="number" id="cfg-sla-outros" value="24" min="1"></div>
+              <div class="fg"><label>Alerta antecipado (% do prazo)</label><input type="number" id="cfg-sla-alerta-pct" value="30" min="5" max="80"><small style="font-size:10px;color:var(--tx3);margin-top:3px;display:block">Ex: 30% = alerta quando faltar 30% do prazo</small></div>
+            </div>
+            <div style="margin-top:16px;display:flex;justify-content:flex-end">
+              <button class="btn btn-primary" onclick="saveCfg('sla')">💾 Salvar</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Alertas -->
+        <div class="cfg-panel" id="cfg-alertas" style="display:none">
+          <div class="card">
+            <div class="card-hd"><div class="card-title">Configuração de Alertas</div></div>
+            <p style="font-size:12px;color:var(--tx3);margin-bottom:16px">Defina quais eventos geram notificações no sino e por qual canal.</p>
+            <div style="display:flex;flex-direction:column;gap:12px">
+              <div class="cfg-alerta-row">
+                <div><div style="font-size:12px;font-weight:600;color:var(--nv)">SLA próximo do vencimento</div><div style="font-size:11px;color:var(--tx3)">Notifica quando restar menos de X% do prazo</div></div>
+                <label class="cfg-toggle"><input type="checkbox" id="cfg-al-sla" checked><span></span></label>
+              </div>
+              <div class="cfg-alerta-row">
+                <div><div style="font-size:12px;font-weight:600;color:var(--nv)">SLA estourado</div><div style="font-size:11px;color:var(--tx3)">Notifica quando a OS ultrapassar o prazo</div></div>
+                <label class="cfg-toggle"><input type="checkbox" id="cfg-al-sla-late" checked><span></span></label>
+              </div>
+              <div class="cfg-alerta-row">
+                <div><div style="font-size:12px;font-weight:600;color:var(--nv)">Estoque abaixo do mínimo</div><div style="font-size:11px;color:var(--tx3)">Alerta no Dashboard quando item atingir o mínimo</div></div>
+                <label class="cfg-toggle"><input type="checkbox" id="cfg-al-estoque" checked><span></span></label>
+              </div>
+              <div class="cfg-alerta-row">
+                <div><div style="font-size:12px;font-weight:600;color:var(--nv)">Manutenção de veículo vencida</div><div style="font-size:11px;color:var(--tx3)">Alerta no módulo de Logística</div></div>
+                <label class="cfg-toggle"><input type="checkbox" id="cfg-al-manut" checked><span></span></label>
+              </div>
+            </div>
+            <div style="margin-top:16px;display:flex;justify-content:flex-end">
+              <button class="btn btn-primary" onclick="saveCfg('alertas')">💾 Salvar</button>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
@@ -2284,7 +2479,7 @@ function nav(p, el) {
   document.querySelectorAll('.ni').forEach(x=>x.classList.remove('active'));
   const pg = document.getElementById('page-'+p); if(pg) pg.classList.add('active');
   if(el) el.classList.add('active');
-  const renders = { os:renderOS, logistica:renderLogistica, lab:renderLab, clientes:renderClientes, tecnicos:renderTec, usuarios:renderUsers, historico:renderHist, estoque:async()=>{await loadEstMovs();renderEstoque();renderEstKpis();}, 'supr-cli':renderSuprCli, dashboard:loadDash, contratos:async()=>{await loadContratos();renderContratos();}, financeiro:async()=>{await loadFinanceiro();renderFinLanc();renderFinKpis();}, notificacoes:async()=>{await gerarNotificacoes();}, relatorios:()=>{if(typeof renderRelatorios==='function')renderRelatorios();} };
+  const renders = { os:renderOS, logistica:renderLogistica, lab:renderLab, clientes:renderClientes, tecnicos:renderTec, usuarios:renderUsers, historico:renderHist, estoque:async()=>{await loadEstMovs();renderEstoque();renderEstKpis();}, 'supr-cli':renderSuprCli, dashboard:loadDash, contratos:async()=>{await loadContratos();renderContratos();}, financeiro:async()=>{await loadFinanceiro();renderFinLanc();renderFinKpis();}, notificacoes:async()=>{await gerarNotificacoes();}, relatorios:()=>{if(typeof renderRelatorios==='function')renderRelatorios();}, configuracoes:()=>{loadCfg();cfgTab('empresa');} };
   if(renders[p]) renders[p]();
 }
 
@@ -6028,19 +6223,23 @@ async function forgotStep3() {
     document.getElementById('dev-footer').style.display='flex';}catch(e){/* not logged in */}})();
 // ─── SIDEBAR TOGGLE ──────────────────────────────────────────────────────────
 function toggleSidebar() {
-  const sb = document.getElementById('sidebar');
-  const mn = document.getElementById('main');
+  const sb  = document.getElementById('sidebar');
+  const mn  = document.getElementById('main');
+  const btn = document.getElementById('sb-toggle-btn');
   sb.classList.toggle('collapsed');
   mn.classList.toggle('sb-collapsed');
+  if (btn) btn.classList.toggle('collapsed-pos', sb.classList.contains('collapsed'));
   localStorage.setItem('sb_collapsed', sb.classList.contains('collapsed') ? '1' : '0');
 }
 // Restaura estado do menu ao carregar
 (function() {
   if (localStorage.getItem('sb_collapsed') === '1') {
-    const sb = document.getElementById('sidebar');
-    const mn = document.getElementById('main');
-    if (sb) sb.classList.add('collapsed');
-    if (mn) mn.classList.add('sb-collapsed');
+    const sb  = document.getElementById('sidebar');
+    const mn  = document.getElementById('main');
+    const btn = document.getElementById('sb-toggle-btn');
+    if (sb)  sb.classList.add('collapsed');
+    if (mn)  mn.classList.add('sb-collapsed');
+    if (btn) btn.classList.add('collapsed-pos');
   }
 })();
 
@@ -6159,6 +6358,52 @@ function showHelp(id) {
   document.querySelectorAll('.help-nav-item').forEach(el => {
     if (el.getAttribute('onclick')?.includes("'"+id+"'")) el.classList.add('active');
   });
+}
+
+// ─── CONFIGURAÇÕES ───────────────────────────────────────────────────────────
+function cfgTab(id) {
+  document.querySelectorAll('.cfg-panel').forEach(el => el.style.display = 'none');
+  document.querySelectorAll('.card .cfg-nav-item').forEach(el => el.classList.remove('active'));
+  const panel = document.getElementById('cfg-' + id);
+  if (panel) panel.style.display = 'block';
+  document.querySelectorAll('.card .cfg-nav-item').forEach(el => {
+    if (el.getAttribute('onclick')?.includes("'"+id+"'")) el.classList.add('active');
+  });
+}
+
+function saveCfg(secao) {
+  const data = {};
+  if (secao==='empresa') { ['nome-empresa','cnpj','tel-empresa','email-empresa','end-empresa','cidade','estado'].forEach(k=>{ const el=document.getElementById('cfg-'+k); if(el) data[k]=el.value; }); }
+  else if (secao==='email') { data.user=document.getElementById('cfg-smtp-user')?.value; data.pass=document.getElementById('cfg-smtp-pass')?.value; }
+  else if (secao==='whatsapp') { data.key=document.getElementById('cfg-callmebot-key')?.value; }
+  else if (secao==='sla') { ['corretiva','preventiva','urgente','instalacao','outros','alerta-pct'].forEach(k=>{ const el=document.getElementById('cfg-sla-'+k); if(el) data[k]=el.value; }); }
+  else if (secao==='alertas') { ['sla','sla-late','estoque','manut'].forEach(k=>{ const el=document.getElementById('cfg-al-'+k); if(el) data[k]=el.checked; }); }
+  localStorage.setItem('cfg_'+secao, JSON.stringify(data));
+  const btn = event?.target; if (btn) { const o=btn.textContent; btn.textContent='✔ Salvo!'; btn.disabled=true; setTimeout(()=>{btn.textContent=o;btn.disabled=false;},1800); }
+}
+
+function loadCfg() {
+  try {
+    const emp=JSON.parse(localStorage.getItem('cfg_empresa')||'{}');
+    ['nome-empresa','cnpj','tel-empresa','email-empresa','end-empresa','cidade','estado'].forEach(k=>{ const el=document.getElementById('cfg-'+k); if(el&&emp[k]) el.value=emp[k]; });
+    const slaC=JSON.parse(localStorage.getItem('cfg_sla')||'{}');
+    ['corretiva','preventiva','urgente','instalacao','outros','alerta-pct'].forEach(k=>{ const el=document.getElementById('cfg-sla-'+k); if(el&&slaC[k]) el.value=slaC[k]; });
+  } catch(e){}
+}
+
+async function testEmail() {
+  const user=document.getElementById('cfg-smtp-user')?.value;
+  if(!user){alert('Preencha o e-mail.');return;}
+  try { await api('POST','/api/test-email',{to:user}); alert('✔ E-mail enviado para '+user); }
+  catch(e){alert('Erro: '+e.message);}
+}
+
+async function testWhatsApp() {
+  const tel=document.getElementById('cfg-wpp-test')?.value;
+  const key=document.getElementById('cfg-callmebot-key')?.value;
+  if(!tel||!key){alert('Preencha número e chave.');return;}
+  try { await api('POST','/api/test-whatsapp',{tel,key}); alert('✔ Mensagem enviada!'); }
+  catch(e){alert('Erro: '+e.message);}
 }
 </script>
 
