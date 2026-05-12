@@ -34,27 +34,30 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--tx);font-siz
 .lfg label{display:block;font-size:10px;font-weight:700;color:var(--tx2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.6px}
 .lfg input{width:100%;padding:9px 12px;border:1.5px solid var(--bd2);border-radius:var(--r);font-size:13px;font-family:inherit;color:var(--tx);transition:border .15s}
 .lfg input:focus{outline:none;border-color:var(--bl)}
-.lbtn{width:100%;padding:11px;background:var(--nv);color:#fff;border:none;border-radius:var(--r);font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;margin-top:6px;transition:background .15s}
+.lbtn{width:100%;height:40px;background:var(--nv);color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:600;font-family:'Sora',sans-serif;cursor:pointer;margin-top:6px;transition:background .15s;letter-spacing:.2px}
 .lbtn:hover{background:var(--bl)}
 
 /* SIDEBAR */
-#sidebar{position:fixed;left:0;top:0;width:220px;height:100vh;background:var(--nv);display:flex;flex-direction:column;z-index:100;overflow-y:auto;overflow-x:visible;transition:width .22s cubic-bezier(.4,0,.2,1)}
+#sidebar{position:fixed;left:0;top:0;width:220px;height:100vh;background:var(--nv);display:flex;flex-direction:column;z-index:100;overflow-y:auto;overflow-x:hidden;transition:width .22s cubic-bezier(.4,0,.2,1)}
 #sidebar.collapsed{width:56px}
 #sidebar.collapsed .logo-name,#sidebar.collapsed .logo-sub,#sidebar.collapsed .nav-sec,#sidebar.collapsed .ni-badge,#sidebar.collapsed .ni span:not(.ni-badge),#sidebar.collapsed .sb-name,#sidebar.collapsed .sb-role{display:none!important}
 #sidebar.collapsed #sb-backup-wrap{display:none!important}
 #sidebar.collapsed .logo-wrap{padding:18px 11px 14px}
 #sidebar.collapsed .logo-row{justify-content:center}
 #sidebar.collapsed .ni{padding:10px;justify-content:center;gap:0;position:relative}
-#sidebar.collapsed .ni:hover::after{content:attr(data-tip);position:fixed;left:62px;background:#1a2340;color:#fff;font-size:11px;white-space:nowrap;padding:5px 10px;border-radius:7px;z-index:9999;pointer-events:none;box-shadow:0 4px 16px rgba(0,0,0,.3)}
+#sidebar.collapsed .ni:hover::after{content:attr(data-tip);position:fixed;left:60px;background:#1a2340;color:#fff;font-size:11px;white-space:nowrap;padding:5px 10px;border-radius:7px;z-index:9999;pointer-events:none;box-shadow:0 4px 16px rgba(0,0,0,.25)}
 #sidebar.collapsed .sb-footer{padding:12px 8px}
 #sidebar.collapsed .sb-user{flex-direction:column;gap:5px;align-items:center}
 #sidebar.collapsed .btn-logout{margin-left:0}
 #sidebar.collapsed .sb-av{width:32px;height:32px}
+#sidebar.collapsed .sb-toggle{justify-content:center;padding:9px}
+/* Toggle button — dentro da sidebar */
+.sb-toggle{display:flex;align-items:center;justify-content:space-between;padding:9px 14px;cursor:pointer;color:rgba(255,255,255,.4);font-size:10px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;border-top:1px solid rgba(255,255,255,.07);transition:color .15s;margin-top:auto;flex-shrink:0}
+.sb-toggle:hover{color:rgba(255,255,255,.7);background:rgba(255,255,255,.04)}
+.sb-toggle-ico{width:22px;height:22px;background:rgba(255,255,255,.08);border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sb-toggle svg{transition:transform .22s}
 #sidebar.collapsed .sb-toggle svg{transform:rotate(180deg)}
-/* Toggle fica dentro da sidebar mas aparece para fora com position:absolute */
-.sb-toggle{position:absolute;right:-12px;top:20px;width:24px;height:24px;background:var(--sf);border:1.5px solid var(--bd2);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:101;box-shadow:0 2px 8px rgba(13,31,60,.15);color:var(--tx2)}
-.sb-toggle:hover{background:var(--sf2);color:var(--nv)}
-.sb-toggle svg{transition:transform .22s;flex-shrink:0}
+#sidebar.collapsed .sb-toggle-lbl{display:none}
 .logo-wrap{padding:18px 16px 14px;border-bottom:1px solid rgba(255,255,255,.07);flex-shrink:0}
 .logo-row{display:flex;align-items:center;gap:9px}
 .logo-ico{width:34px;height:34px;background:var(--ac);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
@@ -84,47 +87,42 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--tx);font-siz
 .content{padding:20px 24px}
 
 /* ═══ RESET GLOBAL — garante consistência em TODOS inputs/selects/buttons ═══ */
-input,select,textarea,button{font-family:'Sora',sans-serif!important;font-size:12px!important;box-sizing:border-box!important}
-input:not([type=range]):not([type=checkbox]):not([type=radio]),select,textarea{
+input,select,textarea,button{font-family:'Sora',sans-serif!important;font-size:12px!important;box-sizing:border-box}
+input:not([type=range]),select,textarea{
   padding:8px 10px!important;
   border:1.5px solid var(--bd2)!important;
   border-radius:var(--r)!important;
   color:var(--tx)!important;
   background:var(--sf)!important;
+  transition:border .15s!important;
   line-height:1.4!important;
   height:auto!important;
   outline:none!important;
-  width:100%!important;
-  display:block!important;
-  transition:border-color .15s!important;
 }
-input:not([type=range]):not([type=checkbox]):not([type=radio]):focus,select:focus,textarea:focus{border-color:var(--bl)!important;box-shadow:0 0 0 3px rgba(30,64,128,.08)!important}
-input[readonly]{background:var(--sf2)!important;color:var(--tx2)!important}
+input:not([type=range]):focus,select:focus,textarea:focus{border-color:var(--bl)!important}
+input[readonly],input[disabled]{background:var(--sf2)!important;color:var(--tx2)!important;cursor:default!important}
 input[type=date],input[type=time],input[type=datetime-local]{padding:6px 10px!important}
-textarea{resize:vertical!important;min-height:60px!important}
-/* Botões — forma geométrica precisa, fonte uniforme */
-.btn,.btn-primary,.btn-accent,.btn-ghost,.btn-danger,.btn-success,.btn-success,.btn-info,.lbtn{
+textarea{resize:vertical!important;height:auto!important;min-height:60px!important}
+/* Sobrescreve inline styles problemáticos nos filtros */
+.filter-row input,.filter-row select{height:34px!important;padding:0 10px!important}
+/* Botões nativos — tipografia base */
+button:not(.btn):not(.btnx):not(.lbtn):not(.btn-logout):not(.chk):not(.os-tab):not(.lab-tab):not(.log-tab){
   font-family:'Sora',sans-serif!important;
   font-size:12px!important;
-  font-weight:600!important;
-  border-radius:var(--r)!important;
   cursor:pointer!important;
-  display:inline-flex!important;
-  align-items:center!important;
-  white-space:nowrap!important;
-  width:auto!important;
-  outline:none!important;
 }
-/* Filtros inline */
-.filter-row input,.filter-row select,.swrap input{width:auto!important;display:inline-block!important}
 
-.btn{display:inline-flex;align-items:center;gap:5px;padding:6px 13px;border-radius:var(--r);border:none;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;font-family:inherit}
-.btn-primary{background:var(--nv);color:#fff}.btn-primary:hover{background:var(--bl)}
-.btn-accent{background:var(--ac);color:#fff}.btn-accent:hover{background:var(--ac2)}
-.btn-ghost{background:transparent;color:var(--tx2);border:1px solid var(--bd2)}.btn-ghost:hover{background:var(--sf2)}
-.btn-danger{background:var(--rdbg);color:var(--rd);border:1px solid var(--rdbd)}.btn-danger:hover{background:#f5d8d4}
-.btn-success{background:var(--gnbg);color:var(--gn);border:1px solid var(--gnbd)}.btn-success:hover{background:#cce8d8}
-.btn-info{background:var(--pubg);color:var(--pu);border:1px solid #c8a8f0}.btn-info:hover{background:#e8d8fc}
+/* ═══ SISTEMA DE BOTÕES UNIFICADO ═══ */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:0 14px;height:34px;border-radius:8px;border:none;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;font-family:'Sora',sans-serif!important;white-space:nowrap;line-height:1}
+.btn-sm{height:30px;padding:0 11px;font-size:11px}
+.btn-xs{height:26px;padding:0 9px;font-size:11px;border-radius:6px}
+.btn-lg{height:40px;padding:0 18px;font-size:13px}
+.btn-primary{background:var(--nv);color:#fff;border:1.5px solid var(--nv)}.btn-primary:hover{background:var(--bl);border-color:var(--bl)}
+.btn-accent{background:var(--ac);color:#fff;border:1.5px solid var(--ac)}.btn-accent:hover{background:var(--ac2);border-color:var(--ac2)}
+.btn-ghost{background:#fff;color:var(--tx2);border:1.5px solid var(--bd2)}.btn-ghost:hover{background:var(--sf2);border-color:var(--bd)}
+.btn-danger{background:var(--rdbg);color:var(--rd);border:1.5px solid var(--rdbd)}.btn-danger:hover{background:#f5d8d4}
+.btn-success{background:var(--gnbg);color:var(--gn);border:1.5px solid var(--gnbd)}.btn-success:hover{background:#cce8d8}
+.btn-info{background:var(--pubg);color:var(--pu);border:1.5px solid #c8a8f0}.btn-info:hover{background:#e8d8fc}
 /* SLA BADGES */
 .sla-ok{display:inline-flex;align-items:center;gap:4px;background:#e6f5ee;color:#1a7a4a;border:1px solid #9ddcba;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700}
 .sla-warn{display:inline-flex;align-items:center;gap:4px;background:#fff4e6;color:#c06010;border:1px solid #fac878;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700}
@@ -403,11 +401,7 @@ tr:hover td{background:var(--sf2)}
 
 <!-- SIDEBAR -->
 <div id="sidebar" style="display:none">
-  <div class="logo-wrap" style="position:relative">
-    <!-- Toggle recolher — dentro da sidebar mas aparece para fora -->
-    <div class="sb-toggle" id="sb-toggle-btn" onclick="toggleSidebar()" title="Recolher/Expandir menu">
-      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
-    </div>
+  <div class="logo-wrap">
     <div class="logo-row">
       <img src="data:image/png;base64,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" style="width:34px;height:34px;object-fit:contain;border-radius:6px">
       <div><div class="logo-name">Theikós AT</div><div class="logo-sub">Assistência Técnica</div></div>
@@ -440,6 +434,13 @@ tr:hover td{background:var(--sf2)}
       <div class="sb-av" id="sb-av">A</div>
       <div><div class="sb-name" id="sb-name">Admin</div><div class="sb-role" id="sb-role">Admin</div><div class="sb-role" id="sb-perfil" style="color:var(--ac2);font-size:9px;margin-top:1px"></div></div>
       <button class="btn-logout" onclick="doLogout()" title="Sair">⏻</button>
+    </div>
+  </div>
+  <!-- Botão recolher — dentro da sidebar -->
+  <div class="sb-toggle" id="sb-toggle-btn" onclick="toggleSidebar()">
+    <span class="sb-toggle-lbl">Recolher menu</span>
+    <div class="sb-toggle-ico">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
     </div>
   </div>
 </div>
@@ -2433,24 +2434,16 @@ async function doLogin() {
   try {
     const res = await api('POST', '/api/login', { login, senha });
     G.user = res.user;
-    // Fecha qualquer modal aberto na tela de login
-    closeM('m-forgot');
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('sidebar').style.display = 'flex';
     document.getElementById('main').style.display = 'block';
-    // Restaura toggle sidebar
-    const toggleBtn = document.getElementById('sb-toggle-btn');
-    if (toggleBtn) {
-      const collapsed = localStorage.getItem('sb_collapsed') === '1';
-      if (collapsed) { document.getElementById('sidebar').classList.add('collapsed'); document.getElementById('main').classList.add('sb-collapsed'); toggleBtn.classList.add('collapsed-pos'); }
-      toggleBtn.style.display = 'flex';
-    }
     document.getElementById('sb-av').textContent = res.user.nome[0].toUpperCase();
     document.getElementById('sb-name').textContent = res.user.nome;
     document.getElementById('sb-role').textContent = res.user.role === 'admin' ? 'Administrador' : 'Técnico';
     await loadAll();
     applyPermissoes(res.user);
     document.getElementById('dev-footer').style.display='flex';
+    // Gerar notificações automáticas ao logar
     setTimeout(()=>gerarNotificacoes().catch(()=>{}), 800);
   } catch(e) {
     const el = document.getElementById('lerr');
@@ -6097,6 +6090,9 @@ function openForgotPassword() {
   document.getElementById('forgot-title').textContent = 'Recuperar Senha';
   // Reset seleção canal
   selectCanal('email');
+  // Eleva z-index acima da tela de login (z-index 9999)
+  const modal = document.getElementById('m-forgot');
+  if (modal) modal.style.zIndex = '10000';
   openM('m-forgot');
 }
 
@@ -6238,8 +6234,8 @@ async function forgotStep3() {
     document.getElementById('dev-footer').style.display='flex';}catch(e){/* not logged in */}})();
 // ─── SIDEBAR TOGGLE ──────────────────────────────────────────────────────────
 function toggleSidebar() {
-  const sb = document.getElementById('sidebar');
-  const mn = document.getElementById('main');
+  const sb  = document.getElementById('sidebar');
+  const mn  = document.getElementById('main');
   sb.classList.toggle('collapsed');
   mn.classList.toggle('sb-collapsed');
   localStorage.setItem('sb_collapsed', sb.classList.contains('collapsed') ? '1' : '0');
@@ -6247,10 +6243,10 @@ function toggleSidebar() {
 // Restaura estado do menu ao carregar
 (function() {
   if (localStorage.getItem('sb_collapsed') === '1') {
-    const sb = document.getElementById('sidebar');
-    const mn = document.getElementById('main');
-    if (sb) sb.classList.add('collapsed');
-    if (mn) mn.classList.add('sb-collapsed');
+    const sb  = document.getElementById('sidebar');
+    const mn  = document.getElementById('main');
+    if (sb)  sb.classList.add('collapsed');
+    if (mn)  mn.classList.add('sb-collapsed');
   }
 })();
 
