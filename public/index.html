@@ -34,7 +34,7 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--tx);font-siz
 .lfg label{display:block;font-size:10px;font-weight:700;color:var(--tx2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.6px}
 .lfg input{width:100%;padding:9px 12px;border:1.5px solid var(--bd2);border-radius:var(--r);font-size:13px;font-family:inherit;color:var(--tx);transition:border .15s}
 .lfg input:focus{outline:none;border-color:var(--bl)}
-.lbtn{width:100%;padding:11px;background:var(--nv);color:#fff;border:none;border-radius:var(--r);font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;margin-top:6px;transition:background .15s}
+.lbtn{width:100%;height:40px;background:var(--nv);color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:600;font-family:'Sora',sans-serif;cursor:pointer;margin-top:6px;transition:background .15s;letter-spacing:.2px}
 .lbtn:hover{background:var(--bl)}
 
 /* SIDEBAR */
@@ -50,12 +50,14 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--tx);font-siz
 #sidebar.collapsed .sb-user{flex-direction:column;gap:5px;align-items:center}
 #sidebar.collapsed .btn-logout{margin-left:0}
 #sidebar.collapsed .sb-av{width:32px;height:32px}
-/* Toggle button — fixed position, moves with sidebar */
-.sb-toggle{position:fixed;top:16px;left:208px;width:24px;height:24px;background:var(--sf);border:1.5px solid var(--bd);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:200;box-shadow:0 2px 8px rgba(13,31,60,.15);transition:left .22s cubic-bezier(.4,0,.2,1);color:var(--nv)}
-.sb-toggle:hover{background:var(--sf2)}
+#sidebar.collapsed .sb-toggle{justify-content:center;padding:9px}
+/* Toggle button — dentro da sidebar */
+.sb-toggle{display:flex;align-items:center;justify-content:space-between;padding:9px 14px;cursor:pointer;color:rgba(255,255,255,.4);font-size:10px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;border-top:1px solid rgba(255,255,255,.07);transition:color .15s;margin-top:auto;flex-shrink:0}
+.sb-toggle:hover{color:rgba(255,255,255,.7);background:rgba(255,255,255,.04)}
+.sb-toggle-ico{width:22px;height:22px;background:rgba(255,255,255,.08);border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .sb-toggle svg{transition:transform .22s}
-.sb-toggle.collapsed-pos{left:44px}
-.sb-toggle.collapsed-pos svg{transform:rotate(180deg)}
+#sidebar.collapsed .sb-toggle svg{transform:rotate(180deg)}
+#sidebar.collapsed .sb-toggle-lbl{display:none}
 .logo-wrap{padding:18px 16px 14px;border-bottom:1px solid rgba(255,255,255,.07);flex-shrink:0}
 .logo-row{display:flex;align-items:center;gap:9px}
 .logo-ico{width:34px;height:34px;background:var(--ac);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
@@ -103,20 +105,24 @@ input[type=date],input[type=time],input[type=datetime-local]{padding:6px 10px!im
 textarea{resize:vertical!important;height:auto!important;min-height:60px!important}
 /* Sobrescreve inline styles problemáticos nos filtros */
 .filter-row input,.filter-row select{height:34px!important;padding:0 10px!important}
-/* Botões — forma geométrica precisa e tipografia consistente */
-button:not(.btn):not(.btnx):not(.lbtn):not(.btn-logout):not(.sb-toggle):not(.chk):not(.os-tab):not(.lab-tab):not(.log-tab){
+/* Botões nativos — tipografia base */
+button:not(.btn):not(.btnx):not(.lbtn):not(.btn-logout):not(.chk):not(.os-tab):not(.lab-tab):not(.log-tab){
   font-family:'Sora',sans-serif!important;
   font-size:12px!important;
   cursor:pointer!important;
 }
 
-.btn{display:inline-flex;align-items:center;gap:5px;padding:6px 13px;border-radius:var(--r);border:none;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;font-family:inherit}
-.btn-primary{background:var(--nv);color:#fff}.btn-primary:hover{background:var(--bl)}
-.btn-accent{background:var(--ac);color:#fff}.btn-accent:hover{background:var(--ac2)}
-.btn-ghost{background:transparent;color:var(--tx2);border:1px solid var(--bd2)}.btn-ghost:hover{background:var(--sf2)}
-.btn-danger{background:var(--rdbg);color:var(--rd);border:1px solid var(--rdbd)}.btn-danger:hover{background:#f5d8d4}
-.btn-success{background:var(--gnbg);color:var(--gn);border:1px solid var(--gnbd)}.btn-success:hover{background:#cce8d8}
-.btn-info{background:var(--pubg);color:var(--pu);border:1px solid #c8a8f0}.btn-info:hover{background:#e8d8fc}
+/* ═══ SISTEMA DE BOTÕES UNIFICADO ═══ */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:0 14px;height:34px;border-radius:8px;border:none;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;font-family:'Sora',sans-serif!important;white-space:nowrap;line-height:1}
+.btn-sm{height:30px;padding:0 11px;font-size:11px}
+.btn-xs{height:26px;padding:0 9px;font-size:11px;border-radius:6px}
+.btn-lg{height:40px;padding:0 18px;font-size:13px}
+.btn-primary{background:var(--nv);color:#fff;border:1.5px solid var(--nv)}.btn-primary:hover{background:var(--bl);border-color:var(--bl)}
+.btn-accent{background:var(--ac);color:#fff;border:1.5px solid var(--ac)}.btn-accent:hover{background:var(--ac2);border-color:var(--ac2)}
+.btn-ghost{background:#fff;color:var(--tx2);border:1.5px solid var(--bd2)}.btn-ghost:hover{background:var(--sf2);border-color:var(--bd)}
+.btn-danger{background:var(--rdbg);color:var(--rd);border:1.5px solid var(--rdbd)}.btn-danger:hover{background:#f5d8d4}
+.btn-success{background:var(--gnbg);color:var(--gn);border:1.5px solid var(--gnbd)}.btn-success:hover{background:#cce8d8}
+.btn-info{background:var(--pubg);color:var(--pu);border:1.5px solid #c8a8f0}.btn-info:hover{background:#e8d8fc}
 /* SLA BADGES */
 .sla-ok{display:inline-flex;align-items:center;gap:4px;background:#e6f5ee;color:#1a7a4a;border:1px solid #9ddcba;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700}
 .sla-warn{display:inline-flex;align-items:center;gap:4px;background:#fff4e6;color:#c06010;border:1px solid #fac878;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700}
@@ -430,11 +436,13 @@ tr:hover td{background:var(--sf2)}
       <button class="btn-logout" onclick="doLogout()" title="Sair">⏻</button>
     </div>
   </div>
-</div>
-
-<!-- Toggle sidebar — fixo, fora da sidebar -->
-<div class="sb-toggle" id="sb-toggle-btn" onclick="toggleSidebar()" title="Recolher/Expandir menu">
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+  <!-- Botão recolher — dentro da sidebar -->
+  <div class="sb-toggle" id="sb-toggle-btn" onclick="toggleSidebar()">
+    <span class="sb-toggle-lbl">Recolher menu</span>
+    <div class="sb-toggle-ico">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+    </div>
+  </div>
 </div>
 
 <!-- MAIN -->
@@ -6082,6 +6090,9 @@ function openForgotPassword() {
   document.getElementById('forgot-title').textContent = 'Recuperar Senha';
   // Reset seleção canal
   selectCanal('email');
+  // Eleva z-index acima da tela de login (z-index 9999)
+  const modal = document.getElementById('m-forgot');
+  if (modal) modal.style.zIndex = '10000';
   openM('m-forgot');
 }
 
@@ -6225,10 +6236,8 @@ async function forgotStep3() {
 function toggleSidebar() {
   const sb  = document.getElementById('sidebar');
   const mn  = document.getElementById('main');
-  const btn = document.getElementById('sb-toggle-btn');
   sb.classList.toggle('collapsed');
   mn.classList.toggle('sb-collapsed');
-  if (btn) btn.classList.toggle('collapsed-pos', sb.classList.contains('collapsed'));
   localStorage.setItem('sb_collapsed', sb.classList.contains('collapsed') ? '1' : '0');
 }
 // Restaura estado do menu ao carregar
@@ -6236,10 +6245,8 @@ function toggleSidebar() {
   if (localStorage.getItem('sb_collapsed') === '1') {
     const sb  = document.getElementById('sidebar');
     const mn  = document.getElementById('main');
-    const btn = document.getElementById('sb-toggle-btn');
     if (sb)  sb.classList.add('collapsed');
     if (mn)  mn.classList.add('sb-collapsed');
-    if (btn) btn.classList.add('collapsed-pos');
   }
 })();
 
