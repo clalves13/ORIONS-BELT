@@ -587,32 +587,57 @@ async function enviarEmail(destinatario, nome, codigo) {
   });
 }
 
-// Envia WhatsApp via Callmebot (gratuito, sem conta)
-// O usuário precisa ter ativado o Callmebot no WhatsApp dele previamente:
-// Enviar "I allow callmebot to send me messages" para +34 644 65 21 28
-async function enviarWhatsApp(numero, nome, codigo) {
+// Envia mensagem via Telegram Bot API
+// Setup: criar bot via @BotFather → obter TOKEN → usuário inicia conversa com o bot → obter CHAT_ID via /api/telegram-updates
+async function enviarTelegram(chatId, nome, codigo) {
   const https = require('https');
-  // Limpa número: mantém só dígitos, adiciona 55 se não tiver DDI
-  let tel = numero.replace(/\D/g, '');
-  if (!tel.startsWith('55')) tel = '55' + tel;
-  // Chave Callmebot — pode ser configurada por variável de ambiente ou usar a default do sistema
-  const apiKey = process.env.CALLMEBOT_KEY || '';
-  if (!apiKey) throw new Error('CALLMEBOT_KEY não configurada. Acesse callmebot.com para obter sua chave pessoal.');
-  const msg = encodeURIComponent(
-    `🔐 *Theikós AT — Recuperação de Senha*\n\nOlá, ${nome}!\n\nSeu código de verificação é:\n\n*${codigo}*\n\n⏱ Expira em 15 minutos.\n\nSe não foi você, ignore esta mensagem.`
+  const token = process.env.TELEGRAM_BOT_TOKEN || '';
+  if (!token) throw new Error('TELEGRAM_BOT_TOKEN não configurado. Crie um bot via @BotFather no Telegram e adicione o token nas variáveis de ambiente do Railway.');
+  if (!chatId) throw new Error('Chat ID do Telegram não cadastrado para este usuário.');
+  const text = encodeURIComponent(
+    `🔐 Theikós AT — Recuperação de Senha\n\nOlá, ${nome}!\n\nSeu código de verificação é:\n\n${codigo}\n\n⏱ Expira em 15 minutos.\n\nSe não foi você, ignore esta mensagem.`
   );
-  const url = `https://api.callmebot.com/whatsapp.php?phone=${tel}&text=${msg}&apikey=${apiKey}`;
+  const url = `https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${text}`;
   return new Promise((resolve, reject) => {
     https.get(url, (r) => {
       let data = '';
       r.on('data', d => data += d);
       r.on('end', () => {
-        if (r.statusCode === 200) resolve(data);
-        else reject(new Error(`Callmebot retornou status ${r.statusCode}: ${data}`));
+        try {
+          const json = JSON.parse(data);
+          if (json.ok) resolve(json);
+          else reject(new Error(`Telegram API: ${json.description || 'Erro desconhecido'}`));
+        } catch(e) { reject(new Error('Resposta inválida do Telegram: ' + data)); }
       });
     }).on('error', reject);
   });
 }
+
+// Endpoint auxiliar: lista os últimos contatos do bot (para obter chat_id dos usuários)
+app.get('/api/telegram-updates', requireAuth, requireAdmin, async (req, res) => {
+  const https = require('https');
+  const token = process.env.TELEGRAM_BOT_TOKEN || '';
+  if (!token) return res.status(400).json({ error: 'TELEGRAM_BOT_TOKEN não configurado.' });
+  const url = `https://api.telegram.org/bot${token}/getUpdates?limit=20`;
+  https.get(url, (r) => {
+    let data = '';
+    r.on('data', d => data += d);
+    r.on('end', () => {
+      try {
+        const json = JSON.parse(data);
+        if (!json.ok) return res.status(500).json({ error: json.description });
+        const updates = (json.result || []).map(u => ({
+          chat_id: u.message?.chat?.id,
+          username: u.message?.chat?.username || '',
+          nome: (u.message?.chat?.first_name || '') + ' ' + (u.message?.chat?.last_name || ''),
+          texto: u.message?.text || '',
+          data: u.message?.date ? new Date(u.message.date * 1000).toLocaleString('pt-BR') : ''
+        })).filter(u => u.chat_id);
+        res.json(updates);
+      } catch(e) { res.status(500).json({ error: 'Resposta inválida do Telegram.' }); }
+    });
+  }).on('error', e => res.status(500).json({ error: e.message }));
+});
 
 app.post('/api/forgot-password', async (req, res) => {
   try {
@@ -629,16 +654,16 @@ app.post('/api/forgot-password', async (req, res) => {
       { $set: { reset_codigo: codigo, reset_expiry: expiry, reset_tentativas: 0 } }
     );
 
-    if (canal === 'whatsapp') {
-      const tel = user.wpp || '';
-      if (!tel) return res.status(400).json({ error: 'Este usuário não tem WhatsApp cadastrado no sistema. Tente pelo email.' });
+    if (canal === 'telegram') {
+      const chatId = user.telegram_chat_id || '';
+      if (!chatId) return res.status(400).json({ error: 'Este usuário não tem Telegram cadastrado no sistema. Tente pelo email.' });
       try {
-        await enviarWhatsApp(tel, user.nome, codigo);
-        const telMask = tel.replace(/\D/g,'').slice(-4);
-        return res.json({ ok: true, msg: `Código enviado para o WhatsApp com final *${telMask}. Verifique seu celular!` });
+        await enviarTelegram(chatId, user.nome, codigo);
+        const chatMask = String(chatId).slice(-4);
+        return res.json({ ok: true, msg: `Código enviado via Telegram (conta com final ...${chatMask}). Verifique o app!` });
       } catch(e) {
-        console.error('WhatsApp error:', e.message);
-        return res.status(500).json({ error: 'Erro ao enviar WhatsApp: ' + e.message });
+        console.error('Telegram error:', e.message);
+        return res.status(500).json({ error: 'Erro ao enviar via Telegram: ' + e.message });
       }
     } else {
       // Canal email (padrão)
@@ -693,6 +718,51 @@ app.post('/api/reset-password', async (req, res) => {
 
 // Debug route
 app.get('/api/test', (req,res) => res.json({ok:true, session: req.session.user || null}));
+
+// Teste de envio Telegram
+app.post('/api/test-telegram', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const { chat_id } = req.body;
+    if (!chat_id) return res.status(400).json({ error: 'Informe o Chat ID.' });
+    await enviarTelegram(String(chat_id), 'Administrador', '123456');
+    res.json({ ok: true, msg: `Mensagem de teste enviada para o chat ${chat_id}!` });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ─── RESET DO SISTEMA ────────────────────────────────────────────────────────
+// Apaga TODOS os dados, preservando APENAS o usuário master (coringa)
+app.post('/api/reset-system', requireAuth, async (req, res) => {
+  try {
+    const u = req.session.user;
+    if (!u?.isMaster && u?.login !== 'master') {
+      return res.status(403).json({ error: 'Acesso negado. Apenas o usuário master pode executar esta operação.' });
+    }
+    const { confirmacao } = req.body;
+    if (confirmacao !== 'APAGAR TUDO') {
+      return res.status(400).json({ error: 'Confirmação inválida. Digite exatamente: APAGAR TUDO' });
+    }
+    const colecoes = [
+      'users','tecnicos','clientes','equipamentos',
+      'ordens','laboratorio','historico',
+      'estoque','estoque_movs',
+      'supr_cli','supr_movs',
+      'logistica','abastecimento','checklist','manutencao',
+      'pedidos_pecas','eq_baixados',
+      'lancamentos','contratos','financeiro',
+      'counter','sessions','notificacoes','configuracoes'
+    ];
+    const db = client.db();
+    const resultados = {};
+    for (const nome of colecoes) {
+      try {
+        const r = await db.collection(nome).deleteMany({});
+        resultados[nome] = r.deletedCount;
+      } catch(e) { resultados[nome] = `erro: ${e.message}`; }
+    }
+    req.session.destroy(() => {});
+    res.json({ ok: true, msg: 'Sistema zerado. Todos os dados foram apagados. Faça login novamente.', resultados });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
 
 app.get('*',(req,res)=>res.sendFile(path.join(__dirname,'public','index.html')));
 

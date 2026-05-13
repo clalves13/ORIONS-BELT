@@ -460,7 +460,7 @@ tr:hover td{background:var(--sf2)}
       <div class="ni-child" id="nicfg-alertas"    onclick="navCfg('alertas')">    <span class="ni-child-dot"></span>Alertas</div>
       <div class="ni-child" id="nicfg-estoque"    onclick="navCfg('estoque-cfg')"><span class="ni-child-dot"></span>Suprimentos e Estoque</div>
       <div class="ni-child" id="nicfg-sla"        onclick="navCfg('sla')">        <span class="ni-child-dot"></span>Prazos de SLA</div>
-      <div class="ni-child" id="nicfg-whatsapp"   onclick="navCfg('whatsapp')">   <span class="ni-child-dot"></span>Integração WhatsApp</div>
+      <div class="ni-child" id="nicfg-whatsapp"   onclick="navCfg('whatsapp')">   <span class="ni-child-dot"></span>Integração Telegram</div>
     </div>
   </div>
   <div class="sb-footer">
@@ -1529,6 +1529,7 @@ tr:hover td{background:var(--sf2)}
     <div><div class="tb-title">Usuários do Sistema</div><div class="tb-sub">Controle de acesso e perfis</div></div>
     <div class="tb-right">
       <button class="btn btn-ghost btn-sm" onclick="switchUsrTab('recovery')" id="btn-recovery-tab">🔑 Reset de Senha (Admin)</button>
+      <button id="btn-reset-sistema" class="btn btn-danger btn-sm" onclick="abrirResetSistema()" style="display:none">⚠️ Zerar Sistema</button>
       <button class="btn btn-accent" onclick="openUser(null)">+ Novo Usuário</button>
     </div>
   </div>
@@ -1542,7 +1543,7 @@ tr:hover td{background:var(--sf2)}
     <!-- Aba lista -->
     <div id="usr-tab-lista">
       <div class="card" style="padding:0"><div class="twrap"><table>
-        <thead><tr><th>Login</th><th>Nome</th><th>Perfil</th><th>E-mail</th><th>WhatsApp</th><th>Status</th><th>Último acesso</th><th>Ações</th></tr></thead>
+        <thead><tr><th>Login</th><th>Nome</th><th>Perfil</th><th>E-mail</th><th>Telegram ID</th><th>Status</th><th>Último acesso</th><th>Ações</th></tr></thead>
         <tbody id="tb-usr"></tbody>
       </table></div></div>
     </div>
@@ -1571,7 +1572,7 @@ tr:hover td{background:var(--sf2)}
           <div style="font-size:12px;font-weight:600;margin-bottom:8px;color:var(--tx2)">Enviar recuperação via:</div>
           <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap">
             <button class="btn btn-ghost" id="rec-btn-email" onclick="enviarRecovery('email')" style="flex:1;min-width:130px">📧 E-mail</button>
-            <button class="btn btn-ghost" id="rec-btn-wpp" onclick="enviarRecovery('whatsapp')" style="flex:1;min-width:130px">💬 WhatsApp</button>
+            <button class="btn btn-ghost" id="rec-btn-wpp" onclick="enviarRecovery('telegram')" style="flex:1;min-width:130px">✈️ Telegram</button>
           </div>
           <div style="border-top:1px solid var(--bd);padding-top:16px">
             <div style="font-size:12px;font-weight:600;margin-bottom:8px;color:var(--tx2)">Ou gerar senha temporária manualmente:</div>
@@ -1732,20 +1733,36 @@ Outros</textarea>
       </div>
     </div>
 
-    <!-- WhatsApp -->
+    <!-- Telegram -->
     <div class="cfg-panel" id="cfg-whatsapp" style="display:none">
       <div class="card">
-        <div class="card-hd"><div class="card-title">💬 Integração WhatsApp (Callmebot)</div></div>
+        <div class="card-hd"><div class="card-title">✈️ Integração Telegram</div></div>
         <div class="help-tip" style="margin-bottom:16px">
-          O Callmebot é gratuito e não precisa de conta. Para ativar, cada usuário deve enviar a mensagem <b>"I allow callmebot to send me messages"</b> para o número <b>+34 644 65 21 28</b> no WhatsApp e guardar a chave recebida.
+          <b>Como configurar em 3 passos:</b><br>
+          1. Abra o Telegram e pesquise <b>@BotFather</b> → envie <code>/newbot</code> → siga as instruções → copie o <b>Token</b>.<br>
+          2. Cada usuário precisa abrir uma conversa com o seu bot (pesquisar pelo nome do bot) e enviar qualquer mensagem.<br>
+          3. Clique em <b>"Buscar Chat IDs"</b> abaixo para listar quem já conversou com o bot e copie o Chat ID para o cadastro do usuário.
         </div>
         <div class="fgrid fg2">
-          <div class="fg"><label>Chave Callmebot do Sistema</label><input type="text" id="cfg-callmebot-key" placeholder="Ex: 123456"></div>
-          <div class="fg"><label>Número de teste (com DDI)</label><input type="text" id="cfg-wpp-test" placeholder="5511999999999"></div>
+          <div class="fg" style="grid-column:1/-1">
+            <label>Token do Bot (variável de ambiente TELEGRAM_BOT_TOKEN no Railway)</label>
+            <div style="display:flex;gap:8px">
+              <input type="password" id="cfg-telegram-token" placeholder="1234567890:ABCdefGhIJKlmNoPQRsTUVwxYZ" style="flex:1">
+              <span onclick="const i=document.getElementById('cfg-telegram-token');i.type=i.type==='password'?'text':'password'" style="cursor:pointer;padding:0 10px;display:flex;align-items:center;font-size:16px;color:var(--tx3)" title="Mostrar/ocultar">👁</span>
+            </div>
+            <small style="font-size:10px;color:var(--tx3);margin-top:3px;display:block">⚠️ O token é configurado no Railway (Settings → Variables → TELEGRAM_BOT_TOKEN), não salvo aqui por segurança.</small>
+          </div>
+          <div class="fg"><label>Chat ID para teste</label><input type="text" id="cfg-telegram-test" placeholder="Ex: 123456789"></div>
+          <div class="fg" style="display:flex;flex-direction:column;justify-content:flex-end">
+            <button class="btn btn-ghost" onclick="testTelegram()">📲 Enviar mensagem de teste</button>
+          </div>
         </div>
-        <div style="margin-top:16px;display:flex;gap:8px;justify-content:flex-end">
-          <button class="btn btn-ghost" onclick="testWhatsApp()">📲 Enviar mensagem de teste</button>
-          <button class="btn btn-primary" onclick="saveCfg('whatsapp')">💾 Salvar</button>
+        <div style="margin-top:16px">
+          <button class="btn btn-ghost" onclick="buscarChatIds()" id="btn-buscar-chatids">🔍 Buscar Chat IDs dos usuários</button>
+          <div id="telegram-updates" style="margin-top:12px;display:none">
+            <div style="font-size:11px;font-weight:700;color:var(--nv);margin-bottom:8px">Contatos encontrados — copie o Chat ID para o cadastro do usuário:</div>
+            <div id="telegram-updates-lista" style="display:flex;flex-direction:column;gap:6px"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -2227,7 +2244,7 @@ Outros</textarea>
         </div>
       </div>
       <div class="fg"><label>E-mail (para recuperação)</label><input type="text" id="u-email" placeholder="usuario@empresa.com"></div>
-      <div class="fg"><label>WhatsApp (para recuperação)</label><input type="text" id="u-wpp" placeholder="+55 11 99999-9999"></div>
+      <div class="fg"><label>Telegram Chat ID (para recuperação)</label><input type="text" id="u-wpp" placeholder="Ex: 123456789"></div>
       <div class="fg"><label>Perfil de Acesso *</label>
         <select id="u-perfil" onchange="setRoleFromPerfil()">
           <option value="tecnico">Técnico</option>
@@ -4401,15 +4418,15 @@ function enviarRecovery(via){
   if(!uid){alert('Selecione um usuário.');return;}
   const user=G._users?.find(x=>x.id===uid);if(!user)return;
   if(via==='email'&&!user.email){alert('Usuário sem e-mail cadastrado.');return;}
-  if(via==='whatsapp'&&!user.wpp){alert('Usuário sem WhatsApp cadastrado.');return;}
+  if(via==='telegram'&&!user.wpp){alert('Usuário sem Telegram Chat ID cadastrado.');return;}
   const chars='ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
   let s='';for(let i=0;i<8;i++)s+=chars[Math.floor(Math.random()*chars.length)];
   api('PUT',`/api/users/${uid}`,{senha_temp:s}).catch(()=>{});
   const dest=via==='email'?user.email:user.wpp;
   alert(via==='email'
     ?`📧 E-mail de recuperação simulado para: ${dest}\nSenha temporária: ${s}`
-    :`💬 Simulando envio WhatsApp para: ${dest}\nSenha temporária: ${s}\n\n(Integração real requer API WhatsApp Business)`);
-  adicionarRecLog(`Recuperação via ${via==='email'?'e-mail':'WhatsApp'} para ${user.nome}`,uid);
+    :`✈️ Simulando envio Telegram para Chat ID: ${dest}\nSenha temporária: ${s}`);
+  adicionarRecLog(`Recuperação via ${via==='email'?'e-mail':'Telegram'} para ${user.nome}`,uid);
 }
 
 function adicionarRecLog(acao,uid){
@@ -4485,6 +4502,9 @@ async function renderUsers(){
       </td>
     </tr>`;
   }).join('');
+  // Botão "Zerar Sistema" só aparece para o master
+  const btnReset = document.getElementById('btn-reset-sistema');
+  if (btnReset) btnReset.style.display = G.user?.isMaster ? 'inline-flex' : 'none';
   renderPerfisPainel();
 }
 
@@ -6159,8 +6179,8 @@ function selectCanal(canal) {
   const wppLbl   = document.getElementById('canal-wpp-lbl');
   const sel = 'border-color:var(--ac);background:var(--orbg)';
   const def = 'border-color:var(--bd2);background:transparent';
-  emailLbl.style.cssText += canal === 'email' ? sel : def;
-  wppLbl.style.cssText   += canal === 'whatsapp' ? sel : def;
+  emailLbl.style.cssText += canal === 'email'    ? sel : def;
+  wppLbl.style.cssText   += canal === 'telegram' ? sel : def;
 }
 
 function _showForgotMsg(step, msg, tipo) {
@@ -6195,9 +6215,9 @@ async function forgotStep1() {
     document.getElementById('btn-forgot-1').style.display = 'none';
     document.getElementById('btn-forgot-2').style.display = 'inline-flex';
     // Ícone e texto conforme canal
-    document.getElementById('forgot-canal-icon').textContent = _forgot.canal === 'whatsapp' ? '💬' : '📧';
-    document.getElementById('forgot-enviado-sub').textContent = _forgot.canal === 'whatsapp'
-      ? 'Verifique o WhatsApp e digite o código de 6 dígitos abaixo.'
+    document.getElementById('forgot-canal-icon').textContent = _forgot.canal === 'telegram' ? '✈️' : '📧';
+    document.getElementById('forgot-enviado-sub').textContent = _forgot.canal === 'telegram'
+      ? 'Verifique o Telegram e digite o código de 6 dígitos abaixo.'
       : 'Verifique seu email e digite o código de 6 dígitos abaixo.';
     _showForgotMsg(2, res.msg, 'ok');
     setTimeout(() => { document.getElementById('forgot-codigo').focus(); }, 200);
@@ -6431,7 +6451,7 @@ const _cfgLabels = {
   'alertas':    ['Alertas',                   'Notificações automáticas'],
   'estoque-cfg':['Suprimentos e Estoque',     'Parâmetros de estoque'],
   'sla':        ['Prazos de SLA',             'Tempos por tipo de OS'],
-  'whatsapp':   ['Integração WhatsApp',       'Callmebot'],
+  'whatsapp':   ['Integração Telegram',        'Bot do Telegram'],
 };
 
 function toggleCfgMenu() {
@@ -6520,12 +6540,41 @@ async function testEmail() {
   catch(e){alert('Erro: '+e.message);}
 }
 
-async function testWhatsApp() {
-  const tel=document.getElementById('cfg-wpp-test')?.value;
-  const key=document.getElementById('cfg-callmebot-key')?.value;
-  if(!tel||!key){alert('Preencha número e chave.');return;}
-  try { await api('POST','/api/test-whatsapp',{tel,key}); alert('✔ Mensagem enviada!'); }
-  catch(e){alert('Erro: '+e.message);}
+async function testTelegram() {
+  const chat_id = document.getElementById('cfg-telegram-test')?.value?.trim();
+  if (!chat_id) { alert('Informe o Chat ID.'); return; }
+  try {
+    await api('POST', '/api/test-telegram', { chat_id });
+    alert('✔ Mensagem de teste enviada via Telegram!');
+  } catch(e) { alert('Erro: ' + e.message); }
+}
+
+async function buscarChatIds() {
+  const btn = document.getElementById('btn-buscar-chatids');
+  if (btn) { btn.textContent = '⏳ Buscando...'; btn.disabled = true; }
+  try {
+    const updates = await api('GET', '/api/telegram-updates');
+    const wrap = document.getElementById('telegram-updates');
+    const lista = document.getElementById('telegram-updates-lista');
+    if (!wrap || !lista) return;
+    if (!updates.length) {
+      lista.innerHTML = '<div style="font-size:11px;color:var(--tx3)">Nenhum contato encontrado. Peça para os usuários abrirem conversa com o bot no Telegram.</div>';
+    } else {
+      lista.innerHTML = updates.map(u => `
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--sf2);border-radius:8px;border:1px solid var(--bd)">
+          <div style="flex:1">
+            <div style="font-size:12px;font-weight:600;color:var(--nv)">${u.nome.trim()||'(sem nome)'} ${u.username?'<span style="color:var(--tx3)">@'+u.username+'</span>':''}</div>
+            <div style="font-size:11px;color:var(--tx3)">Último contato: ${u.data} · "${u.texto.slice(0,40)}"</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <code style="background:var(--nv);color:#fff;padding:4px 8px;border-radius:6px;font-size:12px;font-weight:700">${u.chat_id}</code>
+            <button class="btn btn-ghost btn-xs" onclick="navigator.clipboard.writeText('${u.chat_id}');this.textContent='✔ Copiado!'">Copiar</button>
+          </div>
+        </div>`).join('');
+    }
+    wrap.style.display = 'block';
+  } catch(e) { alert('Erro ao buscar: ' + e.message); }
+  finally { if (btn) { btn.textContent = '🔍 Buscar Chat IDs dos usuários'; btn.disabled = false; } }
 }
 </script>
 
@@ -6741,10 +6790,10 @@ async function testWhatsApp() {
           <input type="radio" name="forgot-canal" value="email" style="display:none" checked>
         </label>
         <label id="canal-wpp-lbl" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 10px;border:2px solid var(--bd2);border-radius:var(--r);cursor:pointer;transition:all .15s;text-align:center" onclick="selectCanal('whatsapp')">
-          <span style="font-size:26px">💬</span>
-          <span style="font-size:12px;font-weight:700;color:var(--nv)">WhatsApp</span>
+          <span style="font-size:26px">✈️</span>
+          <span style="font-size:12px;font-weight:700;color:var(--nv)">Telegram</span>
           <span style="font-size:10px;color:var(--tx3)">Receber no celular cadastrado</span>
-          <input type="radio" name="forgot-canal" value="whatsapp" style="display:none">
+          <input type="radio" name="forgot-canal" value="telegram" style="display:none">
         </label>
       </div>
       <div id="forgot-msg1" style="display:none;margin-top:12px;padding:10px 12px;border-radius:var(--r);font-size:12px"></div>
@@ -6803,5 +6852,76 @@ async function testWhatsApp() {
     <button class="btn btn-success" id="btn-forgot-3" style="display:none" onclick="forgotStep3()">✔ Redefinir Senha</button>
   </div>
 </div></div>
+<!-- Modal Zerar Sistema -->
+<div class="mov" id="m-reset-sistema">
+<div class="modal" style="max-width:460px">
+  <div class="mhd" style="background:var(--rdbg);border-bottom:1px solid var(--rdbd)">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="width:34px;height:34px;background:var(--rd);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px">⚠️</div>
+      <div>
+        <div class="mhd-title" style="color:var(--rd)">Zerar Sistema</div>
+        <div style="font-size:10px;color:var(--rd);opacity:.8">Esta ação é irreversível</div>
+      </div>
+    </div>
+    <button class="btnx" onclick="closeM('m-reset-sistema')">×</button>
+  </div>
+  <div style="padding:20px">
+    <div style="background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:12px;color:#7c4b00;line-height:1.6">
+      <b>⚠️ Atenção:</b> Esta operação apagará <b>permanentemente</b> todos os dados do sistema:<br>
+      OS, clientes, técnicos, equipamentos, estoque, financeiro, contratos, logística, laboratório, histórico e usuários.<br><br>
+      <b>Será preservado apenas o usuário master (coringa).</b><br>
+      O sistema voltará ao estado inicial zerado.
+    </div>
+    <div class="fg" style="margin-bottom:16px">
+      <label style="font-size:12px;font-weight:700;color:var(--rd)">Para confirmar, digite exatamente: <code style="background:#fee;padding:2px 6px;border-radius:4px">APAGAR TUDO</code></label>
+      <input type="text" id="reset-confirmacao" placeholder="APAGAR TUDO" style="margin-top:6px;border-color:var(--rdbd);font-family:monospace;font-size:14px;letter-spacing:1px">
+    </div>
+    <div id="reset-msg" style="display:none;padding:10px 12px;border-radius:8px;font-size:12px;margin-bottom:12px"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="closeM('m-reset-sistema')">Cancelar</button>
+      <button class="btn btn-danger" id="btn-confirmar-reset" onclick="confirmarResetSistema()">⚠️ Confirmar — Apagar Tudo</button>
+    </div>
+  </div>
+</div></div>
+
+<script>
+function abrirResetSistema() {
+  document.getElementById('reset-confirmacao').value = '';
+  const msg = document.getElementById('reset-msg');
+  msg.style.display = 'none';
+  const btn = document.getElementById('btn-confirmar-reset');
+  btn.disabled = false; btn.textContent = '⚠️ Confirmar — Apagar Tudo';
+  openM('m-reset-sistema');
+}
+
+async function confirmarResetSistema() {
+  const confirmacao = document.getElementById('reset-confirmacao').value.trim();
+  const btn = document.getElementById('btn-confirmar-reset');
+  const msg = document.getElementById('reset-msg');
+  if (confirmacao !== 'APAGAR TUDO') {
+    msg.style.cssText = 'display:block;background:#fef2f2;color:#b91c1c;border:1px solid #fca5a5;padding:10px 12px;border-radius:8px;font-size:12px;margin-bottom:12px';
+    msg.textContent = '✕ Confirmação incorreta. Digite exatamente: APAGAR TUDO';
+    return;
+  }
+  btn.disabled = true; btn.textContent = '⏳ Apagando tudo...';
+  msg.style.cssText = 'display:block;background:#eff6ff;color:#1e4080;border:1px solid #93c5fd;padding:10px 12px;border-radius:8px;font-size:12px;margin-bottom:12px';
+  msg.textContent = '⏳ Processando... aguarde.';
+  try {
+    const r = await api('POST', '/api/reset-system', { confirmacao });
+    msg.style.cssText = 'display:block;background:#edfaf3;color:#1a7a4a;border:1px solid #6ee7b7;padding:10px 12px;border-radius:8px;font-size:12px;margin-bottom:12px';
+    msg.textContent = '✔ ' + r.msg;
+    btn.textContent = '✔ Concluído';
+    setTimeout(() => {
+      closeM('m-reset-sistema');
+      doLogout();
+    }, 2500);
+  } catch(e) {
+    msg.style.cssText = 'display:block;background:#fef2f2;color:#b91c1c;border:1px solid #fca5a5;padding:10px 12px;border-radius:8px;font-size:12px;margin-bottom:12px';
+    msg.textContent = '✕ Erro: ' + e.message;
+    btn.disabled = false; btn.textContent = '⚠️ Confirmar — Apagar Tudo';
+  }
+}
+</script>
+
 </body>
 </html>
