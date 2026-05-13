@@ -177,6 +177,26 @@ button:not(.btn):not(.btnx):not(.lbtn):not(.btn-logout):not(.chk):not(.os-tab):n
 .card .cfg-nav-item{color:var(--tx2)}
 .card .cfg-nav-item:hover{background:var(--sf2);color:var(--nv)}
 .card .cfg-nav-item.active{background:var(--bl2bg);color:var(--bl2)}
+/* SIDEBAR SUBMENU — Configurações expansível */
+.ni-parent{display:flex;align-items:center;gap:8px;padding:8px 16px;cursor:pointer;color:rgba(255,255,255,.55);font-size:12px;font-weight:500;transition:all .15s;border-left:3px solid transparent;justify-content:space-between}
+.ni-parent:hover{background:rgba(255,255,255,.05);color:#fff}
+.ni-parent.open{color:rgba(255,255,255,.85)}
+.ni-parent.has-active{color:var(--ac2);border-left-color:var(--ac)}
+.ni-parent-left{display:flex;align-items:center;gap:8px}
+.ni-parent-left svg{width:15px;height:15px;flex-shrink:0;opacity:.8}
+.ni-chevron{width:14px;height:14px;transition:transform .22s;opacity:.5;flex-shrink:0}
+.ni-parent.open .ni-chevron{transform:rotate(90deg)}
+.ni-children{overflow:hidden;max-height:0;transition:max-height .25s cubic-bezier(.4,0,.2,1)}
+.ni-children.open{max-height:400px}
+.ni-child{display:flex;align-items:center;gap:7px;padding:6px 16px 6px 36px;cursor:pointer;color:rgba(255,255,255,.4);font-size:11px;font-weight:500;transition:all .12s;border-left:3px solid transparent}
+.ni-child:hover{color:rgba(255,255,255,.75);background:rgba(255,255,255,.04)}
+.ni-child.active{color:var(--ac2);background:rgba(224,120,24,.1);border-left-color:var(--ac)}
+.ni-child-dot{width:4px;height:4px;border-radius:50%;background:rgba(255,255,255,.25);flex-shrink:0;margin-left:2px}
+.ni-child.active .ni-child-dot{background:var(--ac)}
+#sidebar.collapsed .ni-parent{padding:10px;justify-content:center}
+#sidebar.collapsed .ni-parent-left span,#sidebar.collapsed .ni-chevron{display:none!important}
+#sidebar.collapsed .ni-parent-left{gap:0}
+#sidebar.collapsed .ni-children{display:none!important}
 .cfg-alerta-row{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:var(--sf2);border:1px solid var(--bd);border-radius:var(--r)}
 /* Toggle switch */
 .cfg-toggle{position:relative;display:inline-block;width:38px;height:20px;flex-shrink:0}
@@ -426,7 +446,22 @@ tr:hover td{background:var(--sf2)}
     <div class="ni" data-modulo="contratos" data-tip="Contratos" onclick="nav('contratos',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10,9 9,9 8,9"/></svg><span>Contratos</span><span class="ni-badge" id="b-contratos" style="display:none">0</span></div>
     <div class="ni" data-modulo="financeiro" data-tip="Financeiro" onclick="nav('financeiro',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg><span>Financeiro</span></div>
     <div class="ni" data-modulo="notificacoes" data-tip="Notificações SLA" onclick="nav('notificacoes',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg><span>Notificações</span><span class="ni-badge" id="b-notif" style="background:var(--rd)">0</span></div>
-    <div class="ni" data-modulo="configuracoes" data-tip="Configurações" onclick="nav('configuracoes',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg><span>Configurações</span></div>
+    <!-- Configurações — submenu expansível -->
+    <div class="ni-parent" id="ni-cfg-parent" data-tip="Configurações" onclick="toggleCfgMenu()">
+      <div class="ni-parent-left">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        <span>Configurações</span>
+      </div>
+      <svg class="ni-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+    </div>
+    <div class="ni-children" id="ni-cfg-children">
+      <div class="ni-child" id="nicfg-empresa"    onclick="navCfg('empresa')">    <span class="ni-child-dot"></span>Dados da Empresa</div>
+      <div class="ni-child" id="nicfg-email"      onclick="navCfg('email')">      <span class="ni-child-dot"></span>E-mail / SMTP</div>
+      <div class="ni-child" id="nicfg-alertas"    onclick="navCfg('alertas')">    <span class="ni-child-dot"></span>Alertas</div>
+      <div class="ni-child" id="nicfg-estoque"    onclick="navCfg('estoque-cfg')"><span class="ni-child-dot"></span>Suprimentos e Estoque</div>
+      <div class="ni-child" id="nicfg-sla"        onclick="navCfg('sla')">        <span class="ni-child-dot"></span>Prazos de SLA</div>
+      <div class="ni-child" id="nicfg-whatsapp"   onclick="navCfg('whatsapp')">   <span class="ni-child-dot"></span>Integração WhatsApp</div>
+    </div>
   </div>
   <div class="sb-footer">
     <div id="sb-backup-wrap" style="display:none;margin-bottom:8px"><button onclick="openM('m-backup')" style="width:100%;padding:7px;background:rgba(224,120,24,0.15);color:var(--ac2);border:1px solid rgba(224,120,24,0.3);border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">💾 Backup / Restaurar</button></div>
@@ -1560,147 +1595,161 @@ tr:hover td{background:var(--sf2)}
 <!-- CONFIGURAÇÕES -->
 <div id="page-configuracoes" class="page">
   <div class="topbar">
-    <div><div class="tb-title">Configurações</div><div class="tb-sub">Preferências do sistema</div></div>
+    <div><div class="tb-title" id="cfg-topbar-title">Configurações</div><div class="tb-sub" id="cfg-topbar-sub">Dados da Empresa</div></div>
   </div>
   <div class="content">
-    <div style="display:grid;grid-template-columns:200px 1fr;gap:20px;align-items:start">
 
-      <!-- Nav lateral de configurações -->
-      <div class="card" style="padding:10px">
-        <div style="font-size:9px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:1px;padding:8px 10px 4px">Sistema</div>
-        <div class="cfg-nav-item active" onclick="cfgTab('empresa')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>
-          Dados da Empresa
+    <!-- Empresa -->
+    <div class="cfg-panel" id="cfg-empresa">
+      <div class="card">
+        <div class="card-hd"><div class="card-title">🏢 Dados da Empresa</div></div>
+        <div class="fgrid fg2">
+          <div class="fg"><label>Nome da Empresa</label><input type="text" id="cfg-nome-empresa" placeholder="Theikós Soluções"></div>
+          <div class="fg"><label>CNPJ</label><input type="text" id="cfg-cnpj" placeholder="00.000.000/0001-00"></div>
+          <div class="fg"><label>Telefone</label><input type="text" id="cfg-tel-empresa"></div>
+          <div class="fg"><label>E-mail</label><input type="text" id="cfg-email-empresa"></div>
+          <div class="fg" style="grid-column:1/-1"><label>Endereço</label><input type="text" id="cfg-end-empresa"></div>
+          <div class="fg"><label>Cidade</label><input type="text" id="cfg-cidade"></div>
+          <div class="fg"><label>Estado</label><input type="text" id="cfg-estado" placeholder="SP"></div>
         </div>
-        <div class="cfg-nav-item" onclick="cfgTab('email')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-          Envio de E-mail
+        <div style="margin-top:16px;display:flex;justify-content:flex-end">
+          <button class="btn btn-primary" onclick="saveCfg('empresa')">💾 Salvar</button>
         </div>
-        <div class="cfg-nav-item" onclick="cfgTab('whatsapp')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-          WhatsApp
-        </div>
-        <div style="font-size:9px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:1px;padding:12px 10px 4px">Operacional</div>
-        <div class="cfg-nav-item" onclick="cfgTab('sla')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
-          Prazos de SLA
-        </div>
-        <div class="cfg-nav-item" onclick="cfgTab('alertas')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
-          Alertas
-        </div>
-      </div>
-
-      <!-- Conteúdo das abas -->
-      <div>
-
-        <!-- Empresa -->
-        <div class="cfg-panel active" id="cfg-empresa">
-          <div class="card">
-            <div class="card-hd"><div class="card-title">Dados da Empresa</div></div>
-            <div class="fgrid fg2">
-              <div class="fg"><label>Nome da Empresa</label><input type="text" id="cfg-nome-empresa" placeholder="Theikós Soluções"></div>
-              <div class="fg"><label>CNPJ</label><input type="text" id="cfg-cnpj" placeholder="00.000.000/0001-00"></div>
-              <div class="fg"><label>Telefone</label><input type="text" id="cfg-tel-empresa"></div>
-              <div class="fg"><label>E-mail</label><input type="text" id="cfg-email-empresa"></div>
-              <div class="fg" style="grid-column:1/-1"><label>Endereço</label><input type="text" id="cfg-end-empresa"></div>
-              <div class="fg"><label>Cidade</label><input type="text" id="cfg-cidade"></div>
-              <div class="fg"><label>Estado</label><input type="text" id="cfg-estado" placeholder="SP"></div>
-            </div>
-            <div style="margin-top:16px;display:flex;justify-content:flex-end">
-              <button class="btn btn-primary" onclick="saveCfg('empresa')">💾 Salvar</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Email -->
-        <div class="cfg-panel" id="cfg-email" style="display:none">
-          <div class="card">
-            <div class="card-hd"><div class="card-title">Configuração de E-mail (SMTP)</div></div>
-            <div class="help-tip" style="margin-bottom:16px">
-              📧 Configurado para Yahoo: <b>smtp.mail.yahoo.com</b> porta 587. Para a senha, use uma "Senha de App" gerada em: Conta Yahoo → Segurança → Senhas de App.
-            </div>
-            <div class="fgrid fg2">
-              <div class="fg"><label>Servidor SMTP</label><input type="text" id="cfg-smtp-host" value="smtp.mail.yahoo.com" readonly></div>
-              <div class="fg"><label>Porta</label><input type="text" id="cfg-smtp-port" value="587" readonly></div>
-              <div class="fg"><label>E-mail remetente</label><input type="text" id="cfg-smtp-user" value="clairtonalves@yahoo.com.br"></div>
-              <div class="fg"><label>Senha de App</label><input type="password" id="cfg-smtp-pass" placeholder="••••••••••••"></div>
-            </div>
-            <div style="margin-top:16px;display:flex;gap:8px;justify-content:flex-end">
-              <button class="btn btn-ghost" onclick="testEmail()">📤 Enviar e-mail de teste</button>
-              <button class="btn btn-primary" onclick="saveCfg('email')">💾 Salvar</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- WhatsApp -->
-        <div class="cfg-panel" id="cfg-whatsapp" style="display:none">
-          <div class="card">
-            <div class="card-hd"><div class="card-title">Integração WhatsApp (Callmebot)</div></div>
-            <div class="help-tip" style="margin-bottom:16px">
-              💬 O Callmebot é gratuito e não precisa de conta. Para ativar, cada usuário deve enviar a mensagem <b>"I allow callmebot to send me messages"</b> para o número <b>+34 644 65 21 28</b> no WhatsApp e guardar a chave recebida.
-            </div>
-            <div class="fgrid fg2">
-              <div class="fg"><label>Chave Callmebot do Sistema</label><input type="text" id="cfg-callmebot-key" placeholder="Ex: 123456"></div>
-              <div class="fg"><label>Número de teste (com DDI)</label><input type="text" id="cfg-wpp-test" placeholder="5511999999999"></div>
-            </div>
-            <div style="margin-top:16px;display:flex;gap:8px;justify-content:flex-end">
-              <button class="btn btn-ghost" onclick="testWhatsApp()">📲 Enviar mensagem de teste</button>
-              <button class="btn btn-primary" onclick="saveCfg('whatsapp')">💾 Salvar</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- SLA -->
-        <div class="cfg-panel" id="cfg-sla" style="display:none">
-          <div class="card">
-            <div class="card-hd"><div class="card-title">Prazos Padrão de SLA por Tipo de OS</div></div>
-            <p style="font-size:12px;color:var(--tx3);margin-bottom:16px">Define o prazo padrão sugerido ao abrir uma OS de cada tipo. O atendente pode ajustar manualmente.</p>
-            <div class="fgrid fg2">
-              <div class="fg"><label>Corretiva (horas)</label><input type="number" id="cfg-sla-corretiva" value="24" min="1"></div>
-              <div class="fg"><label>Preventiva (horas)</label><input type="number" id="cfg-sla-preventiva" value="48" min="1"></div>
-              <div class="fg"><label>Urgente (horas)</label><input type="number" id="cfg-sla-urgente" value="4" min="1"></div>
-              <div class="fg"><label>Instalação (horas)</label><input type="number" id="cfg-sla-instalacao" value="48" min="1"></div>
-              <div class="fg"><label>Outros (horas)</label><input type="number" id="cfg-sla-outros" value="24" min="1"></div>
-              <div class="fg"><label>Alerta antecipado (% do prazo)</label><input type="number" id="cfg-sla-alerta-pct" value="30" min="5" max="80"><small style="font-size:10px;color:var(--tx3);margin-top:3px;display:block">Ex: 30% = alerta quando faltar 30% do prazo</small></div>
-            </div>
-            <div style="margin-top:16px;display:flex;justify-content:flex-end">
-              <button class="btn btn-primary" onclick="saveCfg('sla')">💾 Salvar</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Alertas -->
-        <div class="cfg-panel" id="cfg-alertas" style="display:none">
-          <div class="card">
-            <div class="card-hd"><div class="card-title">Configuração de Alertas</div></div>
-            <p style="font-size:12px;color:var(--tx3);margin-bottom:16px">Defina quais eventos geram notificações no sino e por qual canal.</p>
-            <div style="display:flex;flex-direction:column;gap:12px">
-              <div class="cfg-alerta-row">
-                <div><div style="font-size:12px;font-weight:600;color:var(--nv)">SLA próximo do vencimento</div><div style="font-size:11px;color:var(--tx3)">Notifica quando restar menos de X% do prazo</div></div>
-                <label class="cfg-toggle"><input type="checkbox" id="cfg-al-sla" checked><span></span></label>
-              </div>
-              <div class="cfg-alerta-row">
-                <div><div style="font-size:12px;font-weight:600;color:var(--nv)">SLA estourado</div><div style="font-size:11px;color:var(--tx3)">Notifica quando a OS ultrapassar o prazo</div></div>
-                <label class="cfg-toggle"><input type="checkbox" id="cfg-al-sla-late" checked><span></span></label>
-              </div>
-              <div class="cfg-alerta-row">
-                <div><div style="font-size:12px;font-weight:600;color:var(--nv)">Estoque abaixo do mínimo</div><div style="font-size:11px;color:var(--tx3)">Alerta no Dashboard quando item atingir o mínimo</div></div>
-                <label class="cfg-toggle"><input type="checkbox" id="cfg-al-estoque" checked><span></span></label>
-              </div>
-              <div class="cfg-alerta-row">
-                <div><div style="font-size:12px;font-weight:600;color:var(--nv)">Manutenção de veículo vencida</div><div style="font-size:11px;color:var(--tx3)">Alerta no módulo de Logística</div></div>
-                <label class="cfg-toggle"><input type="checkbox" id="cfg-al-manut" checked><span></span></label>
-              </div>
-            </div>
-            <div style="margin-top:16px;display:flex;justify-content:flex-end">
-              <button class="btn btn-primary" onclick="saveCfg('alertas')">💾 Salvar</button>
-            </div>
-          </div>
-        </div>
-
       </div>
     </div>
+
+    <!-- Email / SMTP -->
+    <div class="cfg-panel" id="cfg-email" style="display:none">
+      <div class="card">
+        <div class="card-hd"><div class="card-title">📧 E-mail / SMTP</div></div>
+        <div class="help-tip" style="margin-bottom:16px">
+          Configure o servidor de saída de e-mails. Para <b>Yahoo</b>: host <b>smtp.mail.yahoo.com</b>, porta <b>587</b>, TLS ativado. Gere uma "Senha de App" em: Conta Yahoo → Segurança → Senhas de App. Para Gmail, use <b>smtp.gmail.com</b> porta <b>587</b>.
+        </div>
+        <div class="fgrid fg2">
+          <div class="fg"><label>Servidor SMTP (host)</label><input type="text" id="cfg-smtp-host" placeholder="smtp.mail.yahoo.com"></div>
+          <div class="fg"><label>Porta</label>
+            <select id="cfg-smtp-port" style="width:100%;padding:8px 10px;border:1.5px solid var(--bd2);border-radius:var(--r);font-size:13px;font-family:inherit;color:var(--tx)">
+              <option value="587" selected>587 — TLS (recomendado)</option>
+              <option value="465">465 — SSL</option>
+              <option value="25">25 — Sem criptografia</option>
+            </select>
+          </div>
+          <div class="fg"><label>E-mail remetente</label><input type="email" id="cfg-smtp-user" placeholder="voce@yahoo.com.br"></div>
+          <div class="fg"><label>Senha de App</label>
+            <div style="position:relative">
+              <input type="password" id="cfg-smtp-pass" placeholder="••••••••••••" style="width:100%;padding-right:36px">
+              <span onclick="const i=document.getElementById('cfg-smtp-pass');i.type=i.type==='password'?'text':'password'" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:14px;color:var(--tx3)" title="Mostrar/ocultar">👁</span>
+            </div>
+          </div>
+          <div class="fg"><label>Nome do remetente</label><input type="text" id="cfg-smtp-nome" placeholder="Theikós AT"></div>
+          <div class="fg"><label>E-mail de resposta (reply-to)</label><input type="email" id="cfg-smtp-replyto" placeholder="resposta@empresa.com.br"></div>
+        </div>
+        <div style="margin-top:8px;display:flex;align-items:center;gap:10px">
+          <label class="cfg-toggle" style="gap:8px;display:flex;align-items:center">
+            <input type="checkbox" id="cfg-smtp-tls" checked>
+            <span></span>
+            <span style="font-size:12px;color:var(--tx2);font-weight:500">Ativar TLS/STARTTLS</span>
+          </label>
+        </div>
+        <div style="margin-top:16px;display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">
+          <button class="btn btn-ghost" onclick="testEmail()">📤 Enviar e-mail de teste</button>
+          <button class="btn btn-primary" onclick="saveCfg('email')">💾 Salvar configurações</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Alertas -->
+    <div class="cfg-panel" id="cfg-alertas" style="display:none">
+      <div class="card">
+        <div class="card-hd"><div class="card-title">🔔 Configuração de Alertas</div></div>
+        <p style="font-size:12px;color:var(--tx3);margin-bottom:16px">Defina quais eventos geram notificações no sino e por qual canal.</p>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div class="cfg-alerta-row">
+            <div><div style="font-size:12px;font-weight:600;color:var(--nv)">SLA próximo do vencimento</div><div style="font-size:11px;color:var(--tx3)">Notifica quando restar menos de X% do prazo</div></div>
+            <label class="cfg-toggle"><input type="checkbox" id="cfg-al-sla" checked><span></span></label>
+          </div>
+          <div class="cfg-alerta-row">
+            <div><div style="font-size:12px;font-weight:600;color:var(--nv)">SLA estourado</div><div style="font-size:11px;color:var(--tx3)">Notifica quando a OS ultrapassar o prazo</div></div>
+            <label class="cfg-toggle"><input type="checkbox" id="cfg-al-sla-late" checked><span></span></label>
+          </div>
+          <div class="cfg-alerta-row">
+            <div><div style="font-size:12px;font-weight:600;color:var(--nv)">Estoque abaixo do mínimo</div><div style="font-size:11px;color:var(--tx3)">Alerta no Dashboard quando item atingir o mínimo</div></div>
+            <label class="cfg-toggle"><input type="checkbox" id="cfg-al-estoque" checked><span></span></label>
+          </div>
+          <div class="cfg-alerta-row">
+            <div><div style="font-size:12px;font-weight:600;color:var(--nv)">Manutenção de veículo vencida</div><div style="font-size:11px;color:var(--tx3)">Alerta no módulo de Logística</div></div>
+            <label class="cfg-toggle"><input type="checkbox" id="cfg-al-manut" checked><span></span></label>
+          </div>
+        </div>
+        <div style="margin-top:16px;display:flex;justify-content:flex-end">
+          <button class="btn btn-primary" onclick="saveCfg('alertas')">💾 Salvar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Suprimentos e Estoque -->
+    <div class="cfg-panel" id="cfg-estoque-cfg" style="display:none">
+      <div class="card">
+        <div class="card-hd"><div class="card-title">📦 Suprimentos e Estoque</div></div>
+        <p style="font-size:12px;color:var(--tx3);margin-bottom:16px">Parâmetros padrão para controle de estoque e suprimentos de clientes.</p>
+        <div class="fgrid fg2">
+          <div class="fg"><label>Quantidade mínima padrão (novas peças)</label><input type="number" id="cfg-est-min-padrao" value="2" min="0" placeholder="2"></div>
+          <div class="fg"><label>Alerta de suprimento (% do estoque inicial)</label><input type="number" id="cfg-supr-alerta-pct" value="20" min="5" max="80" placeholder="20"><small style="font-size:10px;color:var(--tx3);margin-top:3px;display:block">Ex: 20% = alerta quando restar 20% do estoque</small></div>
+          <div class="fg" style="grid-column:1/-1">
+            <label>Categorias de peças padrão</label>
+            <textarea id="cfg-est-categorias" rows="3" placeholder="Uma categoria por linha:&#10;Peça mecânica&#10;Elétrica&#10;Consumível&#10;Toner / Cartucho">Peça mecânica
+Elétrica
+Consumível
+Toner / Cartucho
+Fusor
+Rolo
+Cabo
+Outros</textarea>
+          </div>
+        </div>
+        <div style="margin-top:16px;display:flex;justify-content:flex-end">
+          <button class="btn btn-primary" onclick="saveCfg('estoque-cfg')">💾 Salvar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLA -->
+    <div class="cfg-panel" id="cfg-sla" style="display:none">
+      <div class="card">
+        <div class="card-hd"><div class="card-title">⏱ Prazos Padrão de SLA por Tipo de OS</div></div>
+        <p style="font-size:12px;color:var(--tx3);margin-bottom:16px">Define o prazo padrão sugerido ao abrir uma OS de cada tipo. O atendente pode ajustar manualmente.</p>
+        <div class="fgrid fg2">
+          <div class="fg"><label>Corretiva (horas)</label><input type="number" id="cfg-sla-corretiva" value="24" min="1"></div>
+          <div class="fg"><label>Preventiva (horas)</label><input type="number" id="cfg-sla-preventiva" value="48" min="1"></div>
+          <div class="fg"><label>Urgente (horas)</label><input type="number" id="cfg-sla-urgente" value="4" min="1"></div>
+          <div class="fg"><label>Instalação (horas)</label><input type="number" id="cfg-sla-instalacao" value="48" min="1"></div>
+          <div class="fg"><label>Outros (horas)</label><input type="number" id="cfg-sla-outros" value="24" min="1"></div>
+          <div class="fg"><label>Alerta antecipado (% do prazo)</label><input type="number" id="cfg-sla-alerta-pct" value="30" min="5" max="80"><small style="font-size:10px;color:var(--tx3);margin-top:3px;display:block">Ex: 30% = alerta quando faltar 30% do prazo</small></div>
+        </div>
+        <div style="margin-top:16px;display:flex;justify-content:flex-end">
+          <button class="btn btn-primary" onclick="saveCfg('sla')">💾 Salvar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- WhatsApp -->
+    <div class="cfg-panel" id="cfg-whatsapp" style="display:none">
+      <div class="card">
+        <div class="card-hd"><div class="card-title">💬 Integração WhatsApp (Callmebot)</div></div>
+        <div class="help-tip" style="margin-bottom:16px">
+          O Callmebot é gratuito e não precisa de conta. Para ativar, cada usuário deve enviar a mensagem <b>"I allow callmebot to send me messages"</b> para o número <b>+34 644 65 21 28</b> no WhatsApp e guardar a chave recebida.
+        </div>
+        <div class="fgrid fg2">
+          <div class="fg"><label>Chave Callmebot do Sistema</label><input type="text" id="cfg-callmebot-key" placeholder="Ex: 123456"></div>
+          <div class="fg"><label>Número de teste (com DDI)</label><input type="text" id="cfg-wpp-test" placeholder="5511999999999"></div>
+        </div>
+        <div style="margin-top:16px;display:flex;gap:8px;justify-content:flex-end">
+          <button class="btn btn-ghost" onclick="testWhatsApp()">📲 Enviar mensagem de teste</button>
+          <button class="btn btn-primary" onclick="saveCfg('whatsapp')">💾 Salvar</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -2485,9 +2534,17 @@ function updateBadges() {
 function nav(p, el) {
   document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
   document.querySelectorAll('.ni').forEach(x=>x.classList.remove('active'));
+  // Ao trocar de módulo, fecha e desativa o submenu de configurações
+  if (p !== 'configuracoes') {
+    document.querySelectorAll('.ni-child').forEach(x=>x.classList.remove('active'));
+    const parent = document.getElementById('ni-cfg-parent');
+    const children = document.getElementById('ni-cfg-children');
+    if (parent) parent.classList.remove('open','has-active');
+    if (children) children.classList.remove('open');
+  }
   const pg = document.getElementById('page-'+p); if(pg) pg.classList.add('active');
   if(el) el.classList.add('active');
-  const renders = { os:renderOS, logistica:renderLogistica, lab:renderLab, clientes:renderClientes, tecnicos:renderTec, usuarios:renderUsers, historico:renderHist, estoque:async()=>{await loadEstMovs();renderEstoque();renderEstKpis();}, 'supr-cli':renderSuprCli, dashboard:loadDash, contratos:async()=>{await loadContratos();renderContratos();}, financeiro:async()=>{await loadFinanceiro();renderFinLanc();renderFinKpis();}, notificacoes:async()=>{await gerarNotificacoes();}, relatorios:()=>{if(typeof renderRelatorios==='function')renderRelatorios();}, configuracoes:()=>{loadCfg();cfgTab('empresa');} };
+  const renders = { os:renderOS, logistica:renderLogistica, lab:renderLab, clientes:renderClientes, tecnicos:renderTec, usuarios:renderUsers, historico:renderHist, estoque:async()=>{await loadEstMovs();renderEstoque();renderEstKpis();}, 'supr-cli':renderSuprCli, dashboard:loadDash, contratos:async()=>{await loadContratos();renderContratos();}, financeiro:async()=>{await loadFinanceiro();renderFinLanc();renderFinKpis();}, notificacoes:async()=>{await gerarNotificacoes();}, relatorios:()=>{if(typeof renderRelatorios==='function')renderRelatorios();}, configuracoes:()=>{loadCfg();} };
   if(renders[p]) renders[p]();
 }
 
@@ -6368,15 +6425,68 @@ function showHelp(id) {
 }
 
 // ─── CONFIGURAÇÕES ───────────────────────────────────────────────────────────
-function cfgTab(id) {
+const _cfgLabels = {
+  'empresa':    ['Dados da Empresa',          'Informações da empresa'],
+  'email':      ['E-mail / SMTP',             'Servidor de envio de e-mail'],
+  'alertas':    ['Alertas',                   'Notificações automáticas'],
+  'estoque-cfg':['Suprimentos e Estoque',     'Parâmetros de estoque'],
+  'sla':        ['Prazos de SLA',             'Tempos por tipo de OS'],
+  'whatsapp':   ['Integração WhatsApp',       'Callmebot'],
+};
+
+function toggleCfgMenu() {
+  const parent   = document.getElementById('ni-cfg-parent');
+  const children = document.getElementById('ni-cfg-children');
+  if (!parent || !children) return;
+  const isOpen = children.classList.contains('open');
+  if (isOpen) {
+    children.classList.remove('open');
+    parent.classList.remove('open');
+  } else {
+    children.classList.add('open');
+    parent.classList.add('open');
+    // Navega para a página de configurações se ainda não estiver nela
+    const pg = document.getElementById('page-configuracoes');
+    if (pg && !pg.classList.contains('active')) {
+      document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+      document.querySelectorAll('.ni').forEach(x=>x.classList.remove('active'));
+      pg.classList.add('active');
+      loadCfg();
+      // Abre o primeiro item se nenhum estiver ativo
+      if (!document.querySelector('.ni-child.active')) navCfg('email');
+    }
+  }
+}
+
+function navCfg(id) {
+  // Garante que a página cfg esteja ativa
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.ni').forEach(x=>x.classList.remove('active'));
+  const pg = document.getElementById('page-configuracoes');
+  if (pg) pg.classList.add('active');
+  // Abre o submenu se fechado
+  const parent   = document.getElementById('ni-cfg-parent');
+  const children = document.getElementById('ni-cfg-children');
+  if (parent)   parent.classList.add('open','has-active');
+  if (children) children.classList.add('open');
+  // Destaca o filho ativo
+  document.querySelectorAll('.ni-child').forEach(el => {
+    el.classList.toggle('active', el.id === 'nicfg-' + id.replace('-cfg',''));
+  });
+  // Atualiza topbar
+  const lbl = _cfgLabels[id] || ['Configurações',''];
+  const t = document.getElementById('cfg-topbar-title');
+  const s = document.getElementById('cfg-topbar-sub');
+  if (t) t.textContent = lbl[0];
+  if (s) s.textContent = lbl[1];
+  // Mostra painel correto
   document.querySelectorAll('.cfg-panel').forEach(el => el.style.display = 'none');
-  document.querySelectorAll('.card .cfg-nav-item').forEach(el => el.classList.remove('active'));
   const panel = document.getElementById('cfg-' + id);
   if (panel) panel.style.display = 'block';
-  document.querySelectorAll('.card .cfg-nav-item').forEach(el => {
-    if (el.getAttribute('onclick')?.includes("'"+id+"'")) el.classList.add('active');
-  });
+  loadCfg();
 }
+
+function cfgTab(id) { navCfg(id); }
 
 function saveCfg(secao) {
   const data = {};
@@ -6385,6 +6495,7 @@ function saveCfg(secao) {
   else if (secao==='whatsapp') { data.key=document.getElementById('cfg-callmebot-key')?.value; }
   else if (secao==='sla') { ['corretiva','preventiva','urgente','instalacao','outros','alerta-pct'].forEach(k=>{ const el=document.getElementById('cfg-sla-'+k); if(el) data[k]=el.value; }); }
   else if (secao==='alertas') { ['sla','sla-late','estoque','manut'].forEach(k=>{ const el=document.getElementById('cfg-al-'+k); if(el) data[k]=el.checked; }); }
+  else if (secao==='estoque-cfg') { data.minPadrao=document.getElementById('cfg-est-min-padrao')?.value; data.suprPct=document.getElementById('cfg-supr-alerta-pct')?.value; data.cats=document.getElementById('cfg-est-categorias')?.value; }
   localStorage.setItem('cfg_'+secao, JSON.stringify(data));
   const btn = event?.target; if (btn) { const o=btn.textContent; btn.textContent='✔ Salvo!'; btn.disabled=true; setTimeout(()=>{btn.textContent=o;btn.disabled=false;},1800); }
 }
@@ -6395,6 +6506,10 @@ function loadCfg() {
     ['nome-empresa','cnpj','tel-empresa','email-empresa','end-empresa','cidade','estado'].forEach(k=>{ const el=document.getElementById('cfg-'+k); if(el&&emp[k]) el.value=emp[k]; });
     const slaC=JSON.parse(localStorage.getItem('cfg_sla')||'{}');
     ['corretiva','preventiva','urgente','instalacao','outros','alerta-pct'].forEach(k=>{ const el=document.getElementById('cfg-sla-'+k); if(el&&slaC[k]) el.value=slaC[k]; });
+    const em=JSON.parse(localStorage.getItem('cfg_email')||'{}');
+    if(em.user){ const u=document.getElementById('cfg-smtp-user'); if(u) u.value=em.user; }
+    const wpp=JSON.parse(localStorage.getItem('cfg_whatsapp')||'{}');
+    if(wpp.key){ const k=document.getElementById('cfg-callmebot-key'); if(k) k.value=wpp.key; }
   } catch(e){}
 }
 
