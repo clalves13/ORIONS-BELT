@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0">
+<title>Portal do Cliente — Theikós</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --nv:#0d1f3c;--nv2:#162d52;--bl:#1e4080;--ac:#e07818;--ac2:#f5a030;
+  --bg:#eef1f7;--sf:#fff;--sf2:#f4f6fb;--sf3:#eaecf4;
+  --tx:#1a2340;--tx2:#445577;--tx3:#8899bb;
+  --bd:#d8dff0;--bd2:#c0cbdf;
+  --gn:#1a7a4a;--gnbg:#e6f5ee;--gnbd:#9ddcba;
+  --rd:#b83030;--rdbg:#fdf0ee;--rdbd:#f0b8b0;
+  --or:#c06010;--orbg:#fff4e6;--orbd:#fac878;
+  --bl2:#1a50b0;--bl2bg:#e8f0fe;--bl2bd:#90b8f0;
+  --r:10px;--rlg:16px;
+  --sh:0 2px 16px rgba(13,31,60,.10);--shlg:0 8px 40px rgba(13,31,60,.18);
+}
+body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--tx);font-size:14px;min-height:100vh}
+input,select,textarea,button{font-family:'Sora',sans-serif;font-size:13px;box-sizing:border-box}
+input:not([type=range]),select,textarea{padding:9px 12px;border:1.5px solid var(--bd2);border-radius:var(--r);color:var(--tx);background:var(--sf);transition:border .15s;width:100%}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--bl)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:0 16px;height:36px;border-radius:8px;border:none;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;font-family:'Sora',sans-serif;white-space:nowrap}
+.btn-primary{background:var(--nv);color:#fff;border:1.5px solid var(--nv)}.btn-primary:hover{background:var(--bl)}
+.btn-accent{background:var(--ac);color:#fff;border:1.5px solid var(--ac)}.btn-accent:hover{background:var(--ac2)}
+.btn-ghost{background:#fff;color:var(--tx2);border:1.5px solid var(--bd2)}.btn-ghost:hover{background:var(--sf2)}
+.btn-danger{background:var(--rdbg);color:var(--rd);border:1.5px solid var(--rdbd)}
+.btn-sm{height:30px;padding:0 12px;font-size:11px}
+.btn-lg{height:44px;padding:0 24px;font-size:14px;font-weight:700}
+.card{background:var(--sf);border-radius:var(--rlg);border:1px solid var(--bd);padding:20px}
+.label{display:block;font-size:10px;font-weight:700;color:var(--tx2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px}
+.fg{margin-bottom:14px}
+
+/* ── TELA DE LOGIN ── */
+#portal-login{position:fixed;inset:0;background:linear-gradient(135deg,var(--nv) 0%,#1a3a6e 100%);display:flex;align-items:center;justify-content:center;z-index:9999}
+.pbox{background:var(--sf);border-radius:20px;padding:40px 36px;width:380px;box-shadow:var(--shlg)}
+.plogo{text-align:center;margin-bottom:28px}
+.plogo-icon{width:60px;height:60px;background:var(--ac);border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:28px}
+.plogo-title{font-size:20px;font-weight:700;color:var(--nv)}
+.plogo-sub{font-size:11px;color:var(--tx3);margin-top:3px}
+.perr{background:var(--rdbg);color:var(--rd);border:1px solid var(--rdbd);border-radius:var(--r);padding:9px 13px;font-size:12px;margin-bottom:12px;display:none}
+.plbtn{width:100%;height:44px;background:var(--nv);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;font-family:'Sora',sans-serif;cursor:pointer;margin-top:8px;transition:background .15s}
+.plbtn:hover{background:var(--bl)}
+
+/* ── LAYOUT PRINCIPAL ── */
+#portal-app{display:none;min-height:100vh;flex-direction:column}
+.portal-header{background:var(--nv);padding:0 28px;height:58px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.2)}
+.portal-logo{display:flex;align-items:center;gap:10px}
+.portal-logo-ico{width:34px;height:34px;background:var(--ac);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px}
+.portal-logo-name{color:#fff;font-size:14px;font-weight:700}
+.portal-logo-badge{font-size:9px;color:rgba(255,255,255,.5);background:rgba(255,255,255,.08);border-radius:4px;padding:2px 6px;margin-left:4px;font-weight:600;letter-spacing:.5px;text-transform:uppercase}
+.portal-user{display:flex;align-items:center;gap:8px;color:rgba(255,255,255,.8);font-size:12px}
+.portal-av{width:30px;height:30px;border-radius:50%;background:var(--ac);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+.portal-content{flex:1;padding:24px 28px;max-width:1100px;margin:0 auto;width:100%}
+.portal-nav{display:flex;gap:4px;margin-bottom:22px;border-bottom:1px solid var(--bd);padding-bottom:0}
+.pnav-btn{padding:10px 16px;border:none;background:none;font-family:'Sora',sans-serif;font-size:12px;font-weight:600;color:var(--tx3);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;margin-bottom:-1px}
+.pnav-btn:hover{color:var(--nv)}
+.pnav-btn.active{color:var(--nv);border-bottom-color:var(--ac)}
+.ppage{display:none}.ppage.active{display:block}
+
+/* ── CARDS DE OS ── */
+.os-cards{display:flex;flex-direction:column;gap:10px}
+.os-card{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rlg);padding:16px 18px;border-left:4px solid var(--bd2);transition:box-shadow .15s;cursor:default}
+.os-card:hover{box-shadow:var(--sh)}
+.os-card.aberta{border-left-color:#3b82f6}
+.os-card.andamento{border-left-color:var(--ac)}
+.os-card.concluida{border-left-color:var(--gn)}
+.os-card.cancelada{border-left-color:var(--rd)}
+.os-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.os-card-num{font-size:13px;font-weight:700;color:var(--nv)}
+.os-card-body{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;margin-bottom:10px}
+.os-info-item{display:flex;flex-direction:column;gap:2px}
+.os-info-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--tx3)}
+.os-info-val{font-size:12px;color:var(--tx);font-weight:500}
+.os-card-foot{display:flex;align-items:center;justify-content:space-between;padding-top:10px;border-top:1px solid var(--bd)}
+.status-pill{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700}
+.sp-aberta{background:#dbeafe;color:#1e40af}
+.sp-andamento{background:var(--orbg);color:var(--or)}
+.sp-concluida{background:var(--gnbg);color:var(--gn)}
+.sp-cancelada{background:var(--rdbg);color:var(--rd)}
+.sp-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+
+/* ── FORMULÁRIO DE CHAMADO ── */
+.chamado-form{max-width:640px}
+.fsec{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--tx3);padding-bottom:6px;border-bottom:1px solid var(--bd);margin-bottom:12px;margin-top:18px}
+.fsec:first-child{margin-top:0}
+.fgrid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fgrid2 .full{grid-column:1/-1}
+.ok-msg{background:var(--gnbg);border:1px solid var(--gnbd);color:var(--gn);border-radius:var(--r);padding:12px 16px;font-size:13px;font-weight:600;display:none;margin-bottom:14px}
+
+/* ── EMPTY STATE ── */
+.empty-state{text-align:center;padding:48px 20px;color:var(--tx3)}
+.empty-ico{font-size:40px;margin-bottom:12px}
+.empty-title{font-size:14px;font-weight:700;color:var(--tx2);margin-bottom:6px}
+.empty-sub{font-size:12px}
+
+/* ── MODAL PDF ── */
+.mov{position:fixed;inset:0;background:rgba(13,31,60,.45);display:flex;align-items:center;justify-content:center;z-index:500;display:none}
+.mov.open{display:flex}
+.modal{background:var(--sf);border-radius:var(--rlg);width:100%;max-width:680px;max-height:92vh;overflow-y:auto;box-shadow:var(--shlg)}
+.mhd{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid var(--bd)}
+.mhd-title{font-size:14px;font-weight:700;color:var(--nv)}
+.mbody{padding:20px 22px}
+.mfoot{padding:14px 22px;border-top:1px solid var(--bd);display:flex;justify-content:flex-end;gap:8px}
+.btnx{width:30px;height:30px;background:var(--sf2);border:1px solid var(--bd);border-radius:7px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--tx3);transition:all .12s}
+.btnx:hover{background:var(--rdbg);color:var(--rd)}
+
+/* ── OS DETALHE PRINT ── */
+.os-print-wrap{font-size:12px;line-height:1.7}
+.os-print-header{background:var(--nv);color:#fff;border-radius:10px;padding:16px 20px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}
+.os-print-empresa{font-size:15px;font-weight:700}
+.os-print-num{font-size:22px;font-weight:700;color:var(--ac)}
+.os-print-section{margin-bottom:14px}
+.os-print-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--tx3);margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid var(--bd)}
+.os-print-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.os-print-item{background:var(--sf2);border-radius:7px;padding:8px 11px}
+.os-print-item-label{font-size:9px;font-weight:700;text-transform:uppercase;color:var(--tx3);margin-bottom:2px}
+.os-print-item-val{font-size:12px;font-weight:600;color:var(--nv)}
+.os-print-text{background:var(--sf2);border-radius:7px;padding:10px 13px;font-size:12px;color:var(--tx);min-height:36px;line-height:1.7}
+@media print{
+  #portal-login,#portal-app .portal-header,#portal-app .portal-nav,.mfoot,.btnx{display:none!important}
+  .mov.open{position:static;background:none;display:block}
+  .modal{box-shadow:none;max-height:none}
+}
+
+/* ── KPI strip ── */
+.kpi-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
+.kpi-card{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rlg);padding:14px 16px;text-align:center}
+.kpi-val{font-size:22px;font-weight:700;color:var(--nv)}
+.kpi-lbl{font-size:10px;color:var(--tx3);font-weight:600;text-transform:uppercase;letter-spacing:.6px;margin-top:2px}
+</style>
+</head>
+<body>
+
+<!-- TELA DE LOGIN -->
+<div id="portal-login">
+  <div class="pbox">
+    <div class="plogo">
+      <div class="plogo-icon">🏢</div>
+      <div class="plogo-title">Portal do Cliente</div>
+      <div class="plogo-sub">Theikós Soluções — Assistência Técnica</div>
+    </div>
+    <div class="perr" id="p-err"></div>
+    <div class="fg">
+      <label class="label">Usuário</label>
+      <input type="text" id="p-login" placeholder="Seu login" autocomplete="username" onkeydown="if(event.key==='Enter')doPortalLogin()">
+    </div>
+    <div class="fg" style="position:relative">
+      <label class="label">Senha</label>
+      <input type="password" id="p-senha" placeholder="Sua senha" autocomplete="current-password" onkeydown="if(event.key==='Enter')doPortalLogin()">
+    </div>
+    <button class="plbtn" onclick="doPortalLogin()" id="p-btn-login">Entrar no Portal</button>
+    <div style="text-align:center;margin-top:16px;font-size:11px;color:var(--tx3)">
+      Problemas com acesso? Contate o suporte.
+    </div>
+  </div>
+</div>
+
+<!-- PORTAL PRINCIPAL -->
+<div id="portal-app">
+  <header class="portal-header">
+    <div class="portal-logo">
+      <div class="portal-logo-ico">🏢</div>
+      <div class="portal-logo-name">Theikós</div>
+      <span class="portal-logo-badge">Portal do Cliente</span>
+    </div>
+    <div class="portal-user">
+      <div class="portal-av" id="p-av">C</div>
+      <span id="p-nome-hd">Cliente</span>
+      <button class="btn btn-ghost btn-sm" onclick="doPortalLogout()" style="margin-left:6px">Sair</button>
+    </div>
+  </header>
+
+  <div class="portal-content">
+    <nav class="portal-nav">
+      <button class="pnav-btn active" onclick="pNav('chamados',this)">📋 Meus Chamados</button>
+      <button class="pnav-btn" onclick="pNav('abrir',this)">➕ Abrir Chamado</button>
+    </nav>
+
+    <!-- ── CHAMADOS ── -->
+    <div class="ppage active" id="pp-chamados">
+      <div class="kpi-strip" id="p-kpis"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div style="font-size:13px;font-weight:700;color:var(--nv)">Histórico de Chamados</div>
+        <div style="display:flex;gap:8px">
+          <select id="p-f-status" onchange="renderPortalOS()" style="width:auto;font-size:11px;height:32px">
+            <option value="">Todos os status</option>
+            <option>Aberta</option>
+            <option>Em andamento</option>
+            <option>Concluída</option>
+            <option>Cancelada</option>
+          </select>
+        </div>
+      </div>
+      <div class="os-cards" id="p-os-list">
+        <div class="empty-state"><div class="empty-ico">⏳</div><div class="empty-title">Carregando...</div></div>
+      </div>
+    </div>
+
+    <!-- ── ABRIR CHAMADO ── -->
+    <div class="ppage" id="pp-abrir">
+      <div class="chamado-form">
+        <div class="card">
+          <div style="font-size:15px;font-weight:700;color:var(--nv);margin-bottom:4px">➕ Abrir Novo Chamado</div>
+          <div style="font-size:11px;color:var(--tx3);margin-bottom:18px">Preencha as informações abaixo. Nossa equipe entrará em contato em breve.</div>
+          <div class="ok-msg" id="p-ok-msg">✅ Chamado aberto com sucesso! Número: <strong id="p-ok-num"></strong></div>
+          <div class="fsec">Equipamento</div>
+          <div class="fgrid2">
+            <div class="fg">
+              <label class="label">Equipamento</label>
+              <select id="p-eq-sel" onchange="preencherEq()">
+                <option value="">Selecionar equipamento...</option>
+              </select>
+            </div>
+            <div class="fg">
+              <label class="label">Modelo</label>
+              <input type="text" id="p-modelo" placeholder="Ex: Impressora HP LaserJet">
+            </div>
+            <div class="fg">
+              <label class="label">Nº de Série</label>
+              <input type="text" id="p-nserie" placeholder="Número de série">
+            </div>
+            <div class="fg">
+              <label class="label">Contador Atual</label>
+              <input type="text" id="p-contador" placeholder="Ex: 12500">
+            </div>
+          </div>
+          <div class="fsec">Chamado</div>
+          <div class="fgrid2">
+            <div class="fg">
+              <label class="label">Tipo de Chamado</label>
+              <select id="p-tipo">
+                <option>Corretiva</option>
+                <option>Preventiva</option>
+                <option>Urgente</option>
+                <option>Instalação</option>
+                <option>Outros</option>
+              </select>
+            </div>
+            <div class="fg">
+              <label class="label">Prioridade / SLA</label>
+              <select id="p-sla">
+                <option value="24h">Normal — 24h</option>
+                <option value="12h">Urgente — 12h</option>
+                <option value="48h">Baixa — 48h</option>
+              </select>
+            </div>
+            <div class="fg full">
+              <label class="label">Defeito / Problema Relatado *</label>
+              <textarea id="p-defeito" rows="3" placeholder="Descreva detalhadamente o problema que está ocorrendo..."></textarea>
+            </div>
+            <div class="fg">
+              <label class="label">Contato no Local</label>
+              <input type="text" id="p-contato" placeholder="Nome do responsável">
+            </div>
+            <div class="fg">
+              <label class="label">Telefone</label>
+              <input type="text" id="p-tel" placeholder="(00) 00000-0000">
+            </div>
+            <div class="fg full">
+              <label class="label">Observações Adicionais</label>
+              <textarea id="p-obs" rows="2" placeholder="Informações extras que possam ajudar o técnico..."></textarea>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:flex-end;margin-top:6px">
+            <button class="btn btn-accent btn-lg" onclick="abrirChamado()">📨 Enviar Chamado</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DETALHE OS / PDF -->
+<div class="mov" id="m-os-portal">
+  <div class="modal">
+    <div class="mhd">
+      <div class="mhd-title" id="m-os-portal-title">Detalhes do Chamado</div>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-ghost btn-sm" onclick="imprimirOS()">🖨 Imprimir / PDF</button>
+        <button class="btnx" onclick="fecharModal()">×</button>
+      </div>
+    </div>
+    <div class="mbody" id="m-os-portal-body"></div>
+  </div>
+</div>
+
+<script>
+const PG = { ordens:[], equips:[], clienteId:'' };
+
+async function api(method, url, body) {
+  const opts = { method, headers:{'Content-Type':'application/json'}, credentials:'include' };
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch(url, opts);
+  const data = await r.json();
+  if (!r.ok) throw new Error(data.error || 'Erro na requisição');
+  return data;
+}
+
+// ── LOGIN ──
+async function doPortalLogin() {
+  const login = document.getElementById('p-login').value.trim();
+  const senha = document.getElementById('p-senha').value;
+  const err = document.getElementById('p-err');
+  const btn = document.getElementById('p-btn-login');
+  err.style.display = 'none';
+  if (!login || !senha) { err.textContent='Preencha usuário e senha.'; err.style.display='block'; return; }
+  btn.textContent = 'Entrando...'; btn.disabled = true;
+  try {
+    const res = await api('POST','/api/portal/login',{login,senha});
+    document.getElementById('portal-login').style.display = 'none';
+    document.getElementById('portal-app').style.display = 'flex';
+    document.getElementById('portal-app').style.flexDirection = 'column';
+    document.getElementById('p-av').textContent = res.nome[0].toUpperCase();
+    document.getElementById('p-nome-hd').textContent = res.nome;
+    await carregarPortal();
+  } catch(e) {
+    err.textContent = e.message; err.style.display = 'block';
+  } finally { btn.textContent = 'Entrar no Portal'; btn.disabled = false; }
+}
+
+async function doPortalLogout() {
+  await api('POST','/api/portal/logout');
+  document.getElementById('portal-login').style.display = 'flex';
+  document.getElementById('portal-app').style.display = 'none';
+  document.getElementById('p-login').value='';
+  document.getElementById('p-senha').value='';
+}
+
+// ── NAVEGAÇÃO ──
+function pNav(pg, el) {
+  document.querySelectorAll('.ppage').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.pnav-btn').forEach(x=>x.classList.remove('active'));
+  document.getElementById('pp-'+pg).classList.add('active');
+  el.classList.add('active');
+  if (pg === 'abrir') { document.getElementById('p-ok-msg').style.display='none'; }
+}
+
+// ── CARREGAR DADOS ──
+async function carregarPortal() {
+  try {
+    const [ordens, equips] = await Promise.all([
+      api('GET','/api/portal/ordens'),
+      api('GET','/api/portal/equipamentos')
+    ]);
+    PG.ordens = ordens;
+    PG.equips = equips;
+    renderPortalOS();
+    renderKpis();
+    popularEquips();
+  } catch(e) { console.error(e); }
+}
+
+function renderKpis() {
+  const o = PG.ordens;
+  const kpis = [
+    { lbl:'Total', val: o.length, cor:'var(--bl2)' },
+    { lbl:'Em Aberto', val: o.filter(x=>['Aberta','Em andamento'].includes(x.status)).length, cor:'var(--or)' },
+    { lbl:'Concluídos', val: o.filter(x=>x.status==='Concluída').length, cor:'var(--gn)' },
+    { lbl:'Equipamentos', val: PG.equips.length, cor:'var(--pu,#6b3fa0)' },
+  ];
+  document.getElementById('p-kpis').innerHTML = kpis.map(k=>
+    `<div class="kpi-card"><div class="kpi-val" style="color:${k.cor}">${k.val}</div><div class="kpi-lbl">${k.lbl}</div></div>`
+  ).join('');
+}
+
+function renderPortalOS() {
+  const filtro = document.getElementById('p-f-status').value;
+  let lista = filtro ? PG.ordens.filter(o=>o.status===filtro) : PG.ordens;
+  const el = document.getElementById('p-os-list');
+  if (lista.length === 0) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-ico">📋</div><div class="empty-title">Nenhum chamado encontrado</div><div class="empty-sub">Clique em "Abrir Chamado" para registrar uma ocorrência.</div></div>`;
+    return;
+  }
+  el.innerHTML = lista.map(o => {
+    const stKey = o.status.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/ /g,'-');
+    const stClass = {'aberta':'aberta','em-andamento':'andamento','concluida':'concluida','cancelada':'cancelada'}[stKey]||'aberta';
+    const spClass = {'Aberta':'sp-aberta','Em andamento':'sp-andamento','Concluída':'sp-concluida','Cancelada':'sp-cancelada'}[o.status]||'sp-aberta';
+    const dot = {'Aberta':'#3b82f6','Em andamento':'#c06010','Concluída':'#1a7a4a','Cancelada':'#b83030'}[o.status]||'#94a3b8';
+    return `
+    <div class="os-card ${stClass}">
+      <div class="os-card-header">
+        <div class="os-card-num">OS #${o.num} ${o.tipo?'· '+o.tipo:''}</div>
+        <span class="status-pill ${spClass}"><span class="sp-dot" style="background:${dot}"></span>${o.status}</span>
+      </div>
+      <div class="os-card-body">
+        <div class="os-info-item"><span class="os-info-label">Data Abertura</span><span class="os-info-val">${fmtData(o.data_ab)}</span></div>
+        <div class="os-info-item"><span class="os-info-label">Equipamento</span><span class="os-info-val">${o.modelo||'—'}</span></div>
+        <div class="os-info-item"><span class="os-info-label">Nº Série</span><span class="os-info-val">${o.nserie||'—'}</span></div>
+        <div class="os-info-item"><span class="os-info-label">Técnico</span><span class="os-info-val">${o.tecnico_nome||'Em definição'}</span></div>
+        ${o.sla_deadline?`<div class="os-info-item"><span class="os-info-label">Prazo SLA</span><span class="os-info-val">${fmtDataHora(o.sla_deadline)}</span></div>`:''}
+      </div>
+      <div style="background:var(--sf2);border-radius:7px;padding:8px 11px;font-size:12px;color:var(--tx2);margin-bottom:10px">
+        <span style="font-weight:700;color:var(--tx3);font-size:10px;text-transform:uppercase">Defeito: </span>${o.defeito||'—'}
+      </div>
+      <div class="os-card-foot">
+        <span style="font-size:11px;color:var(--tx3)">${o.data_atend?'Atendido em: '+fmtData(o.data_atend):''}</span>
+        <button class="btn btn-ghost btn-sm" onclick="verDetalheOS('${o.id}')">📄 Ver Detalhes / PDF</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function popularEquips() {
+  const sel = document.getElementById('p-eq-sel');
+  sel.innerHTML = '<option value="">Selecionar equipamento...</option>' +
+    PG.equips.map(e=>`<option value="${e.id}" data-modelo="${e.modelo}" data-nserie="${e.nserie}">${e.nome}${e.modelo?' — '+e.modelo:''} ${e.nserie?'('+e.nserie+')':''}</option>`).join('');
+}
+
+function preencherEq() {
+  const sel = document.getElementById('p-eq-sel');
+  const opt = sel.options[sel.selectedIndex];
+  if (!opt.value) return;
+  document.getElementById('p-modelo').value = opt.dataset.modelo||'';
+  document.getElementById('p-nserie').value = opt.dataset.nserie||'';
+}
+
+// ── ABRIR CHAMADO ──
+async function abrirChamado() {
+  const defeito = document.getElementById('p-defeito').value.trim();
+  if (!defeito) { alert('Descreva o defeito / problema.'); return; }
+  const body = {
+    modelo: document.getElementById('p-modelo').value,
+    nserie: document.getElementById('p-nserie').value,
+    contador: document.getElementById('p-contador').value,
+    tipo: document.getElementById('p-tipo').value,
+    sla_prazo: document.getElementById('p-sla').value,
+    defeito, obs: document.getElementById('p-obs').value,
+    contato: document.getElementById('p-contato').value,
+    tel: document.getElementById('p-tel').value,
+  };
+  try {
+    const res = await api('POST','/api/portal/chamado', body);
+    document.getElementById('p-ok-num').textContent = '#'+res.num;
+    document.getElementById('p-ok-msg').style.display = 'block';
+    // Limpa form
+    ['p-modelo','p-nserie','p-contador','p-defeito','p-obs','p-contato','p-tel'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('p-eq-sel').value='';
+    document.getElementById('p-tipo').value='Corretiva';
+    document.getElementById('p-sla').value='24h';
+    // Recarrega lista
+    await carregarPortal();
+    setTimeout(()=>pNav('chamados',document.querySelector('.pnav-btn')),2000);
+  } catch(e) { alert(e.message); }
+}
+
+// ── DETALHE / PDF ──
+async function verDetalheOS(id) {
+  try {
+    const data = await api('GET',`/api/portal/ordens/${id}/pdf`);
+    const { ordem:o, cliente:c, tecnico:t, empresa:emp } = data;
+    document.getElementById('m-os-portal-title').textContent = `OS #${o.num} — Detalhes`;
+    document.getElementById('m-os-portal-body').innerHTML = `
+      <div class="os-print-wrap" id="os-print-content">
+        <div class="os-print-header">
+          <div>
+            <div class="os-print-empresa">${emp.nome}</div>
+            <div style="font-size:11px;opacity:.7;margin-top:2px">${emp.cnpj||''} ${emp.tel?'· Tel: '+emp.tel:''}</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:11px;opacity:.6;margin-bottom:2px">Ordem de Serviço</div>
+            <div class="os-print-num">#${o.num}</div>
+          </div>
+        </div>
+
+        <div class="os-print-section">
+          <div class="os-print-title">Informações do Chamado</div>
+          <div class="os-print-grid">
+            <div class="os-print-item"><div class="os-print-item-label">Data Abertura</div><div class="os-print-item-val">${fmtData(o.data_ab)}</div></div>
+            <div class="os-print-item"><div class="os-print-item-label">Status</div><div class="os-print-item-val">${o.status}</div></div>
+            <div class="os-print-item"><div class="os-print-item-label">Tipo</div><div class="os-print-item-val">${o.tipo||'—'}</div></div>
+            <div class="os-print-item"><div class="os-print-item-label">SLA / Prazo</div><div class="os-print-item-val">${o.sla_deadline?fmtDataHora(o.sla_deadline):o.sla_prazo||'—'}</div></div>
+            <div class="os-print-item"><div class="os-print-item-label">Data Atendimento</div><div class="os-print-item-val">${fmtData(o.data_atend)||'Aguardando'}</div></div>
+            <div class="os-print-item"><div class="os-print-item-label">Técnico</div><div class="os-print-item-val">${t?.nome||'Em definição'}</div></div>
+          </div>
+        </div>
+
+        <div class="os-print-section">
+          <div class="os-print-title">Equipamento</div>
+          <div class="os-print-grid">
+            <div class="os-print-item"><div class="os-print-item-label">Modelo</div><div class="os-print-item-val">${o.modelo||'—'}</div></div>
+            <div class="os-print-item"><div class="os-print-item-label">Nº de Série</div><div class="os-print-item-val">${o.nserie||'—'}</div></div>
+            <div class="os-print-item"><div class="os-print-item-label">Contador</div><div class="os-print-item-val">${o.contador||'—'}</div></div>
+            <div class="os-print-item"><div class="os-print-item-label">Cliente</div><div class="os-print-item-val">${c.nome}</div></div>
+          </div>
+        </div>
+
+        <div class="os-print-section">
+          <div class="os-print-title">Defeito Relatado</div>
+          <div class="os-print-text">${o.defeito||'—'}</div>
+        </div>
+
+        ${o.procedimento?`<div class="os-print-section">
+          <div class="os-print-title">Procedimento Técnico</div>
+          <div class="os-print-text">${o.procedimento}</div>
+        </div>`:''}
+
+        ${o.pecas?`<div class="os-print-section">
+          <div class="os-print-title">Peças / Materiais Utilizados</div>
+          <div class="os-print-text">${o.pecas}</div>
+        </div>`:''}
+
+        ${o.obs?`<div class="os-print-section">
+          <div class="os-print-title">Observações</div>
+          <div class="os-print-text">${o.obs}</div>
+        </div>`:''}
+
+        <div style="margin-top:24px;padding-top:14px;border-top:1px dashed var(--bd);display:grid;grid-template-columns:1fr 1fr;gap:24px">
+          <div style="text-align:center">
+            <div style="height:50px;border-bottom:1.5px solid var(--bd2);margin-bottom:6px"></div>
+            <div style="font-size:10px;color:var(--tx3)">Assinatura do Técnico</div>
+          </div>
+          <div style="text-align:center">
+            <div style="height:50px;border-bottom:1.5px solid var(--bd2);margin-bottom:6px"></div>
+            <div style="font-size:10px;color:var(--tx3)">Assinatura do Cliente</div>
+          </div>
+        </div>
+        <div style="text-align:center;margin-top:18px;font-size:9px;color:var(--tx3)">
+          Documento gerado em ${new Date().toLocaleString('pt-BR')} · ${emp.nome}
+        </div>
+      </div>`;
+    document.getElementById('m-os-portal').classList.add('open');
+  } catch(e) { alert(e.message); }
+}
+
+function fecharModal() { document.getElementById('m-os-portal').classList.remove('open'); }
+function imprimirOS() { window.print(); }
+
+// ── UTILS ──
+function fmtData(d) {
+  if (!d) return '—';
+  const p = d.slice(0,10).split('-');
+  if (p.length < 3) return d;
+  return `${p[2]}/${p[1]}/${p[0]}`;
+}
+function fmtDataHora(d) {
+  if (!d) return '—';
+  const dt = new Date(d);
+  return dt.toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+}
+
+// ── AUTO-LOGIN se já tiver sessão ──
+(async()=>{
+  try {
+    const me = await api('GET','/api/portal/me');
+    document.getElementById('portal-login').style.display = 'none';
+    document.getElementById('portal-app').style.display = 'flex';
+    document.getElementById('portal-app').style.flexDirection = 'column';
+    document.getElementById('p-av').textContent = me.nome[0].toUpperCase();
+    document.getElementById('p-nome-hd').textContent = me.nome;
+    await carregarPortal();
+  } catch(e) {
+    // Não autenticado — mostra tela de login
+    document.getElementById('portal-login').style.display = 'flex';
+  }
+})();
+</script>
+</body>
+</html>
