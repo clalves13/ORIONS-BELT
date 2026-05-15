@@ -6080,18 +6080,18 @@ function renderGraficoPizzaToner(d) {
 
 // ─── PERFIS DE ACESSO ─────────────────────────────────────────
 const PERFIS_MODULOS = {
-  admin:          ['dashboard','os','lab','historico','estoque','supr-cli','clientes','tecnicos','usuarios','logistica','contratos','financeiro','notificacoes','relatorios'],
-  supervisor:     ['dashboard','os','lab','historico','estoque','supr-cli','clientes','tecnicos','usuarios','logistica','contratos','financeiro','notificacoes','relatorios'],
-  tecnico:        ['dashboard','os','lab','historico','estoque','supr-cli','clientes','notificacoes'],
-  logistica:      ['dashboard','logistica','os','clientes','estoque','notificacoes'],
+  admin:          ['dashboard','os','agenda','lab','historico','estoque','supr-cli','clientes','tecnicos','usuarios','logistica','contratos','financeiro','notificacoes','relatorios'],
+  supervisor:     ['dashboard','os','agenda','lab','historico','estoque','supr-cli','clientes','tecnicos','usuarios','logistica','contratos','financeiro','notificacoes','relatorios'],
+  tecnico:        ['dashboard','os','agenda','lab','historico','estoque','supr-cli','clientes','notificacoes'],
+  logistica:      ['dashboard','logistica','os','agenda','clientes','estoque','notificacoes'],
   rh:             ['dashboard','tecnicos','usuarios'],
   financeiro:     ['dashboard','os','historico','logistica','contratos','financeiro','notificacoes','relatorios'],
-  comercial:      ['dashboard','os','historico','clientes','contratos','notificacoes'],
-  administrativo: ['dashboard','os','lab','historico','estoque','supr-cli','clientes','logistica','contratos','notificacoes','relatorios'],
+  comercial:      ['dashboard','os','agenda','historico','clientes','contratos','notificacoes'],
+  administrativo: ['dashboard','os','agenda','lab','historico','estoque','supr-cli','clientes','logistica','contratos','notificacoes','relatorios'],
 };
 
 function applyPermissoes(user) {
-  const TODOS_MODULOS = ['dashboard','os','lab','historico','estoque','supr-cli','clientes','tecnicos','usuarios','logistica','contratos','financeiro','notificacoes','relatorios'];
+  const TODOS_MODULOS = ['dashboard','os','agenda','lab','historico','estoque','supr-cli','clientes','tecnicos','usuarios','logistica','contratos','financeiro','notificacoes','relatorios'];
   const perfil = user.perfil || (user.role === 'admin' ? 'admin' : 'tecnico');
   const permitidos = (user.isMaster || user.role === 'admin' || perfil === 'supervisor') ? TODOS_MODULOS : (PERFIS_MODULOS[perfil] || PERFIS_MODULOS.tecnico);
 
