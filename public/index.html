@@ -167,7 +167,59 @@ button:not(.btn):not(.btnx):not(.lbtn):not(.btn-logout):not(.chk):not(.os-tab):n
 /* TOPBAR EXTRA */
 .tb-right-group{display:flex;align-items:center;gap:7px;position:relative}
 
-/* CONFIGURAÇÕES */
+/* ═══ AGENDA / CALENDÁRIO ═══ */
+.cal-wrap{display:grid;grid-template-columns:1fr 280px;gap:16px;align-items:start}
+.cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.cal-nav{display:flex;align-items:center;gap:10px}
+.cal-mes-ano{font-size:16px;font-weight:700;color:var(--nv);min-width:180px;text-align:center}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.cal-dow{text-align:center;padding:6px 0;font-size:9px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.8px}
+.cal-dow.dom{color:var(--rd)}
+.cal-day{min-height:88px;background:var(--sf);border:1px solid var(--bd);border-radius:8px;padding:5px 6px;cursor:pointer;transition:all .12s;position:relative;overflow:hidden}
+.cal-day:hover{border-color:var(--bl2bd);background:var(--bl2bg)}
+.cal-day.outro-mes{background:var(--sf2);opacity:.55}
+.cal-day.hoje{border-color:var(--ac);border-width:2px}
+.cal-day.hoje .cal-day-num{background:var(--ac);color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center}
+.cal-day.selected{border-color:var(--bl);border-width:2px;background:var(--bl2bg)}
+.cal-day-num{font-size:11px;font-weight:700;color:var(--tx2);line-height:22px;width:22px;text-align:center;margin-bottom:3px}
+.cal-day.dom .cal-day-num{color:var(--rd)}
+.cal-event{font-size:10px;font-weight:600;padding:2px 5px;border-radius:4px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;line-height:1.5}
+.cal-event:hover{filter:brightness(.92)}
+.cal-more{font-size:9px;color:var(--tx3);font-weight:600;padding:1px 4px;cursor:pointer}
+.cal-more:hover{color:var(--bl2)}
+/* Cores por tipo de evento */
+.ev-os{background:#dbeafe;color:#1e40af;border-left:2px solid #3b82f6}
+.ev-visita{background:#dcfce7;color:#166534;border-left:2px solid #22c55e}
+.ev-preventiva{background:#fef9c3;color:#854d0e;border-left:2px solid #eab308}
+.ev-reuniao{background:#f3e8ff;color:#6b21a8;border-left:2px solid #a855f7}
+.ev-outros{background:#f1f5f9;color:#475569;border-left:2px solid #94a3b8}
+.ev-cancelado{background:#fee2e2;color:#991b1b;border-left:2px solid #ef4444;text-decoration:line-through;opacity:.7}
+/* Painel lateral */
+.cal-side{display:flex;flex-direction:column;gap:12px}
+.cal-side-day{font-size:12px;font-weight:700;color:var(--nv);margin-bottom:8px}
+.cal-side-ev{background:var(--sf);border:1px solid var(--bd);border-radius:8px;padding:9px 11px;cursor:pointer;transition:all .12s;display:flex;flex-direction:column;gap:3px;border-left:3px solid var(--bd2)}
+.cal-side-ev:hover{box-shadow:var(--sh);border-color:var(--bd2)}
+.cal-side-ev-title{font-size:12px;font-weight:700;color:var(--nv)}
+.cal-side-ev-sub{font-size:10px;color:var(--tx3)}
+.cal-side-ev-tec{display:inline-flex;align-items:center;gap:4px;font-size:10px;color:var(--tx2);background:var(--sf2);border-radius:4px;padding:2px 6px;width:fit-content}
+.cal-side-empty{font-size:11px;color:var(--tx3);text-align:center;padding:20px 0;border:1.5px dashed var(--bd2);border-radius:8px}
+/* Legenda */
+.cal-legenda{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.cal-leg-item{display:flex;align-items:center;gap:4px;font-size:10px;font-weight:600;color:var(--tx2)}
+.cal-leg-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+/* Mini calendário nav */
+.cal-view-toggle{display:flex;gap:4px}
+.cal-vbtn{height:28px;padding:0 10px;border-radius:6px;border:1.5px solid var(--bd2);background:var(--sf);font-size:11px;font-weight:600;color:var(--tx2);cursor:pointer;transition:all .12s}
+.cal-vbtn.active{background:var(--nv);color:#fff;border-color:var(--nv)}
+/* Lista de eventos do dia selecionado */
+.cal-day-events-header{display:flex;align-items:center;justify-content:space-between}
+.status-badge{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:700}
+.st-agendado{background:#dbeafe;color:#1e40af}
+.st-confirmado{background:#dcfce7;color:#166534}
+.st-concluido{background:#f0fdf4;color:#15803d;border:1px solid #86efac}
+.st-cancelado{background:#fee2e2;color:#991b1b}
+
+
 .cfg-nav-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:500;color:rgba(255,255,255,.55);transition:all .12s;margin-bottom:2px}
 .cfg-nav-item:hover{background:rgba(255,255,255,.06);color:#fff}
 .cfg-nav-item.active{background:rgba(224,120,24,.15);color:var(--ac2);font-weight:600}
@@ -431,6 +483,7 @@ tr:hover td{background:var(--sf2)}
     <div class="nav-sec">Principal</div>
     <div class="ni active" data-modulo="dashboard" data-tip="Dashboard" onclick="nav('dashboard',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg><span>Dashboard</span></div>
     <div class="ni" data-modulo="os" data-tip="OS / Atendimento" onclick="nav('os',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="2"/></svg><span>OS / Atendimento</span><span class="ni-badge" id="b-os">0</span></div>
+    <div class="ni" data-modulo="agenda" data-tip="Agenda / Calendário" onclick="nav('agenda',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span>Agenda</span></div>
     <div class="ni" data-modulo="logistica" data-tip="Logística" onclick="nav('logistica',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16,8 20,8 23,11 23,16 16,16 16,8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg><span>Logística</span></div>
     <div class="ni" data-modulo="lab" data-tip="Laboratório" onclick="nav('lab',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/></svg><span>Laboratório</span></div>
     <div class="nav-sec">Histórico</div>
@@ -774,6 +827,187 @@ tr:hover td{background:var(--sf2)}
 
 
 <!-- OS -->
+<!-- AGENDA / CALENDÁRIO -->
+<div id="page-agenda" class="page">
+  <div class="topbar">
+    <div>
+      <div class="tb-title">Agenda / Calendário</div>
+      <div class="tb-sub" id="ag-topbar-sub">Visitas e OS por técnico</div>
+    </div>
+    <div class="tb-right">
+      <select id="ag-f-tec" onchange="renderAgenda()" style="font-size:11px;height:32px;border:1.5px solid var(--bd2);border-radius:7px;font-family:inherit;padding:0 8px;color:var(--tx)">
+        <option value="">Todos os técnicos</option>
+      </select>
+      <select id="ag-f-tipo" onchange="renderAgenda()" style="font-size:11px;height:32px;border:1.5px solid var(--bd2);border-radius:7px;font-family:inherit;padding:0 8px;color:var(--tx)">
+        <option value="">Todos os tipos</option>
+        <option>OS</option>
+        <option>Visita</option>
+        <option>Preventiva</option>
+        <option>Reunião</option>
+        <option>Outros</option>
+      </select>
+      <div class="cal-view-toggle">
+        <button class="cal-vbtn active" id="vbtn-mes" onclick="setCalView('mes')">Mês</button>
+        <button class="cal-vbtn" id="vbtn-lista" onclick="setCalView('lista')">Lista</button>
+      </div>
+      <button class="btn btn-accent" onclick="openAgendaEvento(null)">+ Novo Evento</button>
+    </div>
+  </div>
+  <div class="content">
+    <!-- Legenda -->
+    <div class="cal-legenda">
+      <div class="cal-leg-item"><div class="cal-leg-dot" style="background:#3b82f6"></div>OS</div>
+      <div class="cal-leg-item"><div class="cal-leg-dot" style="background:#22c55e"></div>Visita</div>
+      <div class="cal-leg-item"><div class="cal-leg-dot" style="background:#eab308"></div>Preventiva</div>
+      <div class="cal-leg-item"><div class="cal-leg-dot" style="background:#a855f7"></div>Reunião</div>
+      <div class="cal-leg-item"><div class="cal-leg-dot" style="background:#94a3b8"></div>Outros</div>
+      <div class="cal-leg-item"><div class="cal-leg-dot" style="background:#ef4444"></div>Cancelado</div>
+    </div>
+
+    <!-- VISÃO MÊS -->
+    <div id="ag-view-mes">
+      <div class="cal-wrap">
+        <!-- Calendário -->
+        <div>
+          <div class="cal-header">
+            <div class="cal-nav">
+              <button class="btn btn-ghost btn-sm" onclick="navMes(-1)">‹ Anterior</button>
+              <div class="cal-mes-ano" id="cal-mes-ano-lbl"></div>
+              <button class="btn btn-ghost btn-sm" onclick="navMes(1)">Próximo ›</button>
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="irHoje()">Hoje</button>
+          </div>
+          <div class="cal-grid" id="cal-grid">
+            <div class="cal-dow dom">Dom</div>
+            <div class="cal-dow">Seg</div>
+            <div class="cal-dow">Ter</div>
+            <div class="cal-dow">Qua</div>
+            <div class="cal-dow">Qui</div>
+            <div class="cal-dow">Sex</div>
+            <div class="cal-dow">Sáb</div>
+          </div>
+        </div>
+        <!-- Painel lateral -->
+        <div class="cal-side">
+          <div class="card" style="padding:14px">
+            <div class="cal-day-events-header">
+              <div class="cal-side-day" id="cal-side-day-lbl">Selecione um dia</div>
+              <button class="btn btn-accent btn-xs" onclick="openAgendaEvento(null)">+ Novo</button>
+            </div>
+            <div style="margin-top:10px" id="cal-side-events"></div>
+          </div>
+          <!-- KPIs do mês -->
+          <div class="card" style="padding:14px">
+            <div style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">Este Mês</div>
+            <div style="display:flex;flex-direction:column;gap:7px" id="cal-kpis"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VISÃO LISTA -->
+    <div id="ag-view-lista" style="display:none">
+      <div class="card" style="padding:0">
+        <div class="twrap">
+          <table>
+            <thead><tr>
+              <th>Data</th><th>Hora</th><th>Tipo</th><th>Título</th><th>Técnico</th><th>Cliente</th><th>Status</th><th>Ações</th>
+            </tr></thead>
+            <tbody id="ag-lista-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EVENTO AGENDA -->
+<div class="mov" id="m-agenda-ev">
+<div class="modal" style="max-width:540px">
+  <div class="mhd">
+    <div><div class="mhd-title" id="m-ag-title">Novo Evento</div></div>
+    <button class="btnx" onclick="closeM('m-agenda-ev')">×</button>
+  </div>
+  <div class="mbody">
+    <input type="hidden" id="ag-ev-id">
+    <div class="fgrid fg2" style="gap:10px">
+      <div class="fg" style="grid-column:1/-1">
+        <label>Título *</label>
+        <input type="text" id="ag-ev-titulo" placeholder="Ex: Visita preventiva Empresa X">
+      </div>
+      <div class="fg">
+        <label>Tipo</label>
+        <select id="ag-ev-tipo">
+          <option>Visita</option>
+          <option>OS</option>
+          <option>Preventiva</option>
+          <option>Reunião</option>
+          <option>Outros</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label>Status</label>
+        <select id="ag-ev-status">
+          <option>Agendado</option>
+          <option>Confirmado</option>
+          <option>Concluído</option>
+          <option>Cancelado</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label>Data Início *</label>
+        <input type="date" id="ag-ev-data-ini">
+      </div>
+      <div class="fg">
+        <label>Hora Início</label>
+        <input type="time" id="ag-ev-hora-ini">
+      </div>
+      <div class="fg">
+        <label>Data Fim</label>
+        <input type="date" id="ag-ev-data-fim">
+      </div>
+      <div class="fg">
+        <label>Hora Fim</label>
+        <input type="time" id="ag-ev-hora-fim">
+      </div>
+      <div class="fg" style="grid-column:1/-1">
+        <label>Técnico</label>
+        <select id="ag-ev-tec">
+          <option value="">Nenhum</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label>Cliente</label>
+        <select id="ag-ev-cli">
+          <option value="">Nenhum</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label>OS Vinculada</label>
+        <select id="ag-ev-os">
+          <option value="">Nenhuma</option>
+        </select>
+      </div>
+      <div class="fg" style="grid-column:1/-1">
+        <label>Local / Endereço</label>
+        <input type="text" id="ag-ev-local" placeholder="Endereço do atendimento">
+      </div>
+      <div class="fg" style="grid-column:1/-1">
+        <label>Descrição / Observações</label>
+        <textarea id="ag-ev-desc" rows="2" placeholder="Detalhes do evento..."></textarea>
+      </div>
+    </div>
+  </div>
+  <div class="mfoot" style="justify-content:space-between">
+    <button class="btn btn-danger btn-sm" id="ag-ev-del-btn" onclick="deletarAgendaEv()" style="display:none">🗑 Excluir</button>
+    <div style="display:flex;gap:8px;margin-left:auto">
+      <button class="btn btn-ghost" onclick="closeM('m-agenda-ev')">Cancelar</button>
+      <button class="btn btn-accent" onclick="salvarAgendaEv()">💾 Salvar</button>
+    </div>
+  </div>
+</div>
+</div>
+
 <div id="page-os" class="page">
   <div class="topbar">
     <div><div class="tb-title">Ordens de Serviço</div><div class="tb-sub">Gestão de OS e Atendimentos</div></div>
@@ -2548,7 +2782,335 @@ function updateBadges() {
   if(bos) bos.textContent = G.ordens.filter(o=>o.status==='Aberta'||o.status==='Em andamento').length;
 }
 
-function nav(p, el) {
+// ═══════════════════════════════════════════════════════════
+// AGENDA / CALENDÁRIO
+// ═══════════════════════════════════════════════════════════
+let AG = { eventos: [], mesSel: new Date().getMonth(), anoSel: new Date().getFullYear(), diaSel: null, view: 'mes' };
+
+async function loadAgenda() {
+  try {
+    const r = await fetch(`/api/agenda?mes=${AG.mesSel+1}&ano=${AG.anoSel}`);
+    AG.eventos = await r.json();
+    // Também carrega OS abertas/andamento para exibir no calendário
+    if (!G.ordens || G.ordens.length === 0) {
+      const r2 = await fetch('/api/ordens'); G.ordens = await r2.json();
+    }
+    renderAgenda();
+  } catch(e) { console.error('loadAgenda', e); }
+}
+
+function getEventosPorDia(dataStr) {
+  const filtTec = document.getElementById('ag-f-tec')?.value || '';
+  const filtTipo = document.getElementById('ag-f-tipo')?.value || '';
+  let evs = AG.eventos.filter(e => e.data_inicio === dataStr || e.data_fim === dataStr || (e.data_inicio <= dataStr && e.data_fim >= dataStr));
+  // OS abertas/andamento como eventos (somente se sem filtro tipo ou tipo=OS)
+  if (!filtTipo || filtTipo === 'OS') {
+    const osEvs = (G.ordens||[]).filter(o => {
+      if (!['Aberta','Em andamento'].includes(o.status)) return false;
+      const d = (o.sla_deadline||'').slice(0,10);
+      return d === dataStr;
+    }).map(o => ({
+      id: 'os-'+o.id, titulo: `OS #${o.num} — ${o.defeito||''}`.substring(0,40),
+      tipo: 'OS', data_inicio: dataStr, data_fim: dataStr,
+      tecnico_nome: G.tecnicos.find(t=>t.id===o.tecnico_id)?.nome||'',
+      cliente_nome: G.clientes.find(c=>c.id===o.cliente_id)?.nome||'',
+      status: o.status, os_num: o.num, os_id: o.id, _fromOS: true
+    }));
+    evs = [...evs, ...osEvs];
+  }
+  if (filtTec) evs = evs.filter(e => e.tecnico_id === filtTec || e.tecnico_nome === filtTec);
+  if (filtTipo) evs = evs.filter(e => e.tipo === filtTipo);
+  return evs;
+}
+
+function classEvento(ev) {
+  if (ev.status === 'Cancelado') return 'ev-cancelado';
+  const map = { OS:'ev-os', Visita:'ev-visita', Preventiva:'ev-preventiva', Reunião:'ev-reuniao', Outros:'ev-outros' };
+  return map[ev.tipo] || 'ev-outros';
+}
+
+function renderAgenda() {
+  // Popula filtro de técnico
+  const selTec = document.getElementById('ag-f-tec');
+  if (selTec && selTec.options.length <= 1) {
+    selTec.innerHTML = '<option value="">Todos os técnicos</option>' + (G.tecnicos||[]).map(t=>`<option value="${t.id}">${t.nome}</option>`).join('');
+  }
+  if (AG.view === 'mes') renderCalMes();
+  else renderCalLista();
+}
+
+function renderCalMes() {
+  const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  document.getElementById('cal-mes-ano-lbl').textContent = `${MESES[AG.mesSel]} ${AG.anoSel}`;
+  document.getElementById('ag-topbar-sub').textContent = `${MESES[AG.mesSel]} ${AG.anoSel}`;
+
+  const grid = document.getElementById('cal-grid');
+  // Limpa dias anteriores mantendo os cabeçalhos (7 primeiros filhos)
+  while (grid.children.length > 7) grid.removeChild(grid.lastChild);
+
+  const hoje = new Date(); const hd = hoje.getDate(), hm = hoje.getMonth(), hy = hoje.getFullYear();
+  const primDia = new Date(AG.anoSel, AG.mesSel, 1).getDay(); // 0=dom
+  const ultDia = new Date(AG.anoSel, AG.mesSel+1, 0).getDate();
+  const ultMes = new Date(AG.anoSel, AG.mesSel, 0).getDate();
+
+  // Dias do mês anterior
+  for (let i = primDia - 1; i >= 0; i--) {
+    const d = document.createElement('div'); d.className = 'cal-day outro-mes';
+    d.innerHTML = `<div class="cal-day-num">${ultMes - i}</div>`;
+    grid.appendChild(d);
+  }
+  // Dias do mês atual
+  for (let d = 1; d <= ultDia; d++) {
+    const dataStr = `${AG.anoSel}-${String(AG.mesSel+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isHoje = d===hd && AG.mesSel===hm && AG.anoSel===hy;
+    const isSel = AG.diaSel === dataStr;
+    const diaSem = new Date(AG.anoSel, AG.mesSel, d).getDay();
+    let cls = 'cal-day';
+    if (isHoje) cls += ' hoje';
+    if (isSel) cls += ' selected';
+    if (diaSem === 0) cls += ' dom';
+    const cel = document.createElement('div'); cel.className = cls;
+    cel.onclick = () => selectDia(dataStr);
+    const evs = getEventosPorDia(dataStr);
+    const max = 2;
+    let html = `<div class="cal-day-num">${d}</div>`;
+    evs.slice(0, max).forEach(ev => {
+      html += `<div class="cal-event ${classEvento(ev)}" onclick="event.stopPropagation();verAgendaEv('${ev.id}')" title="${ev.titulo}">${ev.hora_inicio?ev.hora_inicio+' ':''} ${ev.titulo}</div>`;
+    });
+    if (evs.length > max) html += `<div class="cal-more">+${evs.length - max} mais</div>`;
+    cel.innerHTML = html;
+    grid.appendChild(cel);
+  }
+  // Completar com dias do próximo mês
+  const total = primDia + ultDia;
+  const resto = total % 7 === 0 ? 0 : 7 - (total % 7);
+  for (let d = 1; d <= resto; d++) {
+    const cel = document.createElement('div'); cel.className = 'cal-day outro-mes';
+    cel.innerHTML = `<div class="cal-day-num">${d}</div>`;
+    grid.appendChild(cel);
+  }
+  // Se nenhum dia selecionado, seleciona hoje (se no mês atual)
+  if (!AG.diaSel && AG.mesSel === hm && AG.anoSel === hy) {
+    const dataStr = `${hy}-${String(hm+1).padStart(2,'0')}-${String(hd).padStart(2,'0')}`;
+    selectDia(dataStr, false);
+  } else if (AG.diaSel) {
+    renderSideDia(AG.diaSel);
+  }
+  renderCalKpis();
+}
+
+function selectDia(dataStr, rerender=true) {
+  AG.diaSel = dataStr;
+  if (rerender) renderCalMes(); else renderSideDia(dataStr);
+}
+
+function renderSideDia(dataStr) {
+  const partes = dataStr.split('-');
+  const dt = new Date(+partes[0], +partes[1]-1, +partes[2]);
+  const DIAS = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  const MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  document.getElementById('cal-side-day-lbl').textContent = `${DIAS[dt.getDay()]}, ${dt.getDate()} ${MESES[dt.getMonth()]} ${dt.getFullYear()}`;
+  const evs = getEventosPorDia(dataStr);
+  const el = document.getElementById('cal-side-events');
+  if (evs.length === 0) {
+    el.innerHTML = `<div class="cal-side-empty">Nenhum evento neste dia<br><small style="color:var(--tx3)">Clique em "+ Novo" para agendar</small></div>`;
+  } else {
+    el.innerHTML = evs.map(ev => `
+      <div class="cal-side-ev" style="border-left-color:${evCorHex(ev.tipo)}" onclick="verAgendaEv('${ev.id}')">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div class="cal-side-ev-title">${ev.titulo}</div>
+          <span class="status-badge ${stClass(ev.status)}">${ev.status}</span>
+        </div>
+        <div class="cal-side-ev-sub">${ev.hora_inicio||''}${ev.hora_fim?' — '+ev.hora_fim:''} · ${ev.tipo}</div>
+        ${ev.tecnico_nome?`<div class="cal-side-ev-tec">👤 ${ev.tecnico_nome}</div>`:''}
+        ${ev.cliente_nome?`<div class="cal-side-ev-sub" style="margin-top:2px">🏢 ${ev.cliente_nome}</div>`:''}
+      </div>`).join('');
+  }
+}
+
+function evCorHex(tipo) {
+  const m = { OS:'#3b82f6', Visita:'#22c55e', Preventiva:'#eab308', Reunião:'#a855f7', Outros:'#94a3b8' };
+  return m[tipo] || '#94a3b8';
+}
+function stClass(st) {
+  const m = { Agendado:'st-agendado', Confirmado:'st-confirmado', Concluído:'st-concluido', Cancelado:'st-cancelado' };
+  return m[st] || 'st-agendado';
+}
+
+function renderCalKpis() {
+  const mes = String(AG.mesSel+1).padStart(2,'0');
+  const prefixo = `${AG.anoSel}-${mes}`;
+  const evMes = AG.eventos.filter(e => (e.data_inicio||'').startsWith(prefixo));
+  const kpis = [
+    { lbl:'Total de eventos', val: evMes.length, ico:'📅' },
+    { lbl:'Visitas', val: evMes.filter(e=>e.tipo==='Visita').length, ico:'🚗' },
+    { lbl:'Preventivas', val: evMes.filter(e=>e.tipo==='Preventiva').length, ico:'🔧' },
+    { lbl:'Confirmados', val: evMes.filter(e=>e.status==='Confirmado').length, ico:'✅' },
+    { lbl:'Pendentes', val: evMes.filter(e=>e.status==='Agendado').length, ico:'⏳' },
+  ];
+  document.getElementById('cal-kpis').innerHTML = kpis.map(k=>
+    `<div style="display:flex;align-items:center;justify-content:space-between;font-size:12px">
+      <span style="color:var(--tx2)">${k.ico} ${k.lbl}</span>
+      <span style="font-weight:700;color:var(--nv)">${k.val}</span>
+    </div>`
+  ).join('');
+}
+
+function renderCalLista() {
+  const filtTec = document.getElementById('ag-f-tec')?.value || '';
+  const filtTipo = document.getElementById('ag-f-tipo')?.value || '';
+  let evs = [...AG.eventos];
+  if (filtTec) evs = evs.filter(e => e.tecnico_id === filtTec || e.tecnico_nome === filtTec);
+  if (filtTipo) evs = evs.filter(e => e.tipo === filtTipo);
+  evs.sort((a,b) => (a.data_inicio+a.hora_inicio).localeCompare(b.data_inicio+b.hora_inicio));
+  const tbody = document.getElementById('ag-lista-tbody');
+  if (evs.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--tx3);padding:24px">Nenhum evento encontrado</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = evs.map(ev => `<tr>
+    <td>${fmtData(ev.data_inicio)}</td>
+    <td>${ev.hora_inicio||'—'}</td>
+    <td><span class="cal-event ${classEvento(ev)}" style="display:inline">${ev.tipo}</span></td>
+    <td style="font-weight:600;color:var(--nv)">${ev.titulo}</td>
+    <td>${ev.tecnico_nome||'—'}</td>
+    <td>${ev.cliente_nome||'—'}</td>
+    <td><span class="status-badge ${stClass(ev.status)}">${ev.status}</span></td>
+    <td>
+      <button class="btn btn-ghost btn-xs" onclick="verAgendaEv('${ev.id}')">✏ Editar</button>
+    </td>
+  </tr>`).join('');
+}
+
+function navMes(delta) {
+  AG.mesSel += delta;
+  if (AG.mesSel > 11) { AG.mesSel = 0; AG.anoSel++; }
+  if (AG.mesSel < 0) { AG.mesSel = 11; AG.anoSel--; }
+  AG.diaSel = null;
+  loadAgenda();
+}
+
+function irHoje() {
+  const h = new Date();
+  AG.mesSel = h.getMonth(); AG.anoSel = h.getFullYear(); AG.diaSel = null;
+  loadAgenda();
+}
+
+function setCalView(v) {
+  AG.view = v;
+  document.getElementById('ag-view-mes').style.display = v==='mes' ? '' : 'none';
+  document.getElementById('ag-view-lista').style.display = v==='lista' ? '' : 'none';
+  document.getElementById('vbtn-mes').classList.toggle('active', v==='mes');
+  document.getElementById('vbtn-lista').classList.toggle('active', v==='lista');
+  renderAgenda();
+}
+
+function openAgendaEvento(ev) {
+  document.getElementById('ag-ev-id').value = ev?.id || '';
+  document.getElementById('m-ag-title').textContent = ev ? 'Editar Evento' : 'Novo Evento';
+  document.getElementById('ag-ev-titulo').value = ev?.titulo || '';
+  document.getElementById('ag-ev-tipo').value = ev?.tipo || 'Visita';
+  document.getElementById('ag-ev-status').value = ev?.status || 'Agendado';
+  document.getElementById('ag-ev-data-ini').value = ev?.data_inicio || AG.diaSel || '';
+  document.getElementById('ag-ev-hora-ini').value = ev?.hora_inicio || '';
+  document.getElementById('ag-ev-data-fim').value = ev?.data_fim || ev?.data_inicio || AG.diaSel || '';
+  document.getElementById('ag-ev-hora-fim').value = ev?.hora_fim || '';
+  document.getElementById('ag-ev-local').value = ev?.local || '';
+  document.getElementById('ag-ev-desc').value = ev?.descricao || '';
+  // Técnico
+  const selTec = document.getElementById('ag-ev-tec');
+  selTec.innerHTML = '<option value="">Nenhum</option>' + (G.tecnicos||[]).map(t=>`<option value="${t.id}">${t.nome}</option>`).join('');
+  selTec.value = ev?.tecnico_id || '';
+  // Cliente
+  const selCli = document.getElementById('ag-ev-cli');
+  selCli.innerHTML = '<option value="">Nenhum</option>' + (G.clientes||[]).map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
+  selCli.value = ev?.cliente_id || '';
+  // OS
+  const selOS = document.getElementById('ag-ev-os');
+  const osAbertas = (G.ordens||[]).filter(o=>['Aberta','Em andamento'].includes(o.status));
+  selOS.innerHTML = '<option value="">Nenhuma</option>' + osAbertas.map(o=>`<option value="${o.id}">${o.num} — ${(G.clientes||[]).find(c=>c.id===o.cliente_id)?.nome||''}</option>`).join('');
+  selOS.value = ev?.os_id || '';
+  // Botão excluir
+  const delBtn = document.getElementById('ag-ev-del-btn');
+  delBtn.style.display = ev ? '' : 'none';
+  openM('m-agenda-ev');
+}
+
+async function salvarAgendaEv() {
+  const titulo = document.getElementById('ag-ev-titulo').value.trim();
+  if (!titulo) return alert('Informe o título do evento.');
+  const dataIni = document.getElementById('ag-ev-data-ini').value;
+  if (!dataIni) return alert('Informe a data de início.');
+  const tecId = document.getElementById('ag-ev-tec').value;
+  const tecNome = tecId ? (G.tecnicos||[]).find(t=>t.id===tecId)?.nome||'' : '';
+  const cliId = document.getElementById('ag-ev-cli').value;
+  const cliNome = cliId ? (G.clientes||[]).find(c=>c.id===cliId)?.nome||'' : '';
+  const osId = document.getElementById('ag-ev-os').value;
+  const osNum = osId ? (G.ordens||[]).find(o=>o.id===osId)?.num||'' : '';
+  const body = {
+    titulo, tipo: document.getElementById('ag-ev-tipo').value,
+    status: document.getElementById('ag-ev-status').value,
+    data_inicio: dataIni, hora_inicio: document.getElementById('ag-ev-hora-ini').value,
+    data_fim: document.getElementById('ag-ev-data-fim').value || dataIni,
+    hora_fim: document.getElementById('ag-ev-hora-fim').value,
+    tecnico_id: tecId, tecnico_nome: tecNome,
+    cliente_id: cliId, cliente_nome: cliNome,
+    os_id: osId, os_num: osNum,
+    local: document.getElementById('ag-ev-local').value,
+    descricao: document.getElementById('ag-ev-desc').value
+  };
+  const id = document.getElementById('ag-ev-id').value;
+  const url = id ? `/api/agenda/${id}` : '/api/agenda';
+  const method = id ? 'PUT' : 'POST';
+  const r = await fetch(url, { method, headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+  const data = await r.json();
+  if (data.ok) { closeM('m-agenda-ev'); await loadAgenda(); }
+  else alert(data.error || 'Erro ao salvar.');
+}
+
+async function deletarAgendaEv() {
+  const id = document.getElementById('ag-ev-id').value;
+  if (!id || !confirm('Excluir este evento?')) return;
+  await fetch(`/api/agenda/${id}`, { method:'DELETE' });
+  closeM('m-agenda-ev'); await loadAgenda();
+}
+
+function verAgendaEv(id) {
+  if (!id) return;
+  if (id.startsWith('os-')) {
+    // É uma OS — abre o detalhe de OS
+    const osId = id.replace('os-','');
+    const os = G.ordens.find(o=>o.id===osId);
+    if (os) { nav('os', document.querySelector('[data-modulo=os]')); setTimeout(()=>verOS(osId),300); }
+    return;
+  }
+  const ev = AG.eventos.find(e=>e.id===id);
+  if (ev) openAgendaEvento(ev);
+}
+
+function fmtData(d) {
+  if (!d) return '—';
+  const p = d.split('-'); if (p.length < 3) return d;
+  return `${p[2]}/${p[1]}/${p[0]}`;
+}
+
+function navAgendaFromOS(osId) {
+  // Navega para agenda e filtra pelo dia de SLA da OS
+  const os = G.ordens.find(o=>o.id===osId);
+  if (os?.sla_deadline) {
+    const d = os.sla_deadline.slice(0,10);
+    const [y,m,day] = d.split('-');
+    AG.anoSel = +y; AG.mesSel = +m-1; AG.diaSel = d;
+  }
+  nav('agenda', document.querySelector('[data-modulo=agenda]'));
+}
+
+function navAgendaDia(dataStr) {
+  const [y,m] = dataStr.split('-');
+  AG.anoSel = +y; AG.mesSel = +m-1; AG.diaSel = dataStr;
+  nav('agenda', document.querySelector('[data-modulo=agenda]'));
+}
+
   document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
   document.querySelectorAll('.ni').forEach(x=>x.classList.remove('active'));
   // Ao trocar de módulo, fecha e desativa o submenu de configurações
@@ -2561,7 +3123,7 @@ function nav(p, el) {
   }
   const pg = document.getElementById('page-'+p); if(pg) pg.classList.add('active');
   if(el) el.classList.add('active');
-  const renders = { os:renderOS, logistica:renderLogistica, lab:renderLab, clientes:renderClientes, tecnicos:renderTec, usuarios:renderUsers, historico:renderHist, estoque:async()=>{await loadEstMovs();renderEstoque();renderEstKpis();}, 'supr-cli':renderSuprCli, dashboard:loadDash, contratos:async()=>{await loadContratos();renderContratos();}, financeiro:async()=>{await loadFinanceiro();renderFinLanc();renderFinKpis();}, notificacoes:async()=>{await gerarNotificacoes();}, relatorios:()=>{if(typeof renderRelatorios==='function')renderRelatorios();}, configuracoes:()=>{loadCfg();} };
+  const renders = { os:renderOS, logistica:renderLogistica, lab:renderLab, clientes:renderClientes, tecnicos:renderTec, usuarios:renderUsers, historico:renderHist, estoque:async()=>{await loadEstMovs();renderEstoque();renderEstKpis();}, 'supr-cli':renderSuprCli, dashboard:loadDash, contratos:async()=>{await loadContratos();renderContratos();}, financeiro:async()=>{await loadFinanceiro();renderFinLanc();renderFinKpis();}, notificacoes:async()=>{await gerarNotificacoes();}, relatorios:()=>{if(typeof renderRelatorios==='function')renderRelatorios();}, configuracoes:()=>{loadCfg();}, agenda:async()=>{await loadAgenda();renderAgenda();} };
   if(renders[p]) renders[p]();
 }
 

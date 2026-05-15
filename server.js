@@ -729,6 +729,81 @@ app.post('/api/test-telegram', requireAuth, requireAdmin, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ─── AGENDA / CALENDÁRIO ────────────────────────────────────────────────────
+app.get('/api/agenda', requireAuth, async (req,res) => {
+  try {
+    const { mes, ano } = req.query;
+    let filter = {};
+    if (mes && ano) {
+      // Filtra pelo mês/ano
+      const prefixo = `${ano}-${String(mes).padStart(2,'0')}`;
+      filter = { $or: [
+        { data_inicio: { $regex: '^' + prefixo } },
+        { data_fim: { $regex: '^' + prefixo } }
+      ]};
+    }
+    const d = await col('agenda').find(filter).sort({ data_inicio: 1, hora_inicio: 1 }).toArray();
+    res.json(d.map(x => ({ ...x, id: x._id.toString() })));
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/agenda', requireAuth, async (req,res) => {
+  try {
+    const b = req.body;
+    const r = await col('agenda').insertOne({
+      titulo: b.titulo || '',
+      tipo: b.tipo || 'Visita', // Visita, OS, Preventiva, Reunião, Outros
+      data_inicio: b.data_inicio || '',
+      hora_inicio: b.hora_inicio || '',
+      data_fim: b.data_fim || b.data_inicio || '',
+      hora_fim: b.hora_fim || '',
+      tecnico_id: b.tecnico_id || '',
+      tecnico_nome: b.tecnico_nome || '',
+      cliente_id: b.cliente_id || '',
+      cliente_nome: b.cliente_nome || '',
+      os_id: b.os_id || '',
+      os_num: b.os_num || '',
+      descricao: b.descricao || '',
+      local: b.local || '',
+      status: b.status || 'Agendado', // Agendado, Confirmado, Concluído, Cancelado
+      cor: b.cor || '',
+      criado_por: req.session.user?.nome || '',
+      created_at: now()
+    });
+    res.json({ ok: true, id: r.insertedId.toString() });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.put('/api/agenda/:id', requireAuth, async (req,res) => {
+  try {
+    const b = req.body;
+    await col('agenda').updateOne({ _id: new ObjectId(req.params.id) }, { $set: {
+      titulo: b.titulo || '',
+      tipo: b.tipo || 'Visita',
+      data_inicio: b.data_inicio || '',
+      hora_inicio: b.hora_inicio || '',
+      data_fim: b.data_fim || b.data_inicio || '',
+      hora_fim: b.hora_fim || '',
+      tecnico_id: b.tecnico_id || '',
+      tecnico_nome: b.tecnico_nome || '',
+      cliente_id: b.cliente_id || '',
+      cliente_nome: b.cliente_nome || '',
+      os_id: b.os_id || '',
+      os_num: b.os_num || '',
+      descricao: b.descricao || '',
+      local: b.local || '',
+      status: b.status || 'Agendado',
+      cor: b.cor || ''
+    }});
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.delete('/api/agenda/:id', requireAuth, async (req,res) => {
+  try { await col('agenda').deleteOne({ _id: new ObjectId(req.params.id) }); res.json({ ok: true }); }
+  catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ─── RESET DO SISTEMA ────────────────────────────────────────────────────────
 // Apaga TODOS os dados, preservando APENAS o usuário master (coringa)
 app.post('/api/reset-system', requireAuth, async (req, res) => {
@@ -749,7 +824,7 @@ app.post('/api/reset-system', requireAuth, async (req, res) => {
       'logistica','abastecimento','checklist','manutencao',
       'pedidos_pecas','eq_baixados',
       'lancamentos','contratos','financeiro',
-      'counter','sessions','notificacoes','configuracoes'
+      'counter','sessions','notificacoes','configuracoes','agenda'
     ];
     const db = client.db();
     const resultados = {};
