@@ -193,7 +193,7 @@ app.post('/api/ordens', requireAuth, async (req,res) => {
     const ctr=await col('counter').findOneAndUpdate({_id:'os'},{$inc:{valor:1}},{returnDocument:'after',upsert:true});
     const num=`OS-${new Date().getFullYear()}-${String(ctr.valor).padStart(4,'0')}`;
     const total=(b.viag||0)+(b.alim||0)+(b.hosp||0)+(b.comb||0)+(b.ped||0)+(b.outros||0);
-    const result=await col('ordens').insertOne({num,data_ab:b.dataAb,tecnico_id:b.tecnicoId||'',cliente_id:b.clienteId,contato:b.contato||'',tel:b.tel||'',end_logradouro:b.end||'',equip_id:b.equipId||'',modelo:b.modelo||'',nserie:b.nserie||'',contador:b.contador||'',defeito:b.defeito||'',procedimento:b.procedimento||'',pecas:b.pecas||'',obs:b.obs||'',data_chamado:b.dataChamado||'',data_atend:b.dataAtend||'',hora_chegada:b.horaChegada||'',hora_saida:b.horaSaida||'',viag:b.viag||0,alim:b.alim||0,hosp:b.hosp||0,comb:b.comb||0,ped:b.ped||0,outros:b.outros||0,total_os:total,status:'Aberta',origem:b.origem||'sistema',created_at:now()});
+    const result=await col('ordens').insertOne({num,data_ab:b.dataAb,tecnico_id:b.tecnicoId||'',cliente_id:b.clienteId,contato:b.contato||'',tel:b.tel||'',end_logradouro:b.end||'',equip_id:b.equipId||'',modelo:b.modelo||'',nserie:b.nserie||'',contador:b.contador||'',defeito:b.defeito||'',procedimento:b.procedimento||'',pecas:b.pecas||'',obs:b.obs||'',data_chamado:b.dataChamado||'',data_atend:b.dataAtend||'',hora_chegada:b.horaChegada||'',hora_saida:b.horaSaida||'',viag:b.viag||0,alim:b.alim||0,hosp:b.hosp||0,comb:b.comb||0,ped:b.ped||0,outros:b.outros||0,total_os:total,status:'Aberta',tipo:b.tipo||'',sla_prazo:b.sla_prazo||'',sla_deadline:b.sla_deadline||null,origem:b.origem||'sistema',created_at:now()});
     const id=result.insertedId.toString();
     const cli=await col('clientes').findOne({_id:new ObjectId(b.clienteId)});
     const tec=b.tecnicoId?await col('tecnicos').findOne({_id:new ObjectId(b.tecnicoId)}):null;
@@ -206,7 +206,7 @@ app.put('/api/ordens/:id', requireAuth, async (req,res) => {
     const b=req.body;
     const old=await col('ordens').findOne({_id:new ObjectId(req.params.id)});
     const total=(b.viag||0)+(b.alim||0)+(b.hosp||0)+(b.comb||0)+(b.ped||0)+(b.outros||0);
-    await col('ordens').updateOne({_id:new ObjectId(req.params.id)},{$set:{data_ab:b.dataAb,tecnico_id:b.tecnicoId||'',cliente_id:b.clienteId,contato:b.contato||'',tel:b.tel||'',end_logradouro:b.end||'',equip_id:b.equipId||'',modelo:b.modelo||'',nserie:b.nserie||'',contador:b.contador||'',defeito:b.defeito||'',procedimento:b.procedimento||'',pecas:b.pecas||'',obs:b.obs||'',data_chamado:b.dataChamado||'',data_atend:b.dataAtend||'',hora_chegada:b.horaChegada||'',hora_saida:b.horaSaida||'',viag:b.viag||0,alim:b.alim||0,hosp:b.hosp||0,comb:b.comb||0,ped:b.ped||0,outros:b.outros||0,total_os:total,status:b.status||'Aberta',checklist:Array.isArray(b.checklist)?b.checklist:[],sig_tec:b.sig_tec||'',sig_cli:b.sig_cli||''}});
+    await col('ordens').updateOne({_id:new ObjectId(req.params.id)},{$set:{data_ab:b.dataAb,tecnico_id:b.tecnicoId||'',cliente_id:b.clienteId,contato:b.contato||'',tel:b.tel||'',end_logradouro:b.end||'',equip_id:b.equipId||'',modelo:b.modelo||'',nserie:b.nserie||'',contador:b.contador||'',defeito:b.defeito||'',procedimento:b.procedimento||'',pecas:b.pecas||'',obs:b.obs||'',data_chamado:b.dataChamado||'',data_atend:b.dataAtend||'',hora_chegada:b.horaChegada||'',hora_saida:b.horaSaida||'',viag:b.viag||0,alim:b.alim||0,hosp:b.hosp||0,comb:b.comb||0,ped:b.ped||0,outros:b.outros||0,total_os:total,status:b.status||'Aberta',checklist:Array.isArray(b.checklist)?b.checklist:[],sig_tec:b.sig_tec||'',sig_cli:b.sig_cli||'',tipo:b.tipo||'',sla_prazo:b.sla_prazo||'',sla_deadline:b.sla_deadline||null,origem:b.origem||'sistema'}});
     if(old&&old.status!=='Concluída'&&b.status==='Concluída'){
       const os=await col('ordens').findOne({_id:new ObjectId(req.params.id)});
       const cli=await col('clientes').findOne({_id:new ObjectId(os.cliente_id)});
@@ -218,7 +218,31 @@ app.put('/api/ordens/:id', requireAuth, async (req,res) => {
 });
 app.delete('/api/ordens/:id', requireAuth, async (req,res) => { try{await col('ordens').deleteOne({_id:new ObjectId(req.params.id)}); res.json({ok:true});}catch(e){res.status(500).json({error:e.message});} });
 
-// LABORATORIO
+// Histórico técnico de um equipamento (por nserie ou equip_id)
+app.get('/api/historico-tecnico', requireAuth, async (req,res) => {
+  try {
+    const { nserie, equip_id, cliente_id } = req.query;
+    let filter = {};
+    if (nserie) filter.nserie = { $regex: nserie, $options: 'i' };
+    else if (equip_id) filter.equip_id = equip_id;
+    else if (cliente_id) filter.cliente_id = cliente_id;
+    else return res.json([]);
+    const ordens = await col('ordens').find(filter).sort({ data_ab: -1 }).toArray();
+    const tecnicos = await col('tecnicos').find().toArray();
+    res.json(ordens.map(o => ({
+      id: o._id.toString(), num: o.num,
+      data_ab: o.data_ab, data_atend: o.data_atend||'',
+      status: o.status, tipo: o.tipo||'',
+      defeito: o.defeito||'', procedimento: o.procedimento||'',
+      pecas: o.pecas||'', obs: o.obs||'',
+      tecnico_nome: tecnicos.find(t=>t._id.toString()===o.tecnico_id)?.nome||'—',
+      contador: o.contador||'', total_os: o.total_os||0,
+      sla_prazo: o.sla_prazo||'', sla_deadline: o.sla_deadline||null,
+    })));
+  } catch(e) { res.status(500).json({error:e.message}); }
+});
+
+
 // LABORATÓRIO — BANCADA
 app.get('/api/laboratorio', requireAuth, async (req,res) => { const d=await col('laboratorio').find().sort({data_entrada:-1}).toArray(); res.json(d.map(x=>({...x,id:x._id.toString()}))); });
 app.post('/api/laboratorio', requireAuth, async (req,res) => {

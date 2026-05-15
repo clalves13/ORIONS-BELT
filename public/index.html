@@ -1105,7 +1105,7 @@ tr:hover td{background:var(--sf2)}
     <button class="os-tab active" onclick="osTab('resumo',this)">📋 Resumo</button>
     <button class="os-tab" onclick="osTab('tecnico',this)">🔧 Técnico</button>
     <button class="os-tab" onclick="osTab('gastos',this)">💰 Gastos</button>
-    <button class="os-tab" onclick="osTab('historico',this)">📂 Histórico</button>
+    <button class="os-tab" onclick="osTab('historico',this)" id="os-tab-btn-hist">📂 Hist. Equipamento</button>
     <button class="os-tab" onclick="osTab('sigs',this)">✍ Assinaturas</button>
   </div>
   <div class="mbody" style="padding:14px 20px">
@@ -1143,7 +1143,26 @@ tr:hover td{background:var(--sf2)}
     </div>
     <!-- Aba Histórico do equipamento -->
     <div id="os-tab-historico" class="os-tab-panel" style="display:none">
-      <div id="det-hist-eq" style="font-size:12px"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div style="font-size:11px;font-weight:700;color:var(--nv)" id="hist-tec-titulo">Histórico do equipamento</div>
+        <span style="font-size:10px;color:var(--tx3)" id="hist-tec-nserie-lbl"></span>
+      </div>
+      <div id="hist-tec-loading" style="text-align:center;padding:20px;font-size:11px;color:var(--tx3)">Carregando...</div>
+      <div id="hist-tec-tabela" style="display:none">
+        <div class="twrap" style="max-height:340px;overflow-y:auto">
+          <table style="font-size:11px">
+            <thead><tr>
+              <th>OS</th><th>Data</th><th>Tipo</th><th>Status</th><th>Técnico</th>
+              <th>Defeito</th><th>Procedimento</th><th>Peças</th><th>SLA</th>
+            </tr></thead>
+            <tbody id="tb-hist-tec"></tbody>
+          </table>
+        </div>
+        <div id="hist-tec-resumo" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px"></div>
+      </div>
+      <div id="hist-tec-vazio" style="display:none;text-align:center;padding:24px;font-size:11px;color:var(--tx3);border:1.5px dashed var(--bd2);border-radius:8px">
+        Nenhum atendimento anterior registrado para este equipamento
+      </div>
     </div>
     <!-- Aba Assinaturas -->
     <div id="os-tab-sigs" class="os-tab-panel" style="display:none">
@@ -3455,10 +3474,65 @@ function osTab(tab, btn) {
   if (btn) btn.classList.add('active');
   const el = document.getElementById('os-tab-'+tab);
   if (el) el.style.display='block';
+  // Carrega histórico técnico ao clicar na aba
+  if (tab === 'historico' && window._osDetAtual) carregarHistTecnico(window._osDetAtual);
+}
+
+async function carregarHistTecnico(os) {
+  const loading = document.getElementById('hist-tec-loading');
+  const tabela  = document.getElementById('hist-tec-tabela');
+  const vazio   = document.getElementById('hist-tec-vazio');
+  loading.style.display='block'; tabela.style.display='none'; vazio.style.display='none';
+  document.getElementById('hist-tec-nserie-lbl').textContent = os.nserie ? `Nº Série: ${os.nserie}` : '';
+  try {
+    const hist = os.nserie
+      ? await api('GET', `/api/historico-tecnico?nserie=${encodeURIComponent(os.nserie)}`)
+      : [];
+    const outros = hist.filter(h => h.id !== os.id);
+    loading.style.display='none';
+    if (!outros.length) { vazio.style.display='block'; return; }
+    tabela.style.display='block';
+    const stBadge = s => {
+      const m = {'Concluída':'background:#dcfce7;color:#166534','Cancelada':'background:#fee2e2;color:#991b1b','Em andamento':'background:#dbeafe;color:#1e40af','Aberta':'background:#fef9c3;color:#854d0e'};
+      return `<span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;${m[s]||'background:#f1f5f9;color:#475569'}">${s}</span>`;
+    };
+    const fmtSLA = h => {
+      if (!h.sla_deadline) return h.sla_prazo||'—';
+      const d = new Date(h.sla_deadline);
+      return `${h.sla_prazo||''} <span style="font-size:9px;color:var(--tx3)">${d.toLocaleDateString('pt-BR')}</span>`;
+    };
+    document.getElementById('tb-hist-tec').innerHTML = outros.map(h => `<tr>
+      <td style="font-weight:700;font-family:monospace;color:var(--nv);white-space:nowrap">${h.num}</td>
+      <td style="white-space:nowrap">${fd(h.data_ab)}</td>
+      <td>${h.tipo||'—'}</td>
+      <td>${stBadge(h.status)}</td>
+      <td style="white-space:nowrap">${h.tecnico_nome}</td>
+      <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${h.defeito}">${h.defeito||'—'}</td>
+      <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${h.procedimento}">${h.procedimento||'—'}</td>
+      <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${h.pecas}">${h.pecas||'—'}</td>
+      <td style="white-space:nowrap">${fmtSLA(h)}</td>
+    </tr>`).join('');
+    // KPIs resumo
+    const total = outros.length;
+    const concluidas = outros.filter(h=>h.status==='Concluída').length;
+    const retrabalho = outros.filter(h=>h.defeito && outros.some(x=>x.id!==h.id && x.defeito===h.defeito)).length;
+    const gasto = outros.reduce((s,h)=>s+(h.total_os||0),0);
+    document.getElementById('hist-tec-resumo').innerHTML = [
+      {lbl:'Atendimentos',val:total,ico:'📋'},
+      {lbl:'Concluídos',val:concluidas,ico:'✅'},
+      {lbl:'Retrabalhos',val:retrabalho,ico:'🔁'},
+      {lbl:'Gasto total',val:`R$ ${gasto.toFixed(2)}`,ico:'💰'},
+    ].map(k=>`<div style="background:var(--sf2);border:1px solid var(--bd);border-radius:8px;padding:8px 10px;text-align:center">
+      <div style="font-size:16px;margin-bottom:2px">${k.ico}</div>
+      <div style="font-size:13px;font-weight:700;color:var(--nv)">${k.val}</div>
+      <div style="font-size:9px;color:var(--tx3);text-transform:uppercase;letter-spacing:.6px">${k.lbl}</div>
+    </div>`).join('');
+  } catch(e) { loading.style.display='none'; vazio.style.display='block'; }
 }
 
 function verDetalhesOS(id) {
   const os = G.ordens.find(x=>x.id===id); if (!os) return;
+  window._osDetAtual = os;
   const c  = G.clientes.find(x=>x.id===os.cliente_id);
   const t  = G.tecnicos.find(x=>x.id===os.tecnico_id);
   const sb = os.status==='Concluída'?'bg':os.status==='Cancelada'?'br':os.status==='Em andamento'?'bb':'bo';
@@ -3477,6 +3551,10 @@ function verDetalhesOS(id) {
   document.getElementById('det-status-info').innerHTML =
     `<span class="badge ${sb}" style="font-size:13px;padding:4px 12px">${os.status}</span>`;
 
+  // SLA info no resumo
+  const slaTxt = os.sla_prazo ? `<b>SLA:</b> ${os.sla_prazo} ${os.sla_deadline?'· Prazo: '+new Date(os.sla_deadline).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):''}` : '';
+  if (slaTxt) document.getElementById('det-datas-info').innerHTML += `<br>${slaTxt}`;
+
   // Técnico
   document.getElementById('det-defeito').textContent = os.defeito||'—';
   document.getElementById('det-proc').textContent    = os.procedimento||'—';
@@ -3494,25 +3572,6 @@ function verDetalhesOS(id) {
       </table>`
     : `<div class="empty" style="padding:24px"><div class="empty-ico">💰</div><div class="empty-t">Nenhum gasto registrado</div></div>`;
 
-  // Histórico do equipamento (mesmo Nº Série)
-  const hist = G.ordens.filter(o => o.nserie && os.nserie && o.nserie===os.nserie && o.id!==os.id).sort((a,b)=>(b.data_ab||'').localeCompare(a.data_ab||''));
-  document.getElementById('det-hist-eq').innerHTML = hist.length
-    ? `<div style="margin-bottom:8px;font-size:11px;color:var(--tx3)">Histórico de atendimentos para o Nº Série <strong style="color:var(--tx);font-family:monospace">${os.nserie}</strong></div>`
-      + hist.map(h=>{const tc=G.tecnicos.find(x=>x.id===h.tecnico_id);const sb2=h.status==='Concluída'?'bg':h.status==='Cancelada'?'br':h.status==='Em andamento'?'bb':'bo';
-        return`<div style="border:1px solid var(--bd);border-radius:8px;padding:10px 13px;margin-bottom:7px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
-            <span style="font-weight:700;color:var(--nv);font-family:'JetBrains Mono',monospace">${h.num}</span>
-            <span class="badge ${sb2}">${h.status}</span>
-          </div>
-          <div style="font-size:11px;color:var(--tx3);line-height:1.7">
-            <b>Abertura:</b> ${fd(h.data_ab)} · <b>Técnico:</b> ${tc?.nome||'—'}<br>
-            <b>Defeito:</b> ${h.defeito||'—'}<br>
-            ${h.procedimento?`<b>Procedimento:</b> ${h.procedimento}<br>`:''}
-            ${h.pecas?`<b>Peças:</b> ${h.pecas}<br>`:''}
-          </div>
-        </div>`;}).join('')
-    : `<div class="empty" style="padding:24px"><div class="empty-ico">📂</div><div class="empty-t">Sem histórico para este equipamento</div><div class="empty-s">Esta é a primeira OS para o Nº Série ${os.nserie||'—'}</div></div>`;
-
   // Assinaturas
   document.getElementById('det-sig-tec').innerHTML = os.sig_tec
     ? `<img src="${os.sig_tec}" style="max-height:80px;max-width:100%">`
@@ -3521,6 +3580,23 @@ function verDetalhesOS(id) {
     ? `<img src="${os.sig_cli}" style="max-height:80px;max-width:100%">`
     : `<span style="color:var(--tx3);font-size:11px">Sem assinatura</span>`;
 
+  // Resetar para aba resumo
+  osTab('resumo', document.querySelector('.os-tab'));
+  openM('m-os-det');
+
+  document.getElementById('m-os-det-sub').textContent   = `Abertura: ${fd(os.data_ab)} · Técnico: ${t?.nome||'—'}`;
+
+  // Resumo
+  document.getElementById('det-cli-info').innerHTML =
+    `<b>Cliente:</b> ${c?.nome||'—'}<br><b>Contato:</b> ${os.contato||c?.contato||'—'}<br><b>Telefone:</b> ${os.tel||c?.tel||'—'}<br><b>Endereço:</b> ${os.end_logradouro||c?.end_logradouro||'—'}`;
+  document.getElementById('det-eq-info').innerHTML =
+    `<b>Equipamento:</b> ${os.modelo||'—'}<br><b>Nº Série:</b> <span style="font-family:monospace">${os.nserie||'—'}</span><br><b>Contador:</b> ${os.contador||'—'}`;
+  document.getElementById('det-datas-info').innerHTML =
+    `<b>Data Chamado:</b> ${fd(os.data_chamado)||'—'}<br><b>Data Atend.:</b> ${fd(os.data_atend)||'—'}<br><b>Chegada:</b> ${os.hora_chegada||'—'} · <b>Saída:</b> ${os.hora_saida||'—'}`;
+  document.getElementById('det-status-info').innerHTML =
+    `<span class="badge ${sb}" style="font-size:13px;padding:4px 12px">${os.status}</span>`;
+
+  // Técnico
   // Resetar para aba resumo
   osTab('resumo', document.querySelector('.os-tab'));
   openM('m-os-det');
