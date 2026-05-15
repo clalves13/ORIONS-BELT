@@ -1080,7 +1080,7 @@ tr:hover td{background:var(--sf2)}
     <div class="card" style="padding:0"><div class="twrap"><table>
       <thead><tr>
         <th>Nº OS</th><th>Abertura</th><th>Cliente</th><th>Equipamento</th><th>Nº Série</th>
-        <th>Defeito</th><th>Técnico</th><th>SLA</th><th>Status</th><th>Ações</th>
+        <th>Defeito</th><th>Técnico</th><th>Origem</th><th>SLA</th><th>Status</th><th>Ações</th>
       </tr></thead>
       <tbody id="tb-os"></tbody>
     </table></div></div>
@@ -2335,6 +2335,15 @@ Outros</textarea>
             <option value="Outros">Outros</option>
           </select>
         </div>
+        <div class="fg"><label>Origem do Chamado</label>
+          <select id="o-origem">
+            <option value="sistema">Sistema (interno)</option>
+            <option value="suporte">Suporte (telefone/email)</option>
+            <option value="portal">Portal do Cliente</option>
+            <option value="admin">Admin</option>
+            <option value="presencial">Presencial</option>
+          </select>
+        </div>
         <div class="fg"><label>Prazo SLA</label>
           <select id="o-sla-prazo" onchange="calcSLADeadline()">
             <option value="">Sem SLA</option>
@@ -3276,6 +3285,7 @@ function openOS(id) {
     document.getElementById('o-status').value=os.status||'Aberta'; calcOS();
     // SLA
     document.getElementById('o-tipo').value=os.tipo||'';
+    document.getElementById('o-origem').value=os.origem||'sistema';
     document.getElementById('o-sla-prazo').value=os.sla_prazo||'';
     if (os.sla_deadline) {
       document.getElementById('o-sla-deadline-wrap').style.display='block';
@@ -3295,7 +3305,7 @@ function openOS(id) {
     ['o-contato','o-tel','o-end','o-modelo','o-nserie','o-cont','o-defeito','o-proc','o-pecas','o-obs','o-datend','o-hcheg','o-hsai'].forEach(f=>document.getElementById(f).value='');
     ['o-viag','o-alim','o-hosp','o-comb','o-ped','o-out'].forEach(f=>document.getElementById(f).value=0);
     document.getElementById('o-status').value='Aberta'; document.getElementById('o-tot').textContent='R$ 0,00';
-    document.getElementById('o-tipo').value=''; document.getElementById('o-sla-prazo').value='';
+    document.getElementById('o-tipo').value=''; document.getElementById('o-sla-prazo').value=''; document.getElementById('o-origem').value='sistema';
     document.getElementById('o-sla-manual-wrap').style.display='none';
     document.getElementById('o-sla-deadline-wrap').style.display='none';
   }
@@ -3328,11 +3338,22 @@ async function saveOS() {
     const base = document.getElementById('o-dab').value || new Date().toISOString().slice(0,10);
     return new Date(new Date(base).getTime() + parseInt(prazo)*3600000).toISOString();
   })();
-  const body={dataAb:document.getElementById('o-dab').value,tecnicoId:document.getElementById('o-tec').value,clienteId:cid,contato:document.getElementById('o-contato').value,tel:document.getElementById('o-tel').value,end:document.getElementById('o-end').value,equipId:document.getElementById('o-eq').value,modelo:document.getElementById('o-modelo').value,nserie,contador:document.getElementById('o-cont').value,defeito:document.getElementById('o-defeito').value,procedimento:document.getElementById('o-proc').value,pecas:document.getElementById('o-pecas').value,obs:document.getElementById('o-obs').value,dataChamado:document.getElementById('o-dcham').value,dataAtend:document.getElementById('o-datend').value,horaChegada:document.getElementById('o-hcheg').value,horaSaida:document.getElementById('o-hsai').value,viag:+document.getElementById('o-viag').value||0,alim:+document.getElementById('o-alim').value||0,hosp:+document.getElementById('o-hosp').value||0,comb:+document.getElementById('o-comb').value||0,ped:+document.getElementById('o-ped').value||0,outros:+document.getElementById('o-out').value||0,status:document.getElementById('o-status').value,sig_tec:sigOSGet('tec'),sig_cli:sigOSGet('cli'),tipo:document.getElementById('o-tipo').value,sla_prazo:document.getElementById('o-sla-prazo').value,sla_deadline:slaDeadline};
+  const body={dataAb:document.getElementById('o-dab').value,tecnicoId:document.getElementById('o-tec').value,clienteId:cid,contato:document.getElementById('o-contato').value,tel:document.getElementById('o-tel').value,end:document.getElementById('o-end').value,equipId:document.getElementById('o-eq').value,modelo:document.getElementById('o-modelo').value,nserie,contador:document.getElementById('o-cont').value,defeito:document.getElementById('o-defeito').value,procedimento:document.getElementById('o-proc').value,pecas:document.getElementById('o-pecas').value,obs:document.getElementById('o-obs').value,dataChamado:document.getElementById('o-dcham').value,dataAtend:document.getElementById('o-datend').value,horaChegada:document.getElementById('o-hcheg').value,horaSaida:document.getElementById('o-hsai').value,viag:+document.getElementById('o-viag').value||0,alim:+document.getElementById('o-alim').value||0,hosp:+document.getElementById('o-hosp').value||0,comb:+document.getElementById('o-comb').value||0,ped:+document.getElementById('o-ped').value||0,outros:+document.getElementById('o-out').value||0,status:document.getElementById('o-status').value,sig_tec:sigOSGet('tec'),sig_cli:sigOSGet('cli'),tipo:document.getElementById('o-tipo').value,sla_prazo:document.getElementById('o-sla-prazo').value,sla_deadline:slaDeadline,origem:document.getElementById('o-origem').value||'sistema'};
   try {
     if(eid){ await api('PUT',`/api/ordens/${eid}`,body); } else { const res=await api('POST','/api/ordens',body); document.getElementById('o-id').value=res.id; document.getElementById('o-num-val').value=res.num; document.getElementById('o-num').value=res.num; document.getElementById('btn-prev').style.display='inline-flex'; }
     await loadAll(); renderOS(); loadDash(); closeM('m-os');
   } catch(e){alert(e.message)}
+}
+
+function origemBadge(origem) {
+  const map = {
+    portal:   { label:'Portal',   bg:'#ede9fe', color:'#6d28d9', border:'#c4b5fd' },
+    suporte:  { label:'Suporte',  bg:'#dbeafe', color:'#1d4ed8', border:'#93c5fd' },
+    admin:    { label:'Admin',    bg:'#fef9c3', color:'#854d0e', border:'#fde68a' },
+    sistema:  { label:'Sistema',  bg:'#f1f5f9', color:'#475569', border:'#cbd5e1' },
+  };
+  const o = map[(origem||'').toLowerCase()] || { label: origem||'Sistema', bg:'#f1f5f9', color:'#475569', border:'#cbd5e1' };
+  return `<span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;background:${o.bg};color:${o.color};border:1px solid ${o.border};white-space:nowrap">${o.label}</span>`;
 }
 
 function renderOS() {
@@ -3367,7 +3388,7 @@ function renderOS() {
 
   const tb = document.getElementById('tb-os'); if (!tb) return;
   if (!rows.length) {
-    tb.innerHTML=`<tr><td colspan="10"><div class="empty"><div class="empty-ico">📝</div><div class="empty-t">Nenhuma OS encontrada</div><div class="empty-s">Tente ajustar os filtros</div></div></td></tr>`;
+    tb.innerHTML=`<tr><td colspan="11"><div class="empty"><div class="empty-ico">📝</div><div class="empty-t">Nenhuma OS encontrada</div><div class="empty-s">Tente ajustar os filtros</div></div></td></tr>`;
     return;
   }
   tb.innerHTML = rows.map(os => {
@@ -3400,6 +3421,7 @@ function renderOS() {
       <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--tx3)">${os.nserie||'—'}</td>
       <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${os.defeito||''}">${os.defeito||'—'}</td>
       <td>${t?.nome?.split(' ')[0]||'—'}</td>
+      <td>${origemBadge(os.origem)}</td>
       <td>${slaBadge}</td>
       <td><span class="badge ${sb}">${os.status}</span></td>
       <td style="white-space:nowrap;display:flex;gap:3px;flex-wrap:wrap">
