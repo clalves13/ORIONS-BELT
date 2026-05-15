@@ -839,6 +839,217 @@ app.post('/api/reset-system', requireAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ─── PORTAL DO CLIENTE ──────────────────────────────────────────────────────
+
+function requirePortal(req,res,next){
+  if(req.session.portal_cliente) return next();
+  res.status(401).json({error:'Não autenticado no portal'});
+}
+
+// Servir portal.html em /portal e /portal/*
+app.get('/portal', (req,res) => res.sendFile(path.join(__dirname,'public','portal.html')));
+app.get('/portal/*', (req,res) => res.sendFile(path.join(__dirname,'public','portal.html')));
+
+// Login do portal (cliente)
+app.post('/api/portal/login', async (req,res) => {
+  try {
+    const { login, senha } = req.body;
+    if (!login || !senha) return res.status(400).json({error:'Informe login e senha.'});
+    const cliente = await col('clientes').findOne({ portal_login: login });
+    if (!cliente) return res.status(401).json({error:'Usuário ou senha inválidos.'});
+    if (!cliente.portal_ativo) return res.status(403).json({error:'Acesso ao portal desativado. Contate o suporte.'});
+    const ok = await bcrypt.compare(senha, cliente.portal_senha_hash||'');
+    if (!ok) return res.status(401).json({error:'Usuário ou senha inválidos.'});
+    await col('clientes').updateOne({_id:cliente._id},{$set:{portal_ultimo_acesso:now()}});
+    req.session.portal_cliente = { id: cliente._id.toString(), nome: cliente.nome, email: cliente.email||'' };
+    res.json({ ok:true, nome: cliente.nome });
+  } catch(e) { res.status(500).json({error:e.message}); }
+});
+
+// Logout do portal
+app.post('/api/portal/logout', (req,res) => {
+  req.session.portal_cliente = null;
+  res.json({ok:true});
+});
+
+// Sessão atual do portal
+app.get('/api/portal/me', (req,res) => {
+  if (!req.session.portal_cliente) return res.status(401).json({error:'Não autenticado'});
+  res.json(req.session.portal_cliente);
+});
+
+// OS do cliente logado
+app.get('/api/portal/ordens', requirePortal, async (req,res) => {
+  try {
+    const cid = req.session.portal_cliente.id;
+    const ordens = await col('ordens').find({cliente_id: cid}).sort({data_ab:-1}).toArray();
+    const tecnicos = await col('tecnicos').find().toArray();
+    res.json(ordens.map(o => ({
+      id: o._id.toString(),
+      num: o.num,
+      data_ab: o.data_ab,
+      data_atend: o.data_atend||'',
+      modelo: o.modelo||'',
+      nserie: o.nserie||'',
+      defeito: o.defeito||'',
+      status: o.status,
+      sla_deadline: o.sla_deadline||null,
+      tecnico_nome: tecnicos.find(t=>t._id.toString()===o.tecnico_id)?.nome||'Em definição',
+      tipo: o.tipo||'',
+      procedimento: o.procedimento||'',
+      pecas: o.pecas||'',
+      obs: o.obs||'',
+      total: o.total||0,
+    })));
+  } catch(e) { res.status(500).json({error:e.message}); }
+});
+
+// Abrir chamado pelo portal
+app.post('/api/portal/chamado', requirePortal, async (req,res) => {
+  try {
+    const cid = req.session.portal_cliente.id;
+    const b = req.body;
+    const cliente = await col('clientes').findOne({_id: new ObjectId(cid)});
+    if (!cliente) return res.status(404).json({error:'Cliente não encontrado.'});
+    const num = (await col('counter').findOneAndUpdate({_id:'os'},{$inc:{valor:1}},{upsert:true,returnDocument:'after'})).valor||1;
+    await col('ordens').insertOne({
+      num, data_ab: now().slice(0,10),
+      tecnico_id:'', cliente_id: cid,
+      contato: b.contato||cliente.contato||'',
+      tel: b.tel||cliente.tel||'',
+      end_logradouro: cliente.end_logradouro||'',
+      modelo: b.modelo||'', nserie: b.nserie||'',
+      contador: b.contador||'',
+      defeito: b.defeito||'', procedimento:'', pecas:'', obs: b.obs||'',
+      viag:0, alim:0, hosp:0, comb:0, ped:0, outros:0, total:0,
+      data_chamado: now().slice(0,10), data_atend:'',
+      hora_chegada:'', hora_saida:'',
+      status:'Aberta', checklist:[], sig_tec:'', sig_cli:'',
+      tipo: b.tipo||'Corretiva',
+      sla_prazo: b.sla_prazo||'24h',
+      sla_deadline: null,
+      origem: 'portal',
+      created_at: now()
+    });
+    res.json({ok:true, num});
+  } catch(e) { res.status(500).json({error:e.message}); }
+});
+
+// Equipamentos do cliente
+app.get('/api/portal/equipamentos', requirePortal, async (req,res) => {
+  try {
+    const cid = req.session.portal_cliente.id;
+    const eqs = await col('equipamentos').find({cliente_id: cid}).toArray();
+    res.json(eqs.map(e=>({id:e._id.toString(), nome:e.nome, marca:e.marca||'', modelo:e.modelo||'', nserie:e.nserie||'', status:e.status||'Ativo'})));
+  } catch(e) { res.status(500).json({error:e.message}); }
+});
+
+// PDF de uma OS específica (somente do cliente logado)
+app.get('/api/portal/ordens/:id/pdf', requirePortal, async (req,res) => {
+  try {
+    const cid = req.session.portal_cliente.id;
+    const ordem = await col('ordens').findOne({_id: new ObjectId(req.params.id), cliente_id: cid});
+    if (!ordem) return res.status(404).json({error:'OS não encontrada.'});
+    const cliente = await col('clientes').findOne({_id: new ObjectId(cid)});
+    const tecnico = ordem.tecnico_id ? await col('tecnicos').findOne({_id: new ObjectId(ordem.tecnico_id)}) : null;
+    const cfg = await col('configuracoes').findOne({}) || {};
+    // Retorna dados para o frontend gerar o PDF (via print)
+    res.json({
+      ordem: {...ordem, id:ordem._id.toString()},
+      cliente: {...cliente, id:cliente._id.toString()},
+      tecnico: tecnico ? {...tecnico, id:tecnico._id.toString()} : null,
+      empresa: { nome: cfg.nome||'Theikós Soluções', cnpj: cfg.cnpj||'', tel: cfg.tel||'', email: cfg.email_empresa||'' }
+    });
+  } catch(e) { res.status(500).json({error:e.message}); }
+});
+
+// ─── ADMIN: Gerenciar acesso portal dos clientes ────────────────────────────
+// Criar/atualizar credenciais do portal para um cliente
+app.post('/api/clientes/:id/portal-acesso', requireAuth, requireAdmin, async (req,res) => {
+  try {
+    const { login, senha, ativo } = req.body;
+    if (!login || !senha) return res.status(400).json({error:'Login e senha são obrigatórios.'});
+    // Verifica se login já existe em outro cliente
+    const existe = await col('clientes').findOne({portal_login: login, _id:{$ne: new ObjectId(req.params.id)}});
+    if (existe) return res.status(400).json({error:'Este login já está em uso por outro cliente.'});
+    const hash = await bcrypt.hash(senha, 10);
+    await col('clientes').updateOne({_id: new ObjectId(req.params.id)},{$set:{
+      portal_login: login,
+      portal_senha_hash: hash,
+      portal_ativo: ativo !== false,
+      portal_criado_em: now()
+    }});
+    res.json({ok:true});
+  } catch(e) { res.status(500).json({error:e.message}); }
+});
+
+// Enviar link/credenciais por email
+app.post('/api/clientes/:id/portal-enviar-email', requireAuth, requireAdmin, async (req,res) => {
+  try {
+    const cliente = await col('clientes').findOne({_id: new ObjectId(req.params.id)});
+    if (!cliente) return res.status(404).json({error:'Cliente não encontrado.'});
+    if (!cliente.email) return res.status(400).json({error:'Cliente não tem email cadastrado.'});
+    if (!cliente.portal_login) return res.status(400).json({error:'Cliente não tem acesso ao portal configurado.'});
+    const cfg = await col('configuracoes').findOne({}) || {};
+    const empresa = cfg.nome || 'Theikós Soluções';
+    const url = req.body.url || `${req.protocol}://${req.get('host')}/portal`;
+    await enviarEmailPortal(cliente.email, cliente.nome, cliente.portal_login, req.body.senha_temp||'', url, empresa);
+    res.json({ok:true, msg:`Email enviado para ${cliente.email}`});
+  } catch(e) { res.status(500).json({error:e.message}); }
+});
+
+async function enviarEmailPortal(dest, nome, login, senha, url, empresa) {
+  const nodemailer = require('nodemailer');
+  const smtpUser = process.env.SMTP_USER || 'clairtonalves@yahoo.com.br';
+  const smtpPass = process.env.SMTP_PASS;
+  if (!smtpPass) throw new Error('SMTP_PASS não configurado.');
+  const transporter = nodemailer.createTransport({
+    host:'smtp.mail.yahoo.com', port:587, secure:false,
+    auth:{ user:smtpUser, pass:smtpPass },
+    tls:{ rejectUnauthorized:false }
+  });
+  await transporter.sendMail({
+    from:`"${empresa}" <${smtpUser}>`,
+    to: dest,
+    subject:`🔑 Seu acesso ao Portal do Cliente — ${empresa}`,
+    html:`
+      <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;padding:24px;border:1px solid #ddd;border-radius:10px">
+        <div style="text-align:center;margin-bottom:24px">
+          <div style="background:#0d1f3c;display:inline-block;padding:10px 24px;border-radius:8px">
+            <span style="color:#e07818;font-size:20px;font-weight:800;letter-spacing:2px">${empresa.toUpperCase()}</span>
+          </div>
+        </div>
+        <p style="color:#333;font-size:15px">Olá, <b>${nome}</b>!</p>
+        <p style="color:#555;font-size:14px">Seu acesso ao <b>Portal do Cliente</b> foi criado. Use as credenciais abaixo para acompanhar seus chamados:</p>
+        <div style="background:#f4f6fb;border:1.5px solid #d0d8ee;border-radius:10px;padding:20px;margin:20px 0">
+          <table style="width:100%;font-size:14px;color:#333">
+            <tr><td style="padding:6px 0;color:#666">🔗 Link de acesso:</td><td><a href="${url}" style="color:#1e4080;font-weight:700">${url}</a></td></tr>
+            <tr><td style="padding:6px 0;color:#666">👤 Usuário:</td><td><b style="font-family:monospace;font-size:15px">${login}</b></td></tr>
+            ${senha?`<tr><td style="padding:6px 0;color:#666">🔐 Senha:</td><td><b style="font-family:monospace;font-size:15px">${senha}</b></td></tr>`:''}
+          </table>
+        </div>
+        <p style="color:#888;font-size:12px">Recomendamos que você altere sua senha após o primeiro acesso.</p>
+        <hr style="border:none;border-top:1px solid #eee;margin:20px 0">
+        <p style="color:#aaa;font-size:11px;text-align:center">${empresa} — Portal do Cliente</p>
+      </div>`
+  });
+}
+
+// Listar clientes com info de acesso ao portal (para tela de admin)
+app.get('/api/portal/clientes-acesso', requireAuth, requireAdmin, async (req,res) => {
+  try {
+    const clientes = await col('clientes').find().sort({nome:1}).toArray();
+    res.json(clientes.map(c=>({
+      id: c._id.toString(), nome: c.nome, email: c.email||'',
+      portal_login: c.portal_login||'',
+      portal_ativo: c.portal_ativo||false,
+      portal_criado_em: c.portal_criado_em||'',
+      portal_ultimo_acesso: c.portal_ultimo_acesso||''
+    })));
+  } catch(e) { res.status(500).json({error:e.message}); }
+});
+
+// ─── ROTAS FINAIS ────────────────────────────────────────────────────────────
 app.get('*',(req,res)=>res.sendFile(path.join(__dirname,'public','index.html')));
 
 connectDB().then(()=>app.listen(PORT,()=>console.log(`Theikós AT v4 MongoDB porta ${PORT}`))).catch(e=>{console.error('Erro DB:',e);process.exit(1);});

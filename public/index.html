@@ -1772,6 +1772,7 @@ tr:hover td{background:var(--sf2)}
       <button class="log-tab active" id="utab-lista" onclick="switchUsrTab('lista')">👥 Usuários</button>
       <button class="log-tab" id="utab-perfis" onclick="switchUsrTab('perfis')">🔐 Perfis de Acesso</button>
       <button class="log-tab" id="utab-recovery" onclick="switchUsrTab('recovery')">🔑 Recuperação de Senha</button>
+      <button class="log-tab" id="utab-portal" onclick="switchUsrTab('portal')">🌐 Portal do Cliente</button>
     </div>
 
     <!-- Aba lista -->
@@ -1824,10 +1825,61 @@ tr:hover td{background:var(--sf2)}
         </div>
       </div>
     </div>
+    <!-- Aba portal do cliente -->
+    <div id="usr-tab-portal" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--nv)">🌐 Acesso ao Portal do Cliente</div>
+          <div style="font-size:11px;color:var(--tx3);margin-top:2px">Gerencie login e senha dos clientes no portal externo <b>/portal</b></div>
+        </div>
+        <a href="/portal" target="_blank" class="btn btn-ghost btn-sm">↗ Abrir Portal</a>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 340px;gap:16px;align-items:start">
+        <!-- Tabela de clientes -->
+        <div class="card" style="padding:0">
+          <div class="twrap"><table>
+            <thead><tr><th>Cliente</th><th>E-mail</th><th>Login Portal</th><th>Status</th><th>Último Acesso</th><th>Ações</th></tr></thead>
+            <tbody id="tb-portal-clientes"></tbody>
+          </table></div>
+        </div>
+        <!-- Painel de configuração -->
+        <div class="card" style="padding:18px" id="portal-cfg-painel">
+          <div style="font-size:13px;font-weight:700;color:var(--nv);margin-bottom:14px" id="portal-cfg-title">Configurar Acesso</div>
+          <div style="font-size:11px;color:var(--tx3);padding:20px;text-align:center;border:1.5px dashed var(--bd2);border-radius:8px" id="portal-cfg-placeholder">Selecione um cliente na tabela para configurar o acesso ao portal</div>
+          <div id="portal-cfg-form" style="display:none">
+            <div class="fg" style="margin-bottom:10px">
+              <label>Cliente</label>
+              <input type="text" id="pcfg-cli-nome" readonly style="background:var(--sf2)">
+              <input type="hidden" id="pcfg-cli-id">
+            </div>
+            <div class="fg" style="margin-bottom:10px">
+              <label>Login</label>
+              <input type="text" id="pcfg-login" placeholder="Ex: empresa.xyz">
+            </div>
+            <div class="fg" style="margin-bottom:10px;position:relative">
+              <label>Senha</label>
+              <input type="text" id="pcfg-senha" placeholder="Mínimo 6 caracteres">
+              <button onclick="gerarSenhaPortal()" style="position:absolute;right:6px;top:22px;background:var(--sf2);border:1px solid var(--bd);border-radius:5px;padding:2px 8px;font-size:10px;cursor:pointer;font-family:inherit">Gerar</button>
+            </div>
+            <div class="fg" style="margin-bottom:14px">
+              <label>Status</label>
+              <select id="pcfg-ativo">
+                <option value="1">✅ Ativo — cliente pode acessar o portal</option>
+                <option value="0">🔒 Inativo — acesso bloqueado</option>
+              </select>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <button class="btn btn-primary" style="width:100%" onclick="salvarAcessoPortal()">💾 Salvar Credenciais</button>
+              <button class="btn btn-ghost" style="width:100%" onclick="enviarEmailPortalAdmin()" id="pcfg-email-btn">📧 Enviar por E-mail</button>
+            </div>
+            <div id="pcfg-msg" style="font-size:11px;margin-top:10px;padding:8px 11px;border-radius:7px;display:none"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
-
-<!-- CONFIGURAÇÕES -->
 <div id="page-configuracoes" class="page">
   <div class="topbar">
     <div><div class="tb-title" id="cfg-topbar-title">Configurações</div><div class="tb-sub" id="cfg-topbar-sub">Dados da Empresa</div></div>
@@ -4913,13 +4965,107 @@ function setRoleFromPerfil(){
 }
 
 function switchUsrTab(tab){
-  ['lista','perfis','recovery'].forEach(t=>{
+  ['lista','perfis','recovery','portal'].forEach(t=>{
     document.getElementById(`usr-tab-${t}`).style.display=t===tab?'':'none';
     document.getElementById(`utab-${t}`).classList.toggle('active',t===tab);
   });
   if(tab==='perfis')renderPerfisPainel();
   if(tab==='recovery')preencherRecoverySelect();
+  if(tab==='portal')loadPortalClientes();
 }
+
+// ─── PORTAL ADMIN ────────────────────────────────────────────────────────────
+let _portalClientes = [];
+
+async function loadPortalClientes() {
+  try {
+    const data = await api('GET','/api/portal/clientes-acesso');
+    _portalClientes = data;
+    renderPortalClientesTabela();
+  } catch(e) { console.error(e); }
+}
+
+function renderPortalClientesTabela() {
+  const tbody = document.getElementById('tb-portal-clientes');
+  if (!tbody) return;
+  tbody.innerHTML = _portalClientes.map(c => `<tr>
+    <td style="font-weight:600;color:var(--nv)">${c.nome}</td>
+    <td style="font-size:11px">${c.email||'<span style="color:var(--tx3)">Sem e-mail</span>'}</td>
+    <td style="font-family:monospace;font-size:11px">${c.portal_login||'<span style="color:var(--tx3)">—</span>'}</td>
+    <td>${c.portal_login ? (c.portal_ativo
+      ? '<span style="font-size:10px;font-weight:700;color:var(--gn);background:var(--gnbg);padding:2px 8px;border-radius:10px">✅ Ativo</span>'
+      : '<span style="font-size:10px;font-weight:700;color:var(--rd);background:var(--rdbg);padding:2px 8px;border-radius:10px">🔒 Inativo</span>')
+      : '<span style="font-size:10px;color:var(--tx3)">Sem acesso</span>'}</td>
+    <td style="font-size:11px">${c.portal_ultimo_acesso ? fmtDT(c.portal_ultimo_acesso) : '—'}</td>
+    <td><button class="btn btn-ghost btn-xs" onclick="abrirPortalCfg('${c.id}')">⚙ Configurar</button></td>
+  </tr>`).join('');
+}
+
+function abrirPortalCfg(id) {
+  const c = _portalClientes.find(x=>x.id===id);
+  if (!c) return;
+  document.getElementById('portal-cfg-placeholder').style.display = 'none';
+  document.getElementById('portal-cfg-form').style.display = '';
+  document.getElementById('portal-cfg-title').textContent = `Configurar: ${c.nome}`;
+  document.getElementById('pcfg-cli-id').value = c.id;
+  document.getElementById('pcfg-cli-nome').value = c.nome;
+  document.getElementById('pcfg-login').value = c.portal_login || '';
+  document.getElementById('pcfg-senha').value = '';
+  document.getElementById('pcfg-ativo').value = c.portal_ativo ? '1' : '0';
+  document.getElementById('pcfg-msg').style.display = 'none';
+  document.getElementById('pcfg-email-btn').style.display = c.email ? '' : 'none';
+}
+
+function gerarSenhaPortal() {
+  const chars = 'abcdefghjkmnpqrstuvwxyz23456789@#!';
+  let s = '';
+  for (let i=0;i<10;i++) s += chars[Math.floor(Math.random()*chars.length)];
+  document.getElementById('pcfg-senha').value = s;
+}
+
+async function salvarAcessoPortal() {
+  const id = document.getElementById('pcfg-cli-id').value;
+  const login = document.getElementById('pcfg-login').value.trim();
+  const senha = document.getElementById('pcfg-senha').value.trim();
+  const ativo = document.getElementById('pcfg-ativo').value === '1';
+  const msg = document.getElementById('pcfg-msg');
+  if (!login || !senha) { showPortalMsg('Informe login e senha.',false); return; }
+  if (senha.length < 6) { showPortalMsg('Senha deve ter ao menos 6 caracteres.',false); return; }
+  try {
+    await api('POST',`/api/clientes/${id}/portal-acesso`,{login,senha,ativo});
+    showPortalMsg('✅ Credenciais salvas com sucesso!',true);
+    await loadPortalClientes();
+    // Atualiza o cliente selecionado
+    const c = _portalClientes.find(x=>x.id===id);
+    if (c) abrirPortalCfg(id);
+  } catch(e) { showPortalMsg(e.message,false); }
+}
+
+async function enviarEmailPortalAdmin() {
+  const id = document.getElementById('pcfg-cli-id').value;
+  const senha = document.getElementById('pcfg-senha').value.trim();
+  const url = window.location.origin + '/portal';
+  try {
+    const r = await api('POST',`/api/clientes/${id}/portal-enviar-email`,{senha_temp:senha, url});
+    showPortalMsg(`✅ ${r.msg}`,true);
+  } catch(e) { showPortalMsg(e.message,false); }
+}
+
+function showPortalMsg(txt, ok) {
+  const el = document.getElementById('pcfg-msg');
+  el.textContent = txt;
+  el.style.display = '';
+  el.style.background = ok ? 'var(--gnbg)' : 'var(--rdbg)';
+  el.style.color = ok ? 'var(--gn)' : 'var(--rd)';
+  el.style.border = `1px solid ${ok?'var(--gnbd)':'var(--rdbd)'}`;
+}
+
+function fmtDT(d) {
+  if (!d) return '—';
+  try { return new Date(d).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'}); }
+  catch(e) { return d; }
+}
+
 
 function renderPerfisPainel(){
   const el=document.getElementById('perfis-grid');if(!el)return;
@@ -7164,6 +7310,8 @@ async function buscarChatIds() {
         <div class="help-nav-item" onclick="showHelp('estoque')">📦 Estoque</div>
         <div class="help-nav-item" onclick="showHelp('clientes')">👥 Clientes</div>
         <div class="help-nav-item" onclick="showHelp('usuarios')">🔐 Usuários</div>
+        <div class="help-nav-item" onclick="showHelp('agenda')">📅 Agenda</div>
+        <div class="help-nav-item" onclick="showHelp('portal')">🌐 Portal do Cliente</div>
       </div>
     </div>
     <!-- Conteúdo -->
@@ -7321,6 +7469,49 @@ async function buscarChatIds() {
         <h4>Recuperação de senha</h4>
         <p>Na tela de login, clique em "Esqueceu a senha?". Informe o login, escolha receber o código por email ou WhatsApp, e siga as 3 etapas para redefinir.</p>
         <div class="help-tip">💡 Para o WhatsApp funcionar, o número deve estar cadastrado no perfil do usuário e a integração Callmebot deve estar ativa.</div>
+      </div>
+
+      <div class="help-topic" id="help-agenda">
+        <h3>Agenda / Calendário</h3>
+        <p>Visualize e gerencie visitas, preventivas e OS em um calendário interativo por técnico.</p>
+        <h4>Visão Mês</h4>
+        <ul>
+          <li>Navegue entre os meses com os botões <b>‹ Anterior</b> e <b>Próximo ›</b>, ou clique em <b>Hoje</b> para voltar ao mês atual.</li>
+          <li>Clique em qualquer dia para ver os eventos no painel lateral à direita.</li>
+          <li>OS abertas e em andamento aparecem automaticamente no dia do prazo SLA — sem precisar criar evento separado.</li>
+          <li>Cada tipo de evento tem uma cor: <b>azul</b> = OS, <b>verde</b> = Visita, <b>amarelo</b> = Preventiva, <b>roxo</b> = Reunião, <b>cinza</b> = Outros, <b>vermelho</b> = Cancelado.</li>
+        </ul>
+        <h4>Visão Lista</h4>
+        <p>Exibe todos os eventos do mês em tabela, com colunas de data, hora, tipo, técnico, cliente e status. Filtre por técnico ou tipo no topo.</p>
+        <h4>Criar / Editar evento</h4>
+        <ul>
+          <li>Clique em <b>+ Novo Evento</b> na topbar ou em <b>+ Novo</b> no painel lateral.</li>
+          <li>Preencha título, tipo, data/hora, técnico, cliente e, se desejar, vincule a uma OS aberta.</li>
+          <li>Para editar, clique sobre qualquer evento no calendário ou na lista.</li>
+        </ul>
+        <div class="help-tip">💡 Use o filtro de técnico para ver apenas a agenda de um profissional específico.</div>
+      </div>
+
+      <div class="help-topic" id="help-portal">
+        <h3>Portal do Cliente</h3>
+        <p>Página externa acessível em <b>/portal</b> que permite ao cliente acompanhar chamados, abrir novos e baixar relatórios em PDF — sem acesso ao sistema interno.</p>
+        <h4>Como liberar acesso para um cliente</h4>
+        <ul>
+          <li>Acesse <b>Usuários → aba 🌐 Portal do Cliente</b>.</li>
+          <li>Localize o cliente na tabela e clique em <b>⚙ Configurar</b>.</li>
+          <li>Defina um <b>login</b> e uma <b>senha</b> (use o botão "Gerar" para criar senha automática).</li>
+          <li>Clique em <b>💾 Salvar Credenciais</b>.</li>
+          <li>Se o cliente tiver email cadastrado, clique em <b>📧 Enviar por E-mail</b> para mandar as credenciais com o link do portal formatado.</li>
+        </ul>
+        <h4>O que o cliente pode fazer no portal</h4>
+        <ul>
+          <li><b>Meus Chamados</b> — visualiza todas as suas OS com status, técnico responsável, prazo SLA e data de abertura. Filtro por status disponível.</li>
+          <li><b>Abrir Chamado</b> — preenche formulário com tipo, prioridade, equipamento, defeito e contato. A OS chega no sistema marcada com <i>origem: portal</i>.</li>
+          <li><b>Ver Detalhes / PDF</b> — abre modal completo com defeito, procedimento, peças utilizadas, observações e campos de assinatura. Botão <b>🖨 Imprimir / PDF</b> permite salvar como PDF pelo navegador.</li>
+        </ul>
+        <h4>Bloquear acesso</h4>
+        <p>No painel de configuração, altere o campo <b>Status</b> para <i>Inativo</i> e salve. O cliente verá mensagem de acesso bloqueado ao tentar entrar.</p>
+        <div class="help-tip">💡 O login do portal é independente do sistema interno. Um usuário do sistema não acessa o portal e vice-versa.</div>
       </div>
 
     </div>
