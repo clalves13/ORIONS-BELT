@@ -14,7 +14,7 @@ let db;
 async function connectDB() {
   const client = new MongoClient(MONGO_URI);
   await client.connect();
-  db = client.db('theikos_at');
+  db = client.db('orion_at');
   console.log('MongoDB conectado!');
   // Seed admin
   const adminPass = process.env.ADMIN_PASSWORD || 'admin123';
@@ -40,10 +40,10 @@ app.use(express.json({ limit:'50mb' }));
 app.use(express.urlencoded({ extended:true }));
 app.set('trust proxy', 1);
 app.use(session({
-  secret: process.env.SESSION_SECRET||'theikos2026',
+  secret: process.env.SESSION_SECRET||'orion2026',
   resave: false,
   saveUninitialized: false,
-  store: MongoStore.create({ mongoUrl: MONGO_URI, dbName:'theikos_at', collectionName:'sessions', ttl: 24*60*60 }),
+  store: MongoStore.create({ mongoUrl: MONGO_URI, dbName:'orion_at', collectionName:'sessions', ttl: 24*60*60 }),
   cookie: { maxAge: 24*60*60*1000, secure: false, sameSite: 'lax' }
 }));
 app.use(express.static(path.join(__dirname,'public')));
@@ -594,7 +594,7 @@ async function enviarEmail(destinatario, nome, codigo) {
       <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:24px;border:1px solid #ddd;border-radius:10px">
         <div style="text-align:center;margin-bottom:20px">
           <div style="background:#0d1f3c;display:inline-block;padding:10px 20px;border-radius:8px">
-            <span style="color:#e07818;font-size:20px;font-weight:800;letter-spacing:2px">THEIKÓS AT</span>
+            <span style="color:#e07818;font-size:20px;font-weight:800;letter-spacing:2px">ORION PRINT</span>
           </div>
         </div>
         <p style="color:#333;font-size:15px">Olá, <b>${nome}</b>!</p>
