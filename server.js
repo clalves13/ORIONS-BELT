@@ -1112,7 +1112,7 @@ app.post('/api/clientes/:id/monitor-key', requireAuth, requireAdmin, async (req,
   } catch(e) { res.status(500).json({ error:e.message }); }
 });
 
-app.get('/api/monitor/impressoras', requireAuth, async (req,res) => {
+app.get('/api/monitor/impressoras', async (req,res) => {
   try {
     const { cliente_id } = req.query;
     const filtro = cliente_id ? { cliente_id } : {};
@@ -1121,7 +1121,7 @@ app.get('/api/monitor/impressoras', requireAuth, async (req,res) => {
   } catch(e) { res.status(500).json({ error:e.message }); }
 });
 
-app.get('/api/monitor/historico', requireAuth, async (req,res) => {
+app.get('/api/monitor/historico', async (req,res) => {
   try {
     const { cliente_id, ip, limit=30 } = req.query;
     const filtro = { cliente_id };
@@ -1131,7 +1131,7 @@ app.get('/api/monitor/historico', requireAuth, async (req,res) => {
   } catch(e) { res.status(500).json({ error:e.message }); }
 });
 
-app.get('/api/monitor/dashboard', requireAuth, async (req,res) => {
+app.get('/api/monitor/dashboard', async (req,res) => {
   try {
     const total     = await col('monitor_impressoras').countDocuments();
     const online    = await col('monitor_impressoras').countDocuments({ online:true });
@@ -1140,6 +1140,44 @@ app.get('/api/monitor/dashboard', requireAuth, async (req,res) => {
     const comErro   = await col('monitor_impressoras').countDocuments({ erros:{ $exists:true, $not:{ $size:0 } } });
     const clientes  = await col('monitor_impressoras').distinct('cliente_id');
     res.json({ total, online, offline, toner_critico:tonerCrit, com_erro:comErro, clientes_monitorados:clientes.length });
+  } catch(e) { res.status(500).json({ error:e.message }); }
+});
+
+
+// ─── SIMULADOR DE IMPRESSORAS ────────────────────────────────────────────────
+app.post('/api/monitor/simular', async (req,res) => {
+  try {
+    const simuladas = [
+      { ip:'192.168.1.10', fabricante:'HP',      descricao:'HP LaserJet Pro M404dn',          nome_rede:'HP-LASER-01',  serial:'VNB3Q12345', status:'idle',     online:true,  paginas_total:42850, paginas_pb:42100, paginas_color:750,   toner:{ preto:72, ciano:null, magenta:null, amarelo:null }, drum_pct:65, papel_nivel:80, erros:[] },
+      { ip:'192.168.1.11', fabricante:'KYOCERA',  descricao:'Kyocera ECOSYS M2135dn',          nome_rede:'KYOCERA-02',   serial:'VCB9234567', status:'idle',     online:true,  paginas_total:98340, paginas_pb:97800, paginas_color:540,   toner:{ preto:8,  ciano:null, magenta:null, amarelo:null }, drum_pct:22, papel_nivel:40, erros:['toner-baixo'] },
+      { ip:'192.168.1.12', fabricante:'MINOLTA',  descricao:'Konica Minolta bizhub C258',      nome_rede:'BIZHUB-03',    serial:'A6WM012345', status:'printing', online:true,  paginas_total:187650,paginas_pb:120000,paginas_color:67650, toner:{ preto:45, ciano:31,   magenta:28,  amarelo:55 },  drum_pct:58, papel_nivel:60, erros:[] },
+      { ip:'192.168.1.13', fabricante:'RICOH',    descricao:'Ricoh MP 2014AD',                 nome_rede:'RICOH-04',     serial:'E194AB1234', status:'idle',     online:true,  paginas_total:23400, paginas_pb:23400, paginas_color:0,     toner:{ preto:91, ciano:null, magenta:null, amarelo:null }, drum_pct:88, papel_nivel:90, erros:[] },
+      { ip:'192.168.1.14', fabricante:'XEROX',    descricao:'Xerox WorkCentre 3335',           nome_rede:'XEROX-05',     serial:'XRX3335001', status:'idle',     online:false, paginas_total:61200, paginas_pb:61200, paginas_color:0,     toner:{ preto:5,  ciano:null, magenta:null, amarelo:null }, drum_pct:12, papel_nivel:0,  erros:['offline','sem-papel','toner-baixo'] },
+      { ip:'192.168.1.15', fabricante:'CANON',    descricao:'Canon imageRUNNER ADVANCE C3520', nome_rede:'CANON-06',     serial:'JPT0012345', status:'idle',     online:true,  paginas_total:54320, paginas_pb:38000, paginas_color:16320, toner:{ preto:62, ciano:47,   magenta:53,  amarelo:41 },  drum_pct:71, papel_nivel:55, erros:[] },
+      { ip:'192.168.1.16', fabricante:'HP',       descricao:'HP Color LaserJet Pro M479fdw',   nome_rede:'HP-COLOR-07',  serial:'VNB9X54321', status:'idle',     online:true,  paginas_total:18750, paginas_pb:12000, paginas_color:6750,  toner:{ preto:33, ciano:19,   magenta:22,  amarelo:67 },  drum_pct:44, papel_nivel:70, erros:['toner-baixo'] },
+      { ip:'192.168.1.17', fabricante:'KYOCERA',  descricao:'Kyocera TASKalfa 2553ci',         nome_rede:'KYOCERA-08',   serial:'VCA1234567', status:'warmup',   online:true,  paginas_total:231800,paginas_pb:198000,paginas_color:33800, toner:{ preto:58, ciano:44,   magenta:39,  amarelo:61 },  drum_pct:35, papel_nivel:85, erros:[] },
+    ];
+    const clientesFic = ['Empresa Alpha Ltda','Comércio Beta SA','Escritório Gamma','Indústria Delta'];
+    for (let i=0; i < simuladas.length; i++) {
+      const imp = simuladas[i];
+      const cliNome = clientesFic[i % clientesFic.length];
+      const cliId = `sim-${i % clientesFic.length}`;
+      const filtro = { ip: imp.ip, cliente_id: cliId };
+      await col('monitor_impressoras').updateOne(filtro, { $set:{ ...imp, cliente_id:cliId, cliente_nome:cliNome, ultimo_contato:now() }}, { upsert:true });
+      for (let h=0; h<8; h++) {
+        const ts = new Date(Date.now() - h*15*60*1000).toISOString();
+        await col('monitor_telemetria').insertOne({ cliente_id:cliId, cliente_nome:cliNome, timestamp:ts, created_at:ts, impressoras:[{ ...imp, paginas_total: imp.paginas_total - h*15 }] });
+      }
+    }
+    res.json({ ok:true, msg:`${simuladas.length} impressoras simuladas inseridas!` });
+  } catch(e) { res.status(500).json({ error:e.message }); }
+});
+
+app.delete('/api/monitor/simular', async (req,res) => {
+  try {
+    await col('monitor_impressoras').deleteMany({ cliente_id:{ $regex:'^sim-' } });
+    await col('monitor_telemetria').deleteMany({ cliente_id:{ $regex:'^sim-' } });
+    res.json({ ok:true, msg:'Dados simulados removidos.' });
   } catch(e) { res.status(500).json({ error:e.message }); }
 });
 
