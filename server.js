@@ -587,9 +587,9 @@ async function enviarEmail(destinatario, nome, codigo) {
     tls: { rejectUnauthorized: false }
   });
   await transporter.sendMail({
-    from: `"Orion AT" <${smtpUser}>`,
+    from: `"Orion Print" <${smtpUser}>`,
     to: destinatario,
-    subject: '🔐 Código de Recuperação — Orion AT',
+    subject: '🔐 Código de Recuperação — Orion Print',
     html: `
       <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:24px;border:1px solid #ddd;border-radius:10px">
         <div style="text-align:center;margin-bottom:20px">
@@ -619,7 +619,7 @@ async function enviarTelegram(chatId, nome, codigo) {
   if (!token) throw new Error('TELEGRAM_BOT_TOKEN não configurado. Crie um bot via @BotFather no Telegram e adicione o token nas variáveis de ambiente do Railway.');
   if (!chatId) throw new Error('Chat ID do Telegram não cadastrado para este usuário.');
   const text = encodeURIComponent(
-    `🔐 Orion AT — Recuperação de Senha\n\nOlá, ${nome}!\n\nSeu código de verificação é:\n\n${codigo}\n\n⏱ Expira em 15 minutos.\n\nSe não foi você, ignore esta mensagem.`
+    `🔐 Orion Print — Recuperação de Senha\n\nOlá, ${nome}!\n\nSeu código de verificação é:\n\n${codigo}\n\n⏱ Expira em 15 minutos.\n\nSe não foi você, ignore esta mensagem.`
   );
   const url = `https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${text}`;
   return new Promise((resolve, reject) => {
@@ -1187,4 +1187,4 @@ app.get('/monitor/*', (req,res) => res.sendFile(path.join(__dirname,'public','mo
 // ─── ROTAS FINAIS ────────────────────────────────────────────────────────────
 app.get('*',(req,res)=>res.sendFile(path.join(__dirname,'public','index.html')));
 
-connectDB().then(()=>app.listen(PORT,()=>console.log(`Orion AT v4 MongoDB porta ${PORT}`))).catch(e=>{console.error('Erro DB:',e);process.exit(1);});
+connectDB().then(()=>app.listen(PORT,()=>console.log(`Orion Print v4 MongoDB porta ${PORT}`))).catch(e=>{console.error('Erro DB:',e);process.exit(1);});
