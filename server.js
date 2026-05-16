@@ -458,7 +458,7 @@ app.get('/api/backup', requireAuth, requireAdmin, async (req,res) => {
       col('contratos').find().toArray(),col('financeiro').find().toArray()
     ]);
     const backup={version:'5.1',gerado_em:now(),usuarios:users.map(u=>({...u,senha_hash:undefined})),tecnicos,clientes,equipamentos,ordens,laboratorio,historico,estoque,estoque_movs:estMovs,estoque_supr:suprCli,estoque_movs_supr:suprMovs,lancamentos_manuais:lancamentos,contratos,financeiro};
-    res.setHeader('Content-Disposition',`attachment; filename="theikos_backup_${new Date().toISOString().slice(0,10)}.json"`);
+    res.setHeader('Content-Disposition',`attachment; filename="orion_backup_${new Date().toISOString().slice(0,10)}.json"`);
     res.json(backup);
   }catch(e){res.status(500).json({error:e.message});}
 });
@@ -587,9 +587,9 @@ async function enviarEmail(destinatario, nome, codigo) {
     tls: { rejectUnauthorized: false }
   });
   await transporter.sendMail({
-    from: `"Theikós AT" <${smtpUser}>`,
+    from: `"Orion AT" <${smtpUser}>`,
     to: destinatario,
-    subject: '🔐 Código de Recuperação — Theikós AT',
+    subject: '🔐 Código de Recuperação — Orion AT',
     html: `
       <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:24px;border:1px solid #ddd;border-radius:10px">
         <div style="text-align:center;margin-bottom:20px">
@@ -605,7 +605,7 @@ async function enviarEmail(destinatario, nome, codigo) {
         <p style="color:#888;font-size:12px">⏱ Este código expira em <b>15 minutos</b>.</p>
         <p style="color:#888;font-size:12px">Se você não solicitou isso, ignore este email.</p>
         <hr style="border:none;border-top:1px solid #eee;margin:20px 0">
-        <p style="color:#aaa;font-size:11px;text-align:center">Theikós Soluções — Sistema de Assistência Técnica</p>
+        <p style="color:#aaa;font-size:11px;text-align:center">Orion Soluções — Sistema de Assistência Técnica</p>
       </div>
     `
   });
@@ -619,7 +619,7 @@ async function enviarTelegram(chatId, nome, codigo) {
   if (!token) throw new Error('TELEGRAM_BOT_TOKEN não configurado. Crie um bot via @BotFather no Telegram e adicione o token nas variáveis de ambiente do Railway.');
   if (!chatId) throw new Error('Chat ID do Telegram não cadastrado para este usuário.');
   const text = encodeURIComponent(
-    `🔐 Theikós AT — Recuperação de Senha\n\nOlá, ${nome}!\n\nSeu código de verificação é:\n\n${codigo}\n\n⏱ Expira em 15 minutos.\n\nSe não foi você, ignore esta mensagem.`
+    `🔐 Orion AT — Recuperação de Senha\n\nOlá, ${nome}!\n\nSeu código de verificação é:\n\n${codigo}\n\n⏱ Expira em 15 minutos.\n\nSe não foi você, ignore esta mensagem.`
   );
   const url = `https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${text}`;
   return new Promise((resolve, reject) => {
@@ -982,7 +982,7 @@ app.get('/api/portal/ordens/:id/pdf', requirePortal, async (req,res) => {
       ordem: {...ordem, id:ordem._id.toString()},
       cliente: {...cliente, id:cliente._id.toString()},
       tecnico: tecnico ? {...tecnico, id:tecnico._id.toString()} : null,
-      empresa: { nome: cfg.nome||'Theikós Soluções', cnpj: cfg.cnpj||'', tel: cfg.tel||'', email: cfg.email_empresa||'' }
+      empresa: { nome: cfg.nome||'Orion Soluções', cnpj: cfg.cnpj||'', tel: cfg.tel||'', email: cfg.email_empresa||'' }
     });
   } catch(e) { res.status(500).json({error:e.message}); }
 });
@@ -1015,7 +1015,7 @@ app.post('/api/clientes/:id/portal-enviar-email', requireAuth, requireAdmin, asy
     if (!cliente.email) return res.status(400).json({error:'Cliente não tem email cadastrado.'});
     if (!cliente.portal_login) return res.status(400).json({error:'Cliente não tem acesso ao portal configurado.'});
     const cfg = await col('configuracoes').findOne({}) || {};
-    const empresa = cfg.nome || 'Theikós Soluções';
+    const empresa = cfg.nome || 'Orion Soluções';
     const url = req.body.url || `${req.protocol}://${req.get('host')}/portal`;
     await enviarEmailPortal(cliente.email, cliente.nome, cliente.portal_login, req.body.senha_temp||'', url, empresa);
     res.json({ok:true, msg:`Email enviado para ${cliente.email}`});
@@ -1073,7 +1073,80 @@ app.get('/api/portal/clientes-acesso', requireAuth, requireAdmin, async (req,res
   } catch(e) { res.status(500).json({error:e.message}); }
 });
 
+// ─── MONITORAMENTO DE IMPRESSORAS ───────────────────────────────────────────
+
+app.get('/api/monitor/ping', (req,res) => {
+  const key = req.headers['x-orion-key'] || req.query.key;
+  res.json({ status: 'ok', timestamp: now(), key_recebida: !!key });
+});
+
+app.post('/api/monitor/telemetria', async (req,res) => {
+  try {
+    const { clientKey, clientId, hostname, platform, agente_ver, timestamp, impressoras } = req.body;
+    if (!clientKey) return res.status(401).json({ error: 'Chave ausente.' });
+    const cliente = await col('clientes').findOne({ monitor_key: clientKey });
+    if (!cliente) return res.status(403).json({ error: 'Chave inválida.' });
+    const cid = cliente._id.toString();
+    await col('monitor_telemetria').insertOne({ cliente_id:cid, cliente_nome:cliente.nome, hostname:hostname||'', platform:platform||'', agente_ver:agente_ver||'', timestamp:timestamp||now(), impressoras:impressoras||[], created_at:now() });
+    for (const imp of (impressoras||[])) {
+      const filtro = { cliente_id:cid, ip: imp.ip||imp.nome||'' };
+      await col('monitor_impressoras').updateOne(filtro, { $set:{ ...imp, cliente_id:cid, cliente_nome:cliente.nome, ultimo_contato:now(), online:true }}, { upsert:true });
+      if (imp.toner?.preto !== null && imp.toner?.preto < 10) {
+        await col('notificacoes').insertOne({ tipo:'critico', modulo:'monitor', titulo:`Toner crítico — ${cliente.nome}`, msg:`Impressora ${imp.ip||imp.nome} com toner preto em ${imp.toner.preto}%`, cliente_id:cid, lida:false, created_at:now() });
+      }
+      if (imp.erros?.length > 0) {
+        await col('notificacoes').insertOne({ tipo:'aviso', modulo:'monitor', titulo:`Erro na impressora — ${cliente.nome}`, msg:`${imp.ip||imp.nome}: ${imp.erros.join(', ')}`, cliente_id:cid, lida:false, created_at:now() });
+      }
+    }
+    const limite = new Date(Date.now() - 30*60*1000).toISOString();
+    await col('monitor_impressoras').updateMany({ cliente_id:cid, ultimo_contato:{ $lt:limite } }, { $set:{ online:false } });
+    res.json({ ok:true, recebido:(impressoras||[]).length });
+  } catch(e) { res.status(500).json({ error:e.message }); }
+});
+
+app.post('/api/clientes/:id/monitor-key', requireAuth, requireAdmin, async (req,res) => {
+  try {
+    const key = require('crypto').randomBytes(24).toString('hex');
+    await col('clientes').updateOne({ _id:new ObjectId(req.params.id) }, { $set:{ monitor_key:key, monitor_ativo:true, monitor_key_criada:now() } });
+    res.json({ ok:true, key });
+  } catch(e) { res.status(500).json({ error:e.message }); }
+});
+
+app.get('/api/monitor/impressoras', requireAuth, async (req,res) => {
+  try {
+    const { cliente_id } = req.query;
+    const filtro = cliente_id ? { cliente_id } : {};
+    const imps = await col('monitor_impressoras').find(filtro).sort({ ultimo_contato:-1 }).toArray();
+    res.json(imps.map(i => ({ ...i, id:i._id.toString() })));
+  } catch(e) { res.status(500).json({ error:e.message }); }
+});
+
+app.get('/api/monitor/historico', requireAuth, async (req,res) => {
+  try {
+    const { cliente_id, ip, limit=30 } = req.query;
+    const filtro = { cliente_id };
+    if (ip) filtro['impressoras.ip'] = ip;
+    const hist = await col('monitor_telemetria').find(filtro).sort({ created_at:-1 }).limit(parseInt(limit)).toArray();
+    res.json(hist.map(h => ({ ...h, id:h._id.toString() })));
+  } catch(e) { res.status(500).json({ error:e.message }); }
+});
+
+app.get('/api/monitor/dashboard', requireAuth, async (req,res) => {
+  try {
+    const total     = await col('monitor_impressoras').countDocuments();
+    const online    = await col('monitor_impressoras').countDocuments({ online:true });
+    const offline   = await col('monitor_impressoras').countDocuments({ online:false });
+    const tonerCrit = await col('monitor_impressoras').countDocuments({ 'toner.preto':{ $lt:10, $ne:null } });
+    const comErro   = await col('monitor_impressoras').countDocuments({ erros:{ $exists:true, $not:{ $size:0 } } });
+    const clientes  = await col('monitor_impressoras').distinct('cliente_id');
+    res.json({ total, online, offline, toner_critico:tonerCrit, com_erro:comErro, clientes_monitorados:clientes.length });
+  } catch(e) { res.status(500).json({ error:e.message }); }
+});
+
+app.get('/monitor', (req,res) => res.sendFile(path.join(__dirname,'public','monitor.html')));
+app.get('/monitor/*', (req,res) => res.sendFile(path.join(__dirname,'public','monitor.html')));
+
 // ─── ROTAS FINAIS ────────────────────────────────────────────────────────────
 app.get('*',(req,res)=>res.sendFile(path.join(__dirname,'public','index.html')));
 
-connectDB().then(()=>app.listen(PORT,()=>console.log(`Theikós AT v4 MongoDB porta ${PORT}`))).catch(e=>{console.error('Erro DB:',e);process.exit(1);});
+connectDB().then(()=>app.listen(PORT,()=>console.log(`Orion AT v4 MongoDB porta ${PORT}`))).catch(e=>{console.error('Erro DB:',e);process.exit(1);});
