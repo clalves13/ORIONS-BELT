@@ -18,19 +18,74 @@ const { execSync } = require('child_process');
 
 // ─── CONFIGURAÇÃO ────────────────────────────────────────────────────────────
 const CONFIG_PATH = path.join(__dirname, 'config.json');
+const readline = require('readline');
+
+async function setupConfig() {
+  // Se config.json já existe e tem chave válida, usa direto
+  if (fs.existsSync(CONFIG_PATH)) {
+    const cfg = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8'));
+    if (cfg.clientKey && cfg.clientKey !== 'CHAVE_GERADA_NO_SISTEMA') {
+      return cfg;
+    }
+  }
+
+  // Primeira execução — pede a chave ao técnico
+  console.log('\n╔══════════════════════════════════════════════════╗');
+  console.log('║         ORION PRINT — Agente de Monitoramento      ║');
+  console.log('╚══════════════════════════════════════════════════╝');
+  console.log('\nPrimeira execução detectada. Configure o agente:\n');
+
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  const pergunta = (q) => new Promise(resolve => rl.question(q, resolve));
+
+  const serverUrl = await pergunta('URL do servidor (ex: https://orion-at-production.up.railway.app): ');
+  const clientKey = await pergunta('Chave do cliente (copie do sistema Orion Print → Clientes): ');
+  const intervalMin = await pergunta('Intervalo de coleta em minutos (padrão: 15): ') || '15';
+
+  rl.close();
+
+  const cfg = {
+    serverUrl: serverUrl.trim(),
+    clientKey: clientKey.trim(),
+    clientId: '',
+    intervalMin: parseInt(intervalMin) || 15,
+    subnet: '',
+    snmpTimeout: 3000,
+    snmpRetries: 1
+  };
+
+  // Valida a chave no servidor
+  console.log('\n🔍 Validando chave no servidor...');
+  try {
+    const axios = require('axios');
+    const r = await axios.post(`${cfg.serverUrl}/api/monitor/registrar-agente`, {
+      clientKey: cfg.clientKey,
+      hostname: require('os').hostname(),
+      agente_ver: '1.0.0'
+    }, { timeout: 10000 });
+    if (r.data && r.data.clientId) {
+      cfg.clientId = r.data.clientId;
+      console.log(`✅ Chave válida! Cliente: ${r.data.clientNome}`);
+    }
+  } catch(e) {
+    console.log('⚠️  Não foi possível validar a chave agora. Continuando...');
+  }
+
+  fs.writeFileSync(CONFIG_PATH, JSON.stringify(cfg, null, 2));
+  console.log('✅ Configuração salva em config.json\n');
+  return cfg;
+}
 
 function loadConfig() {
-  if (!fs.existsSync(CONFIG_PATH)) {
-    console.error('[AGENTE] config.json não encontrado. Execute o instalador primeiro.');
-    process.exit(1);
-  }
+  if (!fs.existsSync(CONFIG_PATH)) return null;
   return JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8'));
 }
 
-const CFG = loadConfig();
-const SERVER_URL   = CFG.serverUrl   || 'https://orion-at-production.up.railway.app';
-const CLIENT_KEY   = CFG.clientKey   || '';
-const CLIENT_ID    = CFG.clientId    || '';
+// Inicialização assíncrona
+let CFG_TEMP = loadConfig();
+const SERVER_URL   = CFG_TEMP?.serverUrl   || 'https://orion-at-production.up.railway.app';
+const CLIENT_KEY   = CFG_TEMP?.clientKey   || '';
+const CLIENT_ID    = CFG_TEMP?.clientId    || '';
 const INTERVAL_MIN = CFG.intervalMin || 15; // minutos entre coletas
 const SUBNET       = CFG.subnet      || '';  // ex: '192.168.1.' — auto-detectado se vazio
 const SNMP_TIMEOUT = CFG.snmpTimeout || 3000;

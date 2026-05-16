@@ -4,6 +4,8 @@ const bcrypt = require('bcryptjs');
 const { MongoClient, ObjectId } = require('mongodb');
 const MongoStore = require('connect-mongo');
 const path = require('path');
+const crypto = require('crypto');
+const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -174,7 +176,7 @@ app.delete('/api/tecnicos/:id', requireAuth, async (req,res) => { try{await col(
 
 // CLIENTES
 app.get('/api/clientes', requireAuth, async (req,res) => { const d=await col('clientes').find().toArray(); res.json(d.map(x=>({...x,id:x._id.toString()}))); });
-app.post('/api/clientes', requireAuth, async (req,res) => { const b=req.body; await col('clientes').insertOne({nome:b.nome,end_logradouro:b.end||'',cidade:b.cidade||'',cep:b.cep||'',contato:b.contato||'',tel:b.tel||'',email:b.email||'',obs:b.obs||'',created_at:now()}); res.json({ok:true}); });
+app.post('/api/clientes', requireAuth, async (req,res) => { const b=req.body; const monitor_key = crypto.randomBytes(24).toString('hex'); await col('clientes').insertOne({nome:b.nome,end_logradouro:b.end||'',cidade:b.cidade||'',cep:b.cep||'',contato:b.contato||'',tel:b.tel||'',email:b.email||'',obs:b.obs||'',monitor_key,monitor_ativo:true,monitor_key_criada:now(),created_at:now()}); res.json({ok:true}); });
 app.put('/api/clientes/:id', requireAuth, async (req,res) => { try{const b=req.body; await col('clientes').updateOne({_id:new ObjectId(req.params.id)},{$set:{nome:b.nome,end_logradouro:b.end||'',cidade:b.cidade||'',cep:b.cep||'',contato:b.contato||'',tel:b.tel||'',email:b.email||'',obs:b.obs||''}}); res.json({ok:true});}catch(e){res.status(500).json({error:e.message});} });
 app.delete('/api/clientes/:id', requireAuth, async (req,res) => { try{await col('clientes').deleteOne({_id:new ObjectId(req.params.id)}); await col('equipamentos').deleteMany({cliente_id:req.params.id}); res.json({ok:true});}catch(e){res.status(500).json({error:e.message});} });
 
@@ -1073,7 +1075,30 @@ app.get('/api/portal/clientes-acesso', requireAuth, requireAdmin, async (req,res
   } catch(e) { res.status(500).json({error:e.message}); }
 });
 
+// ─── DOWNLOAD DO AGENTE ─────────────────────────────────────────────────────
+
+app.get('/download/agente', requireAuth, (req, res) => {
+  const exePath = path.join(__dirname, 'orion-agente', 'dist', 'orion-agente-win.exe');
+  if (!fs.existsSync(exePath)) {
+    return res.status(404).json({ error: 'Agente não encontrado. Execute o build primeiro.' });
+  }
+  res.setHeader('Content-Disposition', 'attachment; filename="orion-agente-win.exe"');
+  res.setHeader('Content-Type', 'application/octet-stream');
+  res.sendFile(exePath);
+});
+
 // ─── MONITORAMENTO DE IMPRESSORAS ───────────────────────────────────────────
+
+app.post('/api/monitor/registrar-agente', async (req,res) => {
+  try {
+    const { clientKey, hostname, agente_ver } = req.body;
+    if (!clientKey) return res.status(400).json({ error: 'Chave obrigatória' });
+    const cliente = await col('clientes').findOne({ monitor_key: clientKey });
+    if (!cliente) return res.status(403).json({ error: 'Chave inválida' });
+    await col('clientes').updateOne({ _id: cliente._id }, { $set: { monitor_ativo: true, monitor_hostname: hostname||'', monitor_agente_ver: agente_ver||'', monitor_ultimo_registro: now() } });
+    res.json({ ok: true, clientId: cliente._id.toString(), clientNome: cliente.nome });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
 
 app.get('/api/monitor/ping', (req,res) => {
   const key = req.headers['x-orion-key'] || req.query.key;
