@@ -1,7 +1,7 @@
 # Orion Print — Progresso de Desenvolvimento
 
 **Versão atual:** 7.0
-**Última atualização:** 16/05/2026
+**Última atualização:** 17/05/2026
 **Stack:** Node.js + Express + MongoDB + HTML/CSS/JS (single-page)
 **Deploy:** Railway → `https://orion-em-production.up.railway.app/`
 **Repositório GitHub:** `https://github.com/clalves13/orion-at`
@@ -16,8 +16,8 @@
 theikos_at/
 ├── public/
 │   ├── index.html       (~8570 linhas) ✅ v7.0
-│   ├── portal.html      (~280 linhas)
-│   └── monitor.html     (~320 linhas)
+│   ├── portal.html      (~280 linhas)  ✅ Orion Client
+│   └── monitor.html     (~320 linhas)  ✅ Orion View
 ├── orion-agente/
 │   ├── dist/
 │   │   ├── orion-agente-win.exe  (~38MB)
@@ -84,6 +84,19 @@ Nova aba 🚗 Veículos dentro de Logística:
 
 ---
 
+## 🎨 Ajustes de UI — 17/05/2026
+
+### ✅ monitor.html (Orion View)
+- **Logo:** aumentada para 52×52px com efeito `drop-shadow` laranja/dourado para destacar no fundo escuro do header (`--nv: #0d1f3c`)
+- **Botão "Atualizar":** corrigido — estava invisível (branco sobre branco por herdar `.btn-ghost` com `background:#fff` mas ter `color:#fff`). Agora usa `background: rgba(255,255,255,.12)` com borda sutil para ser visível no header escuro.
+- **Botão "Simulador":** mantido com `background: var(--ac)` (laranja) e `color:#fff`, funcionando corretamente.
+
+### ✅ portal.html (Orion Client)
+- Renomeado de "Portal do Cliente" → **Orion Client**
+- Logo maior (44px) com fundo transparente
+
+---
+
 ## ✅ TODOS OS MÓDULOS CONCLUÍDOS
 
 | Módulo | Status |
@@ -102,8 +115,8 @@ Nova aba 🚗 Veículos dentro de Logística:
 | Financeiro | ✅ Lançamentos, DRE, Fluxo de Caixa |
 | Notificações | ✅ SLA, estoque, contratos, CRLV, seguro |
 | Configurações | ✅ Sidebar + aba Agente de Monitoramento |
-| Portal do Cliente | ✅ /portal — chamados, PDF |
-| Monitor Impressoras | ✅ /monitor — SNMP em tempo real |
+| Portal do Cliente | ✅ /portal — Orion Client — chamados, PDF |
+| Monitor Impressoras | ✅ /monitor — Orion View — SNMP em tempo real |
 | Relatórios | ✅ Página completa — filtros + 8 painéis + PDF |
 
 ---
