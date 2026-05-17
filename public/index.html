@@ -499,6 +499,7 @@ tr:hover td{background:var(--sf2)}
     <div class="ni" data-modulo="contratos" data-tip="Contratos" onclick="nav('contratos',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10,9 9,9 8,9"/></svg><span>Contratos</span><span class="ni-badge" id="b-contratos" style="display:none">0</span></div>
     <div class="ni" data-modulo="financeiro" data-tip="Financeiro" onclick="nav('financeiro',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg><span>Financeiro</span></div>
     <div class="ni" data-modulo="notificacoes" data-tip="Notificações SLA" onclick="nav('notificacoes',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg><span>Notificações</span><span class="ni-badge" id="b-notif" style="background:var(--rd)">0</span></div>
+    <div class="ni" data-modulo="relatorios" data-tip="Relatórios" onclick="nav('relatorios',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg><span>Relatórios</span></div>
     <!-- Monitor de Impressoras — link externo -->
     <a href="/monitor" target="_blank" class="ni" style="text-decoration:none;color:rgba(255,255,255,.75)" data-tip="Monitor de Impressoras" title="Abrir monitor em nova aba">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
@@ -2179,6 +2180,121 @@ Outros</textarea>
   </div>
 </div>
 
+<!-- RELATÓRIOS -->
+<div id="page-relatorios" class="page">
+  <div class="topbar">
+    <div><div class="tb-title">Relatórios</div><div class="tb-sub">Análises e exportações do sistema</div></div>
+    <div class="tb-right">
+      <button class="btn btn-ghost btn-sm" onclick="renderRelatorios()">🔄 Atualizar</button>
+    </div>
+  </div>
+  <div class="content">
+
+    <!-- Filtros globais -->
+    <div class="card" style="padding:12px 16px;margin-bottom:14px">
+      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+        <div style="display:flex;align-items:center;gap:5px">
+          <span style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase">De</span>
+          <input type="date" id="rel-de" onchange="renderRelatorios()" style="font-size:11px;padding:4px 8px;border:1.5px solid var(--bd2);border-radius:7px;font-family:inherit">
+        </div>
+        <div style="display:flex;align-items:center;gap:5px">
+          <span style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase">Até</span>
+          <input type="date" id="rel-ate" onchange="renderRelatorios()" style="font-size:11px;padding:4px 8px;border:1.5px solid var(--bd2);border-radius:7px;font-family:inherit">
+        </div>
+        <div style="display:flex;align-items:center;gap:5px">
+          <span style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase">Técnico</span>
+          <select id="rel-tec" onchange="renderRelatorios()" style="font-size:11px;padding:4px 8px;border:1.5px solid var(--bd2);border-radius:7px;font-family:inherit"><option value="">Todos</option></select>
+        </div>
+        <div style="display:flex;align-items:center;gap:5px">
+          <span style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase">Cliente</span>
+          <select id="rel-cli" onchange="renderRelatorios()" style="font-size:11px;padding:4px 8px;border:1.5px solid var(--bd2);border-radius:7px;font-family:inherit"><option value="">Todos</option></select>
+        </div>
+        <button class="btn btn-ghost btn-xs" onclick="limparFiltrosRel()">✕ Limpar</button>
+        <span id="rel-periodo-label" style="margin-left:auto;font-size:10px;color:var(--tx3);font-weight:600"></span>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
+        <button class="btn btn-ghost btn-xs" onclick="setRelPeriodo(7)">7 dias</button>
+        <button class="btn btn-ghost btn-xs" onclick="setRelPeriodo(30)">30 dias</button>
+        <button class="btn btn-ghost btn-xs" onclick="setRelPeriodo(90)">90 dias</button>
+        <button class="btn btn-ghost btn-xs" onclick="setRelPeriodo('mes')">Este mês</button>
+        <button class="btn btn-ghost btn-xs" onclick="setRelPeriodo('ano')">Este ano</button>
+        <button class="btn btn-ghost btn-xs" onclick="setRelPeriodo(0)">Tudo</button>
+      </div>
+    </div>
+
+    <!-- KPIs do período -->
+    <div class="sgrid" style="grid-template-columns:repeat(6,1fr);margin-bottom:14px" id="rel-kpis"></div>
+
+    <!-- Grid de relatórios -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+
+      <!-- OS por Status -->
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div style="font-weight:700;font-size:12px;color:var(--nv)">📋 OS por Status</div>
+          <button class="btn btn-ghost btn-xs" onclick="printRelOS()">🖨 PDF</button>
+        </div>
+        <div id="rel-os-status"></div>
+      </div>
+
+      <!-- Produtividade por Técnico -->
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div style="font-weight:700;font-size:12px;color:var(--nv)">👨‍🔧 Produtividade por Técnico</div>
+          <button class="btn btn-ghost btn-xs" onclick="printRelTecnicos()">🖨 PDF</button>
+        </div>
+        <div id="rel-tecnicos"></div>
+      </div>
+
+      <!-- OS por Cliente (top 10) -->
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div style="font-weight:700;font-size:12px;color:var(--nv)">🏢 OS por Cliente (Top 10)</div>
+          <button class="btn btn-ghost btn-xs" onclick="printRelClientes()">🖨 PDF</button>
+        </div>
+        <div id="rel-clientes"></div>
+      </div>
+
+      <!-- SLA -->
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div style="font-weight:700;font-size:12px;color:var(--nv)">⏱ Desempenho de SLA</div>
+          <button class="btn btn-ghost btn-xs" onclick="printRelSLA()">🖨 PDF</button>
+        </div>
+        <div id="rel-sla"></div>
+      </div>
+
+      <!-- Financeiro resumo -->
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div style="font-weight:700;font-size:12px;color:var(--nv)">💰 Resumo Financeiro</div>
+          <button class="btn btn-ghost btn-xs" onclick="printRelFinanceiro()">🖨 PDF</button>
+        </div>
+        <div id="rel-financeiro"></div>
+      </div>
+
+      <!-- Logística/Frota -->
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div style="font-weight:700;font-size:12px;color:var(--nv)">🚗 Logística e Frota</div>
+          <button class="btn btn-ghost btn-xs" onclick="printRelLogistica()">🖨 PDF</button>
+        </div>
+        <div id="rel-logistica"></div>
+      </div>
+
+      <!-- Estoque crítico -->
+      <div class="card" style="grid-column:1/-1">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div style="font-weight:700;font-size:12px;color:var(--nv)">📦 Estoque Crítico</div>
+          <button class="btn btn-ghost btn-xs" onclick="printRelEstoque()">🖨 PDF</button>
+        </div>
+        <div id="rel-estoque"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
 <!-- LOGISTICA -->
 <div id="page-logistica" class="page">
   <div class="topbar">
@@ -3378,7 +3494,7 @@ function nav(p, el) {
   }
   const pg = document.getElementById('page-'+p); if(pg) pg.classList.add('active');
   if(el) el.classList.add('active');
-  const renders = { os:renderOS, logistica:renderLogistica, lab:renderLab, clientes:renderClientes, tecnicos:renderTec, usuarios:renderUsers, historico:renderHist, estoque:async()=>{await loadEstMovs();renderEstoque();renderEstKpis();}, 'supr-cli':renderSuprCli, dashboard:loadDash, contratos:async()=>{await loadContratos();renderContratos();}, financeiro:async()=>{await loadFinanceiro();renderFinLanc();renderFinKpis();}, notificacoes:async()=>{await gerarNotificacoes();}, relatorios:()=>{if(typeof renderRelatorios==='function')renderRelatorios();}, configuracoes:()=>{loadCfg();}, agenda:async()=>{await loadAgenda();renderAgenda();} };
+  const renders = { os:renderOS, logistica:renderLogistica, lab:renderLab, clientes:renderClientes, tecnicos:renderTec, usuarios:renderUsers, historico:renderHist, estoque:async()=>{await loadEstMovs();renderEstoque();renderEstKpis();}, 'supr-cli':renderSuprCli, dashboard:loadDash, contratos:async()=>{await loadContratos();renderContratos();}, financeiro:async()=>{await loadFinanceiro();renderFinLanc();renderFinKpis();}, notificacoes:async()=>{await gerarNotificacoes();}, relatorios:()=>{ setRelPeriodo('mes'); renderRelatorios(); }, configuracoes:()=>{loadCfg();}, agenda:async()=>{await loadAgenda();renderAgenda();} };
   if(renders[p]) renders[p]();
 }
 
@@ -6305,6 +6421,258 @@ async function loadDash(){
 }
 
 // ─── RELATÓRIOS ───────────────────────────────────────────
+// ─── RELATÓRIOS ──────────────────────────────────────────────────────────────
+
+function setRelPeriodo(dias) {
+  const hoje = today();
+  const ate = document.getElementById('rel-ate');
+  const de = document.getElementById('rel-de');
+  if (!ate || !de) return;
+  ate.value = hoje;
+  if (dias === 0) { de.value = ''; ate.value = ''; }
+  else if (dias === 'mes') { de.value = hoje.slice(0,7)+'-01'; }
+  else if (dias === 'ano') { de.value = hoje.slice(0,4)+'-01-01'; }
+  else { const d = new Date(hoje); d.setDate(d.getDate()-dias); de.value = d.toISOString().slice(0,10); }
+  renderRelatorios();
+}
+
+function limparFiltrosRel() {
+  ['rel-de','rel-ate','rel-tec','rel-cli'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  renderRelatorios();
+}
+
+function getRelFiltros() {
+  return {
+    de:  document.getElementById('rel-de')?.value||'',
+    ate: document.getElementById('rel-ate')?.value||'',
+    tec: document.getElementById('rel-tec')?.value||'',
+    cli: document.getElementById('rel-cli')?.value||''
+  };
+}
+
+function filtrarOS(f) {
+  return (G.ordens||[]).filter(o => {
+    const data = o.data_ab||o.data_atend||'';
+    if (f.de  && data < f.de)  return false;
+    if (f.ate && data > f.ate) return false;
+    if (f.tec && o.tecnico_id !== f.tec) return false;
+    if (f.cli && o.cliente_id !== f.cli) return false;
+    return true;
+  });
+}
+
+function renderRelatorios() {
+  // Popula selects de técnico e cliente
+  const selTec = document.getElementById('rel-tec');
+  const selCli = document.getElementById('rel-cli');
+  if (selTec) {
+    const cur = selTec.value;
+    selTec.innerHTML = '<option value="">Todos</option>' + (G.tecnicos||[]).map(t=>`<option value="${t.id}">${t.nome}</option>`).join('');
+    selTec.value = cur;
+  }
+  if (selCli) {
+    const cur = selCli.value;
+    selCli.innerHTML = '<option value="">Todos</option>' + (G.clientes||[]).map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
+    selCli.value = cur;
+  }
+
+  const f = getRelFiltros();
+  const os = filtrarOS(f);
+  const hoje = today();
+
+  // Label período
+  const lbl = document.getElementById('rel-periodo-label');
+  if (lbl) lbl.textContent = f.de||f.ate ? `${f.de?fd(f.de):'início'} → ${f.ate?fd(f.ate):'hoje'} · ${os.length} OS` : `Total: ${os.length} OS`;
+
+  // KPIs
+  const abertas   = os.filter(o=>o.status==='Aberta').length;
+  const andamento = os.filter(o=>o.status==='Em andamento').length;
+  const concluidas= os.filter(o=>o.status==='Concluída').length;
+  const atrasadas = os.filter(o=>o.sla_deadline&&o.sla_deadline<hoje&&o.status!=='Concluída').length;
+  const receita   = os.filter(o=>o.status==='Concluída').reduce((s,o)=>s+(o.total_os||o.total||0),0);
+  const retrabalho= os.filter(o=>o.retrabalho).length;
+  const kpiEl = document.getElementById('rel-kpis');
+  if (kpiEl) kpiEl.innerHTML = [
+    {ico:'📋',lbl:'Total OS',val:os.length,cor:'var(--bl2)'},
+    {ico:'✅',lbl:'Concluídas',val:concluidas,cor:'var(--gn)'},
+    {ico:'🔄',lbl:'Em andamento',val:andamento,cor:'var(--or)'},
+    {ico:'📂',lbl:'Abertas',val:abertas,cor:'var(--bl2)'},
+    {ico:'🔴',lbl:'Atrasadas',val:atrasadas,cor:'var(--rd)'},
+    {ico:'💰',lbl:'Receita',val:'R$'+Math.round(receita).toLocaleString('pt-BR'),cor:'var(--gn)'}
+  ].map(k=>`<div class="scard"><div class="sico" style="background:${k.cor}22;color:${k.cor}">${k.ico}</div><div class="slabel">${k.lbl}</div><div class="sval" style="color:${k.cor};font-size:${typeof k.val==='string'?'13px':'18px'}">${k.val}</div></div>`).join('');
+
+  // OS por Status
+  const statusEl = document.getElementById('rel-os-status');
+  if (statusEl) {
+    const statuses = ['Aberta','Em andamento','Concluída','Cancelada'];
+    const total = os.length || 1;
+    statusEl.innerHTML = statuses.map(s => {
+      const cnt = os.filter(o=>o.status===s).length;
+      const pct = Math.round(cnt/total*100);
+      const cor = s==='Concluída'?'var(--gn)':s==='Aberta'?'var(--bl2)':s==='Em andamento'?'var(--or)':'var(--tx3)';
+      return `<div style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+          <span style="font-size:11px;font-weight:600;color:var(--tx)">${s}</span>
+          <span style="font-size:11px;font-weight:700;color:${cor}">${cnt} <span style="font-weight:400;color:var(--tx3)">(${pct}%)</span></span>
+        </div>
+        <div style="background:var(--sf2);border-radius:4px;height:8px;overflow:hidden">
+          <div style="width:${pct}%;height:100%;background:${cor};border-radius:4px;transition:width .3s"></div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // Produtividade por Técnico
+  const tecEl = document.getElementById('rel-tecnicos');
+  if (tecEl) {
+    const tecMap = {};
+    os.forEach(o => {
+      const tId = o.tecnico_id;
+      if (!tId) return;
+      if (!tecMap[tId]) tecMap[tId] = {total:0,concluidas:0,receita:0,atrasadas:0};
+      tecMap[tId].total++;
+      if (o.status==='Concluída') { tecMap[tId].concluidas++; tecMap[tId].receita+=(o.total_os||o.total||0); }
+      if (o.sla_deadline&&o.sla_deadline<hoje&&o.status!=='Concluída') tecMap[tId].atrasadas++;
+    });
+    const rows = Object.entries(tecMap).sort((a,b)=>b[1].concluidas-a[1].concluidas);
+    if (!rows.length) { tecEl.innerHTML='<div class="empty"><div class="empty-ico">👨‍🔧</div><div class="empty-t">Sem dados no período</div></div>'; }
+    else tecEl.innerHTML = `<table style="width:100%;font-size:11px;border-collapse:collapse">
+      <thead><tr style="border-bottom:2px solid var(--bd)"><th style="text-align:left;padding:5px 6px;font-size:10px;color:var(--tx3)">Técnico</th><th style="text-align:center;padding:5px 6px;font-size:10px;color:var(--tx3)">Total</th><th style="text-align:center;padding:5px 6px;font-size:10px;color:var(--gn)">Concluídas</th><th style="text-align:center;padding:5px 6px;font-size:10px;color:var(--rd)">Atrasadas</th><th style="text-align:right;padding:5px 6px;font-size:10px;color:var(--gn)">Receita</th></tr></thead>
+      <tbody>${rows.map(([tId,d])=>{const t=G.tecnicos.find(x=>x.id===tId);const ef=d.total?Math.round(d.concluidas/d.total*100):0;return`<tr style="border-bottom:1px solid var(--bd)"><td style="padding:6px;font-weight:600">${t?.nome||'—'}<div style="background:var(--sf2);border-radius:3px;height:4px;margin-top:3px;overflow:hidden"><div style="width:${ef}%;height:100%;background:var(--gn)"></div></div></td><td style="text-align:center;padding:6px">${d.total}</td><td style="text-align:center;padding:6px;color:var(--gn);font-weight:700">${d.concluidas}</td><td style="text-align:center;padding:6px;color:${d.atrasadas?'var(--rd)':'var(--tx3)'}">${d.atrasadas||'—'}</td><td style="text-align:right;padding:6px;font-weight:700;color:var(--gn)">${d.receita>0?fm(d.receita):'—'}</td></tr>`}).join('')}</tbody>
+    </table>`;
+  }
+
+  // OS por Cliente Top 10
+  const cliEl = document.getElementById('rel-clientes');
+  if (cliEl) {
+    const cliMap = {};
+    os.forEach(o => {
+      const cId = o.cliente_id; if (!cId) return;
+      if (!cliMap[cId]) cliMap[cId] = {total:0,concluidas:0,receita:0};
+      cliMap[cId].total++;
+      if (o.status==='Concluída') { cliMap[cId].concluidas++; cliMap[cId].receita+=(o.total_os||o.total||0); }
+    });
+    const rows = Object.entries(cliMap).sort((a,b)=>b[1].total-a[1].total).slice(0,10);
+    if (!rows.length) { cliEl.innerHTML='<div class="empty"><div class="empty-ico">🏢</div><div class="empty-t">Sem dados no período</div></div>'; }
+    else cliEl.innerHTML = `<table style="width:100%;font-size:11px;border-collapse:collapse">
+      <thead><tr style="border-bottom:2px solid var(--bd)"><th style="text-align:left;padding:5px 6px;font-size:10px;color:var(--tx3)">Cliente</th><th style="text-align:center;padding:5px 6px;font-size:10px;color:var(--tx3)">OS</th><th style="text-align:center;padding:5px 6px;font-size:10px;color:var(--gn)">Conc.</th><th style="text-align:right;padding:5px 6px;font-size:10px;color:var(--gn)">Receita</th></tr></thead>
+      <tbody>${rows.map(([cId,d],i)=>{const c=G.clientes.find(x=>x.id===cId);return`<tr style="border-bottom:1px solid var(--bd)"><td style="padding:6px"><span style="font-size:9px;font-weight:700;color:var(--tx3);margin-right:5px">${i+1}º</span>${c?.nome||'—'}</td><td style="text-align:center;padding:6px;font-weight:700">${d.total}</td><td style="text-align:center;padding:6px;color:var(--gn)">${d.concluidas}</td><td style="text-align:right;padding:6px;font-weight:700;color:var(--gn)">${d.receita>0?fm(d.receita):'—'}</td></tr>`}).join('')}</tbody>
+    </table>`;
+  }
+
+  // SLA
+  const slaEl = document.getElementById('rel-sla');
+  if (slaEl) {
+    const comSLA = os.filter(o=>o.sla_deadline);
+    const noPrazo = comSLA.filter(o=>o.status==='Concluída'&&(o.data_atend||'')<=(o.sla_deadline||'')).length;
+    const atrasadasSLA = comSLA.filter(o=>o.sla_deadline<hoje&&o.status!=='Concluída').length;
+    const expiradas = comSLA.filter(o=>o.status==='Concluída'&&(o.data_atend||'')>(o.sla_deadline||'')).length;
+    const pctOk = comSLA.length ? Math.round(noPrazo/comSLA.length*100) : 0;
+    slaEl.innerHTML = `
+      <div style="text-align:center;padding:10px 0 16px">
+        <div style="font-size:40px;font-weight:800;color:${pctOk>=90?'var(--gn)':pctOk>=70?'var(--or)':'var(--rd)'}">${pctOk}%</div>
+        <div style="font-size:11px;color:var(--tx3)">OS concluídas dentro do SLA</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+        ${[['✅ No prazo',noPrazo,'var(--gn)'],['⏰ Atrasadas',atrasadasSLA,'var(--rd)'],['❌ Estouradas',expiradas,'var(--or)']].map(([l,v,c])=>`<div style="background:var(--sf2);border-radius:8px;padding:8px;text-align:center;border-top:3px solid ${c}"><div style="font-size:18px;font-weight:800;color:${c}">${v}</div><div style="font-size:9px;color:var(--tx3)">${l}</div></div>`).join('')}
+      </div>`;
+  }
+
+  // Financeiro
+  const finEl = document.getElementById('rel-financeiro');
+  if (finEl) {
+    const logF = (G.logistica||[]).filter(l => {
+      const d = l.data_saida||'';
+      return (!f.de||d>=f.de) && (!f.ate||d<=f.ate);
+    });
+    const receitaOS = os.filter(o=>o.status==='Concluída').reduce((s,o)=>s+(o.total_os||o.total||0),0);
+    const gastoLog  = logF.reduce((s,l)=>s+(l.valor_total||0),0);
+    const gastoOS   = os.reduce((s,o)=>s+((o.viag||0)+(o.alim||0)+(o.hosp||0)+(o.comb||0)+(o.ped||0)+(o.outros||0)),0);
+    const totalGasto = gastoLog + gastoOS;
+    const lucro = receitaOS - totalGasto;
+    finEl.innerHTML = [
+      {lbl:'💰 Receita (OS concluídas)',val:fm(receitaOS),cor:'var(--gn)'},
+      {lbl:'🚗 Gasto Logística',val:fm(gastoLog),cor:'var(--rd)'},
+      {lbl:'📋 Gasto em OS (viagens)',val:fm(gastoOS),cor:'var(--rd)'},
+      {lbl:'📊 Total de Gastos',val:fm(totalGasto),cor:'var(--or)'},
+      {lbl:'🏆 Resultado',val:fm(lucro),cor:lucro>=0?'var(--gn)':'var(--rd)'}
+    ].map(r=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--bd)"><span style="font-size:11px;color:var(--tx)">${r.lbl}</span><span style="font-size:12px;font-weight:700;color:${r.cor}">${r.val}</span></div>`).join('');
+  }
+
+  // Logística
+  const logEl = document.getElementById('rel-logistica');
+  if (logEl) {
+    const logF = (G.logistica||[]).filter(l => {
+      const d = l.data_saida||'';
+      return (!f.de||d>=f.de) && (!f.ate||d<=f.ate);
+    });
+    const kmTotal = logF.reduce((s,l)=>s+(l.km_percorrido||0),0);
+    const litTotal = logF.reduce((s,l)=>s+(l.litros||0),0);
+    const valTotal = logF.reduce((s,l)=>s+(l.valor_total||0),0);
+    const veics = [...new Set(logF.map(l=>l.placa).filter(Boolean))];
+    logEl.innerHTML = [
+      {lbl:'🚛 Rotas registradas',val:logF.length},
+      {lbl:'📍 Km total percorrido',val:kmTotal.toLocaleString('pt-BR')+' km'},
+      {lbl:'⛽ Litros abastecidos',val:litTotal.toFixed(1)+'L'},
+      {lbl:'💰 Custo total',val:fm(valTotal)},
+      {lbl:'🚗 Veículos ativos',val:veics.length+' veículo(s)'}
+    ].map(r=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--bd)"><span style="font-size:11px;color:var(--tx)">${r.lbl}</span><span style="font-size:12px;font-weight:700;color:var(--nv)">${r.val}</span></div>`).join('');
+  }
+
+  // Estoque crítico
+  const estEl = document.getElementById('rel-estoque');
+  if (estEl) {
+    const criticos = (G.estoque||[]).filter(e=>e.quantidade<=e.quantidade_min).sort((a,b)=>a.quantidade-b.quantidade);
+    const zerados  = criticos.filter(e=>e.quantidade===0);
+    if (!criticos.length) {
+      estEl.innerHTML = `<div style="text-align:center;padding:16px;color:var(--gn);font-weight:700">✅ Todos os itens acima do mínimo</div>`;
+    } else {
+      estEl.innerHTML = `<div style="margin-bottom:8px;font-size:11px;color:var(--rd);font-weight:600">⚠ ${criticos.length} iten(s) crítico(s) · ${zerados.length} zerado(s)</div>
+      <table style="width:100%;font-size:11px;border-collapse:collapse">
+        <thead><tr style="border-bottom:2px solid var(--bd)"><th style="text-align:left;padding:5px 6px;font-size:10px;color:var(--tx3)">Item</th><th style="text-align:left;padding:5px 6px;font-size:10px;color:var(--tx3)">Categoria</th><th style="text-align:center;padding:5px 6px;font-size:10px;color:var(--rd)">Qtd Atual</th><th style="text-align:center;padding:5px 6px;font-size:10px;color:var(--tx3)">Qtd Mín</th><th style="text-align:left;padding:5px 6px;font-size:10px;color:var(--tx3)">Local</th></tr></thead>
+        <tbody>${criticos.map(e=>`<tr style="border-bottom:1px solid var(--bd);background:${e.quantidade===0?'var(--rdbg)':'var(--orbg)'}"><td style="padding:6px;font-weight:700">${e.nome}</td><td style="padding:6px">${e.categoria||'—'}</td><td style="padding:6px;text-align:center;font-weight:800;color:${e.quantidade===0?'var(--rd)':'var(--or)'}">${e.quantidade}${e.quantidade===0?' 🔴':' ⚠'}</td><td style="padding:6px;text-align:center">${e.quantidade_min||0}</td><td style="padding:6px">${e.localizacao||'—'}</td></tr>`).join('')}</tbody>
+      </table>`;
+    }
+  }
+}
+
+// Funções de impressão dos relatórios
+function printRelOS() {
+  const f = getRelFiltros(); const os = filtrarOS(f);
+  const html = `<h2 style="color:#0d1f3c;margin-bottom:14px">Relatório de OS — ${os.length} registros</h2>
+  <table style="width:100%;border-collapse:collapse;font-size:10px"><thead><tr style="background:#0d1f3c;color:#fff"><th style="padding:5px 8px">Nº OS</th><th>Abertura</th><th>Cliente</th><th>Equipamento</th><th>Técnico</th><th>Status</th><th>SLA</th><th>Valor</th></tr></thead>
+  <tbody>${os.map(o=>{const c=G.clientes.find(x=>x.id===o.cliente_id);const t=G.tecnicos.find(x=>x.id===o.tecnico_id);return`<tr style="border-bottom:1px solid #eee"><td style="padding:4px 8px;font-family:monospace;font-weight:700">${o.num||'—'}</td><td>${fd(o.data_ab)}</td><td>${c?.nome||'—'}</td><td>${o.modelo||'—'}</td><td>${t?.nome||'—'}</td><td>${o.status}</td><td>${o.sla_prazo?o.sla_prazo+'h':'—'}</td><td style="font-weight:700">${(o.total_os||o.total||0)>0?fm(o.total_os||o.total):'—'}</td></tr>`}).join('')}</tbody></table>`;
+  const header=`<div style="background:#0d1f3c;color:#fff;padding:12px 18px;border-radius:8px 8px 0 0;display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><div><div style="font-size:14px;font-weight:800;color:#e07818">ORION PRINT</div><div style="font-size:9px;opacity:.6">Relatório de OS · ${new Date().toLocaleDateString('pt-BR')}</div></div></div>`;
+  openPrintWindow(header+html,'');
+}
+
+function printRelTecnicos() {
+  const f = getRelFiltros(); const os = filtrarOS(f); const hoje = today();
+  const tecMap = {};
+  os.forEach(o => { const tId = o.tecnico_id; if (!tId) return; if (!tecMap[tId]) tecMap[tId]={total:0,concluidas:0,receita:0,atrasadas:0}; tecMap[tId].total++; if(o.status==='Concluída'){tecMap[tId].concluidas++;tecMap[tId].receita+=(o.total_os||o.total||0);} if(o.sla_deadline&&o.sla_deadline<hoje&&o.status!=='Concluída')tecMap[tId].atrasadas++; });
+  const html = `<h2 style="color:#0d1f3c;margin-bottom:14px">Produtividade por Técnico</h2>
+  <table style="width:100%;border-collapse:collapse;font-size:11px"><thead><tr style="background:#0d1f3c;color:#fff"><th style="padding:5px 8px">Técnico</th><th>Total OS</th><th>Concluídas</th><th>Eficiência</th><th>Atrasadas</th><th>Receita</th></tr></thead>
+  <tbody>${Object.entries(tecMap).sort((a,b)=>b[1].concluidas-a[1].concluidas).map(([tId,d])=>{const t=G.tecnicos.find(x=>x.id===tId);const ef=d.total?Math.round(d.concluidas/d.total*100):0;return`<tr style="border-bottom:1px solid #eee"><td style="padding:5px 8px;font-weight:700">${t?.nome||'—'}</td><td>${d.total}</td><td style="color:green;font-weight:700">${d.concluidas}</td><td>${ef}%</td><td style="color:${d.atrasadas?'red':''}">${d.atrasadas||'—'}</td><td style="font-weight:700;color:green">${d.receita>0?fm(d.receita):'—'}</td></tr>`}).join('')}</tbody></table>`;
+  const header=`<div style="background:#0d1f3c;color:#fff;padding:12px 18px;border-radius:8px 8px 0 0;margin-bottom:16px"><div style="font-size:14px;font-weight:800;color:#e07818">ORION PRINT</div><div style="font-size:9px;opacity:.6">Produtividade por Técnico · ${new Date().toLocaleDateString('pt-BR')}</div></div>`;
+  openPrintWindow(header+html,'');
+}
+
+function printRelClientes() {
+  const f = getRelFiltros(); const os = filtrarOS(f);
+  const cliMap = {};
+  os.forEach(o => { const cId=o.cliente_id; if(!cId)return; if(!cliMap[cId])cliMap[cId]={total:0,concluidas:0,receita:0}; cliMap[cId].total++; if(o.status==='Concluída'){cliMap[cId].concluidas++;cliMap[cId].receita+=(o.total_os||o.total||0);} });
+  const html = `<h2 style="color:#0d1f3c;margin-bottom:14px">OS por Cliente</h2>
+  <table style="width:100%;border-collapse:collapse;font-size:11px"><thead><tr style="background:#0d1f3c;color:#fff"><th style="padding:5px 8px">Cliente</th><th>Total OS</th><th>Concluídas</th><th>Receita</th></tr></thead>
+  <tbody>${Object.entries(cliMap).sort((a,b)=>b[1].total-a[1].total).map(([cId,d])=>{const c=G.clientes.find(x=>x.id===cId);return`<tr style="border-bottom:1px solid #eee"><td style="padding:5px 8px;font-weight:700">${c?.nome||'—'}</td><td>${d.total}</td><td style="color:green">${d.concluidas}</td><td style="font-weight:700;color:green">${d.receita>0?fm(d.receita):'—'}</td></tr>`}).join('')}</tbody></table>`;
+  const header=`<div style="background:#0d1f3c;color:#fff;padding:12px 18px;border-radius:8px 8px 0 0;margin-bottom:16px"><div style="font-size:14px;font-weight:800;color:#e07818">ORION PRINT</div><div style="font-size:9px;opacity:.6">OS por Cliente · ${new Date().toLocaleDateString('pt-BR')}</div></div>`;
+  openPrintWindow(header+html,'');
+}
+
+function printRelSLA() { printRelatorio('os'); }
+function printRelFinanceiro() { printRelatorio('dashboard'); }
+function printRelLogistica() { printRelatorio('logistica'); }
+function printRelEstoque() { printRelatorio('estoque'); }
+
 function printRelatorio(tipo){
   let html='', title='';
   if(tipo==='atendimentos'){

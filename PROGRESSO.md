@@ -1,13 +1,11 @@
 # Orion Print — Progresso de Desenvolvimento
 
-**Versão atual:** 6.1
+**Versão atual:** 7.0
 **Última atualização:** 16/05/2026
 **Stack:** Node.js + Express + MongoDB + HTML/CSS/JS (single-page)
-**Deploy:** Railway → `https://theikos-at-production.up.railway.app/`
-**Repositório GitHub:** `https://github.com/clalves13/theikos-at`
-**Nome do sistema:** Orion Print (renomeado de Theikós AT)
-
-> ⚠️ Pendente: Renomear serviço no Railway de `theikos-at` → `orion-at` e projeto `zippy-eagerness` → `orion-at` (fazer após estabilizar o sistema)
+**Deploy:** Railway → `https://orion-em-production.up.railway.app/`
+**Repositório GitHub:** `https://github.com/clalves13/orion-at`
+**Nome do sistema:** Orion Print
 
 ---
 
@@ -17,24 +15,23 @@
 ```
 theikos_at/
 ├── public/
-│   ├── index.html       (~7960 linhas) — sistema principal ✅ v6.1
-│   ├── portal.html      (~280 linhas)  — portal do cliente /portal
-│   └── monitor.html     (~320 linhas)  — monitor impressoras /monitor
+│   ├── index.html       (~8570 linhas) ✅ v7.0
+│   ├── portal.html      (~280 linhas)
+│   └── monitor.html     (~320 linhas)
 ├── orion-agente/
 │   ├── dist/
-│   │   ├── orion-agente-win.exe  (~38MB) — executável atual (terminal)
-│   │   ├── config.json           — template de configuração
-│   │   ├── install.bat           — instala serviço Windows
-│   │   ├── uninstall.bat         — remove serviço Windows
+│   │   ├── orion-agente-win.exe  (~38MB)
+│   │   ├── config.json
+│   │   ├── install.bat
+│   │   ├── uninstall.bat
 │   │   └── README.txt
-│   ├── node_modules/
-│   ├── agent.js                  ✅ v6.1 — pede chave na 1ª execução
-│   ├── build-exe.js              ✅ corrigido
+│   ├── agent.js                  ✅ pede chave na 1ª execução
+│   ├── build-exe.js              ✅
 │   ├── service-install.js
 │   ├── service-uninstall.js
 │   └── package.json
-├── server.js            (~1210 linhas) ✅ v6.1
-├── package.json         ✅ restaurado
+├── server.js            (~1221 linhas) ✅ v7.0
+├── package.json         ✅
 ├── package-lock.json
 ├── .gitignore
 ├── PROGRESSO.md
@@ -43,91 +40,58 @@ theikos_at/
 
 ---
 
-## 🆕 Alterações v6.1 — 16/05/2026 parte 3
+## 🆕 Alterações v7.0 — 16/05/2026
 
-### ✅ Fluxo de instalação do agente reformulado
+### ✅ Relatórios — módulo completo expandido
+Nova página **Relatórios** na sidebar com filtros e 8 painéis:
 
-**`server.js`:**
-- Chave gerada **automaticamente** ao cadastrar cliente
-- `GET /download/agente` — serve o `.exe` para download (requer login)
-- `POST /api/monitor/registrar-agente` — valida chave e registra agente
-- `crypto` e `fs` adicionados aos imports
+**Filtros globais:**
+- Período (De/Até) com atalhos: 7d, 30d, 90d, Este mês, Este ano, Tudo
+- Filtro por Técnico e por Cliente
 
-**`index.html`:**
-- **Configurações → Agente de Monitoramento** — nova aba com botão "⬇ Baixar Agente (.exe)" e URL do servidor para copiar
-- **Card do cliente** — mostra primeiros 16 chars da chave + botão 📋 copiar chave completa
-- Funções JS: `baixarAgente()`, `copiarUrlAgente()`
-- `_cfgLabels` atualizado com entrada `agente`
+**Painéis:**
+1. KPIs do período — Total OS, Concluídas, Em andamento, Abertas, Atrasadas, Receita
+2. OS por Status — barras de progresso com percentuais
+3. Produtividade por Técnico — OS, concluídas, eficiência %, receita
+4. OS por Cliente (Top 10) — ranking com receita
+5. Desempenho de SLA — % no prazo, atrasadas, estouradas
+6. Resumo Financeiro — receita, gastos, resultado
+7. Logística e Frota — rotas, km, litros, custo
+8. Estoque Crítico — itens zerados e abaixo do mínimo
 
-**`agent.js`:**
-- Na 1ª execução sem `config.json`, pede URL + chave via terminal
-- Valida chave no servidor antes de salvar
-- Salva `config.json` automaticamente
+Botão 🖨 PDF em cada painel. Abre com período "Este mês" por padrão.
 
-### ✅ Problemas resolvidos
-- `package.json` da raiz restaurado (deletado por engano no `git add -A`)
-- `build-exe.js` reescrito do zero (tinha comandos de terminal em vez de JS)
-- Projeto duplicado `exciting-adventure` deletado no Railway
+### ✅ Veículos / Frota na Logística (v6.2)
+Nova aba 🚗 Veículos dentro de Logística:
+- Cadastro: placa, tipo, marca, modelo, ano, cor, km, responsável
+- CRLV com vencimento + alerta (15/30/60/90 dias)
+- Seguro com seguradora, apólice, valor, vigência, vencimento + alerta
+- Cards visuais: 🟢 ok / 🟡 próximo / 🔴 vencido
+- Alertas automáticos nas Notificações
+- Coleção MongoDB: `veiculos`
 
----
+### ✅ Infraestrutura renomeada
+- GitHub: `theikos-at` → `orion-at`
+- Railway serviço renomeado para `orion-em`
+- SESSION_SECRET atualizado para `orion2026`
 
-## 🆕 Alterações v6.0 — 16/05/2026 parte 2
-
-### ✅ Renomeação completa Theikós → Orion no server.js
-- `theikos_at` → `orion_at` (banco de dados)
-- `theikos2026` → `orion2026` (session secret)
-- `THEIKÓS AT` → `ORION PRINT` (template de email)
-
-### ✅ index.html 100% limpo — zero ocorrências de Theikós
-
----
-
-## 🆕 Alterações v5.9 — 16/05/2026 parte 1
-
-### 🖨 Monitor de Impressoras
-- Botão Monitor em cada card de cliente
-- Modal com gerar chave, baixar config, copiar chave
-- Agente SNMP completo com suporte a HP, Kyocera, Ricoh, Xerox, Canon, Konica Minolta, Brother, Epson, Samsung
-
-### 🔤 Renomeação + Logo
-- Logo `orion.jpg` em base64 em todas as telas
-- Endereço: Rua Adriana Bernardo Cesário, 49 — Vale do Jatobá, BH/MG | CEP: 30.666-000
-- Telefone: (31) 97255-1262
+### ✅ Agente de Monitoramento (v6.1)
+- Chave gerada automaticamente ao cadastrar cliente
+- GET /download/agente — download do .exe
+- POST /api/monitor/registrar-agente — valida chave
+- Configurações → aba "Agente de Monitoramento"
+- Card do cliente mostra chave com 📋 copiar
 
 ---
 
-## 🔮 PRÓXIMA GRANDE ETAPA — Wizard Gráfico Electron
-
-### Objetivo
-Instalador visual profissional para o agente, igual ao PrintWayy.
-
-### Fluxo das 5 telas planejadas
-```
-Tela 1 → Bem-vindo (logo Orion Print + versão)
-Tela 2 → Digite a chave do cliente (copia do sistema)
-Tela 3 → Impressoras encontradas na rede (SNMP scan + checkboxes)
-Tela 4 → Instalando... (barra de progresso + serviço Windows)
-Tela 5 → ✅ Sucesso  ou  ❌ Falha (com motivo)
-```
-
-### Stack
-- **Electron** — janela Windows com HTML/CSS/JS
-- **electron-builder** — gera `.exe` instalador (~60-80MB)
-- **agent.js** existente reaproveitado como backend
-
-### Quando fazer
-Após módulos Frota e Relatórios. Estimativa: 2-3 dias dedicados.
-
----
-
-## ✅ Módulos Concluídos
+## ✅ TODOS OS MÓDULOS CONCLUÍDOS
 
 | Módulo | Status |
 |--------|--------|
 | Dashboard | ✅ KPIs, gráficos, filtros, notificações SLA |
 | OS / Atendimentos | ✅ SLA, origem, histórico técnico |
 | Agenda / Calendário | ✅ Visão mês + lista |
-| Logística | ✅ Rotas, abastecimento, checklist, manutenção |
+| Logística | ✅ Rotas, abastecimento, checklist, manutenção, veículos |
 | Laboratório | ✅ Bancada, pedidos peças, escopo, baixados |
 | Histórico | ✅ OS finalizadas + lançamentos manuais |
 | Estoque | ✅ Peças, movimentações, alertas |
@@ -136,35 +100,42 @@ Após módulos Frota e Relatórios. Estimativa: 2-3 dias dedicados.
 | Usuários | ✅ Perfis, recuperação senha, Portal do Cliente |
 | Contratos | ✅ Fixo mensal, franquia cópias, renovação auto |
 | Financeiro | ✅ Lançamentos, DRE, Fluxo de Caixa |
-| Notificações | ✅ SLA, estoque crítico, contratos |
+| Notificações | ✅ SLA, estoque, contratos, CRLV, seguro |
 | Configurações | ✅ Sidebar + aba Agente de Monitoramento |
 | Portal do Cliente | ✅ /portal — chamados, PDF |
-| Monitor Impressoras | ✅ /monitor — dashboard SNMP em tempo real |
+| Monitor Impressoras | ✅ /monitor — SNMP em tempo real |
+| Relatórios | ✅ Página completa — filtros + 8 painéis + PDF |
 
 ---
 
-## 🔄 Pendente
+## 🔮 ÚNICA PENDÊNCIA — Wizard Gráfico Electron
 
-| Item | Status | Notas |
-|------|--------|-------|
-| Frota | ❌ Pendente | Veículos, CRLV, seguro, vencimentos |
-| Relatórios expandidos | ⚠️ Parcial | Existe básico, precisa expandir |
-| Wizard Electron | 🔮 Planejado | Após Frota e Relatórios |
-| Renomear Railway | ⚠️ Pendente | `zippy-eagerness`→`orion-at`, `theikos-at`→`orion-at` |
-| SESSION_SECRET Railway | ⚠️ Pendente | Atualizar para `orion2026` nas variáveis |
-| Renomear repo GitHub | ⚠️ Pendente | `theikos-at` → `orion-at` |
+Instalador visual profissional para o agente (igual ao PrintWayy).
+
+### Fluxo das 5 telas
+```
+Tela 1 → Bem-vindo (logo Orion Print + versão)
+Tela 2 → Digite a chave do cliente
+Tela 3 → Impressoras encontradas na rede (SNMP scan + checkboxes)
+Tela 4 → Instalando... (barra de progresso)
+Tela 5 → ✅ Sucesso  ou  ❌ Falha
+```
+
+### Stack
+- Electron + electron-builder → gera .exe (~60-80MB)
+- agent.js reaproveitado como backend
+
+### Estimativa
+2-3 dias dedicados. Não bloqueia o uso do sistema.
 
 ---
 
-## 📋 Checklist Railway (fazer quando sistema estiver estável)
+## 🏠 Próximos passos após Wizard
 
-1. Railway → `zippy-eagerness` → Settings → renomear `orion-at`
-2. Card `theikos-at` → Settings → renomear `orion-at`
-3. URL muda para `orion-at-production.up.railway.app`
-4. Variável `SESSION_SECRET` → `orion2026`
-5. `config.json` de `orion-agente/dist/` → atualizar `serverUrl`
-6. GitHub: Settings → Repository name → `orion-at`
-7. Terminal: `git remote set-url origin https://github.com/clalves13/orion-at.git`
+Migração para **Hostinger VPS** (produção definitiva):
+- Site + sistema no mesmo servidor
+- ~R$40-60/mês
+- Node.js + MongoDB no VPS
 
 ---
 
@@ -183,7 +154,7 @@ Após módulos Frota e Relatórios. Estimativa: 2-3 dias dedicados.
 | tecnicos | Técnicos |
 | clientes | monitor_key (auto), monitor_ativo, portal_login |
 | equipamentos | Equipamentos |
-| ordens | OS (sla_horas, sla_deadline, tipo, origem) |
+| ordens | OS |
 | laboratorio | Bancada |
 | historico | Histórico |
 | estoque | Peças |
@@ -192,31 +163,32 @@ Após módulos Frota e Relatórios. Estimativa: 2-3 dias dedicados.
 | supr_movs | Movimentos suprimentos |
 | logistica | Rotas |
 | abastecimento | Abastecimento |
-| checklist | Checklists veículos |
-| manutencao | Manutenções veículos |
-| pedidos_pecas | Pedidos peças (lab) |
+| checklist | Checklists |
+| manutencao | Manutenções |
+| veiculos | 🆕 Frota (placa, CRLV, seguro) |
+| pedidos_pecas | Pedidos peças |
 | eq_baixados | Equipamentos baixados |
 | lancamentos | Lançamentos manuais |
 | contratos | Contratos |
 | financeiro | Financeiro |
 | counter | Contador OS |
-| sessions | Sessões login |
+| sessions | Sessões |
 | notificacoes | Notificações |
-| configuracoes | Configurações sistema |
-| agenda | Agenda/Calendário |
-| monitor_impressoras | Estado atual impressoras |
+| configuracoes | Configurações |
+| agenda | Agenda |
+| monitor_impressoras | Impressoras monitoradas |
 | monitor_telemetria | Histórico coletas SNMP |
 
 ---
 
-## 🌐 Variáveis de Ambiente no Railway
+## 🌐 Variáveis Railway
 
-| Variável | Status | Notas |
-|----------|--------|-------|
-| MONGODB_URI | ✅ ativo | Banco de dados |
-| SESSION_SECRET | ⚠️ `theikos2026` | Atualizar para `orion2026` |
-| SMTP_PASS | ✅ ativo | Email Yahoo |
-| TELEGRAM_BOT_TOKEN | ✅ ativo | Recuperação via Telegram |
+| Variável | Status |
+|----------|--------|
+| MONGODB_URI | ✅ ativo |
+| SESSION_SECRET | ✅ `orion2026` |
+| SMTP_PASS | ✅ ativo |
+| TELEGRAM_BOT_TOKEN | ✅ ativo |
 
 ---
 
@@ -224,22 +196,13 @@ Após módulos Frota e Relatórios. Estimativa: 2-3 dias dedicados.
 
 | Endpoint | Descrição |
 |----------|-----------|
-| `GET /download/agente` | Download do .exe (requer login) |
-| `POST /api/monitor/registrar-agente` | Valida chave e registra agente |
-| `GET /api/monitor/ping` | Teste conectividade |
-| `POST /api/monitor/telemetria` | Recebe dados do agente |
-| `GET /api/monitor/impressoras?cliente_id=X` | Lista impressoras |
-| `GET /api/monitor/historico?cliente_id=X` | Histórico coletas |
-| `GET /api/monitor/dashboard` | KPIs gerais |
-| `POST /api/monitor/simular` | 8 impressoras fictícias |
-| `DELETE /api/monitor/simular` | Remove dados simulados |
-| `POST /api/clientes/:id/monitor-key` | Gera nova chave manualmente |
-
----
-
-## 💡 Próximas implementações (prioridade)
-
-1. 🚗 **Frota** — CRLV, seguro, documentos, vencimentos
-2. 📊 **Relatórios expandidos**
-3. 🖥 **Wizard Electron** — instalador gráfico 5 telas (igual PrintWayy)
-4. 🏠 **Migração** — Hostinger VPS (produção definitiva)
+| GET /download/agente | Download .exe |
+| POST /api/monitor/registrar-agente | Valida chave |
+| GET /api/monitor/ping | Teste |
+| POST /api/monitor/telemetria | Recebe dados |
+| GET /api/monitor/impressoras | Lista impressoras |
+| GET /api/monitor/historico | Histórico |
+| GET /api/monitor/dashboard | KPIs |
+| POST /api/monitor/simular | Dados fictícios |
+| DELETE /api/monitor/simular | Remove simulação |
+| POST /api/clientes/:id/monitor-key | Nova chave |
