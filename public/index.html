@@ -2291,6 +2291,37 @@ Outros</textarea>
         <div id="rel-estoque"></div>
       </div>
 
+      <!-- Histórico por Cliente -->
+      <div class="card" style="grid-column:1/-1">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div style="font-weight:700;font-size:12px;color:var(--nv)">🏢 Histórico de Atendimento por Cliente</div>
+          <button class="btn btn-ghost btn-xs" onclick="printRelHistCli()">🖨 PDF</button>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+          <select id="rel-hist-cli" onchange="renderRelHistCli()" style="font-size:11px;padding:4px 8px;border:1.5px solid var(--bd2);border-radius:7px;font-family:inherit;min-width:200px">
+            <option value="">Selecione um cliente...</option>
+          </select>
+          <span id="rel-hist-cli-total" style="font-size:10px;color:var(--tx3);align-self:center"></span>
+        </div>
+        <div id="rel-hist-cli-table"></div>
+      </div>
+
+      <!-- Histórico por Número de Série -->
+      <div class="card" style="grid-column:1/-1">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div style="font-weight:700;font-size:12px;color:var(--nv)">🔧 Histórico por Equipamento / Nº de Série</div>
+          <button class="btn btn-ghost btn-xs" onclick="printRelHistNserie()">🖨 PDF</button>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+          <input type="text" id="rel-hist-nserie" placeholder="Digite o número de série..." oninput="renderRelHistNserie()" style="font-size:11px;padding:4px 10px;border:1.5px solid var(--bd2);border-radius:7px;font-family:inherit;min-width:240px">
+          <select id="rel-hist-equip" onchange="renderRelHistNserie()" style="font-size:11px;padding:4px 8px;border:1.5px solid var(--bd2);border-radius:7px;font-family:inherit;min-width:200px">
+            <option value="">Ou selecione um equipamento...</option>
+          </select>
+          <span id="rel-hist-nserie-total" style="font-size:10px;color:var(--tx3);align-self:center"></span>
+        </div>
+        <div id="rel-hist-nserie-table"></div>
+      </div>
+
     </div>
   </div>
 </div>
@@ -6619,6 +6650,23 @@ function renderRelatorios() {
     ].map(r=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--bd)"><span style="font-size:11px;color:var(--tx)">${r.lbl}</span><span style="font-size:12px;font-weight:700;color:var(--nv)">${r.val}</span></div>`).join('');
   }
 
+  // Popula select histórico por cliente
+  const selHistCli = document.getElementById('rel-hist-cli');
+  if (selHistCli) {
+    const cur = selHistCli.value;
+    selHistCli.innerHTML = '<option value="">Selecione um cliente...</option>' + (G.clientes||[]).map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
+    selHistCli.value = cur;
+    if (cur) renderRelHistCli();
+  }
+
+  // Popula select histórico por equipamento
+  const selHistEquip = document.getElementById('rel-hist-equip');
+  if (selHistEquip) {
+    const cur = selHistEquip.value;
+    selHistEquip.innerHTML = '<option value="">Ou selecione um equipamento...</option>' + (G.equipamentos||[]).map(e=>`<option value="${e.id}">${e.marca||''} ${e.modelo||''} ${e.nserie?'('+e.nserie+')':''}</option>`).join('');
+    selHistEquip.value = cur;
+  }
+
   // Estoque crítico
   const estEl = document.getElementById('rel-estoque');
   if (estEl) {
@@ -6672,6 +6720,158 @@ function printRelSLA() { printRelatorio('os'); }
 function printRelFinanceiro() { printRelatorio('dashboard'); }
 function printRelLogistica() { printRelatorio('logistica'); }
 function printRelEstoque() { printRelatorio('estoque'); }
+
+// ─── HISTÓRICO POR CLIENTE ────────────────────────────────────────────────────
+function renderRelHistCli() {
+  const selCli = document.getElementById('rel-hist-cli');
+  const cliId = selCli?.value || '';
+  const table = document.getElementById('rel-hist-cli-table');
+  const total = document.getElementById('rel-hist-cli-total');
+  if (!table) return;
+  if (!cliId) { table.innerHTML = '<div style="text-align:center;padding:16px;color:var(--tx3);font-size:11px">Selecione um cliente para ver o histórico</div>'; if(total) total.textContent=''; return; }
+  const f = getRelFiltros();
+  const hist = (G.historico||[]).filter(h => {
+    if (h.cliente_id !== cliId) return false;
+    const d = h.data_atend||h.data_ab||'';
+    if (f.de && d < f.de) return false;
+    if (f.ate && d > f.ate) return false;
+    return true;
+  }).sort((a,b) => (b.data_atend||b.data_ab||'').localeCompare(a.data_atend||a.data_ab||''));
+  if (total) total.textContent = `${hist.length} atendimento(s) encontrado(s)`;
+  if (!hist.length) { table.innerHTML='<div style="text-align:center;padding:16px;color:var(--tx3);font-size:11px">Nenhum atendimento encontrado para este cliente no período</div>'; return; }
+  const receita = hist.reduce((s,h)=>s+(h.total_os||h.total||0),0);
+  table.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px">
+      ${[['📋 Total',hist.length,'var(--bl2)'],['✅ Concluídos',hist.filter(h=>h.status==='Concluída').length,'var(--gn)'],['🔴 Retrabalhos',hist.filter(h=>h.retrabalho).length,'var(--rd)'],['💰 Receita Total',fm(receita),'var(--gn)']].map(([l,v,c])=>`<div style="background:var(--sf2);border-radius:8px;padding:8px 10px;border-left:3px solid ${c}"><div style="font-size:8px;font-weight:700;text-transform:uppercase;color:var(--tx3)">${l}</div><div style="font-size:16px;font-weight:800;color:${c};margin-top:2px">${v}</div></div>`).join('')}
+    </div>
+    <table style="width:100%;font-size:10px;border-collapse:collapse">
+      <thead><tr style="background:var(--sf2);border-bottom:2px solid var(--bd)">
+        <th style="padding:5px 8px;text-align:left;font-size:9px;color:var(--tx3)">Nº OS</th>
+        <th style="padding:5px 8px;text-align:left;font-size:9px;color:var(--tx3)">Data</th>
+        <th style="padding:5px 8px;text-align:left;font-size:9px;color:var(--tx3)">Equipamento</th>
+        <th style="padding:5px 8px;text-align:left;font-size:9px;color:var(--tx3)">Nº Série</th>
+        <th style="padding:5px 8px;text-align:left;font-size:9px;color:var(--tx3)">Defeito</th>
+        <th style="padding:5px 8px;text-align:left;font-size:9px;color:var(--tx3)">Técnico</th>
+        <th style="padding:5px 8px;text-align:left;font-size:9px;color:var(--tx3)">Status</th>
+        <th style="padding:5px 8px;text-align:right;font-size:9px;color:var(--tx3)">Valor</th>
+      </tr></thead>
+      <tbody>${hist.map(h=>{
+        const t=G.tecnicos.find(x=>x.id===h.tecnico_id);
+        const cor=h.status==='Concluída'?'var(--gn)':h.status==='Em andamento'?'var(--or)':'var(--bl2)';
+        return`<tr style="border-bottom:1px solid var(--bd);${h.retrabalho?'background:var(--rdbg)':''}">
+          <td style="padding:5px 8px;font-family:monospace;font-weight:700;color:var(--nv)">${h.num||'—'}</td>
+          <td style="padding:5px 8px">${fd(h.data_atend||h.data_ab)}</td>
+          <td style="padding:5px 8px;font-weight:600">${h.modelo||h.equipamento||'—'}</td>
+          <td style="padding:5px 8px;font-family:monospace;font-size:9px;color:var(--tx2)">${h.nserie||'—'}</td>
+          <td style="padding:5px 8px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${h.defeito||'—'}</td>
+          <td style="padding:5px 8px">${t?.nome||h.tecnico||'—'}</td>
+          <td style="padding:5px 8px"><span style="font-size:9px;font-weight:700;color:${cor}">${h.status}</span>${h.retrabalho?'<span style="font-size:8px;color:var(--rd);margin-left:4px">⚠retrabalho</span>':''}</td>
+          <td style="padding:5px 8px;text-align:right;font-weight:700;color:var(--gn)">${(h.total_os||h.total||0)>0?fm(h.total_os||h.total):'—'}</td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>`;
+}
+
+// ─── HISTÓRICO POR NÚMERO DE SÉRIE ───────────────────────────────────────────
+function renderRelHistNserie() {
+  const nserie = (document.getElementById('rel-hist-nserie')?.value||'').trim().toLowerCase();
+  const equipId = document.getElementById('rel-hist-equip')?.value||'';
+  const table = document.getElementById('rel-hist-nserie-table');
+  const total = document.getElementById('rel-hist-nserie-total');
+  if (!table) return;
+  if (!nserie && !equipId) {
+    table.innerHTML='<div style="text-align:center;padding:16px;color:var(--tx3);font-size:11px">Digite o número de série ou selecione um equipamento</div>';
+    if(total) total.textContent=''; return;
+  }
+  const hist = (G.historico||[]).filter(h => {
+    if (nserie && !(h.nserie||'').toLowerCase().includes(nserie)) return false;
+    if (equipId && h.equip_id !== equipId) return false;
+    return true;
+  }).sort((a,b)=>(b.data_atend||b.data_ab||'').localeCompare(a.data_atend||a.data_ab||''));
+  if (total) total.textContent = `${hist.length} atendimento(s) encontrado(s)`;
+  if (!hist.length) { table.innerHTML='<div style="text-align:center;padding:16px;color:var(--tx3);font-size:11px">Nenhum atendimento encontrado</div>'; return; }
+  const receita = hist.reduce((s,h)=>s+(h.total_os||h.total||0),0);
+  const retrabalhos = hist.filter(h=>h.retrabalho).length;
+  // Equipamento info
+  const equip = G.equipamentos?.find(e=>e.nserie&&e.nserie.toLowerCase().includes(nserie)||e.id===equipId);
+  const equipInfo = equip ? `<div style="background:var(--sf2);border-radius:8px;padding:10px 14px;margin-bottom:10px;border-left:4px solid var(--bl2)"><div style="font-weight:700;color:var(--nv);font-size:12px">${equip.marca||''} ${equip.modelo||''}</div><div style="font-size:10px;color:var(--tx3);margin-top:2px">N° Série: <b style="font-family:monospace">${equip.nserie||'—'}</b> · Patrimônio: ${equip.patrimonio||'—'} · Localização: ${equip.localizacao||'—'}</div></div>` : '';
+  table.innerHTML = equipInfo + `
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px">
+      ${[['📋 Atendimentos',hist.length,'var(--bl2)'],['✅ Concluídos',hist.filter(h=>h.status==='Concluída').length,'var(--gn)'],['⚠ Retrabalhos',retrabalhos,'var(--rd)'],['💰 Gasto Total',fm(receita),'var(--or)']].map(([l,v,c])=>`<div style="background:var(--sf2);border-radius:8px;padding:8px 10px;border-left:3px solid ${c}"><div style="font-size:8px;font-weight:700;text-transform:uppercase;color:var(--tx3)">${l}</div><div style="font-size:16px;font-weight:800;color:${c};margin-top:2px">${v}</div></div>`).join('')}
+    </div>
+    <table style="width:100%;font-size:10px;border-collapse:collapse">
+      <thead><tr style="background:var(--sf2);border-bottom:2px solid var(--bd)">
+        <th style="padding:5px 8px;text-align:left;font-size:9px;color:var(--tx3)">Nº OS</th>
+        <th style="padding:5px 8px;text-align:left;font-size:9px;color:var(--tx3)">Data</th>
+        <th style="padding:5px 8px;text-align:left;font-size:9px;color:var(--tx3)">Cliente</th>
+        <th style="padding:5px 8px;text-align:left;font-size:9px;color:var(--tx3)">Defeito Relatado</th>
+        <th style="padding:5px 8px;text-align:left;font-size:9px;color:var(--tx3)">Procedimento</th>
+        <th style="padding:5px 8px;text-align:left;font-size:9px;color:var(--tx3)">Peças</th>
+        <th style="padding:5px 8px;text-align:left;font-size:9px;color:var(--tx3)">Técnico</th>
+        <th style="padding:5px 8px;text-align:right;font-size:9px;color:var(--tx3)">Valor</th>
+      </tr></thead>
+      <tbody>${hist.map(h=>{
+        const c=G.clientes.find(x=>x.id===h.cliente_id);
+        const t=G.tecnicos.find(x=>x.id===h.tecnico_id);
+        const cor=h.status==='Concluída'?'var(--gn)':h.status==='Em andamento'?'var(--or)':'var(--bl2)';
+        return`<tr style="border-bottom:1px solid var(--bd);${h.retrabalho?'background:var(--rdbg)':''}">
+          <td style="padding:5px 8px;font-family:monospace;font-weight:700;color:var(--nv)">${h.num||'—'}</td>
+          <td style="padding:5px 8px;white-space:nowrap">${fd(h.data_atend||h.data_ab)}</td>
+          <td style="padding:5px 8px;font-weight:600">${c?.nome||h.cliente||'—'}</td>
+          <td style="padding:5px 8px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${h.defeito||'—'}</td>
+          <td style="padding:5px 8px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${h.procedimento||'—'}</td>
+          <td style="padding:5px 8px;font-size:9px">${h.pecas||'—'}</td>
+          <td style="padding:5px 8px">${t?.nome||h.tecnico||'—'}</td>
+          <td style="padding:5px 8px;text-align:right;font-weight:700;color:var(--gn)">${(h.total_os||h.total||0)>0?fm(h.total_os||h.total):'—'}</td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>`;
+}
+
+function printRelHistCli() {
+  const selCli = document.getElementById('rel-hist-cli');
+  const cliId = selCli?.value;
+  if (!cliId) { alert('Selecione um cliente primeiro'); return; }
+  const cli = G.clientes.find(x=>x.id===cliId);
+  const f = getRelFiltros();
+  const hist = (G.historico||[]).filter(h=>{
+    if(h.cliente_id!==cliId)return false;
+    const d=h.data_atend||h.data_ab||'';
+    return(!f.de||d>=f.de)&&(!f.ate||d<=f.ate);
+  }).sort((a,b)=>(b.data_atend||b.data_ab||'').localeCompare(a.data_atend||a.data_ab||''));
+  const html = `<h2 style="color:#0d1f3c;margin-bottom:4px">Histórico — ${cli?.nome||'Cliente'}</h2>
+  <div style="font-size:11px;color:#666;margin-bottom:14px">${hist.length} atendimento(s) · ${f.de?fd(f.de):'início'} → ${f.ate?fd(f.ate):'hoje'}</div>
+  <table style="width:100%;border-collapse:collapse;font-size:10px">
+    <thead><tr style="background:#0d1f3c;color:#fff">
+      <th style="padding:5px 8px">Nº OS</th><th>Data</th><th>Equipamento</th><th>Nº Série</th><th>Defeito</th><th>Procedimento</th><th>Técnico</th><th>Status</th><th>Valor</th>
+    </tr></thead>
+    <tbody>${hist.map(h=>{const t=G.tecnicos.find(x=>x.id===h.tecnico_id);return`<tr style="border-bottom:1px solid #eee;${h.retrabalho?'background:#fff0f0':''}"><td style="padding:4px 8px;font-family:monospace;font-weight:700">${h.num||'—'}</td><td>${fd(h.data_atend||h.data_ab)}</td><td>${h.modelo||h.equipamento||'—'}</td><td style="font-family:monospace;font-size:9px">${h.nserie||'—'}</td><td style="max-width:140px;overflow:hidden;text-overflow:ellipsis">${h.defeito||'—'}</td><td style="max-width:140px;overflow:hidden;text-overflow:ellipsis">${h.procedimento||'—'}</td><td>${t?.nome||h.tecnico||'—'}</td><td style="font-weight:700;color:${h.status==='Concluída'?'green':'orange'}">${h.status}${h.retrabalho?' ⚠':''}</td><td style="font-weight:700;color:green">${(h.total_os||h.total||0)>0?fm(h.total_os||h.total):'—'}</td></tr>`}).join('')}</tbody>
+  </table>`;
+  const header=`<div style="background:#0d1f3c;color:#fff;padding:12px 18px;border-radius:8px 8px 0 0;margin-bottom:16px"><div style="font-size:14px;font-weight:800;color:#e07818">ORION PRINT</div><div style="font-size:9px;opacity:.6">Histórico de Atendimento · ${cli?.nome||''} · ${new Date().toLocaleDateString('pt-BR')}</div></div>`;
+  openPrintWindow(header+html,'');
+}
+
+function printRelHistNserie() {
+  const nserie = (document.getElementById('rel-hist-nserie')?.value||'').trim().toLowerCase();
+  const equipId = document.getElementById('rel-hist-equip')?.value||'';
+  if (!nserie && !equipId) { alert('Digite o número de série ou selecione um equipamento'); return; }
+  const hist = (G.historico||[]).filter(h=>{
+    if(nserie&&!(h.nserie||'').toLowerCase().includes(nserie))return false;
+    if(equipId&&h.equip_id!==equipId)return false;
+    return true;
+  }).sort((a,b)=>(b.data_atend||b.data_ab||'').localeCompare(a.data_atend||a.data_ab||''));
+  const equip = G.equipamentos?.find(e=>e.nserie&&e.nserie.toLowerCase().includes(nserie)||e.id===equipId);
+  const html = `<h2 style="color:#0d1f3c;margin-bottom:4px">Histórico — ${equip?equip.marca+' '+equip.modelo:'Equipamento'}</h2>
+  <div style="font-size:11px;color:#666;margin-bottom:14px">N° Série: ${equip?.nserie||nserie||'—'} · ${hist.length} atendimento(s)</div>
+  <table style="width:100%;border-collapse:collapse;font-size:10px">
+    <thead><tr style="background:#0d1f3c;color:#fff">
+      <th style="padding:5px 8px">Nº OS</th><th>Data</th><th>Cliente</th><th>Defeito</th><th>Procedimento</th><th>Peças</th><th>Técnico</th><th>Valor</th>
+    </tr></thead>
+    <tbody>${hist.map(h=>{const c=G.clientes.find(x=>x.id===h.cliente_id);const t=G.tecnicos.find(x=>x.id===h.tecnico_id);return`<tr style="border-bottom:1px solid #eee;${h.retrabalho?'background:#fff0f0':''}"><td style="padding:4px 8px;font-family:monospace;font-weight:700">${h.num||'—'}</td><td>${fd(h.data_atend||h.data_ab)}</td><td>${c?.nome||h.cliente||'—'}</td><td style="max-width:150px;overflow:hidden;text-overflow:ellipsis">${h.defeito||'—'}</td><td style="max-width:150px;overflow:hidden;text-overflow:ellipsis">${h.procedimento||'—'}</td><td>${h.pecas||'—'}</td><td>${t?.nome||h.tecnico||'—'}</td><td style="font-weight:700;color:green">${(h.total_os||h.total||0)>0?fm(h.total_os||h.total):'—'}</td></tr>`}).join('')}</tbody>
+  </table>`;
+  const header=`<div style="background:#0d1f3c;color:#fff;padding:12px 18px;border-radius:8px 8px 0 0;margin-bottom:16px"><div style="font-size:14px;font-weight:800;color:#e07818">ORION PRINT</div><div style="font-size:9px;opacity:.6">Histórico por Equipamento · N° ${equip?.nserie||nserie||'—'} · ${new Date().toLocaleDateString('pt-BR')}</div></div>`;
+  openPrintWindow(header+html,'');
+}
 
 function printRelatorio(tipo){
   let html='', title='';
