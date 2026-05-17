@@ -272,19 +272,31 @@ button:not(.btn):not(.btnx):not(.lbtn):not(.btn-logout):not(.chk):not(.os-tab):n
 .ssub{font-size:9px;color:var(--tx3);margin-top:3px}
 
 /* DASHBOARD KPI CARDS — grandes com gradiente */
-.dkpi-card{border-radius:16px;padding:20px 22px;color:#fff;position:relative;overflow:hidden;transition:transform .15s,box-shadow .15s}
+.dkpi-card{border-radius:16px;padding:20px 22px;color:#fff;position:relative;overflow:hidden;transition:transform .15s,box-shadow .15s;animation:dkpi-enter .5s ease both}
+.dkpi-card:nth-child(2){animation-delay:.08s}
+.dkpi-card:nth-child(3){animation-delay:.16s}
+.dkpi-card:nth-child(4){animation-delay:.24s;animation:dkpi-enter .5s ease both, crit-glow 2.5s ease-in-out .8s infinite}
+@keyframes dkpi-enter{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes crit-glow{0%,100%{box-shadow:0 4px 20px rgba(183,57,48,.25)}50%{box-shadow:0 4px 32px rgba(231,76,60,.55)}}
 .dkpi-card:hover{transform:translateY(-2px);box-shadow:0 12px 36px rgba(13,31,60,.22)}
 .dkpi-card::after{content:'';position:absolute;right:-20px;bottom:-20px;width:100px;height:100px;border-radius:50%;background:rgba(255,255,255,.07)}
 .dkpi-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px}
 .dkpi-label{font-size:11px;font-weight:600;opacity:.85;text-transform:uppercase;letter-spacing:.8px}
-.dkpi-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.dkpi-val{font-size:32px;font-weight:800;line-height:1;margin-bottom:10px;letter-spacing:-1px}
+.dkpi-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;animation:dkpi-float 3s ease-in-out infinite}
+.dkpi-card:nth-child(2) .dkpi-icon{animation-delay:.4s}
+.dkpi-card:nth-child(3) .dkpi-icon{animation-delay:.8s}
+.dkpi-card:nth-child(4) .dkpi-icon{animation-delay:1.2s}
+@keyframes dkpi-float{0%,100%{transform:translateY(0) rotate(0deg)}30%{transform:translateY(-4px) rotate(-4deg)}60%{transform:translateY(-2px) rotate(3deg)}}
+.dkpi-val{font-size:32px;font-weight:800;line-height:1;margin-bottom:10px;letter-spacing:-1px;animation:dkpi-popin .5s cubic-bezier(.34,1.56,.64,1) both}
+@keyframes dkpi-popin{from{opacity:0;transform:scale(.7)}to{opacity:1;transform:scale(1)}}
 .dkpi-sub{font-size:11px;opacity:.8}
 
 /* DASHBOARD KPI CARDS — mini faixa */
 .dkpi-mini{background:var(--sf);border:1px solid var(--bd);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:10px;transition:all .15s}
 .dkpi-mini:hover{border-color:var(--bl);box-shadow:0 4px 16px rgba(13,31,60,.08)}
-.dkpi-mini-ico{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.dkpi-mini:hover .dkpi-mini-ico{animation:dkpi-spin-once .4s ease-in-out}
+@keyframes dkpi-spin-once{0%{transform:rotate(0deg) scale(1)}50%{transform:rotate(-15deg) scale(1.18)}100%{transform:rotate(0deg) scale(1)}}
+.dkpi-mini-ico{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform .2s}
 .dkpi-mini-val{font-size:18px;font-weight:800;color:var(--nv);line-height:1}
 .dkpi-mini-lbl{font-size:10px;color:var(--tx3);font-weight:600;text-transform:uppercase;letter-spacing:.6px;margin-top:2px}
 
@@ -3489,6 +3501,26 @@ function verAgendaEv(id) {
   if (ev) openAgendaEvento(ev);
 }
 
+function countUp(el, target, duration) {
+  if (!el) return;
+  const end = Number(target) || 0;
+  const start = Number(el.textContent.replace(/\D/g,'')) || 0;
+  if (start === end) { el.textContent = end; return; }
+  const dur = duration || Math.min(600, 200 + end * 8);
+  const step = 16;
+  const steps = Math.ceil(dur / step);
+  let current = start;
+  let i = 0;
+  const inc = (end - start) / steps;
+  clearInterval(el._cTimer);
+  el._cTimer = setInterval(() => {
+    i++;
+    current += inc;
+    el.textContent = Math.round(i >= steps ? end : current);
+    if (i >= steps) clearInterval(el._cTimer);
+  }, step);
+}
+
 function fmtData(d) {
   if (!d) return '—';
   const p = d.split('-'); if (p.length < 3) return d;
@@ -6383,17 +6415,17 @@ async function loadDash(){
     // ── Preenche KPIs ──
     document.getElementById('d-atend').textContent   = osF.length;
     const dAtendMini = document.getElementById('d-atend-mini');
-    if(dAtendMini) dAtendMini.textContent = osF.length;
-    document.getElementById('d-osab').textContent    = osAb;
+    if(dAtendMini) countUp(dAtendMini, osF.length);
+    countUp(document.getElementById('d-osab'),     osAb);
     document.getElementById('d-osand').textContent   = osAnd;
-    document.getElementById('d-osok').textContent    = osOk;
-    document.getElementById('d-lab').textContent     = d.total_lab;
-    document.getElementById('d-retqtd').textContent  = d.retrabalho.length;
-    document.getElementById('d-rotas').textContent   = logF.length;
+    countUp(document.getElementById('d-osok'),     osOk);
+    countUp(document.getElementById('d-lab'),      d.total_lab);
+    countUp(document.getElementById('d-retqtd'),   d.retrabalho.length);
+    countUp(document.getElementById('d-rotas'),    logF.length);
     document.getElementById('d-litros').textContent  = litros.toFixed(0)+'L';
     document.getElementById('d-gastoT').textContent  = 'R$'+Math.round(gastoLog+gastoOS).toLocaleString('pt-BR');
-    document.getElementById('d-estqtd').textContent  = G.estoque.length;
-    document.getElementById('d-estbaixo').textContent= estBaixo.length;
+    countUp(document.getElementById('d-estqtd'),   G.estoque.length);
+    countUp(document.getElementById('d-estbaixo'), estBaixo.length);
 
     // ── Barra por técnico (filtrado) ──
     const porTec = {};
