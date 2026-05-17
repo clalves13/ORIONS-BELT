@@ -2209,6 +2209,7 @@ Outros</textarea>
       <button class="log-tab"        id="ltab-abast"  onclick="logTab('abast',this)">⛽ Abastecimento</button>
       <button class="log-tab"        id="ltab-check"  onclick="logTab('check',this)">✅ Checklist</button>
       <button class="log-tab"        id="ltab-manut"  onclick="logTab('manut',this)">🔧 Manutenção</button>
+      <button class="log-tab"        id="ltab-veic"   onclick="logTab('veic',this)">🚗 Veículos</button>
     </div>
 
     <!-- ABA ROTAS -->
@@ -2270,8 +2271,77 @@ Outros</textarea>
       </table></div></div>
     </div>
 
+    <!-- ABA VEÍCULOS -->
+    <div id="ltab-panel-veic" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div style="font-size:11px;color:var(--tx3)">Cadastre os veículos da frota para controle de CRLV, seguro e manutenções.</div>
+        <button class="btn btn-accent btn-sm" onclick="openVeiculo(null)">+ Novo Veículo</button>
+      </div>
+      <div id="veic-cards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px"></div>
+    </div>
+
   </div>
 </div>
+
+<!-- MODAL VEÍCULO -->
+<div class="mov" id="m-veic">
+<div class="modal" style="max-width:640px">
+  <div class="mhd"><div class="mhd-title" id="m-veic-title">Novo Veículo</div><button class="btnx" onclick="closeM('m-veic')">×</button></div>
+  <div class="mbody">
+    <input type="hidden" id="veic-id">
+    <div style="margin-bottom:13px"><div class="fsec">Identificação</div>
+      <div class="fgrid fg4">
+        <div class="fg"><label>Placa *</label><input type="text" id="veic-placa" style="text-transform:uppercase" placeholder="ABC-1234"></div>
+        <div class="fg"><label>Tipo</label>
+          <select id="veic-tipo">
+            <option>Carro</option><option>Moto</option><option>Van</option>
+            <option>Caminhonete</option><option>Caminhão</option><option>Outro</option>
+          </select>
+        </div>
+        <div class="fg"><label>Marca</label><input type="text" id="veic-marca" placeholder="Honda, Toyota..."></div>
+        <div class="fg"><label>Modelo</label><input type="text" id="veic-modelo" placeholder="Civic, Corolla..."></div>
+        <div class="fg"><label>Ano</label><input type="number" id="veic-ano" placeholder="2020"></div>
+        <div class="fg"><label>Cor</label><input type="text" id="veic-cor" placeholder="Prata"></div>
+        <div class="fg"><label>Km Atual</label><input type="number" id="veic-km" value="0"></div>
+        <div class="fg"><label>Responsável</label><input type="text" id="veic-resp" placeholder="Nome do motorista"></div>
+      </div>
+    </div>
+    <div style="margin-bottom:13px"><div class="fsec">📄 CRLV — Licenciamento</div>
+      <div class="fgrid fg3">
+        <div class="fg"><label>Nº CRLV / Renavam</label><input type="text" id="veic-renavam"></div>
+        <div class="fg"><label>Vencimento CRLV *</label><input type="date" id="veic-crlv-venc"></div>
+        <div class="fg"><label>Alerta (dias antes)</label>
+          <select id="veic-crlv-alerta">
+            <option value="30">30 dias</option><option value="60">60 dias</option>
+            <option value="90">90 dias</option><option value="15">15 dias</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:13px"><div class="fsec">🛡 Seguro</div>
+      <div class="fgrid fg3">
+        <div class="fg"><label>Seguradora</label><input type="text" id="veic-seg-empresa" placeholder="Porto Seguro, Allianz..."></div>
+        <div class="fg"><label>Nº Apólice</label><input type="text" id="veic-seg-apolice"></div>
+        <div class="fg"><label>Valor R$</label><input type="number" id="veic-seg-valor" value="0" step="0.01"></div>
+        <div class="fg"><label>Início Vigência</label><input type="date" id="veic-seg-inicio"></div>
+        <div class="fg"><label>Vencimento Seguro *</label><input type="date" id="veic-seg-venc"></div>
+        <div class="fg"><label>Alerta (dias antes)</label>
+          <select id="veic-seg-alerta">
+            <option value="30">30 dias</option><option value="60">60 dias</option>
+            <option value="90">90 dias</option><option value="15">15 dias</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div><div class="fsec">Observações</div>
+      <div class="fg"><textarea id="veic-obs" rows="2" placeholder="Observações gerais sobre o veículo..."></textarea></div>
+    </div>
+  </div>
+  <div class="mfoot">
+    <button class="btn btn-ghost" onclick="closeM('m-veic')">Cancelar</button>
+    <button class="btn btn-primary" onclick="saveVeiculo()">Salvar</button>
+  </div>
+</div></div>
 
 <!-- MODAL ROTA -->
 <div class="mov" id="m-log">
@@ -2897,7 +2967,7 @@ Outros</textarea>
 
 
 <script>
-let G = { user: null, tecnicos: [], clientes: [], equipamentos: [], atendimentos: [], ordens: [], laboratorio: [], historico: [], estoque: [], suprCli: [], logistica: [], abastecimento: [], checklist: [], manutencao: [], pedidosPecas: [], eqBaixados: [], currentOSData: null, currentLabData: null };
+let G = { user: null, tecnicos: [], clientes: [], equipamentos: [], atendimentos: [], ordens: [], laboratorio: [], historico: [], estoque: [], suprCli: [], logistica: [], abastecimento: [], checklist: [], manutencao: [], veiculos: [], pedidosPecas: [], eqBaixados: [], currentOSData: null, currentLabData: null };
 
 const fm = v => 'R$ ' + (+v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 const fd = d => { if(!d)return''; const p=d.split('-'); return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:d; };
@@ -2952,12 +3022,12 @@ async function loadAll() {
     api('GET','/api/historico'), api('GET','/api/estoque'), api('GET','/api/estoque-supr'),
     api('GET','/api/logistica'), api('GET','/api/abastecimento'),
     api('GET','/api/checklist'), api('GET','/api/manutencao'),
-    api('GET','/api/pedidos-pecas'), api('GET','/api/eq-baixados')
+    api('GET','/api/veiculos'), api('GET','/api/pedidos-pecas'), api('GET','/api/eq-baixados')
   ]);
   G.tecnicos=tec; G.clientes=cli; G.equipamentos=eq;
   G.atendimentos=os; G.ordens=os; G.laboratorio=lab; G.historico=hist; G.estoque=est; G.suprCli=supr;
   G.logistica=log||[]; G.abastecimento=abast||[]; G.checklist=ck||[]; G.manutencao=manut||[];
-  G.pedidosPecas=ped||[]; G.eqBaixados=baix||[];
+  G.veiculos=veic||[]; G.pedidosPecas=ped||[]; G.eqBaixados=baix||[];
   updateBadges();
 }
 
@@ -6024,7 +6094,33 @@ async function gerarNotificacoes() {
     });
   }
 
-  // 5. Info: OS concluídas hoje
+  // 5. CRLV e Seguro vencendo
+  if (G.veiculos?.length) {
+    G.veiculos.forEach(v => {
+      if (v.crlv_venc) {
+        const dias = Math.ceil((new Date(v.crlv_venc) - new Date(hoje)) / 86400000);
+        const alerta = v.crlv_alerta || 30;
+        if (dias < 0)
+          notifs.push({nivel:'critico',categoria:'Frota',icon:'📄',
+            titulo:`CRLV vencido — ${v.placa}`,desc:`${v.marca||''} ${v.modelo||''} · Venceu: ${fd(v.crlv_venc)}`,data:hoje,link:'logistica'});
+        else if (dias <= alerta)
+          notifs.push({nivel:'aviso',categoria:'Frota',icon:'📄',
+            titulo:`CRLV vence em ${dias}d — ${v.placa}`,desc:`${v.marca||''} ${v.modelo||''} · Vence: ${fd(v.crlv_venc)}`,data:hoje,link:'logistica'});
+      }
+      if (v.seg_venc) {
+        const dias = Math.ceil((new Date(v.seg_venc) - new Date(hoje)) / 86400000);
+        const alerta = v.seg_alerta || 30;
+        if (dias < 0)
+          notifs.push({nivel:'critico',categoria:'Frota',icon:'🛡',
+            titulo:`Seguro vencido — ${v.placa}`,desc:`${v.seg_empresa||''} · Venceu: ${fd(v.seg_venc)}`,data:hoje,link:'logistica'});
+        else if (dias <= alerta)
+          notifs.push({nivel:'aviso',categoria:'Frota',icon:'🛡',
+            titulo:`Seguro vence em ${dias}d — ${v.placa}`,desc:`${v.seg_empresa||''} · Vence: ${fd(v.seg_venc)}`,data:hoje,link:'logistica'});
+      }
+    });
+  }
+
+  // 6. Info: OS concluídas hoje
   const conclHoje=G.ordens?.filter(o=>o.status==='Concluída'&&(o.data_atend||'').slice(0,10)===hoje).length||0;
   if(conclHoje>0) notifs.push({nivel:'info',categoria:'OS',icon:'✅',
     titulo:`${conclHoje} OS concluída(s) hoje`,desc:'Atendimentos finalizados no dia',data:hoje,link:'os'});
@@ -6678,19 +6774,19 @@ function sigSet(data){const c=document.getElementById('sig-canvas');if(!c||!data
 const CK_ITENS = ['Pneus calibrados','Estepe','Óleo do motor','Água do radiador','Freios','Lanternas/faróis','Documentos (CRLV)','Extintor','Triângulo','Limpadores'];
 
 function logTab(tab, btn) {
-  ['rotas','abast','check','manut'].forEach(t => {
+  ['rotas','abast','check','manut','veic'].forEach(t => {
     const p = document.getElementById('ltab-panel-'+t);
     const b = document.getElementById('ltab-'+t);
     if (p) p.style.display = t===tab ? 'block' : 'none';
     if (b) b.classList.toggle('active', t===tab);
   });
-  // Atualiza botão topbar
   const btnNova = document.getElementById('btn-nova-log');
-  const actions = {rotas:['+ Nova Rota','openLogistica(null)'], abast:['+ Abastecimento','openAbast(null)'], check:['+ Checklist','openCheck(null)'], manut:['+ Manutenção','openManut(null)']};
+  const actions = {rotas:['+ Nova Rota','openLogistica(null)'], abast:['+ Abastecimento','openAbast(null)'], check:['+ Checklist','openCheck(null)'], manut:['+ Manutenção','openManut(null)'], veic:['+ Novo Veículo','openVeiculo(null)']};
   if (btnNova && actions[tab]) { btnNova.textContent=actions[tab][0]; btnNova.setAttribute('onclick',actions[tab][1]); }
   if (tab==='abast') renderAbast();
   if (tab==='check') renderCheck();
   if (tab==='manut') renderManut();
+  if (tab==='veic') renderVeiculos();
 }
 
 function limparFiltrosLog() {
@@ -7004,6 +7100,116 @@ function renderManut() {
   }).join('');
 }
 async function delManut(id){if(confirm('Excluir?')){await api('DELETE',`/api/manutencao/${id}`);await loadAll();renderManut();renderLogistica();}}
+
+// ── VEÍCULOS ──────────────────────────────────────────────────────────────────
+function renderVeiculos() {
+  const container = document.getElementById('veic-cards'); if (!container) return;
+  const veics = G.veiculos || [];
+  if (!veics.length) {
+    container.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="empty-ico">🚗</div><div class="empty-t">Nenhum veículo cadastrado</div><div class="empty-s">Clique em "+ Novo Veículo" para começar</div></div>`;
+    return;
+  }
+  const hoje = today();
+  container.innerHTML = veics.map(v => {
+    const diasCrlv = v.crlv_venc ? Math.ceil((new Date(v.crlv_venc) - new Date(hoje)) / 86400000) : null;
+    const diasSeg  = v.seg_venc  ? Math.ceil((new Date(v.seg_venc)  - new Date(hoje)) / 86400000) : null;
+    const crlvOk   = diasCrlv === null ? '' : diasCrlv < 0 ? 'var(--rd)' : diasCrlv <= (v.crlv_alerta||30) ? 'var(--or)' : 'var(--gn)';
+    const segOk    = diasSeg  === null ? '' : diasSeg  < 0 ? 'var(--rd)' : diasSeg  <= (v.seg_alerta||30)  ? 'var(--or)' : 'var(--gn)';
+    const crlvTxt  = diasCrlv === null ? '—' : diasCrlv < 0 ? `Vencido há ${Math.abs(diasCrlv)}d` : `${diasCrlv}d restantes`;
+    const segTxt   = diasSeg  === null ? '—' : diasSeg  < 0 ? `Vencido há ${Math.abs(diasSeg)}d`  : `${diasSeg}d restantes`;
+    return `<div style="background:#fff;border:1px solid var(--bd);border-radius:12px;padding:14px 16px;border-left:4px solid var(--bl2)">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px">
+        <div>
+          <div style="font-weight:700;font-size:13px;color:var(--nv)">${v.marca||''} ${v.modelo||''}</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;color:var(--or);margin-top:2px">${v.placa||'SEM PLACA'}</div>
+          <div style="font-size:10px;color:var(--tx3);margin-top:2px">${v.tipo||'—'} · ${v.ano||'—'} · ${v.cor||'—'}</div>
+        </div>
+        <div style="display:flex;gap:5px">
+          <button class="btn btn-ghost btn-xs" onclick="openVeiculo('${v.id}')">✏ Editar</button>
+          <button class="btn btn-danger btn-xs" onclick="delVeiculo('${v.id}')">×</button>
+        </div>
+      </div>
+      ${v.resp ? `<div style="font-size:10px;color:var(--tx2);margin-bottom:8px">👤 ${v.resp}</div>` : ''}
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div style="background:var(--sf2);border-radius:8px;padding:8px 10px;border-left:3px solid ${crlvOk||'var(--bd)'}">
+          <div style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--tx3)">📄 CRLV</div>
+          <div style="font-size:11px;font-weight:700;color:${crlvOk||'var(--tx2)'};margin-top:3px">${crlvTxt}</div>
+          <div style="font-size:9px;color:var(--tx3)">${v.crlv_venc ? 'Venc: '+fd(v.crlv_venc) : 'Não cadastrado'}</div>
+        </div>
+        <div style="background:var(--sf2);border-radius:8px;padding:8px 10px;border-left:3px solid ${segOk||'var(--bd)'}">
+          <div style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--tx3)">🛡 Seguro</div>
+          <div style="font-size:11px;font-weight:700;color:${segOk||'var(--tx2)'};margin-top:3px">${segTxt}</div>
+          <div style="font-size:9px;color:var(--tx3)">${v.seg_venc ? 'Venc: '+fd(v.seg_venc)+(v.seg_empresa?' · '+v.seg_empresa:'') : 'Não cadastrado'}</div>
+        </div>
+      </div>
+      ${v.km ? `<div style="font-size:10px;color:var(--tx3);margin-top:8px">🔢 Km: ${Number(v.km).toLocaleString('pt-BR')} km</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function openVeiculo(id) {
+  const v = id ? (G.veiculos||[]).find(x=>x.id===id) : null;
+  document.getElementById('m-veic-title').textContent = v ? 'Editar Veículo' : 'Novo Veículo';
+  document.getElementById('veic-id').value = v?.id||'';
+  document.getElementById('veic-placa').value = v?.placa||'';
+  document.getElementById('veic-tipo').value = v?.tipo||'Carro';
+  document.getElementById('veic-marca').value = v?.marca||'';
+  document.getElementById('veic-modelo').value = v?.modelo||'';
+  document.getElementById('veic-ano').value = v?.ano||'';
+  document.getElementById('veic-cor').value = v?.cor||'';
+  document.getElementById('veic-km').value = v?.km||0;
+  document.getElementById('veic-resp').value = v?.resp||'';
+  document.getElementById('veic-renavam').value = v?.renavam||'';
+  document.getElementById('veic-crlv-venc').value = v?.crlv_venc||'';
+  document.getElementById('veic-crlv-alerta').value = v?.crlv_alerta||30;
+  document.getElementById('veic-seg-empresa').value = v?.seg_empresa||'';
+  document.getElementById('veic-seg-apolice').value = v?.seg_apolice||'';
+  document.getElementById('veic-seg-valor').value = v?.seg_valor||0;
+  document.getElementById('veic-seg-inicio').value = v?.seg_inicio||'';
+  document.getElementById('veic-seg-venc').value = v?.seg_venc||'';
+  document.getElementById('veic-seg-alerta').value = v?.seg_alerta||30;
+  document.getElementById('veic-obs').value = v?.obs||'';
+  openM('m-veic');
+}
+
+async function saveVeiculo() {
+  const placa = document.getElementById('veic-placa').value.trim();
+  if (!placa) { alert('Placa obrigatória'); return; }
+  const id = document.getElementById('veic-id').value;
+  const body = {
+    placa: placa.toUpperCase(),
+    tipo: document.getElementById('veic-tipo').value,
+    marca: document.getElementById('veic-marca').value,
+    modelo: document.getElementById('veic-modelo').value,
+    ano: document.getElementById('veic-ano').value,
+    cor: document.getElementById('veic-cor').value,
+    km: +document.getElementById('veic-km').value||0,
+    resp: document.getElementById('veic-resp').value,
+    renavam: document.getElementById('veic-renavam').value,
+    crlv_venc: document.getElementById('veic-crlv-venc').value,
+    crlv_alerta: +document.getElementById('veic-crlv-alerta').value||30,
+    seg_empresa: document.getElementById('veic-seg-empresa').value,
+    seg_apolice: document.getElementById('veic-seg-apolice').value,
+    seg_valor: +document.getElementById('veic-seg-valor').value||0,
+    seg_inicio: document.getElementById('veic-seg-inicio').value,
+    seg_venc: document.getElementById('veic-seg-venc').value,
+    seg_alerta: +document.getElementById('veic-seg-alerta').value||30,
+    obs: document.getElementById('veic-obs').value
+  };
+  if (id) await api('PUT', `/api/veiculos/${id}`, body);
+  else await api('POST', '/api/veiculos', body);
+  closeM('m-veic');
+  await loadAll();
+  renderVeiculos();
+  showToast('Veículo salvo!');
+}
+
+async function delVeiculo(id) {
+  if (!confirm('Excluir veículo?')) return;
+  await api('DELETE', `/api/veiculos/${id}`);
+  await loadAll();
+  renderVeiculos();
+}
 
 // ── EXPORTAR LOGÍSTICA EXCEL ──
 function exportLogExcel() {
