@@ -456,6 +456,85 @@ tr:hover td{background:var(--sf2)}
 .os-sig-empty{height:55px}
 .os-sig-line{border-top:1.5px solid #444;padding-top:5px;font-size:9px;color:#555;margin-top:4px}
 .os-sig{border-top:1px solid #555;padding-top:4px;text-align:center;font-size:8px;color:#667;margin-top:26px}
+
+/* ===== ORION V8 FUTURISTIC UI OVERRIDE — VISUAL ONLY ===== */
+:root{
+--bg:#060b16;
+--bg2:#0d1424;
+--bg3:#121d35;
+--sf:rgba(16,23,40,.72);
+--sf2:rgba(21,31,54,.90);
+--sf3:#17233d;
+--nv:#0a1120;
+--nv2:#111d34;
+--tx:#f1f6ff;
+--tx2:#9db2d1;
+--tx3:#6d7f9f;
+--bd:rgba(120,150,220,.12);
+--bd2:rgba(120,150,220,.18);
+--ac:#29a8ff;
+--ac2:#7b61ff;
+--cyan:#26ffe6;
+--pink:#ff5aa5;
+--gn:#34d399;
+--rd:#ff6b81;
+--or:#ffb547;
+--r:14px;
+--rlg:22px;
+--sh:0 8px 32px rgba(0,0,0,.35);
+--shlg:0 15px 60px rgba(0,0,0,.55);
+}
+body{
+background:
+radial-gradient(circle at top left,#1b2d60 0%,transparent 25%),
+radial-gradient(circle at top right,#542c86 0%,transparent 20%),
+linear-gradient(135deg,#060b16,#0c1220,#11192f)!important;
+background-attachment:fixed;
+color:var(--tx)!important;
+}
+#sidebar{
+background:linear-gradient(180deg,rgba(8,15,30,.95),rgba(10,20,40,.92))!important;
+backdrop-filter:blur(20px);
+border-right:1px solid rgba(255,255,255,.06);
+box-shadow:0 0 50px rgba(42,167,255,.06);
+}
+.ni.active{
+background:linear-gradient(90deg,rgba(41,168,255,.22),rgba(123,97,255,.14))!important;
+border-left:3px solid #29a8ff;
+color:#fff!important;
+box-shadow:0 0 25px rgba(41,168,255,.2);
+}
+.ni:hover{transform:translateX(4px)}
+.topbar{
+background:rgba(12,20,35,.55)!important;
+backdrop-filter:blur(20px);
+}
+.card,.scard,.modal,.dkpi-card{
+background:linear-gradient(145deg,rgba(15,24,44,.9),rgba(11,18,35,.7))!important;
+backdrop-filter:blur(18px);
+border:1px solid rgba(255,255,255,.06)!important;
+box-shadow:0 10px 40px rgba(0,0,0,.3)!important;
+transition:.35s;
+}
+.card:hover,.scard:hover{
+transform:translateY(-6px);
+box-shadow:0 20px 50px rgba(41,168,255,.12)!important;
+}
+table{border-collapse:separate;border-spacing:0 8px}
+tbody tr{background:rgba(255,255,255,.02);transition:.25s}
+tbody tr:hover{background:rgba(41,168,255,.08)!important}
+#login-screen{
+background:
+radial-gradient(circle at center,rgba(42,167,255,.16),transparent 30%),
+linear-gradient(135deg,#050816,#0b1427,#111e36)!important;
+}
+.llogo{position:relative}
+.llogo:after{
+content:'';position:absolute;width:140px;height:140px;left:50%;top:40%;
+transform:translate(-50%,-50%);
+background:radial-gradient(circle,rgba(41,168,255,.35),transparent);
+filter:blur(35px);z-index:-1}
+
 </style>
 </head>
 <body>
