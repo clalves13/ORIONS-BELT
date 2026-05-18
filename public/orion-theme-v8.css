@@ -1,0 +1,322 @@
+/*
+ * Orion Print — Tema v8 "Nebula Dark"
+ * Aplique este arquivo APÓS os estilos existentes no index.html
+ * Ou adicione <link rel="stylesheet" href="orion-theme-v8.css"> no <head>
+ *
+ * INSTRUÇÕES:
+ * No index.html, antes de </head>, adicione:
+ * <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+ * <link rel="stylesheet" href="orion-theme-v8.css">
+ */
+
+/* ═══════════════════════════════════════════
+   VARIÁVEIS — NOVO SISTEMA DE CORES
+   ═══════════════════════════════════════════ */
+:root {
+  /* Backgrounds em camadas */
+  --nv: #0f1623;      /* era #0d1f3c — substitui fundo navy */
+  --nv2: #151d2e;
+  --bl: #22d3ee;      /* era #1e4080 — cyan como "link" */
+  --bg: #131a28;      /* era #eef1f7 — fundo geral dark */
+  --sf: #1e2d48;      /* era #fff — superfícies */
+  --sf2: #243358;     /* era #f4f6fb */
+  --sf3: #2a3d68;     /* era #eaecf4 */
+
+  /* Texto */
+  --tx: #e4ecf7;      /* era #1a2340 */
+  --tx2: #9bb5d8;     /* era #445577 */
+  --tx3: #5a7ba8;     /* era #8899bb */
+
+  /* Bordas */
+  --bd: rgba(100,140,220,.15);   /* era #d8dff0 */
+  --bd2: rgba(100,140,220,.25);  /* era #c0cbdf */
+
+  /* Acentos — CYAN + ROXO + ÂMBAR */
+  --ac: #f59e0b;      /* âmbar laranja — mantém compatibilidade */
+  --ac2: #fbbf24;
+  --cy: #22d3ee;      /* cyan primário */
+  --cy2: #06b6d4;
+  --cy3: rgba(34,211,238,.08);
+  --pu: #a78bfa;      /* roxo */
+  --pu2: #8b5cf6;
+  --pu3: rgba(167,139,250,.08);
+
+  /* Status — ajustados para dark */
+  --gn: #10b981;
+  --gnbg: rgba(16,185,129,.12);
+  --gnbd: rgba(16,185,129,.3);
+  --rd: #f87171;
+  --rdbg: rgba(248,113,113,.12);
+  --rdbd: rgba(248,113,113,.3);
+  --or: #fb923c;
+  --orbg: rgba(251,146,60,.12);
+  --orbd: rgba(251,146,60,.3);
+  --bl2: #60a5fa;
+  --bl2bg: rgba(96,165,250,.12);
+  --bl2bd: rgba(96,165,250,.3);
+  --pu: #a78bfa;
+  --pubg: rgba(167,139,250,.12);
+  --pubd: rgba(167,139,250,.3);
+
+  /* Sombras */
+  --sh: 0 4px 24px rgba(0,0,0,.4);
+  --shlg: 0 8px 40px rgba(0,0,0,.5);
+
+  /* Glows */
+  --glow-cy: 0 0 20px rgba(34,211,238,.2);
+  --glow-pu: 0 0 20px rgba(167,139,250,.2);
+}
+
+/* ── FONTE ── */
+body, input, select, textarea, button {
+  font-family: 'DM Sans', sans-serif !important;
+}
+
+/* ── BODY ── */
+body {
+  background: var(--bg) !important;
+  background-image:
+    radial-gradient(ellipse at 15% 0%, rgba(34,211,238,.04) 0%, transparent 45%),
+    radial-gradient(ellipse at 85% 100%, rgba(167,139,250,.04) 0%, transparent 45%) !important;
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--nv2); }
+::-webkit-scrollbar-thumb { background: var(--sf3); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--bd2); }
+
+/* ── SIDEBAR ── */
+#sidebar {
+  background: linear-gradient(180deg, var(--nv2) 0%, var(--nv) 100%) !important;
+  border-right: 1px solid var(--bd);
+}
+.logo-wrap {
+  border-bottom-color: rgba(100,140,220,.12) !important;
+}
+.logo-name { color: var(--tx) !important; }
+.logo-sub { color: var(--tx3) !important; }
+.logo-ico {
+  background: linear-gradient(135deg, var(--cy2), var(--cy)) !important;
+  color: #0f1623 !important;
+}
+.nav-sec { color: rgba(100,140,220,.35) !important; letter-spacing: 1.4px; }
+.ni { color: rgba(155,181,216,.55) !important; border-left-color: transparent !important; }
+.ni:hover { background: rgba(34,211,238,.06) !important; color: var(--tx) !important; }
+.ni.active {
+  background: rgba(34,211,238,.1) !important;
+  color: var(--cy) !important;
+  border-left-color: var(--cy) !important;
+}
+.ni-badge {
+  background: var(--cy) !important;
+  color: #0f1623 !important;
+}
+.sb-footer { border-top-color: rgba(100,140,220,.12) !important; }
+.sb-name { color: var(--tx2) !important; }
+.sb-role { color: var(--tx3) !important; }
+.sb-av {
+  background: linear-gradient(135deg, var(--cy2), var(--pu2)) !important;
+  color: #fff !important;
+}
+.btn-logout:hover { color: var(--rd) !important; }
+.sb-toggle { color: rgba(100,140,220,.4) !important; border-top-color: rgba(100,140,220,.1) !important; }
+.sb-toggle:hover { color: var(--tx2) !important; }
+.sb-toggle-ico { background: rgba(100,140,220,.08) !important; }
+
+/* ── TOPBAR ── */
+.topbar {
+  background: linear-gradient(90deg, var(--nv2), var(--nv)) !important;
+  border-bottom: 1px solid var(--bd) !important;
+  backdrop-filter: blur(12px);
+}
+.tb-title { color: var(--tx) !important; }
+.tb-sub { color: var(--tx3) !important; }
+
+/* ── LOGIN ── */
+#login-screen {
+  background: var(--bg) !important;
+  background-image:
+    radial-gradient(ellipse at 30% 20%, rgba(34,211,238,.1) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 80%, rgba(167,139,250,.1) 0%, transparent 50%) !important;
+}
+.lbox {
+  background: var(--sf) !important;
+  border: 1px solid var(--bd2) !important;
+  box-shadow: var(--shlg), var(--glow-cy) !important;
+}
+.ltitle { color: var(--tx) !important; }
+.lsub { color: var(--tx3) !important; }
+.llogo-icon {
+  background: linear-gradient(135deg, var(--cy2), var(--cy)) !important;
+  color: #0f1623 !important;
+}
+.lbtn {
+  background: linear-gradient(135deg, var(--cy2), var(--cy)) !important;
+  color: #0f1623 !important;
+}
+.lbtn:hover { opacity: .9 !important; box-shadow: var(--glow-cy) !important; }
+.lerr { background: var(--rdbg) !important; color: var(--rd) !important; border-color: var(--rdbd) !important; }
+.lfg label { color: var(--tx3) !important; }
+.lfg input {
+  background: var(--sf2) !important;
+  border-color: var(--bd2) !important;
+  color: var(--tx) !important;
+}
+.lfg input:focus { border-color: var(--cy) !important; box-shadow: 0 0 0 3px rgba(34,211,238,.1) !important; }
+
+/* ── INPUTS GLOBAIS ── */
+input:not([type=range]):not([type=checkbox]):not([type=radio]),
+select, textarea {
+  background: var(--sf) !important;
+  border-color: var(--bd2) !important;
+  color: var(--tx) !important;
+}
+input:focus, select:focus, textarea:focus {
+  border-color: var(--cy) !important;
+  box-shadow: 0 0 0 3px rgba(34,211,238,.1) !important;
+  outline: none !important;
+}
+select option { background: var(--bg) !important; color: var(--tx) !important; }
+
+/* ── BUTTONS ── */
+.btn-primary {
+  background: linear-gradient(135deg, #1a2540, var(--sf2)) !important;
+  color: var(--tx) !important;
+  border-color: var(--bd2) !important;
+}
+.btn-primary:hover { background: var(--sf2) !important; }
+
+/* Botão de ação principal: accent = cyan */
+.btn-accent, [class*="btn-"][style*="background:var(--ac)"] {
+  background: linear-gradient(135deg, var(--cy2), var(--cy)) !important;
+  color: #0f1623 !important;
+  border: none !important;
+}
+.btn-accent:hover { opacity: .9 !important; box-shadow: var(--glow-cy) !important; }
+
+.btn-ghost {
+  background: rgba(255,255,255,.05) !important;
+  color: var(--tx2) !important;
+  border-color: var(--bd2) !important;
+}
+.btn-ghost:hover { background: rgba(255,255,255,.1) !important; color: var(--tx) !important; }
+
+/* ── CARDS ── */
+.card {
+  background: var(--sf) !important;
+  border-color: var(--bd) !important;
+}
+
+/* ── MODALS ── */
+.mov { backdrop-filter: blur(4px); }
+.modal {
+  background: var(--nv2) !important;
+  border: 1px solid var(--bd2) !important;
+  box-shadow: var(--shlg) !important;
+}
+.mhd {
+  background: var(--nv2) !important;
+  border-bottom-color: var(--bd) !important;
+}
+.mhd-title { color: var(--tx) !important; }
+.mfoot { border-top-color: var(--bd) !important; }
+.btnx {
+  background: var(--sf) !important;
+  border-color: var(--bd) !important;
+  color: var(--tx3) !important;
+}
+.btnx:hover { background: var(--rdbg) !important; color: var(--rd) !important; border-color: var(--rdbd) !important; }
+
+/* ── TABLES ── */
+thead th {
+  background: var(--nv2) !important;
+  color: var(--tx3) !important;
+  border-bottom-color: var(--bd) !important;
+}
+tbody td { border-bottom-color: var(--bd) !important; color: var(--tx) !important; }
+tbody tr:hover { background: var(--sf2) !important; }
+
+/* ── PILLS/BADGES ── */
+.badge, [class*="pill"], .status-badge,
+.sp-aberta { background: var(--bl2bg) !important; color: var(--bl2) !important; border-color: var(--bl2bd) !important; }
+.sp-andamento { background: var(--orbg) !important; color: var(--or) !important; border-color: var(--orbd) !important; }
+.sp-concluida { background: var(--gnbg) !important; color: var(--gn) !important; border-color: var(--gnbd) !important; }
+.sp-cancelada { background: var(--rdbg) !important; color: var(--rd) !important; border-color: var(--rdbd) !important; }
+
+/* ── KPI CARDS / DASHBOARD ── */
+.kpi-card, .kpi-box, [class*="stat-"] {
+  background: var(--sf) !important;
+  border-color: var(--bd) !important;
+}
+
+/* ── SECTION TITLES (tabs internas) ── */
+.sec-title, .fsec, .sec-hdr {
+  color: var(--cy) !important;
+  border-bottom-color: var(--bd) !important;
+}
+
+/* ── TOPBAR BUTTONS ── */
+.tb-right .btn {
+  border-color: var(--bd2) !important;
+}
+
+/* ── ANIMAÇÕES SUAVES ── */
+.card, .btn, .ni, input, select, textarea {
+  transition: all .2s !important;
+}
+
+/* ── LINKS ── */
+a { color: var(--cy) !important; }
+a:hover { color: var(--pu) !important; }
+
+/* ── PLACEHOLDERS ── */
+::placeholder { color: var(--tx3) !important; opacity: .7; }
+
+/* ── NOTIFICAÇÃO / ALERTAS ── */
+.alert-success, [class*="ok-"] { background: var(--gnbg) !important; color: var(--gn) !important; border-color: var(--gnbd) !important; }
+.alert-danger, [class*="err-"] { background: var(--rdbg) !important; color: var(--rd) !important; border-color: var(--rdbd) !important; }
+.alert-warning { background: var(--orbg) !important; color: var(--or) !important; border-color: var(--orbd) !important; }
+.alert-info { background: var(--bl2bg) !important; color: var(--bl2) !important; border-color: var(--bl2bd) !important; }
+
+/* ── DROPDOWN / SELECT ── */
+.dropdown-menu, [class*="drop"] {
+  background: var(--sf) !important;
+  border-color: var(--bd2) !important;
+  box-shadow: var(--sh) !important;
+}
+
+/* ── MINI-MAP (Orion sidebar icon ativo) ── */
+.ni.active svg { opacity: 1 !important; }
+
+/* ── PROGRESS BARS ── */
+.progress-bar, [class*="bar-fill"] {
+  background: linear-gradient(90deg, var(--cy2), var(--cy)) !important;
+}
+
+/* ── CHART.JS: canvas background fix ── */
+canvas { background: transparent !important; }
+
+/* ── GLOW LINE TOP SIDEBAR ── */
+#sidebar::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--cy), transparent);
+  opacity: .3;
+}
+
+/* ── EFEITO ACTIVE NI ── */
+.ni.active::before {
+  content: '';
+  position: absolute;
+  right: 0; top: 50%;
+  transform: translateY(-50%);
+  width: 3px; height: 60%;
+  background: var(--cy);
+  border-radius: 2px;
+  box-shadow: 0 0 8px var(--cy);
+}
+.ni { position: relative; }
+
