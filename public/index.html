@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0">
 <title>Orion Print — Assistência Técnica</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -271,34 +271,118 @@ button:not(.btn):not(.btnx):not(.lbtn):not(.btn-logout):not(.chk):not(.os-tab):n
 .sval{font-size:22px;font-weight:700;color:var(--nv);margin-top:2px;line-height:1}
 .ssub{font-size:9px;color:var(--tx3);margin-top:3px}
 
-/* DASHBOARD KPI CARDS — grandes com gradiente */
-.dkpi-card{border-radius:16px;padding:20px 22px;color:#fff;position:relative;overflow:hidden;transition:transform .15s,box-shadow .15s;animation:dkpi-enter .5s ease both}
-.dkpi-card:nth-child(2){animation-delay:.08s}
-.dkpi-card:nth-child(3){animation-delay:.16s}
-.dkpi-card:nth-child(4){animation-delay:.24s;animation:dkpi-enter .5s ease both, crit-glow 2.5s ease-in-out .8s infinite}
-@keyframes dkpi-enter{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
-@keyframes crit-glow{0%,100%{box-shadow:0 4px 20px rgba(183,57,48,.25)}50%{box-shadow:0 4px 32px rgba(231,76,60,.55)}}
-.dkpi-card:hover{transform:translateY(-2px);box-shadow:0 12px 36px rgba(13,31,60,.22)}
-.dkpi-card::after{content:'';position:absolute;right:-20px;bottom:-20px;width:100px;height:100px;border-radius:50%;background:rgba(255,255,255,.07)}
-.dkpi-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px}
-.dkpi-label{font-size:11px;font-weight:600;opacity:.85;text-transform:uppercase;letter-spacing:.8px}
-.dkpi-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;animation:dkpi-float 3s ease-in-out infinite}
-.dkpi-card:nth-child(2) .dkpi-icon{animation-delay:.4s}
-.dkpi-card:nth-child(3) .dkpi-icon{animation-delay:.8s}
-.dkpi-card:nth-child(4) .dkpi-icon{animation-delay:1.2s}
-@keyframes dkpi-float{0%,100%{transform:translateY(0) rotate(0deg)}30%{transform:translateY(-4px) rotate(-4deg)}60%{transform:translateY(-2px) rotate(3deg)}}
-.dkpi-val{font-size:32px;font-weight:800;line-height:1;margin-bottom:10px;letter-spacing:-1px;animation:dkpi-popin .5s cubic-bezier(.34,1.56,.64,1) both}
-@keyframes dkpi-popin{from{opacity:0;transform:scale(.7)}to{opacity:1;transform:scale(1)}}
-.dkpi-sub{font-size:11px;opacity:.8}
+/* ══════════════════════════════════════════════
+   DASHBOARD v8 — VISUAL RICO / PRODUCTION GRADE
+   ══════════════════════════════════════════════ */
 
-/* DASHBOARD KPI CARDS — mini faixa */
-.dkpi-mini{background:var(--sf);border:1px solid var(--bd);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:10px;transition:all .15s}
-.dkpi-mini:hover{border-color:var(--bl);box-shadow:0 4px 16px rgba(13,31,60,.08)}
-.dkpi-mini:hover .dkpi-mini-ico{animation:dkpi-spin-once .4s ease-in-out}
-@keyframes dkpi-spin-once{0%{transform:rotate(0deg) scale(1)}50%{transform:rotate(-15deg) scale(1.18)}100%{transform:rotate(0deg) scale(1)}}
-.dkpi-mini-ico{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform .2s}
-.dkpi-mini-val{font-size:18px;font-weight:800;color:var(--nv);line-height:1}
-.dkpi-mini-lbl{font-size:10px;color:var(--tx3);font-weight:600;text-transform:uppercase;letter-spacing:.6px;margin-top:2px}
+/* KPI cards grandes */
+@keyframes dkpi-enter{from{opacity:0;transform:translateY(18px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes dkpi-shine{0%{left:-60%}to{left:130%}}
+@keyframes crit-glow{0%,100%{box-shadow:0 8px 32px rgba(239,68,68,.4)}50%{box-shadow:0 8px 48px rgba(239,68,68,.7)}}
+
+.dkpi-card{
+  border-radius:20px;padding:22px 24px 18px;color:#fff;
+  position:relative;overflow:hidden;
+  transition:transform .2s cubic-bezier(.34,1.3,.64,1),box-shadow .2s;
+  animation:dkpi-enter .55s cubic-bezier(.34,1.3,.64,1) both;
+  cursor:default;
+}
+.dkpi-card:nth-child(2){animation-delay:.1s}
+.dkpi-card:nth-child(3){animation-delay:.18s}
+.dkpi-card:nth-child(4){animation-delay:.26s}
+.dkpi-card:nth-child(4).crit-pulse{animation:dkpi-enter .55s both, crit-glow 2.5s ease-in-out .8s infinite}
+.dkpi-card:hover{transform:translateY(-4px) scale(1.01)}
+
+/* Shine sweep effect */
+.dkpi-card::before{
+  content:'';position:absolute;top:0;left:-60%;width:40%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.18),transparent);
+  transform:skewX(-20deg);
+  animation:dkpi-shine 3.5s ease-in-out infinite;
+  pointer-events:none;
+}
+/* Decorative circle */
+.dkpi-card::after{
+  content:'';position:absolute;right:-30px;bottom:-30px;
+  width:130px;height:130px;border-radius:50%;
+  background:rgba(255,255,255,.08);
+  pointer-events:none;
+}
+
+/* Icon block — BIG */
+.dkpi-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px}
+.dkpi-label{font-size:11px;font-weight:700;opacity:.88;text-transform:uppercase;letter-spacing:1px}
+.dkpi-icon{
+  width:52px;height:52px;border-radius:14px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  background:rgba(255,255,255,.2);
+  backdrop-filter:blur(4px);
+  box-shadow:0 4px 12px rgba(0,0,0,.15);
+}
+.dkpi-icon svg{width:26px;height:26px}
+.dkpi-val{font-size:38px;font-weight:800;line-height:1;letter-spacing:-1.5px;margin-bottom:10px;text-shadow:0 2px 8px rgba(0,0,0,.15)}
+.dkpi-sub{font-size:11px;opacity:.85;display:flex;align-items:center;gap:6px}
+.dkpi-pill{background:rgba(255,255,255,.22);padding:3px 10px;border-radius:20px;font-size:10px;font-weight:600;backdrop-filter:blur(4px)}
+.dkpi-trend{display:inline-flex;align-items:center;gap:3px;background:rgba(255,255,255,.22);padding:3px 8px;border-radius:12px;font-size:10px;font-weight:700}
+.dkpi-trend.up{background:rgba(255,255,255,.25)}
+.dkpi-trend.dn{background:rgba(0,0,0,.15)}
+
+/* Mini KPI strip */
+@keyframes mini-enter{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
+.dkpi-mini{
+  background:var(--sf);border:1px solid var(--bd);border-radius:14px;
+  padding:14px 16px;display:flex;align-items:center;gap:12px;
+  transition:all .2s;cursor:default;
+  animation:mini-enter .4s both;
+}
+.dkpi-mini:nth-child(1){animation-delay:.05s}
+.dkpi-mini:nth-child(2){animation-delay:.1s}
+.dkpi-mini:nth-child(3){animation-delay:.15s}
+.dkpi-mini:nth-child(4){animation-delay:.2s}
+.dkpi-mini:nth-child(5){animation-delay:.25s}
+.dkpi-mini:nth-child(6){animation-delay:.3s}
+.dkpi-mini:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(13,31,60,.12);border-color:var(--bd2)}
+.dkpi-mini-ico{
+  width:44px;height:44px;border-radius:12px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.dkpi-mini-ico svg{width:20px;height:20px}
+.dkpi-mini-val{font-size:22px;font-weight:800;color:var(--nv);line-height:1}
+.dkpi-mini-lbl{font-size:10px;color:var(--tx3);font-weight:600;text-transform:uppercase;letter-spacing:.7px;margin-top:3px}
+
+/* Dashboard chart cards */
+.dash-card{
+  background:var(--sf);border-radius:18px;
+  border:1px solid var(--bd);
+  padding:18px 20px;
+  box-shadow:0 2px 16px rgba(13,31,60,.07);
+  animation:dkpi-enter .5s both;
+}
+.dash-card-hd{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px}
+.dash-card-title{font-size:13px;font-weight:700;color:var(--nv)}
+.dash-card-sub{font-size:10px;color:var(--tx3);margin-top:3px}
+.dash-card-badge{
+  font-size:9px;font-weight:700;padding:3px 9px;border-radius:20px;
+  background:var(--sf2);color:var(--tx2);border:1px solid var(--bd);
+  white-space:nowrap;
+}
+
+/* Bar rows redesign */
+.barrow{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.barlabel{font-size:11px;font-weight:600;color:var(--tx2);width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0}
+.bartrack{flex:1;height:10px;background:var(--sf2);border-radius:5px;overflow:hidden;position:relative}
+.barfill{height:100%;border-radius:5px;display:flex;align-items:center;justify-content:flex-end;padding-right:6px;transition:width .8s cubic-bezier(.34,1.3,.64,1);position:relative;min-width:28px}
+.barfill::after{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.2));border-radius:5px}
+.barval{font-size:10px;font-weight:700;position:relative;z-index:1}
+
+/* Alertas estoque */
+.est-alert-item{background:var(--orbg);border:1px solid var(--orbd);border-radius:10px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;transition:transform .15s}
+.est-alert-item:hover{transform:translateY(-1px)}
+
+/* Retrabalho */
+.ret-item{background:var(--rdbg);border:1px solid var(--rdbd);border-radius:10px;padding:10px 14px;margin-bottom:7px}
+.ret-title{font-size:11px;font-weight:700;color:var(--rd)}
+.ret-sub{font-size:10px;color:var(--tx3);margin-top:3px}
 
 /* TABLE */
 .twrap{overflow-x:auto}
@@ -457,7 +541,6 @@ tr:hover td{background:var(--sf2)}
 .os-sig-line{border-top:1.5px solid #444;padding-top:5px;font-size:9px;color:#555;margin-top:4px}
 .os-sig{border-top:1px solid #555;padding-top:4px;text-align:center;font-size:8px;color:#667;margin-top:26px}
 </style>
-<link rel="stylesheet" href="orion-theme-v8.css">
 </head>
 <body>
 
@@ -602,73 +685,85 @@ tr:hover td{background:var(--sf2)}
   </div>
   <div class="content" style="padding:20px 24px">
 
-    <!-- ── KPIs PRINCIPAIS: 4 cards com gradiente ───────────────────── -->
+    <!-- ══ KPIs PRINCIPAIS — 4 cards gradiente ══ -->
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px">
 
-      <!-- OS Abertas -->
-      <div class="dkpi-card" style="background:linear-gradient(135deg,#1e4080 0%,#2a5fc4 100%);cursor:pointer" onclick="nav('os',document.querySelector('[data-modulo=os]'))">
+      <!-- OS Abertas — azul royal -->
+      <div class="dkpi-card" style="background:linear-gradient(135deg,#1565c0 0%,#1e88e5 60%,#42a5f5 100%);box-shadow:0 8px 32px rgba(21,101,192,.45);cursor:pointer" onclick="nav('os',document.querySelector('[data-modulo=os]'))">
         <div class="dkpi-top">
-          <div class="dkpi-label">OS Abertas</div>
-          <div class="dkpi-icon" style="background:rgba(255,255,255,.15)">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          <div>
+            <div class="dkpi-label">OS Abertas</div>
+            <div style="font-size:10px;opacity:.7;margin-top:2px">Aguardando atendimento</div>
+          </div>
+          <div class="dkpi-icon">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
           </div>
         </div>
         <div class="dkpi-val" id="d-osab">0</div>
         <div class="dkpi-sub">
-          <span id="d-osand-mini" style="background:rgba(255,255,255,.18);padding:2px 8px;border-radius:20px;font-size:10px"><span id="d-osand">0</span> em andamento</span>
+          <span class="dkpi-pill">🔄 <span id="d-osand">0</span> em andamento</span>
         </div>
       </div>
 
-      <!-- Concluídas -->
-      <div class="dkpi-card" style="background:linear-gradient(135deg,#0f7a45 0%,#1aaa60 100%)">
+      <!-- Concluídas — verde esmeralda -->
+      <div class="dkpi-card" style="background:linear-gradient(135deg,#1b5e20 0%,#2e7d32 50%,#43a047 100%);box-shadow:0 8px 32px rgba(27,94,32,.45)">
         <div class="dkpi-top">
-          <div class="dkpi-label">Concluídas</div>
-          <div class="dkpi-icon" style="background:rgba(255,255,255,.15)">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          <div>
+            <div class="dkpi-label">Concluídas</div>
+            <div style="font-size:10px;opacity:.7;margin-top:2px">No período selecionado</div>
+          </div>
+          <div class="dkpi-icon">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
           </div>
         </div>
         <div class="dkpi-val" id="d-osok">0</div>
         <div class="dkpi-sub">
-          <span style="background:rgba(255,255,255,.18);padding:2px 8px;border-radius:20px;font-size:10px">de <span id="d-atend">0</span> OS no período</span>
+          <span class="dkpi-pill">📋 de <span id="d-atend">0</span> OS total</span>
         </div>
       </div>
 
-      <!-- Gasto Total -->
-      <div class="dkpi-card" style="background:linear-gradient(135deg,#7c3aed 0%,#a855f7 100%)">
+      <!-- Gasto Total — roxo violeta -->
+      <div class="dkpi-card" style="background:linear-gradient(135deg,#4a148c 0%,#7b1fa2 50%,#ab47bc 100%);box-shadow:0 8px 32px rgba(74,20,140,.45)">
         <div class="dkpi-top">
-          <div class="dkpi-label">Gasto Total</div>
-          <div class="dkpi-icon" style="background:rgba(255,255,255,.15)">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+          <div>
+            <div class="dkpi-label">Gasto Total</div>
+            <div style="font-size:10px;opacity:.7;margin-top:2px">Rotas + custos de OS</div>
+          </div>
+          <div class="dkpi-icon">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
           </div>
         </div>
-        <div class="dkpi-val" id="d-gastoT" style="font-size:22px">R$0</div>
+        <div class="dkpi-val" id="d-gastoT" style="font-size:28px">R$0</div>
         <div class="dkpi-sub">
-          <span style="background:rgba(255,255,255,.18);padding:2px 8px;border-radius:20px;font-size:10px">Rotas + OS no período</span>
+          <span class="dkpi-pill">💰 período atual</span>
         </div>
       </div>
 
-      <!-- Estoque Crítico -->
-      <div class="dkpi-card" style="background:linear-gradient(135deg,#c0392b 0%,#e74c3c 100%)">
+      <!-- Estoque Crítico — vermelho -->
+      <div class="dkpi-card crit-pulse" style="background:linear-gradient(135deg,#b71c1c 0%,#c62828 50%,#ef5350 100%);box-shadow:0 8px 32px rgba(183,28,28,.45)">
         <div class="dkpi-top">
-          <div class="dkpi-label">Estoque Crítico</div>
-          <div class="dkpi-icon" style="background:rgba(255,255,255,.15)">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <div>
+            <div class="dkpi-label">Estoque Crítico</div>
+            <div style="font-size:10px;opacity:.7;margin-top:2px">Abaixo do mínimo</div>
+          </div>
+          <div class="dkpi-icon">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
           </div>
         </div>
         <div class="dkpi-val" id="d-estbaixo">0</div>
         <div class="dkpi-sub">
-          <span style="background:rgba(255,255,255,.18);padding:2px 8px;border-radius:20px;font-size:10px">itens abaixo do mínimo</span>
+          <span class="dkpi-pill">⚠ itens precisam reposição</span>
         </div>
       </div>
 
     </div>
 
-    <!-- ── FAIXA COMPACTA: KPIs secundários ─────────────────────────── -->
-    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:20px">
+    <!-- ══ KPIs SECUNDÁRIOS — faixa de 6 mini cards ══ -->
+    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:22px">
 
       <div class="dkpi-mini" onclick="nav('os',document.querySelector('[data-modulo=os]'))" style="cursor:pointer">
-        <div class="dkpi-mini-ico" style="background:#e8f0fe;color:#1a50b0">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+        <div class="dkpi-mini-ico" style="background:linear-gradient(135deg,#1565c0,#42a5f5)">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
         </div>
         <div>
           <div class="dkpi-mini-val" id="d-atend-mini">0</div>
@@ -677,8 +772,8 @@ tr:hover td{background:var(--sf2)}
       </div>
 
       <div class="dkpi-mini" onclick="nav('lab',document.querySelector('[data-modulo=lab]'))" style="cursor:pointer">
-        <div class="dkpi-mini-ico" style="background:#f3eeff;color:#6b3fa0">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v11l-4 4m4-4h10m0 0l-4 4M9 17h10"/></svg>
+        <div class="dkpi-mini-ico" style="background:linear-gradient(135deg,#4a148c,#ab47bc)">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v11l-4 4m4-4h10m0 0l-4 4M9 17h10"/></svg>
         </div>
         <div>
           <div class="dkpi-mini-val" id="d-lab">0</div>
@@ -687,8 +782,8 @@ tr:hover td{background:var(--sf2)}
       </div>
 
       <div class="dkpi-mini">
-        <div class="dkpi-mini-ico" style="background:#fdf0ee;color:#b83030">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <div class="dkpi-mini-ico" style="background:linear-gradient(135deg,#b71c1c,#ef5350)">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
         </div>
         <div>
           <div class="dkpi-mini-val" id="d-retqtd">0</div>
@@ -697,8 +792,8 @@ tr:hover td{background:var(--sf2)}
       </div>
 
       <div class="dkpi-mini" onclick="nav('logistica',document.querySelector('[data-modulo=logistica]'))" style="cursor:pointer">
-        <div class="dkpi-mini-ico" style="background:#e8f0fe;color:#1a50b0">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+        <div class="dkpi-mini-ico" style="background:linear-gradient(135deg,#e65100,#ff9800)">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
         </div>
         <div>
           <div class="dkpi-mini-val" id="d-rotas">0</div>
@@ -707,8 +802,8 @@ tr:hover td{background:var(--sf2)}
       </div>
 
       <div class="dkpi-mini">
-        <div class="dkpi-mini-ico" style="background:#fff4e6;color:#c06010">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+        <div class="dkpi-mini-ico" style="background:linear-gradient(135deg,#f57f17,#ffca28)">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
         </div>
         <div>
           <div class="dkpi-mini-val" id="d-litros">0L</div>
@@ -717,8 +812,8 @@ tr:hover td{background:var(--sf2)}
       </div>
 
       <div class="dkpi-mini" onclick="nav('estoque',document.querySelector('[data-modulo=estoque]'))" style="cursor:pointer">
-        <div class="dkpi-mini-ico" style="background:#e6f5ee;color:#1a7a4a">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+        <div class="dkpi-mini-ico" style="background:linear-gradient(135deg,#1b5e20,#43a047)">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
         </div>
         <div>
           <div class="dkpi-mini-val" id="d-estqtd">0</div>
@@ -728,27 +823,25 @@ tr:hover td{background:var(--sf2)}
 
     </div>
 
-    <!-- ── GRÁFICOS PRINCIPAIS ───────────────────────────────────────── -->
+    <!-- ══ GRÁFICOS LINHA 1 — 2/3 + 1/3 ══ -->
     <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px">
 
-      <!-- Evolução de atendimentos -->
-      <div class="card" style="border:none;box-shadow:0 2px 20px rgba(13,31,60,.07)">
-        <div class="card-hd" style="border-bottom:none;padding-bottom:0;margin-bottom:16px">
+      <div class="dash-card">
+        <div class="dash-card-hd">
           <div>
-            <div class="card-title" style="font-size:13px;color:var(--nv)">Evolução de Atendimentos por Técnico</div>
-            <div style="font-size:10px;color:var(--tx3);margin-top:2px">Quantidade mensal por profissional</div>
+            <div class="dash-card-title">📈 Evolução de Atendimentos por Técnico</div>
+            <div class="dash-card-sub">Quantidade mensal por profissional</div>
           </div>
           <div style="display:flex;gap:6px;flex-wrap:wrap" id="d-leg-tec"></div>
         </div>
         <canvas id="chart-atend-linha" height="185" style="width:100%;display:block"></canvas>
       </div>
 
-      <!-- Status das OS (pizza) -->
-      <div class="card" style="border:none;box-shadow:0 2px 20px rgba(13,31,60,.07)">
-        <div class="card-hd" style="border-bottom:none;padding-bottom:0;margin-bottom:16px">
+      <div class="dash-card">
+        <div class="dash-card-hd">
           <div>
-            <div class="card-title" style="font-size:13px;color:var(--nv)">Status das OS</div>
-            <div style="font-size:10px;color:var(--tx3);margin-top:2px">Distribuição por situação</div>
+            <div class="dash-card-title">🍩 Status das OS</div>
+            <div class="dash-card-sub">Distribuição por situação</div>
           </div>
         </div>
         <canvas id="chart-os-pizza" height="185" style="width:100%;display:block"></canvas>
@@ -756,75 +849,72 @@ tr:hover td{background:var(--sf2)}
 
     </div>
 
-    <!-- ── GRÁFICOS SECUNDÁRIOS ─────────────────────────────────────── -->
+    <!-- ══ GRÁFICOS LINHA 2 — 3 colunas ══ -->
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px">
 
-      <!-- Gastos em rota -->
-      <div class="card" style="border:none;box-shadow:0 2px 20px rgba(13,31,60,.07)">
-        <div class="card-hd" style="border-bottom:none;padding-bottom:0;margin-bottom:12px">
+      <div class="dash-card">
+        <div class="dash-card-hd">
           <div>
-            <div class="card-title" style="font-size:13px">Gastos em Rota</div>
-            <div style="font-size:10px;color:var(--tx3);margin-top:2px">Evolução mensal (R$)</div>
+            <div class="dash-card-title">💸 Gastos em Rota</div>
+            <div class="dash-card-sub">Evolução mensal (R$)</div>
           </div>
+          <span class="dash-card-badge">Logística</span>
         </div>
         <canvas id="chart-gastos-linha" height="160" style="width:100%;display:block"></canvas>
       </div>
 
-      <!-- Atendimentos por técnico (barras) -->
-      <div class="card" style="border:none;box-shadow:0 2px 20px rgba(13,31,60,.07)">
-        <div class="card-hd" style="border-bottom:none;padding-bottom:0;margin-bottom:12px">
+      <div class="dash-card">
+        <div class="dash-card-hd">
           <div>
-            <div class="card-title" style="font-size:13px">Por Técnico</div>
-            <div style="font-size:10px;color:var(--tx3);margin-top:2px">Atendimentos realizados</div>
+            <div class="dash-card-title">👨‍🔧 Por Técnico</div>
+            <div class="dash-card-sub">Atendimentos realizados</div>
           </div>
+          <span class="dash-card-badge">OS</span>
         </div>
         <div id="d-bartec" class="barchart" style="margin-top:4px"></div>
       </div>
 
-      <!-- Top Clientes -->
-      <div class="card" style="border:none;box-shadow:0 2px 20px rgba(13,31,60,.07)">
-        <div class="card-hd" style="border-bottom:none;padding-bottom:0;margin-bottom:12px">
+      <div class="dash-card">
+        <div class="dash-card-hd">
           <div>
-            <div class="card-title" style="font-size:13px">Top Clientes</div>
-            <div style="font-size:10px;color:var(--tx3);margin-top:2px">Por volume de OS</div>
+            <div class="dash-card-title">🏆 Top Clientes</div>
+            <div class="dash-card-sub">Por volume de OS</div>
           </div>
+          <span class="dash-card-badge">Top 6</span>
         </div>
         <div id="d-topcli" class="barchart" style="margin-top:4px"></div>
       </div>
 
     </div>
 
-    <!-- ── LINHA INFERIOR: Suprimentos + Gastos categoria + Retrabalho ── -->
+    <!-- ══ GRÁFICOS LINHA 3 — 3 colunas ══ -->
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px">
 
-      <!-- Consumo de suprimentos -->
-      <div class="card" style="border:none;box-shadow:0 2px 20px rgba(13,31,60,.07)">
-        <div class="card-hd" style="border-bottom:none;padding-bottom:0;margin-bottom:12px">
+      <div class="dash-card">
+        <div class="dash-card-hd">
           <div>
-            <div class="card-title" style="font-size:13px">Suprimentos</div>
-            <div style="font-size:10px;color:var(--tx3);margin-top:2px">Consumo por tipo</div>
+            <div class="dash-card-title">🖨 Suprimentos</div>
+            <div class="dash-card-sub">Consumo por tipo</div>
           </div>
         </div>
         <canvas id="chart-toner-pizza" height="160" style="width:100%;display:block"></canvas>
       </div>
 
-      <!-- Gastos por categoria -->
-      <div class="card" style="border:none;box-shadow:0 2px 20px rgba(13,31,60,.07)">
-        <div class="card-hd" style="border-bottom:none;padding-bottom:0;margin-bottom:12px">
+      <div class="dash-card">
+        <div class="dash-card-hd">
           <div>
-            <div class="card-title" style="font-size:13px">Gastos por Categoria</div>
-            <div style="font-size:10px;color:var(--tx3);margin-top:2px">Distribuição de custos</div>
+            <div class="dash-card-title">📊 Gastos por Categoria</div>
+            <div class="dash-card-sub">Distribuição de custos</div>
           </div>
         </div>
         <div id="d-bargasto" class="barchart" style="margin-top:4px"></div>
       </div>
 
-      <!-- Retrabalho -->
-      <div class="card" style="border:none;box-shadow:0 2px 20px rgba(13,31,60,.07)">
-        <div class="card-hd" style="border-bottom:none;padding-bottom:0;margin-bottom:12px">
+      <div class="dash-card">
+        <div class="dash-card-hd">
           <div>
-            <div class="card-title" style="font-size:13px">Retrabalho</div>
-            <div style="font-size:10px;color:var(--tx3);margin-top:2px">Equipamentos com recorrência</div>
+            <div class="dash-card-title">🔁 Retrabalho</div>
+            <div class="dash-card-sub">Equipamentos com recorrência</div>
           </div>
         </div>
         <div id="d-ret"></div>
@@ -832,19 +922,19 @@ tr:hover td{background:var(--sf2)}
 
     </div>
 
-    <!-- ── ALERTAS ESTOQUE ─────────────────────────────────────────── -->
-    <div class="card" id="d-alerta-est-wrap" style="display:none;border:none;box-shadow:0 2px 20px rgba(184,48,48,.12);border-left:4px solid var(--rd);margin-bottom:4px">
-      <div class="card-hd" style="border-bottom:none;padding-bottom:0;margin-bottom:12px">
-        <div style="display:flex;align-items:center;gap:8px">
-          <div style="width:28px;height:28px;background:var(--rdbg);border-radius:6px;display:flex;align-items:center;justify-content:center">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#b83030" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    <!-- ══ ALERTAS DE ESTOQUE ══ -->
+    <div class="dash-card" id="d-alerta-est-wrap" style="display:none;border-left:4px solid var(--rd);box-shadow:0 4px 24px rgba(183,28,28,.18);margin-bottom:4px">
+      <div class="dash-card-hd">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:36px;height:36px;background:linear-gradient(135deg,#b71c1c,#ef5350);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
           </div>
           <div>
-            <div class="card-title" style="color:var(--rd);font-size:13px">Alertas de Estoque Abaixo do Mínimo</div>
-            <div style="font-size:10px;color:#c06060;margin-top:1px">Itens que precisam de reposição</div>
+            <div class="dash-card-title" style="color:var(--rd)">⚠ Alertas de Estoque Abaixo do Mínimo</div>
+            <div class="dash-card-sub">Itens que precisam de reposição urgente</div>
           </div>
         </div>
-        <button class="btn btn-ghost btn-xs" onclick="nav('estoque',document.querySelector('[data-modulo=estoque]'))">Ver Estoque →</button>
+        <button class="btn btn-ghost btn-sm" onclick="nav('estoque',document.querySelector('[data-modulo=estoque]'))">Ver Estoque →</button>
       </div>
       <div id="d-alerta-est"></div>
     </div>
