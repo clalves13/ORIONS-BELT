@@ -83,7 +83,7 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--tx);font-siz
 /* MAIN */
 #main{margin-left:220px;min-height:100vh;padding-bottom:32px;transition:margin-left .22s cubic-bezier(.4,0,.2,1)}
 #main.sb-collapsed{margin-left:56px}
-.topbar{background:var(--sf);border-bottom:1px solid var(--bd);padding:0 24px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.topbar{background:var(--sf);border-bottom:1px solid rgba(255,255,255,.07);padding:0 24px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
 .tb-title{font-size:14px;font-weight:700;color:var(--nv)}
 .tb-sub{font-size:10px;color:var(--tx3);margin-top:1px}
 .tb-right{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
@@ -142,9 +142,9 @@ button:not(.btn):not(.btnx):not(.lbtn):not(.btn-logout):not(.chk):not(.os-tab):n
 .notif-count.show{display:flex}
 .notif-panel{position:absolute;top:44px;right:0;width:340px;background:var(--sf);border:1px solid var(--bd);border-radius:var(--rlg);box-shadow:0 8px 32px rgba(13,31,60,.16);z-index:200;display:none}
 .notif-panel.open{display:block}
-.notif-panel-hd{padding:14px 16px 10px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between}
+.notif-panel-hd{padding:14px 16px 10px;border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;justify-content:space-between}
 .notif-panel-title{font-size:13px;font-weight:700;color:var(--nv)}
-.notif-item{padding:10px 16px;border-bottom:1px solid var(--bd);cursor:pointer;transition:background .1s}
+.notif-item{padding:10px 16px;border-bottom:1px solid rgba(255,255,255,.07);cursor:pointer;transition:background .1s}
 .notif-item:hover{background:var(--sf2)}
 .notif-item:last-child{border-bottom:none}
 .notif-item-title{font-size:12px;font-weight:600;color:var(--nv);margin-bottom:2px}
@@ -162,7 +162,7 @@ button:not(.btn):not(.btnx):not(.lbtn):not(.btn-logout):not(.chk):not(.os-tab):n
 .help-nav-item:hover{background:var(--sf2)}
 .help-nav-item.active{background:var(--bl2bg);color:var(--bl2);font-weight:700}
 .help-topic{display:none}.help-topic.active{display:block}
-.help-topic h3{font-size:13px;font-weight:700;color:var(--nv);margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--bd)}
+.help-topic h3{font-size:13px;font-weight:700;color:var(--nv);margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,.07)}
 .help-topic h4{font-size:12px;font-weight:700;color:var(--bl);margin:12px 0 5px}
 .help-topic p,.help-topic li{font-size:12px;color:var(--tx2);line-height:1.7}
 .help-topic ul{padding-left:16px;margin-top:4px}
@@ -179,14 +179,14 @@ button:not(.btn):not(.btnx):not(.lbtn):not(.btn-logout):not(.chk):not(.os-tab):n
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
 .cal-dow{text-align:center;padding:6px 0;font-size:9px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.8px}
 .cal-dow.dom{color:var(--rd)}
-.cal-day{min-height:88px;background:var(--sf);border:1px solid var(--bd);border-radius:8px;padding:5px 6px;cursor:pointer;transition:all .12s;position:relative;overflow:hidden}
-.cal-day:hover{border-color:var(--bl2bd);background:var(--bl2bg)}
+.cal-day{min-height:88px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:6px 7px;cursor:pointer;transition:all .15s;position:relative;overflow:hidden}
+.cal-day:hover{border-color:rgba(255,255,255,.15);background:rgba(255,255,255,.06);box-shadow:0 4px 16px rgba(0,0,0,.3)}
 .cal-day.outro-mes{background:var(--sf2);opacity:.55}
-.cal-day.hoje{border-color:var(--ac);border-width:2px}
+.cal-day.hoje{border-color:#f59e0b;border-width:2px;box-shadow:0 0 0 1px rgba(245,158,11,.2),0 4px 16px rgba(245,158,11,.15)}
 .cal-day.hoje .cal-day-num{background:var(--ac);color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center}
-.cal-day.selected{border-color:var(--bl);border-width:2px;background:var(--bl2bg)}
+.cal-day.selected{border-color:rgba(59,130,246,.6);border-width:2px;background:rgba(59,130,246,.08)}
 .cal-day-num{font-size:11px;font-weight:700;color:var(--tx2);line-height:22px;width:22px;text-align:center;margin-bottom:3px}
-.cal-day.dom .cal-day-num{color:var(--rd)}
+.cal-day.dom .cal-day-num{color:#f87171}
 .cal-event{font-size:10px;font-weight:600;padding:2px 5px;border-radius:4px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;line-height:1.5}
 .cal-event:hover{filter:brightness(.92)}
 .cal-more{font-size:9px;color:var(--tx3);font-weight:600;padding:1px 4px;cursor:pointer}
@@ -203,7 +203,7 @@ button:not(.btn):not(.btnx):not(.lbtn):not(.btn-logout):not(.chk):not(.os-tab):n
 .cal-side-day{font-size:12px;font-weight:700;color:var(--nv);margin-bottom:8px}
 .cal-side-ev{background:var(--sf);border:1px solid var(--bd);border-radius:8px;padding:9px 11px;cursor:pointer;transition:all .12s;display:flex;flex-direction:column;gap:3px;border-left:3px solid var(--bd2)}
 .cal-side-ev:hover{box-shadow:var(--sh);border-color:var(--bd2)}
-.cal-side-ev-title{font-size:12px;font-weight:700;color:var(--nv)}
+.cal-side-ev-title{font-size:12px;font-weight:700;color:#e2e8f8}
 .cal-side-ev-sub{font-size:10px;color:var(--tx3)}
 .cal-side-ev-tec{display:inline-flex;align-items:center;gap:4px;font-size:10px;color:var(--tx2);background:var(--sf2);border-radius:4px;padding:2px 6px;width:fit-content}
 .cal-side-empty{font-size:11px;color:var(--tx3);text-align:center;padding:20px 0;border:1.5px dashed var(--bd2);border-radius:8px}
@@ -214,7 +214,7 @@ button:not(.btn):not(.btnx):not(.lbtn):not(.btn-logout):not(.chk):not(.os-tab):n
 /* Mini calendário nav */
 .cal-view-toggle{display:flex;gap:4px}
 .cal-vbtn{height:28px;padding:0 10px;border-radius:6px;border:1.5px solid var(--bd2);background:var(--sf);font-size:11px;font-weight:600;color:var(--tx2);cursor:pointer;transition:all .12s}
-.cal-vbtn.active{background:var(--nv);color:#fff;border-color:var(--nv)}
+.cal-vbtn.active{background:rgba(255,255,255,.12);color:#e2e8f8}
 /* Lista de eventos do dia selecionado */
 .cal-day-events-header{display:flex;align-items:center;justify-content:space-between}
 .status-badge{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:700}
@@ -264,16 +264,16 @@ button:not(.btn):not(.btnx):not(.lbtn):not(.btn-logout):not(.chk):not(.os-tab):n
 
 /* CARDS */
 .card{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rlg);padding:18px}
-.card-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--bd)}
+.card-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.07)}
 .card-title{font-size:12px;font-weight:700;color:var(--nv)}
 
 /* STATS */
 .sgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:11px;margin-bottom:16px}
-.scard{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rlg);padding:14px}
-.sico{width:32px;height:32px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;margin-bottom:7px}
-.slabel{font-size:9px;color:var(--tx3);font-weight:700;text-transform:uppercase;letter-spacing:.8px}
-.sval{font-size:22px;font-weight:700;color:var(--nv);margin-top:2px;line-height:1}
-.ssub{font-size:9px;color:var(--tx3);margin-top:3px}
+.scard{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:14px 16px;transition:all .18s}
+.sico{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px;margin-bottom:8px}
+.slabel{font-size:9px;color:rgba(255,255,255,.35);font-weight:700;text-transform:uppercase;letter-spacing:.9px}
+.sval{font-size:22px;font-weight:800;color:#e2e8f8;margin-top:2px;line-height:1;letter-spacing:-.5px}
+.ssub{font-size:9px;color:rgba(255,255,255,.25);margin-top:3px}
 
 /* ══════════════════════════════════════════════
    DASHBOARD v8 — VISUAL RICO / PRODUCTION GRADE
@@ -396,8 +396,8 @@ button:not(.btn):not(.btnx):not(.lbtn):not(.btn-logout):not(.chk):not(.os-tab):n
 /* TABLE */
 .twrap{overflow-x:auto}
 table{width:100%;border-collapse:collapse;font-size:12px}
-th{background:var(--sf2);color:var(--tx3);font-weight:700;font-size:10px;letter-spacing:.7px;text-transform:uppercase;padding:8px 11px;text-align:left;border-bottom:1px solid var(--bd)}
-td{padding:9px 11px;border-bottom:1px solid var(--bd);color:var(--tx);vertical-align:middle}
+th{background:var(--sf2);color:var(--tx3);font-weight:700;font-size:10px;letter-spacing:.7px;text-transform:uppercase;padding:8px 11px;text-align:left;border-bottom:1px solid rgba(255,255,255,.07)}
+td{padding:9px 11px;border-bottom:1px solid rgba(255,255,255,.07);color:var(--tx);vertical-align:middle}
 tr:last-child td{border-bottom:none}
 tr:hover td{background:var(--sf2)}
 .badge{display:inline-flex;align-items:center;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700}
@@ -418,7 +418,7 @@ tr:hover td{background:var(--sf2)}
 .mov{position:fixed;inset:0;background:rgba(8,16,36,.55);z-index:1000;display:none;align-items:center;justify-content:center;padding:14px}
 .mov.open{display:flex}
 .modal{background:var(--sf);border-radius:var(--rlg);width:100%;max-width:840px;max-height:93vh;overflow-y:auto;box-shadow:var(--shlg)}
-.mhd{padding:14px 20px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--sf);z-index:2}
+.mhd{padding:14px 20px;border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--sf);z-index:2}
 .mhd-title{font-size:14px;font-weight:700;color:var(--nv)}
 .mbody{padding:16px 20px}
 .mfoot{padding:11px 20px;border-top:1px solid var(--bd);display:flex;gap:7px;justify-content:flex-end;position:sticky;bottom:0;background:var(--sf)}
@@ -436,14 +436,14 @@ tr:hover td{background:var(--sf2)}
 .empty-s{font-size:11px}
 
 /* LOG TABS */
-.log-tab{background:none;border:none;padding:9px 16px;font-size:11px;font-weight:600;color:var(--tx3);cursor:pointer;border-bottom:2px solid transparent;font-family:inherit;transition:all .15s;margin-bottom:-2px}
-.log-tab:hover{color:var(--tx)}
-.log-tab.active{color:var(--nv);border-bottom-color:var(--ac)}
+.log-tab{background:none;border:none;padding:10px 16px;font-size:11.5px;font-weight:600;color:rgba(255,255,255,.35);cursor:pointer;border-bottom:2px solid transparent;font-family:inherit;transition:all .18s;margin-bottom:-2px}
+.log-tab:hover{color:rgba(255,255,255,.75)}
+.log-tab.active{color:#e2e8f8;border-bottom-color:#f59e0b}
 
 /* OS TABS */
-.os-tab{background:none;border:none;padding:9px 14px;font-size:11px;font-weight:600;color:var(--tx3);cursor:pointer;border-bottom:2px solid transparent;font-family:inherit;transition:all .15s}
-.os-tab:hover{color:var(--tx)}
-.os-tab.active{color:var(--nv);border-bottom-color:var(--ac)}
+.os-tab{background:none;border:none;padding:10px 16px;font-size:11.5px;font-weight:600;color:rgba(255,255,255,.35);cursor:pointer;border-bottom:2px solid transparent;font-family:inherit;transition:all .18s}
+.os-tab:hover{color:rgba(255,255,255,.75)}
+.os-tab.active{color:#e2e8f8;border-bottom-color:#f59e0b}
 .os-tab-panel{animation:fadeIn .15s}
 @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 
@@ -463,7 +463,7 @@ tr:hover td{background:var(--sf2)}
 
 /* CLIENT TREE */
 .cli-card{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rlg);margin-bottom:9px;overflow:hidden}
-.cli-hd{padding:10px 14px;display:flex;align-items:center;gap:9px;cursor:pointer;background:var(--sf2);border-bottom:1px solid var(--bd)}
+.cli-hd{padding:10px 14px;display:flex;align-items:center;gap:9px;cursor:pointer;background:var(--sf2);border-bottom:1px solid rgba(255,255,255,.07)}
 .cli-av{width:32px;height:32px;border-radius:50%;background:var(--nv);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
 .cli-name{font-weight:700;font-size:13px;color:var(--nv)}
 .cli-sub{font-size:10px;color:var(--tx3);margin-top:1px}
@@ -1157,14 +1157,17 @@ tr:hover td { background: var(--sf2) !important; }
 <div id="page-agenda" class="page">
   <div class="topbar">
     <div>
-      <div class="tb-title">Agenda / Calendário</div>
+      <div class="tb-title" style="display:flex;align-items:center;gap:8px">
+        <span style="width:28px;height:28px;background:linear-gradient(135deg,#8b5cf6,#6d28d9);border-radius:8px;display:inline-flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 4px 12px rgba(139,92,246,.4)">📅</span>
+        Agenda / Calendário
+      </div>
       <div class="tb-sub" id="ag-topbar-sub">Visitas e OS por técnico</div>
     </div>
     <div class="tb-right">
-      <select id="ag-f-tec" onchange="renderAgenda()" style="font-size:11px;height:32px;border:1.5px solid var(--bd2);border-radius:7px;font-family:inherit;padding:0 8px;color:var(--tx)">
+      <select id="ag-f-tec" onchange="renderAgenda()" style="font-size:11px;height:32px;background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.1);border-radius:8px;font-family:inherit;padding:0 10px;color:#e2e8f8">
         <option value="">Todos os técnicos</option>
       </select>
-      <select id="ag-f-tipo" onchange="renderAgenda()" style="font-size:11px;height:32px;border:1.5px solid var(--bd2);border-radius:7px;font-family:inherit;padding:0 8px;color:var(--tx)">
+      <select id="ag-f-tipo" onchange="renderAgenda()" style="font-size:11px;height:32px;background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.1);border-radius:8px;font-family:inherit;padding:0 10px;color:#e2e8f8">
         <option value="">Todos os tipos</option>
         <option>OS</option>
         <option>Visita</option>
@@ -1172,11 +1175,14 @@ tr:hover td { background: var(--sf2) !important; }
         <option>Reunião</option>
         <option>Outros</option>
       </select>
-      <div class="cal-view-toggle">
-        <button class="cal-vbtn active" id="vbtn-mes" onclick="setCalView('mes')">Mês</button>
-        <button class="cal-vbtn" id="vbtn-lista" onclick="setCalView('lista')">Lista</button>
+      <div class="cal-view-toggle" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);border-radius:9px;padding:3px;gap:3px">
+        <button class="cal-vbtn active" id="vbtn-mes" onclick="setCalView('mes')" style="border-radius:7px;border:none">📅 Mês</button>
+        <button class="cal-vbtn" id="vbtn-lista" onclick="setCalView('lista')" style="border-radius:7px;border:none">📋 Lista</button>
       </div>
-      <button class="btn btn-accent" onclick="openAgendaEvento(null)">+ Novo Evento</button>
+      <button class="btn btn-accent" onclick="openAgendaEvento(null)" style="gap:6px">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Novo Evento
+      </button>
     </div>
   </div>
   <div class="content">
@@ -1336,64 +1342,82 @@ tr:hover td { background: var(--sf2) !important; }
 
 <div id="page-os" class="page">
   <div class="topbar">
-    <div><div class="tb-title">Ordens de Serviço</div><div class="tb-sub">Gestão de OS e Atendimentos</div></div>
+    <div>
+      <div class="tb-title" style="display:flex;align-items:center;gap:8px">
+        <span style="width:28px;height:28px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);border-radius:8px;display:inline-flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 4px 12px rgba(59,130,246,.4)">📋</span>
+        Ordens de Serviço
+      </div>
+      <div class="tb-sub">Gestão completa de OS e Atendimentos</div>
+    </div>
     <div class="tb-right">
-      <div class="swrap"><span style="color:var(--tx3)">🔍</span><input type="text" placeholder="Buscar nº, cliente, série..." id="s-os" oninput="renderOS()"></div>
-      <button class="btn btn-ghost btn-sm" onclick="printRelatorio('os')">🖨 PDF</button>
-      <button class="btn btn-ghost btn-sm" onclick="exportOSExcel()">📊 Excel</button>
-      <button class="btn btn-accent" onclick="openOS(null)">+ Nova OS</button>
+      <div class="swrap" style="background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.1)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.3)" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" placeholder="Buscar OS, cliente, série..." id="s-os" oninput="renderOS()" style="color:#e2e8f8">
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="printRelatorio('os')" style="background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.1);color:rgba(255,255,255,.6)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        PDF
+      </button>
+      <button class="btn btn-ghost btn-sm" onclick="exportOSExcel()" style="background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.1);color:rgba(255,255,255,.6)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Excel
+      </button>
+      <button class="btn btn-accent" onclick="openOS(null)" style="gap:6px">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Nova OS
+      </button>
     </div>
   </div>
   <div class="content">
     <!-- KPIs rápidos -->
-    <div class="sgrid" style="grid-template-columns:repeat(5,1fr);margin-bottom:14px">
-      <div class="scard" style="cursor:pointer" onclick="filtrarOSStatus('')">
-        <div class="sico" style="background:var(--bl2bg);color:var(--bl2)">📋</div>
+    <div class="sgrid" style="grid-template-columns:repeat(5,1fr);margin-bottom:16px">
+      <div class="scard" style="cursor:pointer;border-left:3px solid rgba(96,165,250,.5)" onclick="filtrarOSStatus('')">
+        <div class="sico" style="background:rgba(59,130,246,.15);color:#60a5fa">📋</div>
         <div class="slabel">Total</div><div class="sval" id="os-kpi-total">0</div><div class="ssub">Todas as OS</div>
       </div>
-      <div class="scard" style="cursor:pointer" onclick="filtrarOSStatus('Aberta')">
-        <div class="sico" style="background:var(--orbg);color:var(--or)">🔓</div>
+      <div class="scard" style="cursor:pointer;border-left:3px solid rgba(251,191,36,.5)" onclick="filtrarOSStatus('Aberta')">
+        <div class="sico" style="background:rgba(245,158,11,.15);color:#fbbf24">🔓</div>
         <div class="slabel">Abertas</div><div class="sval" id="os-kpi-ab">0</div><div class="ssub">Aguardando</div>
       </div>
-      <div class="scard" style="cursor:pointer" onclick="filtrarOSStatus('Em andamento')">
-        <div class="sico" style="background:var(--bl2bg);color:var(--bl2)">⚙</div>
+      <div class="scard" style="cursor:pointer;border-left:3px solid rgba(96,165,250,.5)" onclick="filtrarOSStatus('Em andamento')">
+        <div class="sico" style="background:rgba(59,130,246,.15);color:#60a5fa">⚙</div>
         <div class="slabel">Em Andamento</div><div class="sval" id="os-kpi-and">0</div><div class="ssub">Em execução</div>
       </div>
-      <div class="scard" style="cursor:pointer" onclick="filtrarOSStatus('Concluída')">
-        <div class="sico" style="background:var(--gnbg);color:var(--gn)">✅</div>
+      <div class="scard" style="cursor:pointer;border-left:3px solid rgba(16,185,129,.5)" onclick="filtrarOSStatus('Concluída')">
+        <div class="sico" style="background:rgba(16,185,129,.15);color:#34d399">✅</div>
         <div class="slabel">Concluídas</div><div class="sval" id="os-kpi-ok">0</div><div class="ssub">Finalizadas</div>
       </div>
-      <div class="scard" style="cursor:pointer" onclick="filtrarOSStatus('Cancelada')">
-        <div class="sico" style="background:var(--rdbg);color:var(--rd)">✖</div>
+      <div class="scard" style="cursor:pointer;border-left:3px solid rgba(239,68,68,.4)" onclick="filtrarOSStatus('Cancelada')">
+        <div class="sico" style="background:rgba(239,68,68,.15);color:#f87171">✖</div>
         <div class="slabel">Canceladas</div><div class="sval" id="os-kpi-can">0</div><div class="ssub">Canceladas</div>
       </div>
     </div>
     <!-- Filtros -->
-    <div class="card" style="padding:10px 14px;margin-bottom:10px">
-      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-        <div style="display:flex;align-items:center;gap:5px">
-          <span style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase">Status</span>
-          <select id="f-os-status" onchange="renderOS()" style="font-size:11px;padding:4px 7px;border:1.5px solid var(--bd2);border-radius:7px;font-family:inherit;color:var(--tx)">
+    <div class="card" style="padding:10px 14px;margin-bottom:12px">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:9px;font-weight:800;color:rgba(255,255,255,.25);text-transform:uppercase;letter-spacing:.8px">Status</span>
+          <select id="f-os-status" onchange="renderOS()" style="font-size:11px;padding:4px 10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-family:inherit;color:#e2e8f8;height:30px">
             <option value="">Todos</option>
             <option>Aberta</option><option>Em andamento</option><option>Concluída</option><option>Cancelada</option>
           </select>
         </div>
-        <div style="display:flex;align-items:center;gap:5px">
-          <span style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase">Técnico</span>
-          <select id="f-os-tec" onchange="renderOS()" style="font-size:11px;padding:4px 7px;border:1.5px solid var(--bd2);border-radius:7px;font-family:inherit;color:var(--tx)">
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:9px;font-weight:800;color:rgba(255,255,255,.25);text-transform:uppercase;letter-spacing:.8px">Técnico</span>
+          <select id="f-os-tec" onchange="renderOS()" style="font-size:11px;padding:4px 10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-family:inherit;color:#e2e8f8;height:30px">
             <option value="">Todos</option>
           </select>
         </div>
-        <div style="display:flex;align-items:center;gap:5px">
-          <span style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase">De</span>
-          <input type="date" id="f-os-de" onchange="renderOS()" style="font-size:11px;padding:4px 7px;border:1.5px solid var(--bd2);border-radius:7px;font-family:inherit;color:var(--tx)">
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:9px;font-weight:800;color:rgba(255,255,255,.25);text-transform:uppercase;letter-spacing:.8px">De</span>
+          <input type="date" id="f-os-de" onchange="renderOS()" style="font-size:11px;padding:4px 10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-family:inherit;color:#e2e8f8;height:30px">
         </div>
-        <div style="display:flex;align-items:center;gap:5px">
-          <span style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase">Até</span>
-          <input type="date" id="f-os-ate" onchange="renderOS()" style="font-size:11px;padding:4px 7px;border:1.5px solid var(--bd2);border-radius:7px;font-family:inherit;color:var(--tx)">
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:9px;font-weight:800;color:rgba(255,255,255,.25);text-transform:uppercase;letter-spacing:.8px">Até</span>
+          <input type="date" id="f-os-ate" onchange="renderOS()" style="font-size:11px;padding:4px 10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-family:inherit;color:#e2e8f8;height:30px">
         </div>
-        <button class="btn btn-ghost btn-xs" onclick="limparFiltrosOS()">✕ Limpar filtros</button>
-        <span id="os-count-label" style="margin-left:auto;font-size:11px;color:var(--tx3)"></span>
+        <button class="btn btn-ghost btn-xs" onclick="limparFiltrosOS()" style="background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.1);color:rgba(255,255,255,.4)">✕ Limpar</button>
+        <span id="os-count-label" style="margin-left:auto;font-size:11px;color:rgba(255,255,255,.3)"></span>
       </div>
     </div>
     <!-- Tabela -->
@@ -1421,7 +1445,7 @@ tr:hover td { background: var(--sf2) !important; }
     </div>
   </div>
   <!-- Abas -->
-  <div style="display:flex;border-bottom:1px solid var(--bd);padding:0 20px;background:var(--sf2)">
+  <div style="display:flex;border-bottom:1px solid rgba(255,255,255,.07);padding:0 20px;background:var(--sf2)">
     <button class="os-tab active" onclick="osTab('resumo',this)">📋 Resumo</button>
     <button class="os-tab" onclick="osTab('tecnico',this)">🔧 Técnico</button>
     <button class="os-tab" onclick="osTab('gastos',this)">💰 Gastos</button>
@@ -1534,27 +1558,45 @@ tr:hover td { background: var(--sf2) !important; }
 <!-- LABORATÓRIO -->
 <div id="page-lab" class="page">
   <div class="topbar">
-    <div><div class="tb-title">Laboratório Técnico</div><div class="tb-sub">Bancada · Peças · Escopo · Baixados</div></div>
+    <div>
+      <div class="tb-title" style="display:flex;align-items:center;gap:8px">
+        <span style="width:28px;height:28px;background:linear-gradient(135deg,#f59e0b,#d97706);border-radius:8px;display:inline-flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 4px 12px rgba(245,158,11,.4)">🔬</span>
+        Laboratório Técnico
+      </div>
+      <div class="tb-sub">Bancada · Pedidos de Peças · Escopo · Baixados</div>
+    </div>
     <div class="tb-right">
-      <div class="swrap"><span style="color:var(--tx3)">🔍</span><input type="text" placeholder="Buscar..." id="s-lab" oninput="renderLab()"></div>
-      <button class="btn btn-ghost btn-sm" onclick="printRelatorio('lab')">🖨 PDF</button>
-      <button class="btn btn-ghost btn-sm" onclick="exportLabExcel()">📊 Excel</button>
-      <button class="btn btn-accent" id="btn-nova-lab" onclick="openLab(null)">+ Nova Entrada</button>
+      <div class="swrap" style="background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.1)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.3)" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" placeholder="Buscar equipamento, cliente..." id="s-lab" oninput="renderLab()" style="color:#e2e8f8">
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="printRelatorio('lab')" style="background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.1);color:rgba(255,255,255,.6)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        PDF
+      </button>
+      <button class="btn btn-ghost btn-sm" onclick="exportLabExcel()" style="background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.1);color:rgba(255,255,255,.6)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Excel
+      </button>
+      <button class="btn btn-accent" id="btn-nova-lab" onclick="openLab(null)" style="gap:6px">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Nova Entrada
+      </button>
     </div>
   </div>
   <div class="content">
 
     <!-- KPIs -->
-    <div class="sgrid" style="grid-template-columns:repeat(5,1fr);margin-bottom:14px">
-      <div class="scard"><div class="sico" style="background:var(--bl2bg);color:var(--bl2)">🔬</div><div class="slabel">Na Bancada</div><div class="sval" id="lab-kpi-total">0</div><div class="ssub">Equipamentos</div></div>
-      <div class="scard"><div class="sico" style="background:var(--orbg);color:var(--or)">⏳</div><div class="slabel">Em Análise</div><div class="sval" id="lab-kpi-analise">0</div><div class="ssub">Aguardando</div></div>
-      <div class="scard"><div class="sico" style="background:var(--pubg);color:var(--pu)">🔧</div><div class="slabel">Em Reparo</div><div class="sval" id="lab-kpi-reparo">0</div><div class="ssub">Em execução</div></div>
-      <div class="scard"><div class="sico" style="background:var(--rdbg);color:var(--rd)">📦</div><div class="slabel">Aguard. Peça</div><div class="sval" id="lab-kpi-aguard">0</div><div class="ssub">Pedidos abertos</div></div>
-      <div class="scard"><div class="sico" style="background:var(--rdbg);color:var(--rd)">🗑</div><div class="slabel">Baixados</div><div class="sval" id="lab-kpi-baixados">0</div><div class="ssub">Equipamentos</div></div>
+    <div class="sgrid" style="grid-template-columns:repeat(5,1fr);margin-bottom:16px">
+      <div class="scard" style="border-left:3px solid rgba(59,130,246,.4)"><div class="sico" style="background:rgba(59,130,246,.15);color:#60a5fa">🔬</div><div class="slabel">Na Bancada</div><div class="sval" id="lab-kpi-total">0</div><div class="ssub">Equipamentos</div></div>
+      <div class="scard" style="border-left:3px solid rgba(245,158,11,.4)"><div class="sico" style="background:rgba(245,158,11,.15);color:#fbbf24">⏳</div><div class="slabel">Em Análise</div><div class="sval" id="lab-kpi-analise">0</div><div class="ssub">Aguardando</div></div>
+      <div class="scard" style="border-left:3px solid rgba(167,139,250,.4)"><div class="sico" style="background:rgba(167,139,250,.15);color:#c4b5fd">🔧</div><div class="slabel">Em Reparo</div><div class="sval" id="lab-kpi-reparo">0</div><div class="ssub">Em execução</div></div>
+      <div class="scard" style="border-left:3px solid rgba(239,68,68,.4)"><div class="sico" style="background:rgba(239,68,68,.15);color:#f87171">📦</div><div class="slabel">Aguard. Peça</div><div class="sval" id="lab-kpi-aguard">0</div><div class="ssub">Pedidos abertos</div></div>
+      <div class="scard"><div class="sico" style="background:rgba(239,68,68,.15);color:#f87171">🗑</div><div class="slabel">Baixados</div><div class="sval" id="lab-kpi-baixados">0</div><div class="ssub">Equipamentos</div></div>
     </div>
 
     <!-- Abas -->
-    <div style="display:flex;border-bottom:2px solid var(--bd);margin-bottom:14px">
+    <div style="display:flex;border-bottom:1px solid rgba(255,255,255,.07);margin-bottom:14px">
       <button class="log-tab active" id="ltab-bancada" onclick="labTab('bancada',this)">🔬 Bancada</button>
       <button class="log-tab" id="ltab-pedidos"  onclick="labTab('pedidos',this)">🔩 Pedidos de Peças</button>
       <button class="log-tab" id="ltab-escopo"   onclick="labTab('escopo',this)">📋 Escopo</button>
@@ -1635,7 +1677,7 @@ tr:hover td { background: var(--sf2) !important; }
     </div>
   </div>
   <!-- mini abas -->
-  <div style="display:flex;border-bottom:1px solid var(--bd);padding:0 20px;background:var(--sf2)">
+  <div style="display:flex;border-bottom:1px solid rgba(255,255,255,.07);padding:0 20px;background:var(--sf2)">
     <button class="os-tab active" onclick="labFormTab('ident',this)">📋 Identificação</button>
     <button class="os-tab" onclick="labFormTab('diag',this)">🔧 Diagnóstico</button>
     <button class="os-tab" onclick="labFormTab('pecas',this)">🔩 Peças</button>
@@ -1817,7 +1859,7 @@ tr:hover td { background: var(--sf2) !important; }
   </div>
   <div class="content">
     <!-- Abas -->
-    <div style="border-bottom:2px solid var(--bd);margin-bottom:14px;display:flex;gap:0">
+    <div style="border-bottom:1px solid rgba(255,255,255,.07);margin-bottom:14px;display:flex;gap:0">
       <button class="log-tab active" id="htab-os" onclick="switchHistTab('os')">✅ OS Finalizadas</button>
       <button class="log-tab" id="htab-manual" onclick="switchHistTab('manual')">📝 Lançamentos Manuais</button>
     </div>
@@ -1890,7 +1932,7 @@ tr:hover td { background: var(--sf2) !important; }
   </div>
   <div class="content">
     <div id="cont-kpis" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:10px;margin-bottom:14px"></div>
-    <div style="border-bottom:2px solid var(--bd);margin-bottom:12px;display:flex;gap:0">
+    <div style="border-bottom:1px solid rgba(255,255,255,.07);margin-bottom:12px;display:flex;gap:0">
       <button class="log-tab active" id="ctab-ativos" onclick="switchContTab('ativos')">✅ Ativos</button>
       <button class="log-tab" id="ctab-avencer" onclick="switchContTab('avencer')">⚠️ A Vencer</button>
       <button class="log-tab" id="ctab-vencidos" onclick="switchContTab('vencidos')">🔴 Vencidos</button>
@@ -1918,7 +1960,7 @@ tr:hover td { background: var(--sf2) !important; }
   </div>
   <div class="content">
     <div id="fin-kpis" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:10px;margin-bottom:14px"></div>
-    <div style="border-bottom:2px solid var(--bd);margin-bottom:12px;display:flex;gap:0">
+    <div style="border-bottom:1px solid rgba(255,255,255,.07);margin-bottom:12px;display:flex;gap:0">
       <button class="log-tab active" id="ftab-lancamentos" onclick="switchFinTab('lancamentos')">📒 Lançamentos</button>
       <button class="log-tab" id="ftab-dre" onclick="switchFinTab('dre')">📊 DRE</button>
       <button class="log-tab" id="ftab-fluxo" onclick="switchFinTab('fluxo')">📈 Fluxo de Caixa</button>
@@ -1965,7 +2007,7 @@ tr:hover td { background: var(--sf2) !important; }
   </div>
   <div class="content">
     <div id="notif-kpis" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-bottom:14px"></div>
-    <div style="border-bottom:2px solid var(--bd);margin-bottom:12px;display:flex;gap:0">
+    <div style="border-bottom:1px solid rgba(255,255,255,.07);margin-bottom:12px;display:flex;gap:0">
       <button class="log-tab active" id="ntab-todas" onclick="switchNotifTab('todas')">🔔 Todas</button>
       <button class="log-tab" id="ntab-criticas" onclick="switchNotifTab('criticas')">🔴 Críticas</button>
       <button class="log-tab" id="ntab-avisos" onclick="switchNotifTab('avisos')">🟡 Avisos</button>
@@ -1990,7 +2032,7 @@ tr:hover td { background: var(--sf2) !important; }
     <!-- KPIs Estoque -->
     <div id="est-kpis" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:14px"></div>
     <!-- Abas -->
-    <div style="border-bottom:2px solid var(--bd);margin-bottom:12px;display:flex;gap:0">
+    <div style="border-bottom:1px solid rgba(255,255,255,.07);margin-bottom:12px;display:flex;gap:0">
       <button class="log-tab active" id="etab-pecas" onclick="switchEstTab('pecas')">📦 Peças</button>
       <button class="log-tab" id="etab-movs" onclick="switchEstTab('movs')">🔄 Movimentações</button>
       <button class="log-tab" id="etab-alertas" onclick="switchEstTab('alertas')">⚠️ Alertas</button>
@@ -2048,7 +2090,7 @@ tr:hover td { background: var(--sf2) !important; }
     <!-- KPIs globais -->
     <div id="supr-kpis" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-bottom:14px"></div>
     <!-- Abas -->
-    <div style="border-bottom:2px solid var(--bd);margin-bottom:12px;display:flex;gap:0">
+    <div style="border-bottom:1px solid rgba(255,255,255,.07);margin-bottom:12px;display:flex;gap:0">
       <button class="log-tab active" id="stab-estoque" onclick="switchSuprTab('estoque')">📦 Estoque por Cliente</button>
       <button class="log-tab" id="stab-hist" onclick="switchSuprTab('hist')">🔄 Histórico Global</button>
     </div>
@@ -2174,7 +2216,7 @@ tr:hover td { background: var(--sf2) !important; }
     </div>
   </div>
   <div class="content">
-    <div style="border-bottom:2px solid var(--bd);margin-bottom:14px;display:flex;gap:0">
+    <div style="border-bottom:1px solid rgba(255,255,255,.07);margin-bottom:14px;display:flex;gap:0">
       <button class="log-tab active" id="utab-lista" onclick="switchUsrTab('lista')">👥 Usuários</button>
       <button class="log-tab" id="utab-perfis" onclick="switchUsrTab('perfis')">🔐 Perfis de Acesso</button>
       <button class="log-tab" id="utab-recovery" onclick="switchUsrTab('recovery')">🔑 Recuperação de Senha</button>
@@ -2682,29 +2724,47 @@ Outros</textarea>
 <!-- LOGISTICA -->
 <div id="page-logistica" class="page">
   <div class="topbar">
-    <div><div class="tb-title">Logística</div><div class="tb-sub">Rotas · Abastecimento · Checklist · Manutenção</div></div>
+    <div>
+      <div class="tb-title" style="display:flex;align-items:center;gap:8px">
+        <span style="width:28px;height:28px;background:linear-gradient(135deg,#10b981,#059669);border-radius:8px;display:inline-flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 4px 12px rgba(16,185,129,.4)">🚚</span>
+        Logística
+      </div>
+      <div class="tb-sub">Rotas · Abastecimento · Checklist · Manutenção · Frota</div>
+    </div>
     <div class="tb-right">
-      <div class="swrap"><span style="color:var(--tx3)">🔍</span><input type="text" id="s-log" placeholder="Buscar..." oninput="renderLogistica()"></div>
-      <button class="btn btn-ghost btn-sm" onclick="printRelatorio('logistica')">🖨 PDF</button>
-      <button class="btn btn-ghost btn-sm" onclick="exportLogExcel()">📊 Excel</button>
-      <button class="btn btn-accent" id="btn-nova-log" onclick="openLogistica(null)">+ Nova Rota</button>
+      <div class="swrap" style="background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.1)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.3)" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="s-log" placeholder="Buscar rota, técnico..." oninput="renderLogistica()" style="color:#e2e8f8">
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="printRelatorio('logistica')" style="background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.1);color:rgba(255,255,255,.6)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        PDF
+      </button>
+      <button class="btn btn-ghost btn-sm" onclick="exportLogExcel()" style="background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.1);color:rgba(255,255,255,.6)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Excel
+      </button>
+      <button class="btn btn-accent" id="btn-nova-log" onclick="openLogistica(null)" style="gap:6px">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Nova Rota
+      </button>
     </div>
   </div>
   <div class="content">
 
     <!-- KPIs -->
-    <div class="sgrid" style="grid-template-columns:repeat(5,1fr);margin-bottom:14px">
-      <div class="scard"><div class="sico" style="background:var(--bl2bg);color:var(--bl2)">🚚</div><div class="slabel">Rotas</div><div class="sval" id="log-kpi-rotas">0</div><div class="ssub">Registradas</div></div>
-      <div class="scard"><div class="sico" style="background:var(--gnbg);color:var(--gn)">📍</div><div class="slabel">Km Total</div><div class="sval" id="log-kpi-km">0</div><div class="ssub">Percorridos</div></div>
-      <div class="scard"><div class="sico" style="background:var(--orbg);color:var(--or)">⛽</div><div class="slabel">Litros</div><div class="sval" id="log-kpi-lit">0L</div><div class="ssub">Abastecidos</div></div>
-      <div class="scard"><div class="sico" style="background:var(--rdbg);color:var(--rd)">💰</div><div class="slabel">Custo Total</div><div class="sval" id="log-kpi-val" style="font-size:14px">R$0</div><div class="ssub">Rotas + gastos</div></div>
-      <div class="scard" id="log-kpi-manut-card" style="cursor:pointer" onclick="logTab('manut',document.getElementById('ltab-manut'))">
-        <div class="sico" style="background:var(--pubg);color:var(--pu)">🔧</div><div class="slabel">Próx. Manutenção</div><div class="sval" id="log-kpi-manut" style="font-size:13px">—</div><div class="ssub" id="log-kpi-manut-sub">—</div>
+    <div class="sgrid" style="grid-template-columns:repeat(5,1fr);margin-bottom:16px">
+      <div class="scard" style="border-left:3px solid rgba(59,130,246,.4)"><div class="sico" style="background:rgba(59,130,246,.15);color:#60a5fa">🚚</div><div class="slabel">Rotas</div><div class="sval" id="log-kpi-rotas">0</div><div class="ssub">Registradas</div></div>
+      <div class="scard" style="border-left:3px solid rgba(16,185,129,.4)"><div class="sico" style="background:rgba(16,185,129,.15);color:#34d399">📍</div><div class="slabel">Km Total</div><div class="sval" id="log-kpi-km">0</div><div class="ssub">Percorridos</div></div>
+      <div class="scard" style="border-left:3px solid rgba(245,158,11,.4)"><div class="sico" style="background:rgba(245,158,11,.15);color:#fbbf24">⛽</div><div class="slabel">Litros</div><div class="sval" id="log-kpi-lit">0L</div><div class="ssub">Abastecidos</div></div>
+      <div class="scard" style="border-left:3px solid rgba(239,68,68,.4)"><div class="sico" style="background:rgba(239,68,68,.15);color:#f87171">💰</div><div class="slabel">Custo Total</div><div class="sval" id="log-kpi-val" style="font-size:14px">R$0</div><div class="ssub">Rotas + gastos</div></div>
+      <div class="scard" id="log-kpi-manut-card" style="cursor:pointer;border-left:3px solid rgba(167,139,250,.4)" onclick="logTab('manut',document.getElementById('ltab-manut'))">
+        <div class="sico" style="background:rgba(167,139,250,.15);color:#c4b5fd">🔧</div><div class="slabel">Próx. Manutenção</div><div class="sval" id="log-kpi-manut" style="font-size:13px">—</div><div class="ssub" id="log-kpi-manut-sub">—</div>
       </div>
     </div>
 
     <!-- Abas -->
-    <div style="display:flex;border-bottom:2px solid var(--bd);margin-bottom:14px">
+    <div style="display:flex;border-bottom:1px solid rgba(255,255,255,.07);margin-bottom:14px">
       <button class="log-tab active" id="ltab-rotas"  onclick="logTab('rotas',this)">🚛 Rotas</button>
       <button class="log-tab"        id="ltab-abast"  onclick="logTab('abast',this)">⛽ Abastecimento</button>
       <button class="log-tab"        id="ltab-check"  onclick="logTab('check',this)">✅ Checklist</button>
@@ -3500,7 +3560,7 @@ async function doLogin() {
     // Botão Reset — mostra wrap+btn para master
     const _isMaster = res.user?.isMaster === true || res.user?.login === 'master';
     const _wrapR = document.getElementById('btn-reset-wrap');
-    if (_wrapR) { const _show = res.user?.isMaster === true || res.user?.login === 'master' || res.user?.role === 'master' || res.user?.role === 'superadmin' || res.user?.role === 'admin'; _wrapR.style.display = _show ? 'block' : 'none'; console.log('[RESET-LOGIN]', JSON.stringify({isMaster:res.user?.isMaster, login:res.user?.login, role:res.user?.role, show:_show})); }
+    if (_wrapR) { const _show = res.user?.isMaster === true || res.user?.login === 'master' || res.user?.role === 'master' || res.user?.role === 'superadmin'; _wrapR.style.display = _show ? 'block' : 'none'; console.log('[RESET-LOGIN]', JSON.stringify({isMaster:res.user?.isMaster, login:res.user?.login, role:res.user?.role, show:_show})); }
     document.getElementById('dev-footer').style.display='flex';
     // Gerar notificações automáticas ao logar
     setTimeout(()=>gerarNotificacoes().catch(()=>{}), 800);
@@ -4252,7 +4312,7 @@ function verDetalhesOS(id) {
   document.getElementById('det-defeito').textContent = os.defeito||'—';
   document.getElementById('det-proc').textContent    = os.procedimento||'—';
   document.getElementById('det-pecas').innerHTML     = os.pecas
-    ? os.pecas.split('\n').map(p=>`<div style="padding:2px 0;border-bottom:1px solid var(--bd)">• ${p}</div>`).join('')
+    ? os.pecas.split('\n').map(p=>`<div style="padding:2px 0;border-bottom:1px solid rgba(255,255,255,.07)">• ${p}</div>`).join('')
     : '—';
   document.getElementById('det-obs').textContent = os.obs||'—';
 
@@ -4260,7 +4320,7 @@ function verDetalhesOS(id) {
   const gastos=[['Viagem',os.viag],['Alimentação',os.alim],['Hospedagem',os.hosp],['Combustível',os.comb],['Pedágios',os.ped],['Outros',os.outros]].filter(([,v])=>(v||0)>0);
   document.getElementById('det-gastos-tbl').innerHTML = gastos.length
     ? `<table style="width:100%;border-collapse:collapse;font-size:12px">
-        ${gastos.map(([n,v])=>`<tr><td style="padding:7px 10px;border-bottom:1px solid var(--bd)">${n}</td><td style="text-align:right;font-weight:600;padding:7px 10px;border-bottom:1px solid var(--bd)">${fm(v)}</td></tr>`).join('')}
+        ${gastos.map(([n,v])=>`<tr><td style="padding:7px 10px;border-bottom:1px solid rgba(255,255,255,.07)">${n}</td><td style="text-align:right;font-weight:600;padding:7px 10px;border-bottom:1px solid rgba(255,255,255,.07)">${fm(v)}</td></tr>`).join('')}
         <tr style="background:var(--nv);color:#fff"><td style="padding:8px 10px;font-weight:700">TOTAL</td><td style="text-align:right;font-weight:800;color:var(--ac2);padding:8px 10px">${fm(tot)}</td></tr>
       </table>`
     : `<div class="empty" style="padding:24px"><div class="empty-ico">💰</div><div class="empty-t">Nenhum gasto registrado</div></div>`;
@@ -4451,7 +4511,151 @@ function getOSPrintStyles() {
 }
 function openPrintWindow(html, styles) {
   const w=window.open('','_blank','width=780,height:950');
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Impressão</title><link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet"><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Sora',sans-serif;padding:18px;background:#fff}${styles}@media print{body{padding:8px}}</style></head><body>${html}</body></html>`);
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Impressão</title><link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet"><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Sora',sans-serif;padding:18px;background:#fff}${styles}@media print{body{padding:8px}}</style></head><body>${html}
+<style id="dark-polish">
+/* ── Cores inline que ainda usam variáveis de light mode ── */
+[style*="color:var(--tx)"]  { color:#e2e8f8 !important }
+[style*="color:var(--tx2)"] { color:rgba(255,255,255,.55) !important }
+[style*="color:var(--tx3)"] { color:rgba(255,255,255,.3) !important }
+[style*="color:var(--nv)"]  { color:#e2e8f8 !important }
+
+/* Inputs/selects inline que ainda têm border/bg de light mode */
+[style*="border:1.5px solid var(--bd2)"] {
+  border-color: rgba(255,255,255,.1) !important;
+  background: rgba(255,255,255,.05) !important;
+  color: #e2e8f8 !important;
+}
+[style*="border-color:var(--bd"] {
+  border-color: rgba(255,255,255,.08) !important;
+}
+
+/* Cards com background branco inline */
+[style*="background:var(--sf)"] { background: rgba(255,255,255,.03) !important }
+[style*="background:var(--sf2)"] { background: rgba(255,255,255,.04) !important }
+[style*="background:var(--sf3)"] { background: rgba(255,255,255,.06) !important }
+
+/* OS lista de cards (renderizados por JS com innerHTML) */
+.os-card-row {
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  transition: all .18s;
+}
+.os-card-row:hover {
+  background: rgba(255,255,255,.05);
+  border-color: rgba(255,255,255,.12);
+  box-shadow: 0 4px 20px rgba(0,0,0,.3);
+}
+
+/* Tab bar container dark */
+.tab-bar, .os-tab-bar {
+  border-bottom: 1px solid rgba(255,255,255,.07) !important;
+  background: transparent !important;
+}
+
+/* Filtros select/input dark globais */
+.filter-row select,
+.filter-row input[type=date],
+.filter-row input[type=text] {
+  background: rgba(255,255,255,.05) !important;
+  border-color: rgba(255,255,255,.1) !important;
+  color: #e2e8f8 !important;
+}
+
+/* Card dark hover effect */
+.card:hover {
+  border-color: rgba(255,255,255,.1) !important;
+}
+
+/* Scard hover neon */
+.scard:hover {
+  background: rgba(255,255,255,.06) !important;
+  border-color: rgba(255,255,255,.14) !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,.35) !important;
+  transform: translateY(-2px);
+}
+
+/* Badge dark force */
+.badge { letter-spacing: .2px }
+
+/* Linha separadora entre sessões do modal */
+.fsec {
+  color: #f59e0b !important;
+  border-bottom-color: rgba(245,158,11,.3) !important;
+}
+
+/* Log tabs bar */
+[style*="border-bottom:1px solid rgba(255,255,255,.07)"],
+[style*="border-bottom:1px solid rgba(255,255,255,.07)"] {
+  border-bottom-color: rgba(255,255,255,.07) !important;
+}
+
+/* Cal grid uniform spacing */
+.cal-grid { gap: 4px }
+.cal-wrap { gap: 16px }
+
+/* Lista de rotas / labs / OS — zebra dark */
+.twrap tbody tr:nth-child(even) td {
+  background: rgba(255,255,255,.015) !important;
+}
+
+/* Checklist dark */
+.chk { 
+  background: rgba(255,255,255,.03) !important;
+  border-color: rgba(255,255,255,.08) !important;
+}
+.chk-lbl { color: rgba(255,255,255,.7) !important }
+.chk.on .chk-lbl { color: #34d399 !important }
+
+/* Timeline dots glow */
+.tl-dot.g, .tl-dot.gn { box-shadow: 0 0 8px rgba(16,185,129,.5) }
+.tl-dot.o, .tl-dot.or { box-shadow: 0 0 8px rgba(245,158,11,.5) }
+.tl-dot.b, .tl-dot.bl2 { box-shadow: 0 0 8px rgba(59,130,246,.5) }
+.tl-dot.r { box-shadow: 0 0 8px rgba(239,68,68,.5) }
+
+/* Topbar icon badges */
+.ni-badge {
+  background: rgba(245,158,11,.25) !important;
+  color: #fbbf24 !important;
+  border: 1px solid rgba(245,158,11,.35) !important;
+}
+
+/* Page animation */
+.page.active { animation: page-in-dark .22s ease both }
+@keyframes page-in-dark {
+  from { opacity:0; transform:translateY(8px) }
+  to   { opacity:1; transform:translateY(0) }
+}
+
+/* Btn reset sidebar */
+#btn-reset-wrap button {
+  background: rgba(239,68,68,.12) !important;
+  color: #f87171 !important;
+  border: 1px solid rgba(239,68,68,.25) !important;
+  transition: all .18s;
+}
+#btn-reset-wrap button:hover {
+  background: rgba(239,68,68,.22) !important;
+  box-shadow: 0 4px 16px rgba(239,68,68,.25) !important;
+}
+
+/* Logística KPI remaining dark */
+.scard .sico[style*="var(--bl2bg)"] { background:rgba(59,130,246,.15) !important; color:#60a5fa !important }
+.scard .sico[style*="var(--gnbg)"]  { background:rgba(16,185,129,.15) !important; color:#34d399 !important }
+.scard .sico[style*="var(--orbg)"]  { background:rgba(245,158,11,.15) !important; color:#fbbf24 !important }
+
+/* Cal event tags mais legíveis no dark */
+.ev-os        { background:rgba(59,130,246,.2)  !important; color:#93c5fd !important; border-left-color:#3b82f6 !important }
+.ev-visita    { background:rgba(34,197,94,.15)   !important; color:#86efac !important; border-left-color:#22c55e !important }
+.ev-preventiva{ background:rgba(234,179,8,.15)   !important; color:#fde047 !important; border-left-color:#eab308 !important }
+.ev-reuniao   { background:rgba(168,85,247,.15)  !important; color:#d8b4fe !important; border-left-color:#a855f7 !important }
+.ev-outros    { background:rgba(148,163,184,.1)  !important; color:#94a3b8 !important; border-left-color:#64748b !important }
+.ev-cancelado { background:rgba(239,68,68,.12)   !important; color:#fca5a5 !important; border-left-color:#ef4444 !important }
+</style>
+
+</body></html>`);
   w.document.close(); setTimeout(()=>w.print(),700);
 }
 
@@ -6047,7 +6251,7 @@ function adicionarRecLog(acao,uid){
   const hora=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
   G_recLog.unshift({acao,nome:user?.nome||'—',hora});
   const el=document.getElementById('rec-log');if(!el)return;
-  el.innerHTML=G_recLog.slice(0,10).map(l=>`<div style="padding:5px 0;border-bottom:1px solid var(--bd);font-size:12px"><span style="color:var(--tx3)">${l.hora}</span> — ${l.acao} — <b>${l.nome}</b></div>`).join('');
+  el.innerHTML=G_recLog.slice(0,10).map(l=>`<div style="padding:5px 0;border-bottom:1px solid rgba(255,255,255,.07);font-size:12px"><span style="color:var(--tx3)">${l.hora}</span> — ${l.acao} — <b>${l.nome}</b></div>`).join('');
 }
 
 function openUser(id){
@@ -6116,7 +6320,7 @@ async function renderUsers(){
     </tr>`;
   }).join('');
   // Botão Reset — sidebar wrap
-  const _isMR = G.user?.isMaster === true || G.user?.login === 'master' || G.user?.role === 'master' || G.user?.role === 'superadmin' || G.user?.role === 'admin';
+  const _isMR = G.user?.isMaster === true || G.user?.login === 'master' || G.user?.role === 'master' || G.user?.role === 'superadmin';
   const _wR = document.getElementById('btn-reset-wrap');
   if (_wR) _wR.style.display = _isMR ? 'block' : 'none';
   renderPerfisPainel();
@@ -6959,8 +7163,8 @@ function renderRelatorios() {
     const rows = Object.entries(tecMap).sort((a,b)=>b[1].concluidas-a[1].concluidas);
     if (!rows.length) { tecEl.innerHTML='<div class="empty"><div class="empty-ico">👨‍🔧</div><div class="empty-t">Sem dados no período</div></div>'; }
     else tecEl.innerHTML = `<table style="width:100%;font-size:11px;border-collapse:collapse">
-      <thead><tr style="border-bottom:2px solid var(--bd)"><th style="text-align:left;padding:5px 6px;font-size:10px;color:var(--tx3)">Técnico</th><th style="text-align:center;padding:5px 6px;font-size:10px;color:var(--tx3)">Total</th><th style="text-align:center;padding:5px 6px;font-size:10px;color:var(--gn)">Concluídas</th><th style="text-align:center;padding:5px 6px;font-size:10px;color:var(--rd)">Atrasadas</th><th style="text-align:right;padding:5px 6px;font-size:10px;color:var(--gn)">Receita</th></tr></thead>
-      <tbody>${rows.map(([tId,d])=>{const t=G.tecnicos.find(x=>x.id===tId);const ef=d.total?Math.round(d.concluidas/d.total*100):0;return`<tr style="border-bottom:1px solid var(--bd)"><td style="padding:6px;font-weight:600">${t?.nome||'—'}<div style="background:var(--sf2);border-radius:3px;height:4px;margin-top:3px;overflow:hidden"><div style="width:${ef}%;height:100%;background:var(--gn)"></div></div></td><td style="text-align:center;padding:6px">${d.total}</td><td style="text-align:center;padding:6px;color:var(--gn);font-weight:700">${d.concluidas}</td><td style="text-align:center;padding:6px;color:${d.atrasadas?'var(--rd)':'var(--tx3)'}">${d.atrasadas||'—'}</td><td style="text-align:right;padding:6px;font-weight:700;color:var(--gn)">${d.receita>0?fm(d.receita):'—'}</td></tr>`}).join('')}</tbody>
+      <thead><tr style="border-bottom:1px solid rgba(255,255,255,.07)"><th style="text-align:left;padding:5px 6px;font-size:10px;color:var(--tx3)">Técnico</th><th style="text-align:center;padding:5px 6px;font-size:10px;color:var(--tx3)">Total</th><th style="text-align:center;padding:5px 6px;font-size:10px;color:var(--gn)">Concluídas</th><th style="text-align:center;padding:5px 6px;font-size:10px;color:var(--rd)">Atrasadas</th><th style="text-align:right;padding:5px 6px;font-size:10px;color:var(--gn)">Receita</th></tr></thead>
+      <tbody>${rows.map(([tId,d])=>{const t=G.tecnicos.find(x=>x.id===tId);const ef=d.total?Math.round(d.concluidas/d.total*100):0;return`<tr style="border-bottom:1px solid rgba(255,255,255,.07)"><td style="padding:6px;font-weight:600">${t?.nome||'—'}<div style="background:var(--sf2);border-radius:3px;height:4px;margin-top:3px;overflow:hidden"><div style="width:${ef}%;height:100%;background:var(--gn)"></div></div></td><td style="text-align:center;padding:6px">${d.total}</td><td style="text-align:center;padding:6px;color:var(--gn);font-weight:700">${d.concluidas}</td><td style="text-align:center;padding:6px;color:${d.atrasadas?'var(--rd)':'var(--tx3)'}">${d.atrasadas||'—'}</td><td style="text-align:right;padding:6px;font-weight:700;color:var(--gn)">${d.receita>0?fm(d.receita):'—'}</td></tr>`}).join('')}</tbody>
     </table>`;
   }
 
@@ -6977,8 +7181,8 @@ function renderRelatorios() {
     const rows = Object.entries(cliMap).sort((a,b)=>b[1].total-a[1].total).slice(0,10);
     if (!rows.length) { cliEl.innerHTML='<div class="empty"><div class="empty-ico">🏢</div><div class="empty-t">Sem dados no período</div></div>'; }
     else cliEl.innerHTML = `<table style="width:100%;font-size:11px;border-collapse:collapse">
-      <thead><tr style="border-bottom:2px solid var(--bd)"><th style="text-align:left;padding:5px 6px;font-size:10px;color:var(--tx3)">Cliente</th><th style="text-align:center;padding:5px 6px;font-size:10px;color:var(--tx3)">OS</th><th style="text-align:center;padding:5px 6px;font-size:10px;color:var(--gn)">Conc.</th><th style="text-align:right;padding:5px 6px;font-size:10px;color:var(--gn)">Receita</th></tr></thead>
-      <tbody>${rows.map(([cId,d],i)=>{const c=G.clientes.find(x=>x.id===cId);return`<tr style="border-bottom:1px solid var(--bd)"><td style="padding:6px"><span style="font-size:9px;font-weight:700;color:var(--tx3);margin-right:5px">${i+1}º</span>${c?.nome||'—'}</td><td style="text-align:center;padding:6px;font-weight:700">${d.total}</td><td style="text-align:center;padding:6px;color:var(--gn)">${d.concluidas}</td><td style="text-align:right;padding:6px;font-weight:700;color:var(--gn)">${d.receita>0?fm(d.receita):'—'}</td></tr>`}).join('')}</tbody>
+      <thead><tr style="border-bottom:1px solid rgba(255,255,255,.07)"><th style="text-align:left;padding:5px 6px;font-size:10px;color:var(--tx3)">Cliente</th><th style="text-align:center;padding:5px 6px;font-size:10px;color:var(--tx3)">OS</th><th style="text-align:center;padding:5px 6px;font-size:10px;color:var(--gn)">Conc.</th><th style="text-align:right;padding:5px 6px;font-size:10px;color:var(--gn)">Receita</th></tr></thead>
+      <tbody>${rows.map(([cId,d],i)=>{const c=G.clientes.find(x=>x.id===cId);return`<tr style="border-bottom:1px solid rgba(255,255,255,.07)"><td style="padding:6px"><span style="font-size:9px;font-weight:700;color:var(--tx3);margin-right:5px">${i+1}º</span>${c?.nome||'—'}</td><td style="text-align:center;padding:6px;font-weight:700">${d.total}</td><td style="text-align:center;padding:6px;color:var(--gn)">${d.concluidas}</td><td style="text-align:right;padding:6px;font-weight:700;color:var(--gn)">${d.receita>0?fm(d.receita):'—'}</td></tr>`}).join('')}</tbody>
     </table>`;
   }
 
@@ -7018,7 +7222,7 @@ function renderRelatorios() {
       {lbl:'📋 Gasto em OS (viagens)',val:fm(gastoOS),cor:'var(--rd)'},
       {lbl:'📊 Total de Gastos',val:fm(totalGasto),cor:'var(--or)'},
       {lbl:'🏆 Resultado',val:fm(lucro),cor:lucro>=0?'var(--gn)':'var(--rd)'}
-    ].map(r=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--bd)"><span style="font-size:11px;color:var(--tx)">${r.lbl}</span><span style="font-size:12px;font-weight:700;color:${r.cor}">${r.val}</span></div>`).join('');
+    ].map(r=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.07)"><span style="font-size:11px;color:var(--tx)">${r.lbl}</span><span style="font-size:12px;font-weight:700;color:${r.cor}">${r.val}</span></div>`).join('');
   }
 
   // Logística
@@ -7038,7 +7242,7 @@ function renderRelatorios() {
       {lbl:'⛽ Litros abastecidos',val:litTotal.toFixed(1)+'L'},
       {lbl:'💰 Custo total',val:fm(valTotal)},
       {lbl:'🚗 Veículos ativos',val:veics.length+' veículo(s)'}
-    ].map(r=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--bd)"><span style="font-size:11px;color:var(--tx)">${r.lbl}</span><span style="font-size:12px;font-weight:700;color:var(--nv)">${r.val}</span></div>`).join('');
+    ].map(r=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.07)"><span style="font-size:11px;color:var(--tx)">${r.lbl}</span><span style="font-size:12px;font-weight:700;color:var(--nv)">${r.val}</span></div>`).join('');
   }
 
   // Popula select histórico por cliente
@@ -7068,8 +7272,8 @@ function renderRelatorios() {
     } else {
       estEl.innerHTML = `<div style="margin-bottom:8px;font-size:11px;color:var(--rd);font-weight:600">⚠ ${criticos.length} iten(s) crítico(s) · ${zerados.length} zerado(s)</div>
       <table style="width:100%;font-size:11px;border-collapse:collapse">
-        <thead><tr style="border-bottom:2px solid var(--bd)"><th style="text-align:left;padding:5px 6px;font-size:10px;color:var(--tx3)">Item</th><th style="text-align:left;padding:5px 6px;font-size:10px;color:var(--tx3)">Categoria</th><th style="text-align:center;padding:5px 6px;font-size:10px;color:var(--rd)">Qtd Atual</th><th style="text-align:center;padding:5px 6px;font-size:10px;color:var(--tx3)">Qtd Mín</th><th style="text-align:left;padding:5px 6px;font-size:10px;color:var(--tx3)">Local</th></tr></thead>
-        <tbody>${criticos.map(e=>`<tr style="border-bottom:1px solid var(--bd);background:${e.quantidade===0?'var(--rdbg)':'var(--orbg)'}"><td style="padding:6px;font-weight:700">${e.nome}</td><td style="padding:6px">${e.categoria||'—'}</td><td style="padding:6px;text-align:center;font-weight:800;color:${e.quantidade===0?'var(--rd)':'var(--or)'}">${e.quantidade}${e.quantidade===0?' 🔴':' ⚠'}</td><td style="padding:6px;text-align:center">${e.quantidade_min||0}</td><td style="padding:6px">${e.localizacao||'—'}</td></tr>`).join('')}</tbody>
+        <thead><tr style="border-bottom:1px solid rgba(255,255,255,.07)"><th style="text-align:left;padding:5px 6px;font-size:10px;color:var(--tx3)">Item</th><th style="text-align:left;padding:5px 6px;font-size:10px;color:var(--tx3)">Categoria</th><th style="text-align:center;padding:5px 6px;font-size:10px;color:var(--rd)">Qtd Atual</th><th style="text-align:center;padding:5px 6px;font-size:10px;color:var(--tx3)">Qtd Mín</th><th style="text-align:left;padding:5px 6px;font-size:10px;color:var(--tx3)">Local</th></tr></thead>
+        <tbody>${criticos.map(e=>`<tr style="border-bottom:1px solid rgba(255,255,255,.07);background:${e.quantidade===0?'var(--rdbg)':'var(--orbg)'}"><td style="padding:6px;font-weight:700">${e.nome}</td><td style="padding:6px">${e.categoria||'—'}</td><td style="padding:6px;text-align:center;font-weight:800;color:${e.quantidade===0?'var(--rd)':'var(--or)'}">${e.quantidade}${e.quantidade===0?' 🔴':' ⚠'}</td><td style="padding:6px;text-align:center">${e.quantidade_min||0}</td><td style="padding:6px">${e.localizacao||'—'}</td></tr>`).join('')}</tbody>
       </table>`;
     }
   }
@@ -7136,7 +7340,7 @@ function renderRelHistCli() {
       ${[['📋 Total',hist.length,'var(--bl2)'],['✅ Concluídos',hist.filter(h=>h.status==='Concluída').length,'var(--gn)'],['🔴 Retrabalhos',hist.filter(h=>h.retrabalho).length,'var(--rd)'],['💰 Receita Total',fm(receita),'var(--gn)']].map(([l,v,c])=>`<div style="background:var(--sf2);border-radius:8px;padding:8px 10px;border-left:3px solid ${c}"><div style="font-size:8px;font-weight:700;text-transform:uppercase;color:var(--tx3)">${l}</div><div style="font-size:16px;font-weight:800;color:${c};margin-top:2px">${v}</div></div>`).join('')}
     </div>
     <table style="width:100%;font-size:10px;border-collapse:collapse">
-      <thead><tr style="background:var(--sf2);border-bottom:2px solid var(--bd)">
+      <thead><tr style="background:var(--sf2);border-bottom:1px solid rgba(255,255,255,.07)">
         <th style="padding:5px 8px;text-align:left;font-size:9px;color:var(--tx3)">Nº OS</th>
         <th style="padding:5px 8px;text-align:left;font-size:9px;color:var(--tx3)">Data</th>
         <th style="padding:5px 8px;text-align:left;font-size:9px;color:var(--tx3)">Equipamento</th>
@@ -7149,7 +7353,7 @@ function renderRelHistCli() {
       <tbody>${hist.map(h=>{
         const t=G.tecnicos.find(x=>x.id===h.tecnico_id);
         const cor=h.status==='Concluída'?'var(--gn)':h.status==='Em andamento'?'var(--or)':'var(--bl2)';
-        return`<tr style="border-bottom:1px solid var(--bd);${h.retrabalho?'background:var(--rdbg)':''}">
+        return`<tr style="border-bottom:1px solid rgba(255,255,255,.07);${h.retrabalho?'background:var(--rdbg)':''}">
           <td style="padding:5px 8px;font-family:monospace;font-weight:700;color:var(--nv)">${h.num||'—'}</td>
           <td style="padding:5px 8px">${fd(h.data_atend||h.data_ab)}</td>
           <td style="padding:5px 8px;font-weight:600">${h.modelo||h.equipamento||'—'}</td>
@@ -7191,7 +7395,7 @@ function renderRelHistNserie() {
       ${[['📋 Atendimentos',hist.length,'var(--bl2)'],['✅ Concluídos',hist.filter(h=>h.status==='Concluída').length,'var(--gn)'],['⚠ Retrabalhos',retrabalhos,'var(--rd)'],['💰 Gasto Total',fm(receita),'var(--or)']].map(([l,v,c])=>`<div style="background:var(--sf2);border-radius:8px;padding:8px 10px;border-left:3px solid ${c}"><div style="font-size:8px;font-weight:700;text-transform:uppercase;color:var(--tx3)">${l}</div><div style="font-size:16px;font-weight:800;color:${c};margin-top:2px">${v}</div></div>`).join('')}
     </div>
     <table style="width:100%;font-size:10px;border-collapse:collapse">
-      <thead><tr style="background:var(--sf2);border-bottom:2px solid var(--bd)">
+      <thead><tr style="background:var(--sf2);border-bottom:1px solid rgba(255,255,255,.07)">
         <th style="padding:5px 8px;text-align:left;font-size:9px;color:var(--tx3)">Nº OS</th>
         <th style="padding:5px 8px;text-align:left;font-size:9px;color:var(--tx3)">Data</th>
         <th style="padding:5px 8px;text-align:left;font-size:9px;color:var(--tx3)">Cliente</th>
@@ -7205,7 +7409,7 @@ function renderRelHistNserie() {
         const c=G.clientes.find(x=>x.id===h.cliente_id);
         const t=G.tecnicos.find(x=>x.id===h.tecnico_id);
         const cor=h.status==='Concluída'?'var(--gn)':h.status==='Em andamento'?'var(--or)':'var(--bl2)';
-        return`<tr style="border-bottom:1px solid var(--bd);${h.retrabalho?'background:var(--rdbg)':''}">
+        return`<tr style="border-bottom:1px solid rgba(255,255,255,.07);${h.retrabalho?'background:var(--rdbg)':''}">
           <td style="padding:5px 8px;font-family:monospace;font-weight:700;color:var(--nv)">${h.num||'—'}</td>
           <td style="padding:5px 8px;white-space:nowrap">${fd(h.data_atend||h.data_ab)}</td>
           <td style="padding:5px 8px;font-weight:600">${c?.nome||h.cliente||'—'}</td>
@@ -7624,7 +7828,7 @@ function applyPermissoes(user) {
   }
   // Reset sistema: só master
   const sbReset = document.getElementById('btn-reset-wrap');
-  if (sbReset) { const isMasterUser = user.isMaster === true || user.login === 'master' || user.role === 'master' || user.role === 'superadmin' || user.role === 'admin'; sbReset.style.display = isMasterUser ? 'block' : 'none'; console.log('[RESET]', 'isMaster='+user.isMaster, 'login='+user.login, 'role='+user.role, 'show='+isMasterUser); }
+  if (sbReset) { const isMasterUser = user.isMaster === true || user.login === 'master' || user.role === 'master' || user.role === 'superadmin'; sbReset.style.display = isMasterUser ? 'block' : 'none'; console.log('[RESET]', 'isMaster='+user.isMaster, 'login='+user.login, 'role='+user.role, 'show='+isMasterUser); }
 
   // Atualizar label de perfil na sidebar
   const perfilLabel = {'admin':'Administrador','tecnico':'Técnico','logistica':'Logística','rh':'RH','financeiro':'Financeiro','comercial':'Comercial','administrativo':'Administrativo'};
@@ -8301,6 +8505,150 @@ ${l.obs ? `<div class="section"><span class="sec-title">Observações</span><div
   </div>
 </div>
 
+
+<style id="dark-polish">
+/* ── Cores inline que ainda usam variáveis de light mode ── */
+[style*="color:var(--tx)"]  { color:#e2e8f8 !important }
+[style*="color:var(--tx2)"] { color:rgba(255,255,255,.55) !important }
+[style*="color:var(--tx3)"] { color:rgba(255,255,255,.3) !important }
+[style*="color:var(--nv)"]  { color:#e2e8f8 !important }
+
+/* Inputs/selects inline que ainda têm border/bg de light mode */
+[style*="border:1.5px solid var(--bd2)"] {
+  border-color: rgba(255,255,255,.1) !important;
+  background: rgba(255,255,255,.05) !important;
+  color: #e2e8f8 !important;
+}
+[style*="border-color:var(--bd"] {
+  border-color: rgba(255,255,255,.08) !important;
+}
+
+/* Cards com background branco inline */
+[style*="background:var(--sf)"] { background: rgba(255,255,255,.03) !important }
+[style*="background:var(--sf2)"] { background: rgba(255,255,255,.04) !important }
+[style*="background:var(--sf3)"] { background: rgba(255,255,255,.06) !important }
+
+/* OS lista de cards (renderizados por JS com innerHTML) */
+.os-card-row {
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  transition: all .18s;
+}
+.os-card-row:hover {
+  background: rgba(255,255,255,.05);
+  border-color: rgba(255,255,255,.12);
+  box-shadow: 0 4px 20px rgba(0,0,0,.3);
+}
+
+/* Tab bar container dark */
+.tab-bar, .os-tab-bar {
+  border-bottom: 1px solid rgba(255,255,255,.07) !important;
+  background: transparent !important;
+}
+
+/* Filtros select/input dark globais */
+.filter-row select,
+.filter-row input[type=date],
+.filter-row input[type=text] {
+  background: rgba(255,255,255,.05) !important;
+  border-color: rgba(255,255,255,.1) !important;
+  color: #e2e8f8 !important;
+}
+
+/* Card dark hover effect */
+.card:hover {
+  border-color: rgba(255,255,255,.1) !important;
+}
+
+/* Scard hover neon */
+.scard:hover {
+  background: rgba(255,255,255,.06) !important;
+  border-color: rgba(255,255,255,.14) !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,.35) !important;
+  transform: translateY(-2px);
+}
+
+/* Badge dark force */
+.badge { letter-spacing: .2px }
+
+/* Linha separadora entre sessões do modal */
+.fsec {
+  color: #f59e0b !important;
+  border-bottom-color: rgba(245,158,11,.3) !important;
+}
+
+/* Log tabs bar */
+[style*="border-bottom:1px solid rgba(255,255,255,.07)"],
+[style*="border-bottom:1px solid rgba(255,255,255,.07)"] {
+  border-bottom-color: rgba(255,255,255,.07) !important;
+}
+
+/* Cal grid uniform spacing */
+.cal-grid { gap: 4px }
+.cal-wrap { gap: 16px }
+
+/* Lista de rotas / labs / OS — zebra dark */
+.twrap tbody tr:nth-child(even) td {
+  background: rgba(255,255,255,.015) !important;
+}
+
+/* Checklist dark */
+.chk { 
+  background: rgba(255,255,255,.03) !important;
+  border-color: rgba(255,255,255,.08) !important;
+}
+.chk-lbl { color: rgba(255,255,255,.7) !important }
+.chk.on .chk-lbl { color: #34d399 !important }
+
+/* Timeline dots glow */
+.tl-dot.g, .tl-dot.gn { box-shadow: 0 0 8px rgba(16,185,129,.5) }
+.tl-dot.o, .tl-dot.or { box-shadow: 0 0 8px rgba(245,158,11,.5) }
+.tl-dot.b, .tl-dot.bl2 { box-shadow: 0 0 8px rgba(59,130,246,.5) }
+.tl-dot.r { box-shadow: 0 0 8px rgba(239,68,68,.5) }
+
+/* Topbar icon badges */
+.ni-badge {
+  background: rgba(245,158,11,.25) !important;
+  color: #fbbf24 !important;
+  border: 1px solid rgba(245,158,11,.35) !important;
+}
+
+/* Page animation */
+.page.active { animation: page-in-dark .22s ease both }
+@keyframes page-in-dark {
+  from { opacity:0; transform:translateY(8px) }
+  to   { opacity:1; transform:translateY(0) }
+}
+
+/* Btn reset sidebar */
+#btn-reset-wrap button {
+  background: rgba(239,68,68,.12) !important;
+  color: #f87171 !important;
+  border: 1px solid rgba(239,68,68,.25) !important;
+  transition: all .18s;
+}
+#btn-reset-wrap button:hover {
+  background: rgba(239,68,68,.22) !important;
+  box-shadow: 0 4px 16px rgba(239,68,68,.25) !important;
+}
+
+/* Logística KPI remaining dark */
+.scard .sico[style*="var(--bl2bg)"] { background:rgba(59,130,246,.15) !important; color:#60a5fa !important }
+.scard .sico[style*="var(--gnbg)"]  { background:rgba(16,185,129,.15) !important; color:#34d399 !important }
+.scard .sico[style*="var(--orbg)"]  { background:rgba(245,158,11,.15) !important; color:#fbbf24 !important }
+
+/* Cal event tags mais legíveis no dark */
+.ev-os        { background:rgba(59,130,246,.2)  !important; color:#93c5fd !important; border-left-color:#3b82f6 !important }
+.ev-visita    { background:rgba(34,197,94,.15)   !important; color:#86efac !important; border-left-color:#22c55e !important }
+.ev-preventiva{ background:rgba(234,179,8,.15)   !important; color:#fde047 !important; border-left-color:#eab308 !important }
+.ev-reuniao   { background:rgba(168,85,247,.15)  !important; color:#d8b4fe !important; border-left-color:#a855f7 !important }
+.ev-outros    { background:rgba(148,163,184,.1)  !important; color:#94a3b8 !important; border-left-color:#64748b !important }
+.ev-cancelado { background:rgba(239,68,68,.12)   !important; color:#fca5a5 !important; border-left-color:#ef4444 !important }
+</style>
+
 </body></html>`;
 
   const w = window.open('', '_blank');
@@ -8496,7 +8844,7 @@ async function forgotStep3() {
     document.getElementById('dev-footer').style.display='flex';
     // Botão reset — checar no auto-login
     const _wI = document.getElementById('btn-reset-wrap');
-    if (_wI) { const _showI = me.isMaster === true || me.login === 'master' || me.role === 'master' || me.role === 'superadmin' || me.role === 'admin'; _wI.style.display = _showI ? 'block' : 'none'; console.log('[RESET-ME]', JSON.stringify({isMaster:me.isMaster, login:me.login, role:me.role, show:_showI})); }
+    if (_wI) { const _showI = me.isMaster === true || me.login === 'master' || me.role === 'master' || me.role === 'superadmin'; _wI.style.display = _showI ? 'block' : 'none'; console.log('[RESET-ME]', JSON.stringify({isMaster:me.isMaster, login:me.login, role:me.role, show:_showI})); }
   }catch(e){/* not logged in */}})();
 // ─── SIDEBAR TOGGLE ──────────────────────────────────────────────────────────
 function toggleSidebar() {
@@ -8511,14 +8859,7 @@ function toggleSidebar() {
   if (lbl) lbl.style.opacity = isCollapsed ? '0' : '1';
   localStorage.setItem('sb_collapsed', sb.classList.contains('collapsed') ? '1' : '0');
 }
-// Auto-show reset button after page load for admins
-setTimeout(function() {
-  const wrap = document.getElementById('btn-reset-wrap');
-  if (wrap && G.user) {
-    const show = G.user.isMaster === true || G.user.role === 'admin' || G.user.role === 'master' || G.user.login === 'master';
-    if (show) wrap.style.display = 'block';
-  }
-}, 1500);
+// Reset button — controlled by applyPermissoes only
 
 // Restaura estado do menu ao carregar
 (function() {
@@ -9274,6 +9615,150 @@ async function confirmarResetSistema() {
   }
 }
 </script>
+
+
+<style id="dark-polish">
+/* ── Cores inline que ainda usam variáveis de light mode ── */
+[style*="color:var(--tx)"]  { color:#e2e8f8 !important }
+[style*="color:var(--tx2)"] { color:rgba(255,255,255,.55) !important }
+[style*="color:var(--tx3)"] { color:rgba(255,255,255,.3) !important }
+[style*="color:var(--nv)"]  { color:#e2e8f8 !important }
+
+/* Inputs/selects inline que ainda têm border/bg de light mode */
+[style*="border:1.5px solid var(--bd2)"] {
+  border-color: rgba(255,255,255,.1) !important;
+  background: rgba(255,255,255,.05) !important;
+  color: #e2e8f8 !important;
+}
+[style*="border-color:var(--bd"] {
+  border-color: rgba(255,255,255,.08) !important;
+}
+
+/* Cards com background branco inline */
+[style*="background:var(--sf)"] { background: rgba(255,255,255,.03) !important }
+[style*="background:var(--sf2)"] { background: rgba(255,255,255,.04) !important }
+[style*="background:var(--sf3)"] { background: rgba(255,255,255,.06) !important }
+
+/* OS lista de cards (renderizados por JS com innerHTML) */
+.os-card-row {
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  transition: all .18s;
+}
+.os-card-row:hover {
+  background: rgba(255,255,255,.05);
+  border-color: rgba(255,255,255,.12);
+  box-shadow: 0 4px 20px rgba(0,0,0,.3);
+}
+
+/* Tab bar container dark */
+.tab-bar, .os-tab-bar {
+  border-bottom: 1px solid rgba(255,255,255,.07) !important;
+  background: transparent !important;
+}
+
+/* Filtros select/input dark globais */
+.filter-row select,
+.filter-row input[type=date],
+.filter-row input[type=text] {
+  background: rgba(255,255,255,.05) !important;
+  border-color: rgba(255,255,255,.1) !important;
+  color: #e2e8f8 !important;
+}
+
+/* Card dark hover effect */
+.card:hover {
+  border-color: rgba(255,255,255,.1) !important;
+}
+
+/* Scard hover neon */
+.scard:hover {
+  background: rgba(255,255,255,.06) !important;
+  border-color: rgba(255,255,255,.14) !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,.35) !important;
+  transform: translateY(-2px);
+}
+
+/* Badge dark force */
+.badge { letter-spacing: .2px }
+
+/* Linha separadora entre sessões do modal */
+.fsec {
+  color: #f59e0b !important;
+  border-bottom-color: rgba(245,158,11,.3) !important;
+}
+
+/* Log tabs bar */
+[style*="border-bottom:1px solid rgba(255,255,255,.07)"],
+[style*="border-bottom:1px solid rgba(255,255,255,.07)"] {
+  border-bottom-color: rgba(255,255,255,.07) !important;
+}
+
+/* Cal grid uniform spacing */
+.cal-grid { gap: 4px }
+.cal-wrap { gap: 16px }
+
+/* Lista de rotas / labs / OS — zebra dark */
+.twrap tbody tr:nth-child(even) td {
+  background: rgba(255,255,255,.015) !important;
+}
+
+/* Checklist dark */
+.chk { 
+  background: rgba(255,255,255,.03) !important;
+  border-color: rgba(255,255,255,.08) !important;
+}
+.chk-lbl { color: rgba(255,255,255,.7) !important }
+.chk.on .chk-lbl { color: #34d399 !important }
+
+/* Timeline dots glow */
+.tl-dot.g, .tl-dot.gn { box-shadow: 0 0 8px rgba(16,185,129,.5) }
+.tl-dot.o, .tl-dot.or { box-shadow: 0 0 8px rgba(245,158,11,.5) }
+.tl-dot.b, .tl-dot.bl2 { box-shadow: 0 0 8px rgba(59,130,246,.5) }
+.tl-dot.r { box-shadow: 0 0 8px rgba(239,68,68,.5) }
+
+/* Topbar icon badges */
+.ni-badge {
+  background: rgba(245,158,11,.25) !important;
+  color: #fbbf24 !important;
+  border: 1px solid rgba(245,158,11,.35) !important;
+}
+
+/* Page animation */
+.page.active { animation: page-in-dark .22s ease both }
+@keyframes page-in-dark {
+  from { opacity:0; transform:translateY(8px) }
+  to   { opacity:1; transform:translateY(0) }
+}
+
+/* Btn reset sidebar */
+#btn-reset-wrap button {
+  background: rgba(239,68,68,.12) !important;
+  color: #f87171 !important;
+  border: 1px solid rgba(239,68,68,.25) !important;
+  transition: all .18s;
+}
+#btn-reset-wrap button:hover {
+  background: rgba(239,68,68,.22) !important;
+  box-shadow: 0 4px 16px rgba(239,68,68,.25) !important;
+}
+
+/* Logística KPI remaining dark */
+.scard .sico[style*="var(--bl2bg)"] { background:rgba(59,130,246,.15) !important; color:#60a5fa !important }
+.scard .sico[style*="var(--gnbg)"]  { background:rgba(16,185,129,.15) !important; color:#34d399 !important }
+.scard .sico[style*="var(--orbg)"]  { background:rgba(245,158,11,.15) !important; color:#fbbf24 !important }
+
+/* Cal event tags mais legíveis no dark */
+.ev-os        { background:rgba(59,130,246,.2)  !important; color:#93c5fd !important; border-left-color:#3b82f6 !important }
+.ev-visita    { background:rgba(34,197,94,.15)   !important; color:#86efac !important; border-left-color:#22c55e !important }
+.ev-preventiva{ background:rgba(234,179,8,.15)   !important; color:#fde047 !important; border-left-color:#eab308 !important }
+.ev-reuniao   { background:rgba(168,85,247,.15)  !important; color:#d8b4fe !important; border-left-color:#a855f7 !important }
+.ev-outros    { background:rgba(148,163,184,.1)  !important; color:#94a3b8 !important; border-left-color:#64748b !important }
+.ev-cancelado { background:rgba(239,68,68,.12)   !important; color:#fca5a5 !important; border-left-color:#ef4444 !important }
+</style>
 
 </body>
 </html>
