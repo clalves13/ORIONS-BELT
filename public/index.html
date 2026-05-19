@@ -85,6 +85,7 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--tx);font-siz
 .tb-sub{font-size:10px;color:var(--tx3);margin-top:1px}
 .tb-right{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
 .content{padding:20px 24px}
+#dash-inner{max-width:1600px;margin:0 auto;width:100%}
 
 /* ═══ RESET GLOBAL — garante consistência em TODOS inputs/selects/buttons ═══ */
 input,select,textarea,button{font-family:'Sora',sans-serif!important;font-size:12px!important;box-sizing:border-box}
@@ -795,6 +796,10 @@ tr:hover td { background: var(--sf2) !important; }
       <div class="ni-child" id="nicfg-agente"     onclick="navCfg('agente')">     <span class="ni-child-dot"></span>Agente de Monitoramento</div>
     </div>
   </div>
+  <!-- Botão Reset Sistema — só aparece para master -->
+  <div id="btn-reset-wrap" style="display:none;padding:0 12px 8px">
+    <button id="btn-reset-sistema" onclick="abrirResetSistema()" style="width:100%;padding:8px;background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.35);border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s;letter-spacing:.3px" onmouseover="this.style.background='rgba(239,68,68,0.28)'" onmouseout="this.style.background='rgba(239,68,68,0.15)'">⚠️ Resetar Sistema</button>
+  </div>
   <div class="sb-footer">
     <div id="sb-backup-wrap" style="display:none;margin-bottom:8px"><button onclick="openM('m-backup')" style="width:100%;padding:7px;background:rgba(224,120,24,0.15);color:var(--ac2);border:1px solid rgba(224,120,24,0.3);border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">💾 Backup / Restaurar</button></div>
     <div class="sb-user">
@@ -852,7 +857,7 @@ tr:hover td { background: var(--sf2) !important; }
       <div class="help-btn" onclick="openHelp()" title="Central de Ajuda">?</div>
     </div>
   </div>
-  <div class="content" style="padding:20px 28px;max-width:1600px;margin:0 auto;width:100%">
+  <div class="content"><div id="dash-inner">
 
     <!-- ══ KPIs PRINCIPAIS — 4 cards gradiente ══ -->
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px">
@@ -992,9 +997,8 @@ tr:hover td { background: var(--sf2) !important; }
 
     </div>
 
-    <!-- ══ GRÁFICOS LINHA 1 — lado a lado ══ -->
-    <div style="display:grid;grid-template-columns:1.6fr 1fr;gap:16px;margin-bottom:16px">
-
+    <!-- ══ GRÁFICOS LINHA 1 — Evolução full width ══ -->
+    <div style="margin-bottom:16px">
       <div class="dash-card">
         <div class="dash-card-hd">
           <div>
@@ -1003,19 +1007,8 @@ tr:hover td { background: var(--sf2) !important; }
           </div>
           <div style="display:flex;gap:6px;flex-wrap:wrap" id="d-leg-tec"></div>
         </div>
-        <canvas id="chart-atend-linha" height="200" style="width:100%;display:block;max-height:200px"></canvas>
+        <canvas id="chart-atend-linha" height="180" style="width:100%;display:block"></canvas>
       </div>
-
-      <div class="dash-card">
-        <div class="dash-card-hd">
-          <div>
-            <div class="dash-card-title">🍩 Status das OS</div>
-            <div class="dash-card-sub">Distribuição por situação</div>
-          </div>
-        </div>
-        <canvas id="chart-os-pizza" height="200" style="width:100%;display:block;max-height:200px"></canvas>
-      </div>
-
     </div>
 
     <!-- ══ GRÁFICOS LINHA 2 — 3 colunas ══ -->
@@ -1062,6 +1055,16 @@ tr:hover td { background: var(--sf2) !important; }
       <div class="dash-card">
         <div class="dash-card-hd">
           <div>
+            <div class="dash-card-title">🍩 Status das OS</div>
+            <div class="dash-card-sub">Distribuição por situação</div>
+          </div>
+        </div>
+        <canvas id="chart-os-pizza" height="170" style="width:100%;display:block"></canvas>
+      </div>
+
+      <div class="dash-card">
+        <div class="dash-card-hd">
+          <div>
             <div class="dash-card-title">🖨 Suprimentos</div>
             <div class="dash-card-sub">Consumo por tipo</div>
           </div>
@@ -1079,6 +1082,10 @@ tr:hover td { background: var(--sf2) !important; }
         <div id="d-bargasto" class="barchart" style="margin-top:4px"></div>
       </div>
 
+    </div>
+
+    <!-- ══ LINHA 4 — Retrabalho ══ -->
+    <div style="display:grid;grid-template-columns:1fr 2fr;gap:16px;margin-bottom:16px">
       <div class="dash-card">
         <div class="dash-card-hd">
           <div>
@@ -1088,7 +1095,28 @@ tr:hover td { background: var(--sf2) !important; }
         </div>
         <div id="d-ret"></div>
       </div>
-
+      <div class="dash-card">
+        <div class="dash-card-hd">
+          <div>
+            <div class="dash-card-title">💡 Visão Geral</div>
+            <div class="dash-card-sub">Resumo do período</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;padding-top:4px">
+          <div style="background:var(--sf2);border-radius:10px;padding:14px;text-align:center;border:1px solid var(--bd)">
+            <div style="font-size:11px;color:var(--tx3);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Taxa Conclusão</div>
+            <div id="d-taxa-conclusao" style="font-size:28px;font-weight:800;color:#2e7d32">—</div>
+          </div>
+          <div style="background:var(--sf2);border-radius:10px;padding:14px;text-align:center;border:1px solid var(--bd)">
+            <div style="font-size:11px;color:var(--tx3);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Atrasadas</div>
+            <div id="d-osatras" style="font-size:28px;font-weight:800;color:#c62828">0</div>
+          </div>
+          <div style="background:var(--sf2);border-radius:10px;padding:14px;text-align:center;border:1px solid var(--bd)">
+            <div style="font-size:11px;color:var(--tx3);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Receita OS</div>
+            <div id="d-receita" style="font-size:22px;font-weight:800;color:#1565c0">—</div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- ══ ALERTAS DE ESTOQUE ══ -->
@@ -1108,7 +1136,7 @@ tr:hover td { background: var(--sf2) !important; }
       <div id="d-alerta-est"></div>
     </div>
 
-  </div>
+  </div></div>
 </div>
 
 
@@ -2130,7 +2158,6 @@ tr:hover td { background: var(--sf2) !important; }
     <div><div class="tb-title">Usuários do Sistema</div><div class="tb-sub">Controle de acesso e perfis</div></div>
     <div class="tb-right">
       <button class="btn btn-ghost btn-sm" onclick="switchUsrTab('recovery')" id="btn-recovery-tab">🔑 Reset de Senha (Admin)</button>
-      <button id="btn-reset-sistema" class="btn btn-danger btn-sm" onclick="abrirResetSistema()" style="display:none">⚠️ Zerar Sistema</button>
       <button class="btn btn-accent" onclick="openUser(null)">+ Novo Usuário</button>
     </div>
   </div>
@@ -3415,6 +3442,11 @@ async function doLogin() {
     document.getElementById('sb-role').textContent = res.user.role === 'admin' ? 'Administrador' : 'Técnico';
     await loadAll();
     applyPermissoes(res.user);
+    // Botão Zerar — checar logo após login
+    // Botão Reset — mostra wrap+btn para master
+    const _isMaster = res.user?.isMaster === true || res.user?.login === 'master';
+    const _wrapR = document.getElementById('btn-reset-wrap');
+    if (_wrapR) _wrapR.style.display = _isMaster ? 'block' : 'none';
     document.getElementById('dev-footer').style.display='flex';
     // Gerar notificações automáticas ao logar
     setTimeout(()=>gerarNotificacoes().catch(()=>{}), 800);
@@ -6029,9 +6061,10 @@ async function renderUsers(){
       </td>
     </tr>`;
   }).join('');
-  // Botão "Zerar Sistema" só aparece para o master
-  const btnReset = document.getElementById('btn-reset-sistema');
-  if (btnReset) btnReset.style.display = G.user?.isMaster ? 'inline-flex' : 'none';
+  // Botão Reset — sidebar wrap
+  const _isMR = G.user?.isMaster === true || G.user?.login === 'master';
+  const _wR = document.getElementById('btn-reset-wrap');
+  if (_wR) _wR.style.display = _isMR ? 'block' : 'none';
   renderPerfisPainel();
 }
 
@@ -6685,6 +6718,18 @@ async function loadDash(){
     document.getElementById('d-litros').textContent  = litros.toFixed(0)+'L';
     document.getElementById('d-gastoT').textContent  = 'R$'+Math.round(gastoLog+gastoOS).toLocaleString('pt-BR');
     countUp(document.getElementById('d-estqtd'),   G.estoque.length);
+
+    // ── Novos KPIs: taxa conclusão, atrasadas, receita ──
+    const taxa = osF.length > 0 ? Math.round((osOk / osF.length) * 100) : 0;
+    const elTaxa = document.getElementById('d-taxa-conclusao');
+    if (elTaxa) { elTaxa.textContent = taxa + '%'; elTaxa.style.color = taxa >= 70 ? '#2e7d32' : taxa >= 40 ? '#e65100' : '#c62828'; }
+    const hoje = new Date().toISOString().slice(0,10);
+    const osAtras = osF.filter(o => o.status !== 'Concluída' && o.status !== 'Cancelada' && o.prazo && o.prazo < hoje).length;
+    const elAtras = document.getElementById('d-osatras');
+    if (elAtras) countUp(elAtras, osAtras);
+    const receita = osF.filter(o => o.status === 'Concluída').reduce((s,o) => s+(o.valor_cobrado||o.valor||0), 0);
+    const elRec = document.getElementById('d-receita');
+    if (elRec) elRec.textContent = 'R$' + receita.toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:0});
     countUp(document.getElementById('d-estbaixo'), estBaixo.length);
 
     // ── Barra por técnico (filtrado) ──
