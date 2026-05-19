@@ -41,6 +41,7 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--tx);font-siz
 #sidebar{position:fixed;left:0;top:0;width:220px;height:100vh;background:var(--nv);display:flex;flex-direction:column;z-index:100;overflow-y:auto;overflow-x:hidden;transition:width .22s cubic-bezier(.4,0,.2,1)}
 #sidebar.collapsed{width:56px}
 #sidebar.collapsed .logo-name,#sidebar.collapsed .logo-sub,#sidebar.collapsed .nav-sec,#sidebar.collapsed .ni-badge,#sidebar.collapsed .ni span:not(.ni-badge),#sidebar.collapsed .sb-name,#sidebar.collapsed .sb-role,#sidebar.collapsed .sb-toggle-lbl{display:none!important}
+#sidebar.collapsed #sb-menu-label{opacity:0!important}
 #sidebar.collapsed #sb-backup-wrap{display:none!important}
 #sidebar.collapsed .logo-wrap{padding:18px 11px 14px}
 #sidebar.collapsed .logo-row{justify-content:center}
@@ -287,6 +288,7 @@ button:not(.btn):not(.btnx):not(.lbtn):not(.btn-logout):not(.chk):not(.os-tab):n
   transition:transform .2s cubic-bezier(.34,1.3,.64,1),box-shadow .2s;
   animation:dkpi-enter .55s cubic-bezier(.34,1.3,.64,1) both;
   cursor:default;
+  min-height:140px;
 }
 .dkpi-card:nth-child(2){animation-delay:.1s}
 .dkpi-card:nth-child(3){animation-delay:.18s}
@@ -359,6 +361,7 @@ button:not(.btn):not(.btnx):not(.lbtn):not(.btn-logout):not(.chk):not(.os-tab):n
   box-shadow:0 2px 16px rgba(13,31,60,.07);
   animation:dkpi-enter .5s both;
   display:flex;flex-direction:column;
+  min-height:200px;
 }
 .dash-card-hd{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px}
 .dash-card-title{font-size:13px;font-weight:700;color:var(--nv)}
@@ -739,11 +742,13 @@ tr:hover td { background: var(--sf2) !important; }
 
 <!-- SIDEBAR -->
 <div id="sidebar" style="display:none">
-  <!-- Botão recolher — TOPO da sidebar -->
-  <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px 0;flex-shrink:0">
-    <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:rgba(255,255,255,.25)">Menu</div>
-    <button onclick="toggleSidebar()" title="Recolher menu" style="width:28px;height:28px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0" onmouseover="this.style.background='rgba(255,255,255,.14)'" onmouseout="this.style.background='rgba(255,255,255,.07)'">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.6)" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+  <!-- Botão recolher — sobrepõe MENU, estilo Claude -->
+  <div id="sb-top-bar" style="display:flex;align-items:center;justify-content:space-between;padding:0 10px;height:44px;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,.06)">
+    <span id="sb-menu-label" style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.4px;color:rgba(255,255,255,.3);transition:opacity .2s">Menu</span>
+    <button id="sb-collapse-btn" onclick="toggleSidebar()" title="Recolher menu"
+      style="width:30px;height:30px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0"
+      onmouseover="this.style.background='rgba(255,255,255,.16)'" onmouseout="this.style.background='rgba(255,255,255,.07)'">
+      <svg id="sb-collapse-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.7)" stroke-width="2.5" style="transition:transform .25s"><polyline points="15 18 9 12 15 6"/></svg>
     </button>
   </div>
   <div class="logo-wrap">
@@ -1000,7 +1005,7 @@ tr:hover td { background: var(--sf2) !important; }
 
     <!-- ══ GRÁFICOS LINHA 1 — Evolução full width ══ -->
     <div style="margin-bottom:16px">
-      <div class="dash-card">
+      <div class="dash-card" style="min-height:260px">
         <div class="dash-card-hd">
           <div>
             <div class="dash-card-title">📈 Evolução de Atendimentos por Técnico</div>
@@ -1008,7 +1013,9 @@ tr:hover td { background: var(--sf2) !important; }
           </div>
           <div style="display:flex;gap:6px;flex-wrap:wrap" id="d-leg-tec"></div>
         </div>
-        <canvas id="chart-atend-linha" height="180" style="width:100%;display:block"></canvas>
+        <div style="flex:1;position:relative;min-height:200px">
+          <canvas id="chart-atend-linha" style="position:absolute;top:0;left:0;width:100%!important;height:100%!important"></canvas>
+        </div>
       </div>
     </div>
 
@@ -2283,10 +2290,52 @@ tr:hover td { background: var(--sf2) !important; }
 
     <!-- Empresa -->
     <div class="cfg-panel" id="cfg-empresa">
+      <div class="card" style="margin-bottom:14px">
+        <div class="card-hd"><div class="card-title">🖼 Identidade Visual</div></div>
+        <div style="display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:start">
+          <!-- Preview da logo -->
+          <div style="display:flex;flex-direction:column;align-items:center;gap:10px">
+            <div id="logo-preview-wrap" style="width:100px;height:100px;border-radius:14px;background:var(--sf2);border:2px dashed var(--bd2);display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer;transition:border-color .2s" onclick="document.getElementById('cfg-logo-input').click()" title="Clique para trocar a logo">
+              <img id="logo-preview-img" src="" style="width:100%;height:100%;object-fit:contain;display:none">
+              <div id="logo-preview-placeholder" style="text-align:center;color:var(--tx3)">
+                <div style="font-size:28px;margin-bottom:4px">🖼</div>
+                <div style="font-size:9px;font-weight:600">Clique para<br>enviar logo</div>
+              </div>
+            </div>
+            <input type="file" id="cfg-logo-input" accept="image/png,image/jpeg,image/svg+xml,image/webp" style="display:none" onchange="previewLogo(this)">
+            <button class="btn btn-ghost btn-sm" onclick="document.getElementById('cfg-logo-input').click()">📁 Escolher arquivo</button>
+            <button class="btn btn-ghost btn-sm" onclick="removeLogo()" style="color:var(--rd);border-color:var(--rdbd)">✕ Remover</button>
+          </div>
+          <!-- Info -->
+          <div>
+            <div style="font-size:13px;font-weight:700;color:var(--nv);margin-bottom:6px">Logo da Empresa</div>
+            <div style="font-size:11px;color:var(--tx3);line-height:1.7;margin-bottom:12px">
+              Substitui a logo da <strong>Orion Print</strong> em toda a interface — sidebar, relatórios e impressões.<br>
+              Formatos aceitos: PNG, JPG, SVG, WEBP. Recomendado: fundo transparente (PNG).
+            </div>
+            <div id="logo-nome-arquivo" style="font-size:10px;color:var(--tx3);font-style:italic">Nenhum arquivo selecionado</div>
+            <div style="margin-top:12px">
+              <button class="btn btn-accent" onclick="salvarLogo()">💾 Aplicar Logo</button>
+            </div>
+            <div id="logo-ok-msg" style="display:none;margin-top:10px;padding:8px 12px;background:var(--gnbg);color:var(--gn);border:1px solid var(--gnbd);border-radius:8px;font-size:12px;font-weight:600">✔ Logo aplicada com sucesso!</div>
+          </div>
+        </div>
+        <!-- Preview no contexto -->
+        <div style="margin-top:16px;padding:14px;background:linear-gradient(135deg,#0f1e3d,#1a3166);border-radius:12px;display:flex;align-items:center;gap:10px">
+          <img id="logo-sidebar-preview" src="" style="width:36px;height:36px;object-fit:contain;display:none;filter:brightness(1.2)">
+          <div id="logo-sidebar-placeholder" style="width:36px;height:36px;background:rgba(255,255,255,.15);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px">🏢</div>
+          <div>
+            <div id="logo-nome-preview" style="color:#fff;font-size:13px;font-weight:700">Orion Print</div>
+            <div style="color:rgba(255,255,255,.45);font-size:10px">Assistência Técnica</div>
+          </div>
+          <div style="margin-left:auto;font-size:9px;color:rgba(255,255,255,.3);font-style:italic">Preview da sidebar</div>
+        </div>
+      </div>
+
       <div class="card">
         <div class="card-hd"><div class="card-title">🏢 Dados da Empresa</div></div>
         <div class="fgrid fg2">
-          <div class="fg"><label>Nome da Empresa</label><input type="text" id="cfg-nome-empresa" placeholder="Orion Soluções"></div>
+          <div class="fg"><label>Nome da Empresa</label><input type="text" id="cfg-nome-empresa" placeholder="Orion Soluções" oninput="document.getElementById('logo-nome-preview').textContent=this.value||'Orion Print'"></div>
           <div class="fg"><label>CNPJ</label><input type="text" id="cfg-cnpj" placeholder="00.000.000/0001-00"></div>
           <div class="fg"><label>Telefone</label><input type="text" id="cfg-tel-empresa"></div>
           <div class="fg"><label>E-mail</label><input type="text" id="cfg-email-empresa"></div>
@@ -8451,6 +8500,11 @@ function toggleSidebar() {
   const mn  = document.getElementById('main');
   sb.classList.toggle('collapsed');
   mn.classList.toggle('sb-collapsed');
+  const ico = document.getElementById('sb-collapse-ico');
+  const lbl = document.getElementById('sb-menu-label');
+  const isCollapsed = sb.classList.contains('collapsed');
+  if (ico) ico.style.transform = isCollapsed ? 'rotate(180deg)' : 'rotate(0deg)';
+  if (lbl) lbl.style.opacity = isCollapsed ? '0' : '1';
   localStorage.setItem('sb_collapsed', sb.classList.contains('collapsed') ? '1' : '0');
 }
 // Restaura estado do menu ao carregar
@@ -8662,10 +8716,108 @@ function saveCfg(secao) {
   const btn = event?.target; if (btn) { const o=btn.textContent; btn.textContent='✔ Salvo!'; btn.disabled=true; setTimeout(()=>{btn.textContent=o;btn.disabled=false;},1800); }
 }
 
+function previewLogo(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const src = e.target.result;
+    const img = document.getElementById('logo-preview-img');
+    const ph  = document.getElementById('logo-preview-placeholder');
+    const sideImg = document.getElementById('logo-sidebar-preview');
+    const sidePh  = document.getElementById('logo-sidebar-placeholder');
+    if (img) { img.src = src; img.style.display = 'block'; }
+    if (ph)  ph.style.display = 'none';
+    if (sideImg) { sideImg.src = src; sideImg.style.display = 'block'; }
+    if (sidePh)  sidePh.style.display = 'none';
+    const nm = document.getElementById('logo-nome-arquivo');
+    if (nm) nm.textContent = '📎 ' + file.name;
+    window._pendingLogo = src;
+  };
+  reader.readAsDataURL(file);
+}
+
+function salvarLogo() {
+  const src = window._pendingLogo;
+  if (!src) { alert('Selecione uma imagem primeiro.'); return; }
+  localStorage.setItem('empresa_logo', src);
+  aplicarLogoGlobal(src);
+  const ok = document.getElementById('logo-ok-msg');
+  if (ok) { ok.style.display = 'block'; setTimeout(()=>ok.style.display='none', 3000); }
+}
+
+function removeLogo() {
+  if (!confirm('Remover logo personalizada e voltar para a logo padrão?')) return;
+  localStorage.removeItem('empresa_logo');
+  window._pendingLogo = null;
+  aplicarLogoGlobal(null);
+  const img = document.getElementById('logo-preview-img');
+  const ph  = document.getElementById('logo-preview-placeholder');
+  const sideImg = document.getElementById('logo-sidebar-preview');
+  const sidePh  = document.getElementById('logo-sidebar-placeholder');
+  if (img) { img.src=''; img.style.display='none'; }
+  if (ph)  ph.style.display='';
+  if (sideImg) { sideImg.src=''; sideImg.style.display='none'; }
+  if (sidePh)  sidePh.style.display='';
+  const nm = document.getElementById('logo-nome-arquivo');
+  if (nm) nm.textContent = 'Nenhum arquivo selecionado';
+}
+
+function aplicarLogoGlobal(src) {
+  // Aplica em todos os elementos de logo da sidebar
+  document.querySelectorAll('.logo-row img, .logo-wrap img').forEach(el => {
+    if (src) { el.src = src; }
+    else {
+      // Restaura logo padrão — salva o src original no first load
+      if (window._defaultLogoSrc) el.src = window._defaultLogoSrc;
+    }
+  });
+}
+
+// Captura src da logo padrão no carregamento
+(function() {
+  const firstLogo = document.querySelector('.logo-row img');
+  if (firstLogo) window._defaultLogoSrc = firstLogo.src;
+  // Aplica logo salva
+  const saved = localStorage.getItem('empresa_logo');
+  if (saved) {
+    setTimeout(() => {
+      aplicarLogoGlobal(saved);
+      // Preenche preview se cfg-empresa estiver aberto
+      const img = document.getElementById('logo-preview-img');
+      const ph  = document.getElementById('logo-preview-placeholder');
+      const sideImg = document.getElementById('logo-sidebar-preview');
+      const sidePh  = document.getElementById('logo-sidebar-placeholder');
+      if (img) { img.src = saved; img.style.display = 'block'; }
+      if (ph)  ph.style.display = 'none';
+      if (sideImg) { sideImg.src = saved; sideImg.style.display = 'block'; }
+      if (sidePh)  sidePh.style.display = 'none';
+    }, 300);
+  }
+})();
+
 function loadCfg() {
   try {
     const emp=JSON.parse(localStorage.getItem('cfg_empresa')||'{}');
     ['nome-empresa','cnpj','tel-empresa','email-empresa','end-empresa','cidade','estado'].forEach(k=>{ const el=document.getElementById('cfg-'+k); if(el&&emp[k]) el.value=emp[k]; });
+    // Preenche nome no preview da sidebar
+    const nomeEl = document.getElementById('cfg-nome-empresa');
+    const nomePreview = document.getElementById('logo-nome-preview');
+    if (nomeEl && nomePreview && nomeEl.value) nomePreview.textContent = nomeEl.value;
+    // Preenche logo preview
+    const saved = localStorage.getItem('empresa_logo');
+    if (saved) {
+      const img = document.getElementById('logo-preview-img');
+      const ph  = document.getElementById('logo-preview-placeholder');
+      const sideImg = document.getElementById('logo-sidebar-preview');
+      const sidePh  = document.getElementById('logo-sidebar-placeholder');
+      if (img) { img.src = saved; img.style.display = 'block'; }
+      if (ph)  ph.style.display = 'none';
+      if (sideImg) { sideImg.src = saved; sideImg.style.display = 'block'; }
+      if (sidePh)  sidePh.style.display = 'none';
+      const nm = document.getElementById('logo-nome-arquivo');
+      if (nm) nm.textContent = '✔ Logo personalizada ativa';
+    }
     const slaC=JSON.parse(localStorage.getItem('cfg_sla')||'{}');
     ['corretiva','preventiva','urgente','instalacao','outros','alerta-pct'].forEach(k=>{ const el=document.getElementById('cfg-sla-'+k); if(el&&slaC[k]) el.value=slaC[k]; });
     const em=JSON.parse(localStorage.getItem('cfg_email')||'{}');
