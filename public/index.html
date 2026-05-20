@@ -8,15 +8,15 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
---nv:#0f1623;--nv2:#1a2535;--bl:#3b82f6;--ac:#f59e0b;--ac2:#fbbf24;
---bg:#111827;--sf:#1f2937;--sf2:#374151;--sf3:#4b5563;
---tx:#f9fafb;--tx2:#d1d5db;--tx3:#9ca3af;
---bd:rgba(255,255,255,.1);--bd2:rgba(255,255,255,.18);
---gn:#34d399;--gnbg:rgba(52,211,153,.15);--gnbd:rgba(52,211,153,.35);
---rd:#f87171;--rdbg:rgba(248,113,113,.15);--rdbd:rgba(248,113,113,.35);
---or:#fb923c;--orbg:rgba(251,146,60,.15);--orbd:rgba(251,146,60,.35);
---bl2:#60a5fa;--bl2bg:rgba(96,165,250,.15);--bl2bd:rgba(96,165,250,.35);
---pu:#c084fc;--pubg:rgba(192,132,252,.15);
+--nv:#0d1f3c;--nv2:#162d52;--bl:#1e4080;--ac:#e07818;--ac2:#f5a030;
+--bg:#eef1f7;--sf:#fff;--sf2:#f4f6fb;--sf3:#eaecf4;
+--tx:#0a0f1a;--tx2:#1e2d45;--tx3:#445577;
+--bd:#d8dff0;--bd2:#c0cbdf;
+--gn:#1a7a4a;--gnbg:#e6f5ee;--gnbd:#9ddcba;
+--rd:#b83030;--rdbg:#fdf0ee;--rdbd:#f0b8b0;
+--or:#c06010;--orbg:#fff4e6;--orbd:#fac878;
+--bl2:#1a50b0;--bl2bg:#e8f0fe;--bl2bd:#90b8f0;
+--pu:#6b3fa0;--pubg:#f3eeff;
 --r:10px;--rlg:16px;
 --sh:0 2px 16px rgba(13,31,60,.10);--shlg:0 8px 40px rgba(13,31,60,.18);
 }
@@ -24,15 +24,15 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--tx);font-siz
 
 /* LOGIN */
 #login-screen{position:fixed;inset:0;background:linear-gradient(135deg,var(--nv) 0%,#1a3560 100%);display:flex;align-items:center;justify-content:center;z-index:9999}
-.lbox{background:#1f2937;border-radius:20px;padding:36px;width:360px;box-shadow:var(--shlg)}
+.lbox{background:var(--sf);border-radius:20px;padding:36px;width:360px;box-shadow:var(--shlg)}
 .llogo{text-align:center;margin-bottom:24px}
 .llogo-icon{width:60px;height:60px;background:var(--ac);border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 10px;font-size:26px}
-.ltitle{font-size:20px;font-weight:700;color:#f9fafb}
+.ltitle{font-size:20px;font-weight:700;color:var(--nv)}
 .lsub{font-size:11px;color:var(--tx3);margin-top:3px}
 .lerr{background:var(--rdbg);color:var(--rd);border:1px solid var(--rdbd);border-radius:var(--r);padding:8px 12px;font-size:12px;margin-bottom:10px;display:none}
 .lfg{margin-bottom:12px}
 .lfg label{display:block;font-size:10px;font-weight:700;color:var(--tx2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.6px}
-.lfg input{width:100%;padding:9px 12px;border:1.5px solid var(--bd2);border-radius:var(--r);font-size:13px;font-family:inherit;color:var(--tx);background:#374151;transition:border .15s}
+.lfg input{width:100%;padding:9px 12px;border:1.5px solid var(--bd2);border-radius:var(--r);font-size:13px;font-family:inherit;color:var(--tx);transition:border .15s}
 .lfg input:focus{outline:none;border-color:var(--bl)}
 .lbtn{width:100%;height:40px;background:var(--nv);color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:600;font-family:'Sora',sans-serif;cursor:pointer;margin-top:6px;transition:background .15s;letter-spacing:.2px}
 .lbtn:hover{background:var(--bl)}
@@ -417,7 +417,7 @@ tr:hover td{background:var(--sf2)}
 /* MODAL */
 .mov{position:fixed;inset:0;background:rgba(8,16,36,.55);z-index:1000;display:none;align-items:center;justify-content:center;padding:14px}
 .mov.open{display:flex}
-.modal{background:#1f2937;border-radius:var(--rlg);width:100%;max-width:840px;max-height:93vh;overflow-y:auto;box-shadow:var(--shlg)}
+.modal{background:var(--sf);border-radius:var(--rlg);width:100%;max-width:840px;max-height:93vh;overflow-y:auto;box-shadow:var(--shlg)}
 .mhd{padding:14px 20px;border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--sf);z-index:2}
 .mhd-title{font-size:14px;font-weight:700;color:var(--nv)}
 .mbody{padding:16px 20px}
@@ -555,7 +555,22 @@ tr:hover td{background:var(--sf2)}
    ══════════════════════════════════════════════ */
 
 /* Novas variáveis de cor */
-
+:root {
+  --bg:#f0f4fa;
+  --sf:#ffffff;
+  --sf2:#f5f7fc;
+  --sf3:#eaeff8;
+  --bd:rgba(30,64,128,.12);
+  --bd2:rgba(30,64,128,.22);
+  --tx:#1a2340;
+  --tx2:#3d5280;
+  --tx3:#7a92bb;
+  --cy:#0ea5e9;
+  --cy2:#0284c7;
+  --pu:#8b5cf6;
+  --pu2:#7c3aed;
+  --am:#f59e0b;
+}
 
 body {
   background: var(--bg) !important;
