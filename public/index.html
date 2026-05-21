@@ -4611,6 +4611,30 @@ function openPrintWindow(html, styles) {
   w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Impressão</title><link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet"><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Sora',sans-serif;padding:18px;background:#fff}${styles}@media print{body{padding:8px}}</style></head><body>${html}
 
 
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const btnNovaOS = Array.from(document.querySelectorAll('button'))
+    .find(btn => btn.textContent && btn.textContent.includes('Nova OS'));
+
+  if (btnNovaOS) {
+    btnNovaOS.style.pointerEvents = 'auto';
+    btnNovaOS.style.cursor = 'pointer';
+
+    btnNovaOS.addEventListener('click', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (typeof openOS === 'function') {
+        openOS(null);
+      } else {
+        console.error('Função openOS não encontrada.');
+      }
+    });
+  }
+});
+</script>
+
 </body></html>`);
   w.document.close(); setTimeout(()=>w.print(),700);
 }
@@ -8464,6 +8488,30 @@ ${l.obs ? `<div class="section"><span class="sec-title">Observações</span><div
 
 
 
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const btnNovaOS = Array.from(document.querySelectorAll('button'))
+    .find(btn => btn.textContent && btn.textContent.includes('Nova OS'));
+
+  if (btnNovaOS) {
+    btnNovaOS.style.pointerEvents = 'auto';
+    btnNovaOS.style.cursor = 'pointer';
+
+    btnNovaOS.addEventListener('click', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (typeof openOS === 'function') {
+        openOS(null);
+      } else {
+        console.error('Função openOS não encontrada.');
+      }
+    });
+  }
+});
+</script>
+
 </body></html>`;
 
   const w = window.open('', '_blank');
@@ -9674,6 +9722,30 @@ window.openM = function(id) {
 
 
 
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const btnNovaOS = Array.from(document.querySelectorAll('button'))
+    .find(btn => btn.textContent && btn.textContent.includes('Nova OS'));
+
+  if (btnNovaOS) {
+    btnNovaOS.style.pointerEvents = 'auto';
+    btnNovaOS.style.cursor = 'pointer';
+
+    btnNovaOS.addEventListener('click', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (typeof openOS === 'function') {
+        openOS(null);
+      } else {
+        console.error('Função openOS não encontrada.');
+      }
+    });
+  }
+});
+</script>
 
 </body>
 </html>
