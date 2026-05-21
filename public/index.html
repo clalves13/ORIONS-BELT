@@ -118,7 +118,7 @@ button:not(.btn):not(.btnx):not(.lbtn):not(.btn-logout):not(.chk):not(.os-tab):n
 }
 
 /* ═══ SISTEMA DE BOTÕES UNIFICADO ═══ */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:0 14px;height:34px;border-radius:8px;border:none;font-size:12px;font-weight:600;cursor:pointer;pointer-events:auto;transition:all .15s;font-family:'Sora',sans-serif!important;white-space:nowrap;line-height:1}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:0 14px;height:34px;border-radius:8px;border:none;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;font-family:'Sora',sans-serif!important;white-space:nowrap;line-height:1}
 .btn-sm{height:30px;padding:0 11px;font-size:11px}
 .btn-xs{height:26px;padding:0 9px;font-size:11px;border-radius:6px}
 .btn-lg{height:40px;padding:0 18px;font-size:13px}
@@ -730,10 +730,6 @@ tr:hover td { background: var(--sf2) !important; }
 .anx-card-del{position:absolute;top:4px;right:4px;width:22px;height:22px;background:rgba(0,0,0,.55);border-radius:50%;display:none;align-items:center;justify-content:center;color:#fff;font-size:13px;border:none;cursor:pointer}
 .anx-card:hover .anx-card-del{display:flex}
 
-
-/* FIX VISIBILIDADE FILTROS */
-.filter-row select,.filter-row input,.filter-row button{color:var(--tx)!important;opacity:1!important} 
-.filter-row select option{color:#0f172a!important;background:#fff!important}
 </style>
 </head>
 <body>
@@ -4609,31 +4605,148 @@ function getOSPrintStyles() {
 function openPrintWindow(html, styles) {
   const w=window.open('','_blank','width=780,height:950');
   w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Impressão</title><link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet"><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Sora',sans-serif;padding:18px;background:#fff}${styles}@media print{body{padding:8px}}</style></head><body>${html}
+<style id="dark-polish">
+/* ── Cores inline que ainda usam variáveis de light mode ── */
+[style*="color:var(--tx)"]  { color:#e2e8f8 !important }
+[style*="color:var(--tx2)"] { color:rgba(255,255,255,.55) !important }
+[style*="color:var(--tx3)"] { color:rgba(255,255,255,.3) !important }
+[style*="color:var(--nv)"]  { color:#e2e8f8 !important }
 
+/* Inputs/selects inline que ainda têm border/bg de light mode */
+[style*="border:1.5px solid var(--bd2)"] {
+  border-color: rgba(255,255,255,.1) !important;
+  background: rgba(255,255,255,.05) !important;
+  color: #e2e8f8 !important;
+}
+[style*="border-color:var(--bd"] {
+  border-color: rgba(255,255,255,.08) !important;
+}
 
+/* Cards com background branco inline */
+[style*="background:var(--sf)"] { background: rgba(255,255,255,.03) !important }
+[style*="background:var(--sf2)"] { background: rgba(255,255,255,.04) !important }
+[style*="background:var(--sf3)"] { background: rgba(255,255,255,.06) !important }
 
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-  const btnNovaOS = Array.from(document.querySelectorAll('button'))
-    .find(btn => btn.textContent && btn.textContent.includes('Nova OS'));
+/* OS lista de cards (renderizados por JS com innerHTML) */
+.os-card-row {
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  transition: all .18s;
+}
+.os-card-row:hover {
+  background: rgba(255,255,255,.05);
+  border-color: rgba(255,255,255,.12);
+  box-shadow: 0 4px 20px rgba(0,0,0,.3);
+}
 
-  if (btnNovaOS) {
-    btnNovaOS.style.pointerEvents = 'auto';
-    btnNovaOS.style.cursor = 'pointer';
+/* Tab bar container dark */
+.tab-bar, .os-tab-bar {
+  border-bottom: 1px solid rgba(255,255,255,.07) !important;
+  background: transparent !important;
+}
 
-    btnNovaOS.addEventListener('click', function (e) {
-      e.preventDefault();
-      e.stopPropagation();
+/* Filtros select/input dark globais */
+.filter-row select,
+.filter-row input[type=date],
+.filter-row input[type=text] {
+  background: rgba(255,255,255,.05) !important;
+  border-color: rgba(255,255,255,.1) !important;
+  color: #e2e8f8 !important;
+}
 
-      if (typeof openOS === 'function') {
-        openOS(null);
-      } else {
-        console.error('Função openOS não encontrada.');
-      }
-    });
-  }
-});
-</script>
+/* Card dark hover effect */
+.card:hover {
+  border-color: rgba(255,255,255,.1) !important;
+}
+
+/* Scard hover neon */
+.scard:hover {
+  background: rgba(255,255,255,.06) !important;
+  border-color: rgba(255,255,255,.14) !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,.35) !important;
+  transform: translateY(-2px);
+}
+
+/* Badge dark force */
+.badge { letter-spacing: .2px }
+
+/* Linha separadora entre sessões do modal */
+.fsec {
+  color: #f59e0b !important;
+  border-bottom-color: rgba(245,158,11,.3) !important;
+}
+
+/* Log tabs bar */
+[style*="border-bottom:1px solid rgba(255,255,255,.07)"],
+[style*="border-bottom:1px solid rgba(255,255,255,.07)"] {
+  border-bottom-color: rgba(255,255,255,.07) !important;
+}
+
+/* Cal grid uniform spacing */
+.cal-grid { gap: 4px }
+.cal-wrap { gap: 16px }
+
+/* Lista de rotas / labs / OS — zebra dark */
+.twrap tbody tr:nth-child(even) td {
+  background: rgba(255,255,255,.015) !important;
+}
+
+/* Checklist dark */
+.chk { 
+  background: rgba(255,255,255,.03) !important;
+  border-color: rgba(255,255,255,.08) !important;
+}
+.chk-lbl { color: rgba(255,255,255,.7) !important }
+.chk.on .chk-lbl { color: #34d399 !important }
+
+/* Timeline dots glow */
+.tl-dot.g, .tl-dot.gn { box-shadow: 0 0 8px rgba(16,185,129,.5) }
+.tl-dot.o, .tl-dot.or { box-shadow: 0 0 8px rgba(245,158,11,.5) }
+.tl-dot.b, .tl-dot.bl2 { box-shadow: 0 0 8px rgba(59,130,246,.5) }
+.tl-dot.r { box-shadow: 0 0 8px rgba(239,68,68,.5) }
+
+/* Topbar icon badges */
+.ni-badge {
+  background: rgba(245,158,11,.25) !important;
+  color: #fbbf24 !important;
+  border: 1px solid rgba(245,158,11,.35) !important;
+}
+
+/* Page animation */
+.page.active { animation: page-in-dark .22s ease both }
+@keyframes page-in-dark {
+  from { opacity:0; transform:translateY(8px) }
+  to   { opacity:1; transform:translateY(0) }
+}
+
+/* Btn reset sidebar */
+#btn-reset-wrap button {
+  background: rgba(239,68,68,.12) !important;
+  color: #f87171 !important;
+  border: 1px solid rgba(239,68,68,.25) !important;
+  transition: all .18s;
+}
+#btn-reset-wrap button:hover {
+  background: rgba(239,68,68,.22) !important;
+  box-shadow: 0 4px 16px rgba(239,68,68,.25) !important;
+}
+
+/* Logística KPI remaining dark */
+.scard .sico[style*="var(--bl2bg)"] { background:rgba(59,130,246,.15) !important; color:#60a5fa !important }
+.scard .sico[style*="var(--gnbg)"]  { background:rgba(16,185,129,.15) !important; color:#34d399 !important }
+.scard .sico[style*="var(--orbg)"]  { background:rgba(245,158,11,.15) !important; color:#fbbf24 !important }
+
+/* Cal event tags mais legíveis no dark */
+.ev-os        { background:rgba(59,130,246,.2)  !important; color:#93c5fd !important; border-left-color:#3b82f6 !important }
+.ev-visita    { background:rgba(34,197,94,.15)   !important; color:#86efac !important; border-left-color:#22c55e !important }
+.ev-preventiva{ background:rgba(234,179,8,.15)   !important; color:#fde047 !important; border-left-color:#eab308 !important }
+.ev-reuniao   { background:rgba(168,85,247,.15)  !important; color:#d8b4fe !important; border-left-color:#a855f7 !important }
+.ev-outros    { background:rgba(148,163,184,.1)  !important; color:#94a3b8 !important; border-left-color:#64748b !important }
+.ev-cancelado { background:rgba(239,68,68,.12)   !important; color:#fca5a5 !important; border-left-color:#ef4444 !important }
+</style>
 
 </body></html>`);
   w.document.close(); setTimeout(()=>w.print(),700);
@@ -8486,31 +8599,148 @@ ${l.obs ? `<div class="section"><span class="sec-title">Observações</span><div
 </div>
 
 
+<style id="dark-polish">
+/* ── Cores inline que ainda usam variáveis de light mode ── */
+[style*="color:var(--tx)"]  { color:#e2e8f8 !important }
+[style*="color:var(--tx2)"] { color:rgba(255,255,255,.55) !important }
+[style*="color:var(--tx3)"] { color:rgba(255,255,255,.3) !important }
+[style*="color:var(--nv)"]  { color:#e2e8f8 !important }
 
+/* Inputs/selects inline que ainda têm border/bg de light mode */
+[style*="border:1.5px solid var(--bd2)"] {
+  border-color: rgba(255,255,255,.1) !important;
+  background: rgba(255,255,255,.05) !important;
+  color: #e2e8f8 !important;
+}
+[style*="border-color:var(--bd"] {
+  border-color: rgba(255,255,255,.08) !important;
+}
 
+/* Cards com background branco inline */
+[style*="background:var(--sf)"] { background: rgba(255,255,255,.03) !important }
+[style*="background:var(--sf2)"] { background: rgba(255,255,255,.04) !important }
+[style*="background:var(--sf3)"] { background: rgba(255,255,255,.06) !important }
 
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-  const btnNovaOS = Array.from(document.querySelectorAll('button'))
-    .find(btn => btn.textContent && btn.textContent.includes('Nova OS'));
+/* OS lista de cards (renderizados por JS com innerHTML) */
+.os-card-row {
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  transition: all .18s;
+}
+.os-card-row:hover {
+  background: rgba(255,255,255,.05);
+  border-color: rgba(255,255,255,.12);
+  box-shadow: 0 4px 20px rgba(0,0,0,.3);
+}
 
-  if (btnNovaOS) {
-    btnNovaOS.style.pointerEvents = 'auto';
-    btnNovaOS.style.cursor = 'pointer';
+/* Tab bar container dark */
+.tab-bar, .os-tab-bar {
+  border-bottom: 1px solid rgba(255,255,255,.07) !important;
+  background: transparent !important;
+}
 
-    btnNovaOS.addEventListener('click', function (e) {
-      e.preventDefault();
-      e.stopPropagation();
+/* Filtros select/input dark globais */
+.filter-row select,
+.filter-row input[type=date],
+.filter-row input[type=text] {
+  background: rgba(255,255,255,.05) !important;
+  border-color: rgba(255,255,255,.1) !important;
+  color: #e2e8f8 !important;
+}
 
-      if (typeof openOS === 'function') {
-        openOS(null);
-      } else {
-        console.error('Função openOS não encontrada.');
-      }
-    });
-  }
-});
-</script>
+/* Card dark hover effect */
+.card:hover {
+  border-color: rgba(255,255,255,.1) !important;
+}
+
+/* Scard hover neon */
+.scard:hover {
+  background: rgba(255,255,255,.06) !important;
+  border-color: rgba(255,255,255,.14) !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,.35) !important;
+  transform: translateY(-2px);
+}
+
+/* Badge dark force */
+.badge { letter-spacing: .2px }
+
+/* Linha separadora entre sessões do modal */
+.fsec {
+  color: #f59e0b !important;
+  border-bottom-color: rgba(245,158,11,.3) !important;
+}
+
+/* Log tabs bar */
+[style*="border-bottom:1px solid rgba(255,255,255,.07)"],
+[style*="border-bottom:1px solid rgba(255,255,255,.07)"] {
+  border-bottom-color: rgba(255,255,255,.07) !important;
+}
+
+/* Cal grid uniform spacing */
+.cal-grid { gap: 4px }
+.cal-wrap { gap: 16px }
+
+/* Lista de rotas / labs / OS — zebra dark */
+.twrap tbody tr:nth-child(even) td {
+  background: rgba(255,255,255,.015) !important;
+}
+
+/* Checklist dark */
+.chk { 
+  background: rgba(255,255,255,.03) !important;
+  border-color: rgba(255,255,255,.08) !important;
+}
+.chk-lbl { color: rgba(255,255,255,.7) !important }
+.chk.on .chk-lbl { color: #34d399 !important }
+
+/* Timeline dots glow */
+.tl-dot.g, .tl-dot.gn { box-shadow: 0 0 8px rgba(16,185,129,.5) }
+.tl-dot.o, .tl-dot.or { box-shadow: 0 0 8px rgba(245,158,11,.5) }
+.tl-dot.b, .tl-dot.bl2 { box-shadow: 0 0 8px rgba(59,130,246,.5) }
+.tl-dot.r { box-shadow: 0 0 8px rgba(239,68,68,.5) }
+
+/* Topbar icon badges */
+.ni-badge {
+  background: rgba(245,158,11,.25) !important;
+  color: #fbbf24 !important;
+  border: 1px solid rgba(245,158,11,.35) !important;
+}
+
+/* Page animation */
+.page.active { animation: page-in-dark .22s ease both }
+@keyframes page-in-dark {
+  from { opacity:0; transform:translateY(8px) }
+  to   { opacity:1; transform:translateY(0) }
+}
+
+/* Btn reset sidebar */
+#btn-reset-wrap button {
+  background: rgba(239,68,68,.12) !important;
+  color: #f87171 !important;
+  border: 1px solid rgba(239,68,68,.25) !important;
+  transition: all .18s;
+}
+#btn-reset-wrap button:hover {
+  background: rgba(239,68,68,.22) !important;
+  box-shadow: 0 4px 16px rgba(239,68,68,.25) !important;
+}
+
+/* Logística KPI remaining dark */
+.scard .sico[style*="var(--bl2bg)"] { background:rgba(59,130,246,.15) !important; color:#60a5fa !important }
+.scard .sico[style*="var(--gnbg)"]  { background:rgba(16,185,129,.15) !important; color:#34d399 !important }
+.scard .sico[style*="var(--orbg)"]  { background:rgba(245,158,11,.15) !important; color:#fbbf24 !important }
+
+/* Cal event tags mais legíveis no dark */
+.ev-os        { background:rgba(59,130,246,.2)  !important; color:#93c5fd !important; border-left-color:#3b82f6 !important }
+.ev-visita    { background:rgba(34,197,94,.15)   !important; color:#86efac !important; border-left-color:#22c55e !important }
+.ev-preventiva{ background:rgba(234,179,8,.15)   !important; color:#fde047 !important; border-left-color:#eab308 !important }
+.ev-reuniao   { background:rgba(168,85,247,.15)  !important; color:#d8b4fe !important; border-left-color:#a855f7 !important }
+.ev-outros    { background:rgba(148,163,184,.1)  !important; color:#94a3b8 !important; border-left-color:#64748b !important }
+.ev-cancelado { background:rgba(239,68,68,.12)   !important; color:#fca5a5 !important; border-left-color:#ef4444 !important }
+</style>
 
 </body></html>`;
 
@@ -9512,7 +9742,7 @@ function renderAnexosGrid(anexos) {
     const size  = a.tamanho > 1048576 ? (a.tamanho/1048576).toFixed(1)+'MB' : Math.round(a.tamanho/1024)+'KB';
     const thumb = isImg
       ? '<img class="anx-card-img" src="'+a.url+'" alt="'+a.nome+'" loading="lazy" onclick="verAnexo('+i+')">'
-      : '<div class="anx-card-doc" onclick="window.open(a.url,'_blank')">'+icon+'</div>';
+      : '<div class="anx-card-doc" onclick="window.open(''+a.url+'','_blank')">'+icon+'</div>';
     return '<div class="anx-card">'+thumb+'<div class="anx-card-info"><div class="anx-card-nome" title="'+a.nome+'">'+a.nome+'</div><div class="anx-card-size">'+size+'</div></div><button class="anx-card-del" onclick="deletarAnexo(''+encodeURIComponent(a.public_id)+'',this)">×</button></div>';
   }).join('');
 }
@@ -9721,31 +9951,148 @@ window.openM = function(id) {
 </script>
 
 
+<style id="dark-polish">
+/* ── Cores inline que ainda usam variáveis de light mode ── */
+[style*="color:var(--tx)"]  { color:#e2e8f8 !important }
+[style*="color:var(--tx2)"] { color:rgba(255,255,255,.55) !important }
+[style*="color:var(--tx3)"] { color:rgba(255,255,255,.3) !important }
+[style*="color:var(--nv)"]  { color:#e2e8f8 !important }
 
+/* Inputs/selects inline que ainda têm border/bg de light mode */
+[style*="border:1.5px solid var(--bd2)"] {
+  border-color: rgba(255,255,255,.1) !important;
+  background: rgba(255,255,255,.05) !important;
+  color: #e2e8f8 !important;
+}
+[style*="border-color:var(--bd"] {
+  border-color: rgba(255,255,255,.08) !important;
+}
 
+/* Cards com background branco inline */
+[style*="background:var(--sf)"] { background: rgba(255,255,255,.03) !important }
+[style*="background:var(--sf2)"] { background: rgba(255,255,255,.04) !important }
+[style*="background:var(--sf3)"] { background: rgba(255,255,255,.06) !important }
 
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-  const btnNovaOS = Array.from(document.querySelectorAll('button'))
-    .find(btn => btn.textContent && btn.textContent.includes('Nova OS'));
+/* OS lista de cards (renderizados por JS com innerHTML) */
+.os-card-row {
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  transition: all .18s;
+}
+.os-card-row:hover {
+  background: rgba(255,255,255,.05);
+  border-color: rgba(255,255,255,.12);
+  box-shadow: 0 4px 20px rgba(0,0,0,.3);
+}
 
-  if (btnNovaOS) {
-    btnNovaOS.style.pointerEvents = 'auto';
-    btnNovaOS.style.cursor = 'pointer';
+/* Tab bar container dark */
+.tab-bar, .os-tab-bar {
+  border-bottom: 1px solid rgba(255,255,255,.07) !important;
+  background: transparent !important;
+}
 
-    btnNovaOS.addEventListener('click', function (e) {
-      e.preventDefault();
-      e.stopPropagation();
+/* Filtros select/input dark globais */
+.filter-row select,
+.filter-row input[type=date],
+.filter-row input[type=text] {
+  background: rgba(255,255,255,.05) !important;
+  border-color: rgba(255,255,255,.1) !important;
+  color: #e2e8f8 !important;
+}
 
-      if (typeof openOS === 'function') {
-        openOS(null);
-      } else {
-        console.error('Função openOS não encontrada.');
-      }
-    });
-  }
-});
-</script>
+/* Card dark hover effect */
+.card:hover {
+  border-color: rgba(255,255,255,.1) !important;
+}
+
+/* Scard hover neon */
+.scard:hover {
+  background: rgba(255,255,255,.06) !important;
+  border-color: rgba(255,255,255,.14) !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,.35) !important;
+  transform: translateY(-2px);
+}
+
+/* Badge dark force */
+.badge { letter-spacing: .2px }
+
+/* Linha separadora entre sessões do modal */
+.fsec {
+  color: #f59e0b !important;
+  border-bottom-color: rgba(245,158,11,.3) !important;
+}
+
+/* Log tabs bar */
+[style*="border-bottom:1px solid rgba(255,255,255,.07)"],
+[style*="border-bottom:1px solid rgba(255,255,255,.07)"] {
+  border-bottom-color: rgba(255,255,255,.07) !important;
+}
+
+/* Cal grid uniform spacing */
+.cal-grid { gap: 4px }
+.cal-wrap { gap: 16px }
+
+/* Lista de rotas / labs / OS — zebra dark */
+.twrap tbody tr:nth-child(even) td {
+  background: rgba(255,255,255,.015) !important;
+}
+
+/* Checklist dark */
+.chk { 
+  background: rgba(255,255,255,.03) !important;
+  border-color: rgba(255,255,255,.08) !important;
+}
+.chk-lbl { color: rgba(255,255,255,.7) !important }
+.chk.on .chk-lbl { color: #34d399 !important }
+
+/* Timeline dots glow */
+.tl-dot.g, .tl-dot.gn { box-shadow: 0 0 8px rgba(16,185,129,.5) }
+.tl-dot.o, .tl-dot.or { box-shadow: 0 0 8px rgba(245,158,11,.5) }
+.tl-dot.b, .tl-dot.bl2 { box-shadow: 0 0 8px rgba(59,130,246,.5) }
+.tl-dot.r { box-shadow: 0 0 8px rgba(239,68,68,.5) }
+
+/* Topbar icon badges */
+.ni-badge {
+  background: rgba(245,158,11,.25) !important;
+  color: #fbbf24 !important;
+  border: 1px solid rgba(245,158,11,.35) !important;
+}
+
+/* Page animation */
+.page.active { animation: page-in-dark .22s ease both }
+@keyframes page-in-dark {
+  from { opacity:0; transform:translateY(8px) }
+  to   { opacity:1; transform:translateY(0) }
+}
+
+/* Btn reset sidebar */
+#btn-reset-wrap button {
+  background: rgba(239,68,68,.12) !important;
+  color: #f87171 !important;
+  border: 1px solid rgba(239,68,68,.25) !important;
+  transition: all .18s;
+}
+#btn-reset-wrap button:hover {
+  background: rgba(239,68,68,.22) !important;
+  box-shadow: 0 4px 16px rgba(239,68,68,.25) !important;
+}
+
+/* Logística KPI remaining dark */
+.scard .sico[style*="var(--bl2bg)"] { background:rgba(59,130,246,.15) !important; color:#60a5fa !important }
+.scard .sico[style*="var(--gnbg)"]  { background:rgba(16,185,129,.15) !important; color:#34d399 !important }
+.scard .sico[style*="var(--orbg)"]  { background:rgba(245,158,11,.15) !important; color:#fbbf24 !important }
+
+/* Cal event tags mais legíveis no dark */
+.ev-os        { background:rgba(59,130,246,.2)  !important; color:#93c5fd !important; border-left-color:#3b82f6 !important }
+.ev-visita    { background:rgba(34,197,94,.15)   !important; color:#86efac !important; border-left-color:#22c55e !important }
+.ev-preventiva{ background:rgba(234,179,8,.15)   !important; color:#fde047 !important; border-left-color:#eab308 !important }
+.ev-reuniao   { background:rgba(168,85,247,.15)  !important; color:#d8b4fe !important; border-left-color:#a855f7 !important }
+.ev-outros    { background:rgba(148,163,184,.1)  !important; color:#94a3b8 !important; border-left-color:#64748b !important }
+.ev-cancelado { background:rgba(239,68,68,.12)   !important; color:#fca5a5 !important; border-left-color:#ef4444 !important }
+</style>
 
 </body>
 </html>
