@@ -9464,8 +9464,8 @@ function renderAnexosGrid(anexos) {
     const size  = a.tamanho > 1048576 ? (a.tamanho/1048576).toFixed(1)+'MB' : Math.round(a.tamanho/1024)+'KB';
     const thumb = isImg
       ? '<img class="anx-card-img" src="'+a.url+'" alt="'+a.nome+'" loading="lazy" onclick="verAnexo('+i+')">'
-      : '<div class="anx-card-doc" onclick="window.open(a.url,'_blank')">'+icon+'</div>';
-    return '<div class="anx-card">'+thumb+'<div class="anx-card-info"><div class="anx-card-nome" title="'+a.nome+'">'+a.nome+'</div><div class="anx-card-size">'+size+'</div></div><button class="anx-card-del" onclick="deletarAnexo(''+encodeURIComponent(a.public_id)+'',this)">×</button></div>';
+      : '<div class="anx-card-doc" onclick="window.open(\''+a.url+'\',\'_blank\')">'+icon+'</div>';
+    return '<div class="anx-card">'+thumb+'<div class="anx-card-info"><div class="anx-card-nome" title="'+a.nome+'">'+a.nome+'</div><div class="anx-card-size">'+size+'</div></div><button class="anx-card-del" onclick="deletarAnexo(\''+encodeURIComponent(a.public_id)+'\',this)">×</button></div>';
   }).join('');
 }
 
