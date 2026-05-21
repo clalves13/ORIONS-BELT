@@ -1,18 +1,24 @@
 {
-  "name": "theikos-at",
-  "version": "5.0.0",
-  "description": "Theikós — Sistema de Assistência Técnica",
+  "name": "orion-at",
+  "version": "7.1.0",
+  "description": "Orion Print — Sistema de Assistência Técnica",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
+    "cloudinary": "^1.41.3",
     "connect-mongo": "^5.1.0",
     "express": "^4.18.2",
     "express-session": "^1.17.3",
-    "jsonwebtoken": "^9.0.3",
-    "mongodb": "^6.3.0"
+    "mongodb": "^6.3.0",
+    "multer": "^1.4.5-lts.1",
+    "node-cron": "^3.0.3",
+    "nodemailer": "^6.9.7",
+    "node-telegram-bot-api": "^0.64.0",
+    "snmp-native": "^1.2.0",
+    "streamifier": "^0.1.1"
   },
   "engines": {
     "node": ">=18.0.0"

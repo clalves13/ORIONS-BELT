@@ -1,4 +1,7 @@
 const express = require('express');
+const multer  = require('multer');
+const cloudinary = require('cloudinary').v2;
+const streamifier = require('streamifier');
 const session = require('express-session');
 const bcrypt = require('bcryptjs');
 const { MongoClient, ObjectId } = require('mongodb');
@@ -9,6 +12,14 @@ const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+// ── Cloudinary ──
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'diz3fpmrk',
+  api_key:     process.env.CLOUDINARY_API_KEY    || '198226588682375',
+  api_secret:  process.env.CLOUDINARY_API_SECRET || 'ttSsE-FuwvE8yYx7itvKwG8VsS0',
+});
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
+
 const MONGO_URI = process.env.MONGO_URI || 'mongodb+srv://clairton_db_user:Ita722018@cluster0.uy61dew.mongodb.net/?appName=Cluster0';
 const MASTER_HASH = bcrypt.hashSync('churrasquinho@26', 10);
 
@@ -1214,6 +1225,92 @@ app.delete('/api/monitor/simular', async (req,res) => {
 
 app.get('/monitor', (req,res) => res.sendFile(path.join(__dirname,'public','monitor.html')));
 app.get('/monitor/*', (req,res) => res.sendFile(path.join(__dirname,'public','monitor.html')));
+
+// ─── ANEXOS DE OS (Cloudinary) ───────────────────────────────────────────────
+
+// Upload de foto/documento para uma OS
+app.post('/api/ordens/:id/anexos', requireAuth, upload.single('arquivo'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'Nenhum arquivo enviado' });
+    const osId = req.params.id;
+    const os = await col('ordens').findOne({ _id: new ObjectId(osId) });
+    if (!os) return res.status(404).json({ error: 'OS não encontrada' });
+
+    // Comprime imagem se for foto (reduz para max 1200px, qualidade 80)
+    const isImage = req.file.mimetype.startsWith('image/');
+    const folder  = `orion/os/${os.num || osId}`;
+
+    const uploadResult = await new Promise((resolve, reject) => {
+      const opts = {
+        folder,
+        resource_type: isImage ? 'image' : 'raw',
+        public_id: `${Date.now()}_${req.file.originalname.replace(/[^a-zA-Z0-9.]/g,'_')}`,
+      };
+      if (isImage) {
+        opts.transformation = [{ width: 1200, crop: 'limit', quality: 80 }];
+      }
+      const stream = cloudinary.uploader.upload_stream(opts, (err, result) => {
+        if (err) reject(err); else resolve(result);
+      });
+      streamifier.createReadStream(req.file.buffer).pipe(stream);
+    });
+
+    const anexo = {
+      url:           uploadResult.secure_url,
+      public_id:     uploadResult.public_id,
+      nome:          req.file.originalname,
+      tipo:          req.file.mimetype,
+      tamanho:       req.file.size,
+      resource_type: uploadResult.resource_type,
+      criado_em:     now(),
+      criado_por:    req.session.user?.nome || 'Sistema',
+    };
+
+    await col('ordens').updateOne(
+      { _id: new ObjectId(osId) },
+      { $push: { anexos: anexo } }
+    );
+
+    res.json({ ok: true, anexo });
+  } catch (e) {
+    console.error('Erro upload anexo:', e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Listar anexos de uma OS
+app.get('/api/ordens/:id/anexos', requireAuth, async (req, res) => {
+  try {
+    const os = await col('ordens').findOne({ _id: new ObjectId(req.params.id) }, { projection: { anexos: 1, num: 1 } });
+    if (!os) return res.status(404).json({ error: 'OS não encontrada' });
+    res.json(os.anexos || []);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Deletar um anexo
+app.delete('/api/ordens/:id/anexos/:public_id', requireAuth, async (req, res) => {
+  try {
+    const publicId = decodeURIComponent(req.params.public_id);
+    // Remove do Cloudinary
+    try { await cloudinary.uploader.destroy(publicId, { resource_type: 'raw' }); } catch (_) {}
+    try { await cloudinary.uploader.destroy(publicId, { resource_type: 'image' }); } catch (_) {}
+    // Remove do MongoDB
+    await col('ordens').updateOne(
+      { _id: new ObjectId(req.params.id) },
+      { $pull: { anexos: { public_id: publicId } } }
+    );
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Buscar OS por número com anexos
+app.get('/api/ordens/buscar/:num', requireAuth, async (req, res) => {
+  try {
+    const os = await col('ordens').findOne({ num: req.params.num.toUpperCase() });
+    if (!os) return res.status(404).json({ error: 'OS não encontrada' });
+    res.json({ ...os, id: os._id.toString() });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
 
 // ─── ROTAS FINAIS ────────────────────────────────────────────────────────────
 app.get('*',(req,res)=>res.sendFile(path.join(__dirname,'public','index.html')));
