@@ -4174,7 +4174,7 @@ function openOS(id) {
     document.getElementById('o-sla-manual-wrap').style.display='none';
     document.getElementById('o-sla-deadline-wrap').style.display='none';
   }
-  setTimeout(()=>{sigOSInit();sigOSClear('tec');sigOSClear('cli');},80);
+
   openM('m-os');
 }
 
@@ -9794,7 +9794,7 @@ function osFormSetOsId(id) {
   _osFormOsId = id || null;
   // If editing, load existing attachments
   if (_osFormOsId) osFormCarregarAnexos(_osFormOsId);
-  else osFormRenderGrid([]);
+  else osFormRenderPending();
 }
 
 async function osFormUploadFiles(files) {
