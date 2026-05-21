@@ -3152,6 +3152,40 @@ Outros</textarea>
       </div>
       <div class="fgrid"><div class="fg"><label>Defeito Relatado *</label><textarea id="o-defeito" rows="3"></textarea></div><div class="fg"><label>Procedimento Técnico</label><textarea id="o-proc" rows="3"></textarea></div><div class="fg"><label>Peças Trocadas</label><textarea id="o-pecas" rows="2"></textarea></div><div class="fg"><label>Observações</label><textarea id="o-obs" rows="2"></textarea></div></div>
     </div>
+    <!-- SEÇÃO DE FOTOS/ANEXOS NA OS -->
+    <div style="margin-bottom:13px" id="os-form-anexos-sec">
+      <div class="fsec">📷 Fotos e Anexos</div>
+      <div style="margin-top:8px">
+        <!-- Área de upload -->
+        <div style="background:#f8fafc;border:2px dashed #c0cbdf;border-radius:10px;padding:16px;text-align:center" id="os-form-drop-area">
+          <div style="font-size:24px;margin-bottom:6px">📷</div>
+          <div style="font-size:12px;font-weight:600;color:#0f172a;margin-bottom:4px">Adicionar fotos ou documentos</div>
+          <div style="font-size:11px;color:#64748b;margin-bottom:10px">Fotos JPG/PNG ou PDF · máx 20MB cada</div>
+          <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+            <!-- Câmera (abre câmera traseira no celular/tablet) -->
+            <label style="cursor:pointer">
+              <input type="file" id="os-form-cam-input" accept="image/*" capture="environment" style="display:none" onchange="osFormUploadFiles(this.files)">
+              <span class="btn btn-accent btn-sm" onclick="document.getElementById('os-form-cam-input').click()">📷 Tirar Foto</span>
+            </label>
+            <!-- Arquivo do dispositivo -->
+            <label style="cursor:pointer">
+              <input type="file" id="os-form-file-input" multiple accept="image/*,.pdf,.doc,.docx" style="display:none" onchange="osFormUploadFiles(this.files)">
+              <span class="btn btn-ghost btn-sm" onclick="document.getElementById('os-form-file-input').click()">📁 Escolher Arquivo</span>
+            </label>
+          </div>
+        </div>
+        <!-- Barra de progresso -->
+        <div id="os-form-upload-progress" style="display:none;margin-top:8px">
+          <div style="font-size:11px;color:#475569;margin-bottom:3px" id="os-form-upload-label">Enviando...</div>
+          <div style="background:#e2e8f0;border-radius:4px;height:6px;overflow:hidden">
+            <div id="os-form-upload-bar" style="height:100%;background:linear-gradient(90deg,#1d4ed8,#38bdf8);border-radius:4px;width:0%;transition:width .3s"></div>
+          </div>
+        </div>
+        <!-- Grid de preview das fotos já salvas -->
+        <div id="os-form-anx-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px;margin-top:10px"></div>
+      </div>
+    </div>
+
     <div style="margin-bottom:13px"><div class="fsec">Gastos</div>
       <div class="fgrid fg3">
         <div class="fg"><label>Viagem R$</label><input type="number" id="o-viag" value="0" step="0.01" oninput="calcOS()"></div>
@@ -3175,21 +3209,28 @@ Outros</textarea>
       </div>
     </div>
     <div style="margin-top:13px"><div class="fsec">Assinaturas</div>
-      <div class="fgrid fg2" style="gap:16px">
-        <div style="background:#f0f7ff;border:2px solid #bfdbfe;border-radius:10px;padding:12px">
-          <div style="font-size:11px;font-weight:700;color:#1d4ed8;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;display:flex;align-items:center;gap:6px">
-            🔧 Assinatura do Técnico
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:8px">
+
+        <!-- TÉCNICO -->
+        <div style="border:2px solid #1e3a5f;border-radius:10px;overflow:hidden">
+          <div style="background:#1e3a5f;padding:6px 12px;font-size:11px;font-weight:700;color:#fff;letter-spacing:.5px">🔧 TÉCNICO</div>
+          <canvas id="sig-tec" height="110" style="width:100%;display:block;background:#fff;cursor:crosshair;touch-action:none"></canvas>
+          <div style="border-top:2px solid #1e3a5f;background:#f8fafc;padding:6px 12px;display:flex;align-items:center;justify-content:space-between">
+            <span style="font-size:10px;color:#64748b;font-weight:600">Assinatura do Técnico Responsável</span>
+            <button class="btn btn-ghost btn-xs" style="font-size:10px;padding:2px 8px" onclick="sigOSClear('tec')">🗑 Limpar</button>
           </div>
-          <canvas id="sig-tec" height="100" style="width:100%;display:block;border:1.5px solid #93c5fd;border-radius:6px;background:#fff;cursor:crosshair;touch-action:none"></canvas>
-          <button class="btn btn-ghost btn-xs" style="margin-top:6px;font-size:10px" onclick="sigOSClear('tec')">🗑 Limpar</button>
         </div>
-        <div style="background:#f0fdf4;border:2px solid #bbf7d0;border-radius:10px;padding:12px">
-          <div style="font-size:11px;font-weight:700;color:#15803d;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;display:flex;align-items:center;gap:6px">
-            👤 Assinatura do Cliente
+
+        <!-- CLIENTE -->
+        <div style="border:2px solid #15803d;border-radius:10px;overflow:hidden">
+          <div style="background:#15803d;padding:6px 12px;font-size:11px;font-weight:700;color:#fff;letter-spacing:.5px">👤 CLIENTE</div>
+          <canvas id="sig-cli" height="110" style="width:100%;display:block;background:#fff;cursor:crosshair;touch-action:none"></canvas>
+          <div style="border-top:2px solid #15803d;background:#f8fafc;padding:6px 12px;display:flex;align-items:center;justify-content:space-between">
+            <span style="font-size:10px;color:#64748b;font-weight:600">Assinatura do Cliente / Responsável</span>
+            <button class="btn btn-ghost btn-xs" style="font-size:10px;padding:2px 8px" onclick="sigOSClear('cli')">🗑 Limpar</button>
           </div>
-          <canvas id="sig-cli" height="100" style="width:100%;display:block;border:1.5px solid #86efac;border-radius:6px;background:#fff;cursor:crosshair;touch-action:none"></canvas>
-          <button class="btn btn-ghost btn-xs" style="margin-top:6px;font-size:10px" onclick="sigOSClear('cli')">🗑 Limpar</button>
         </div>
+
       </div>
     </div>
   </div>
@@ -4120,6 +4161,7 @@ function openOS(id) {
       document.getElementById('btn-troca-serie').style.display='inline-flex';
     }
     setTimeout(()=>{sigOSInit();sigOSSet('tec',os.sig_tec||'');sigOSSet('cli',os.sig_cli||'');},80);
+    _osFormPendingFiles=[]; osFormSetOsId(os.id);
   } else {
     document.getElementById('o-id').value=''; document.getElementById('o-num-val').value=''; document.getElementById('o-num').value='(gerado ao salvar)';
     document.getElementById('o-dab').value=today(); document.getElementById('o-dcham').value=today();
@@ -4127,6 +4169,7 @@ function openOS(id) {
     ['o-contato','o-tel','o-end','o-modelo','o-nserie','o-cont','o-defeito','o-proc','o-pecas','o-obs','o-datend','o-hcheg','o-hsai'].forEach(f=>document.getElementById(f).value='');
     ['o-viag','o-alim','o-hosp','o-comb','o-ped','o-out'].forEach(f=>document.getElementById(f).value=0);
     document.getElementById('o-status').value='Aberta'; document.getElementById('o-tot').textContent='R$ 0,00';
+    _osFormPendingFiles=[]; osFormSetOsId(null); const g=document.getElementById('os-form-anx-grid'); if(g) g.innerHTML='';
     document.getElementById('o-tipo').value=''; document.getElementById('o-sla-prazo').value=''; document.getElementById('o-origem').value='sistema';
     document.getElementById('o-sla-manual-wrap').style.display='none';
     document.getElementById('o-sla-deadline-wrap').style.display='none';
@@ -4162,7 +4205,7 @@ async function saveOS() {
   })();
   const body={dataAb:document.getElementById('o-dab').value,tecnicoId:document.getElementById('o-tec').value,clienteId:cid,contato:document.getElementById('o-contato').value,tel:document.getElementById('o-tel').value,end:document.getElementById('o-end').value,equipId:document.getElementById('o-eq').value,modelo:document.getElementById('o-modelo').value,nserie,contador:document.getElementById('o-cont').value,defeito:document.getElementById('o-defeito').value,procedimento:document.getElementById('o-proc').value,pecas:document.getElementById('o-pecas').value,obs:document.getElementById('o-obs').value,dataChamado:document.getElementById('o-dcham').value,dataAtend:document.getElementById('o-datend').value,horaChegada:document.getElementById('o-hcheg').value,horaSaida:document.getElementById('o-hsai').value,viag:+document.getElementById('o-viag').value||0,alim:+document.getElementById('o-alim').value||0,hosp:+document.getElementById('o-hosp').value||0,comb:+document.getElementById('o-comb').value||0,ped:+document.getElementById('o-ped').value||0,outros:+document.getElementById('o-out').value||0,status:document.getElementById('o-status').value,sig_tec:sigOSGet('tec'),sig_cli:sigOSGet('cli'),tipo:document.getElementById('o-tipo').value,sla_prazo:document.getElementById('o-sla-prazo').value,sla_deadline:slaDeadline,origem:document.getElementById('o-origem').value||'sistema'};
   try {
-    if(eid){ await api('PUT',`/api/ordens/${eid}`,body); } else { const res=await api('POST','/api/ordens',body); document.getElementById('o-id').value=res.id; document.getElementById('o-num-val').value=res.num; document.getElementById('o-num').value=res.num; document.getElementById('btn-prev').style.display='inline-flex'; }
+    if(eid){ await api('PUT',`/api/ordens/${eid}`,body); } else { const res=await api('POST','/api/ordens',body); document.getElementById('o-id').value=res.id; document.getElementById('o-num-val').value=res.num; document.getElementById('o-num').value=res.num; document.getElementById('btn-prev').style.display='inline-flex'; await osFormFlushPending(res.id); }
     await loadAll(); renderOS(); loadDash(); closeM('m-os');
   } catch(e){alert(e.message)}
 }
@@ -9740,6 +9783,144 @@ function verAnexo(idx) {
   box.onclick = () => box.remove();
   box.innerHTML = '<img src="'+list[idx].url+'" style="max-width:90vw;max-height:82vh;border-radius:8px"><div style="color:#fff;font-size:11px;opacity:.6">'+list[idx].nome+' — clique para fechar</div>';
   document.body.appendChild(box);
+}
+
+// ─── FOTOS/ANEXOS NO FORMULÁRIO NOVA OS ─────────────────────────────────────
+// Pending files when OS doesn't have ID yet (new OS)
+let _osFormPendingFiles = [];
+let _osFormOsId = null; // set when editing existing OS
+
+function osFormSetOsId(id) {
+  _osFormOsId = id || null;
+  // If editing, load existing attachments
+  if (_osFormOsId) osFormCarregarAnexos(_osFormOsId);
+  else osFormRenderGrid([]);
+}
+
+async function osFormUploadFiles(files) {
+  if (!files?.length) return;
+  const bar  = document.getElementById('os-form-upload-bar');
+  const lbl  = document.getElementById('os-form-upload-label');
+  const wrap = document.getElementById('os-form-upload-progress');
+  if (wrap) wrap.style.display = 'block';
+
+  if (_osFormOsId) {
+    // OS already saved — upload directly
+    for (let i = 0; i < files.length; i++) {
+      if (lbl) lbl.textContent = 'Enviando ' + (i+1) + '/' + files.length + ': ' + files[i].name;
+      if (bar) bar.style.width = Math.round((i/files.length)*100) + '%';
+      const fd = new FormData(); fd.append('arquivo', files[i]);
+      try { await fetch('/api/ordens/'+_osFormOsId+'/anexos', { method:'POST', body:fd, credentials:'include' }); } catch(e) {}
+    }
+    if (bar) bar.style.width = '100%';
+    if (lbl) lbl.textContent = 'Concluído!';
+    setTimeout(() => { if (wrap) wrap.style.display='none'; if(bar) bar.style.width='0'; }, 1500);
+    await osFormCarregarAnexos(_osFormOsId);
+  } else {
+    // OS not saved yet — store in pending, show local previews
+    for (let i = 0; i < files.length; i++) {
+      _osFormPendingFiles.push(files[i]);
+    }
+    if (lbl) lbl.textContent = files.length + ' foto(s) prontas para envio ao salvar a OS';
+    if (bar) bar.style.width = '100%';
+    setTimeout(() => { if (wrap) wrap.style.display='none'; if(bar) bar.style.width='0'; }, 1500);
+    osFormRenderPending();
+  }
+  // Reset file inputs
+  ['os-form-cam-input','os-form-file-input'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+}
+
+function osFormRenderPending() {
+  const grid = document.getElementById('os-form-anx-grid');
+  if (!grid) return;
+  if (!_osFormPendingFiles.length) { grid.innerHTML = ''; return; }
+  grid.innerHTML = _osFormPendingFiles.map((f,i) => {
+    const isImg = f.type.startsWith('image/');
+    const name = f.name.length > 16 ? f.name.slice(0,14)+'…' : f.name;
+    if (isImg) {
+      const url = URL.createObjectURL(f);
+      return `<div style="position:relative;border:1.5px solid #e2e8f0;border-radius:8px;overflow:hidden;aspect-ratio:1">
+        <img src="${url}" style="width:100%;height:100%;object-fit:cover">
+        <button onclick="osFormRemovePending(${i})" style="position:absolute;top:3px;right:3px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center">×</button>
+        <div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.5);color:#fff;font-size:9px;padding:2px 4px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${name}</div>
+      </div>`;
+    } else {
+      return `<div style="position:relative;border:1.5px solid #e2e8f0;border-radius:8px;padding:8px;text-align:center;background:#f8fafc;aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px">
+        <div style="font-size:24px">📄</div>
+        <div style="font-size:9px;color:#475569;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:100%">${name}</div>
+        <button onclick="osFormRemovePending(${i})" style="position:absolute;top:3px;right:3px;background:rgba(0,0,0,.5);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer;line-height:1">×</button>
+      </div>`;
+    }
+  }).join('');
+}
+
+function osFormRemovePending(i) {
+  _osFormPendingFiles.splice(i, 1);
+  osFormRenderPending();
+}
+
+async function osFormCarregarAnexos(osId) {
+  const grid = document.getElementById('os-form-anx-grid');
+  if (!grid) return;
+  try {
+    const r = await fetch('/api/ordens/'+osId+'/anexos', { credentials:'include' });
+    const anexos = await r.json();
+    if (!anexos.length) { grid.innerHTML = ''; return; }
+    grid.innerHTML = anexos.map((a,i) => {
+      const isImg = a.tipo?.startsWith('image/');
+      const name = (a.nome||'').length > 16 ? (a.nome||'').slice(0,14)+'…' : (a.nome||'Arquivo');
+      if (isImg) {
+        return `<div style="position:relative;border:1.5px solid #e2e8f0;border-radius:8px;overflow:hidden;aspect-ratio:1;cursor:zoom-in" onclick="osFormVerFoto('${a.url}','${a.nome||''}')">
+          <img src="${a.url}" style="width:100%;height:100%;object-fit:cover">
+          <button onclick="event.stopPropagation();osFormDeletar('${a.public_id}',this)" style="position:absolute;top:3px;right:3px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center">×</button>
+          <div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.5);color:#fff;font-size:9px;padding:2px 4px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${name}</div>
+        </div>`;
+      } else {
+        return `<div style="position:relative;border:1.5px solid #e2e8f0;border-radius:8px;padding:8px;text-align:center;background:#f8fafc;aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px">
+          <a href="${a.url}" target="_blank" style="font-size:24px;text-decoration:none">📄</a>
+          <div style="font-size:9px;color:#475569;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:100%">${name}</div>
+          <button onclick="osFormDeletar('${a.public_id}',this)" style="position:absolute;top:3px;right:3px;background:rgba(0,0,0,.5);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer">×</button>
+        </div>`;
+      }
+    }).join('');
+  } catch(e) {}
+}
+
+function osFormVerFoto(url, nome) {
+  const box = document.createElement('div');
+  box.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:99999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;cursor:zoom-out';
+  box.onclick = () => box.remove();
+  box.innerHTML = '<img src="'+url+'" style="max-width:90vw;max-height:82vh;border-radius:8px"><div style="color:#fff;font-size:11px;opacity:.6">'+nome+' — clique para fechar</div>';
+  document.body.appendChild(box);
+}
+
+async function osFormDeletar(publicId, btn) {
+  if (!_osFormOsId || !confirm('Remover este anexo?')) return;
+  btn.disabled = true;
+  try {
+    await fetch('/api/ordens/'+_osFormOsId+'/anexos/'+encodeURIComponent(publicId), { method:'DELETE', credentials:'include' });
+    await osFormCarregarAnexos(_osFormOsId);
+  } catch(e) { btn.disabled = false; }
+}
+
+// Called after saving a NEW OS — upload pending files
+async function osFormFlushPending(osId) {
+  if (!_osFormPendingFiles.length || !osId) return;
+  _osFormOsId = osId;
+  const wrap = document.getElementById('os-form-upload-progress');
+  const bar  = document.getElementById('os-form-upload-bar');
+  const lbl  = document.getElementById('os-form-upload-label');
+  if (wrap) wrap.style.display = 'block';
+  for (let i = 0; i < _osFormPendingFiles.length; i++) {
+    if (lbl) lbl.textContent = 'Salvando foto '+(i+1)+'/'+_osFormPendingFiles.length+'...';
+    if (bar) bar.style.width = Math.round((i/_osFormPendingFiles.length)*100)+'%';
+    const fd = new FormData(); fd.append('arquivo', _osFormPendingFiles[i]);
+    try { await fetch('/api/ordens/'+osId+'/anexos', { method:'POST', body:fd, credentials:'include' }); } catch(e) {}
+  }
+  _osFormPendingFiles = [];
+  if (bar) bar.style.width='100%';
+  if (lbl) lbl.textContent='Fotos salvas!';
+  setTimeout(()=>{ if(wrap) wrap.style.display='none'; if(bar) bar.style.width='0'; },1500);
 }
 
 // Hook na osTab para carregar ao abrir aba
