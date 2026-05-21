@@ -8,22 +8,15 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-/* Sidebar escura */
---nv:#0f1e3d;--nv2:#162847;--bl:#1e4080;
-/* Acentos */
---ac:#e07818;--ac2:#f5a030;
-/* Fundo do conteúdo — CLARO */
+--nv:#0f172a;--nv2:#1e293b;--bl:#1d4ed8;--ac:#e07818;--ac2:#f5a030;
 --bg:#eef1f7;--sf:#ffffff;--sf2:#f4f6fb;--sf3:#eaecf4;
-/* Texto — ESCURO para fundo claro */
---tx:#0f172a;--tx2:#1e3a5f;--tx3:#64748b;
-/* Bordas */
+--tx:#0f172a;--tx2:#1e3a5f;--tx3:#475569;
 --bd:#d8dff0;--bd2:#c0cbdf;
-/* Status */
---gn:#16a34a;--gnbg:#dcfce7;--gnbd:#86efac;
---rd:#dc2626;--rdbg:#fee2e2;--rdbd:#fca5a5;
---or:#ea580c;--orbg:#fff7ed;--orbd:#fdba74;
+--gn:#15803d;--gnbg:#dcfce7;--gnbd:#86efac;
+--rd:#b91c1c;--rdbg:#fee2e2;--rdbd:#fca5a5;
+--or:#c2410c;--orbg:#fff7ed;--orbd:#fdba74;
 --bl2:#1d4ed8;--bl2bg:#dbeafe;--bl2bd:#93c5fd;
---pu:#7c3aed;--pubg:#ede9fe;
+--pu:#6d28d9;--pubg:#ede9fe;
 --r:10px;--rlg:16px;
 --sh:0 2px 16px rgba(13,31,60,.10);--shlg:0 8px 40px rgba(13,31,60,.18);
 }
@@ -31,7 +24,7 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--tx);font-siz
 
 /* LOGIN */
 #login-screen{position:fixed;inset:0;background:linear-gradient(135deg,var(--nv) 0%,#1a3560 100%);display:flex;align-items:center;justify-content:center;z-index:9999}
-.lbox{background:#ffffff;border-radius:20px;padding:36px;width:360px;box-shadow:var(--shlg)}
+.lbox{background:var(--sf);border-radius:20px;padding:36px;width:360px;box-shadow:var(--shlg)}
 .llogo{text-align:center;margin-bottom:24px}
 .llogo-icon{width:60px;height:60px;background:var(--ac);border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 10px;font-size:26px}
 .ltitle{font-size:20px;font-weight:700;color:var(--nv)}
@@ -75,8 +68,8 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--tx);font-siz
 .logo-sub{color:rgba(255,255,255,.4);font-size:10px;margin-top:1px}
 .nav-sec{padding:12px 0 3px 16px;font-size:9px;font-weight:700;color:rgba(255,255,255,.25);letter-spacing:1.4px;text-transform:uppercase}
 .ni{display:flex;align-items:center;gap:8px;padding:8px 16px;cursor:pointer;color:rgba(255,255,255,.55);font-size:12px;font-weight:500;transition:all .15s;border-left:3px solid transparent}
-.ni:hover{background:rgba(255,255,255,.1);color:#fff}
-.ni.active{background:rgba(56,189,248,.15);color:#38bdf8;border-left-color:#0ea5e9}
+.ni:hover{background:rgba(255,255,255,.1);color:#ffffff}
+.ni.active{background:rgba(56,189,248,.18);color:#38bdf8;border-left-color:#0ea5e9}
 .ni svg{width:15px;height:15px;flex-shrink:0;opacity:.8}
 .ni-badge{margin-left:auto;background:var(--ac);color:var(--nv);font-size:9px;font-weight:700;padding:1px 5px;border-radius:10px}
 .sb-footer{padding:12px 16px;border-top:1px solid rgba(255,255,255,.07);flex-shrink:0}
@@ -91,7 +84,7 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--tx);font-siz
 #main{margin-left:220px;min-height:100vh;padding-bottom:32px;transition:margin-left .22s cubic-bezier(.4,0,.2,1)}
 #main.sb-collapsed{margin-left:56px}
 .topbar{background:#ffffff;border-bottom:1px solid #e2e8f0;padding:0 24px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
-.tb-title{font-size:16px;font-weight:700;color:#0f172a}
+.tb-title{font-size:14px;font-weight:700;color:var(--nv)}
 .tb-sub{font-size:10px;color:var(--tx3);margin-top:1px}
 .tb-right{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
 .content{padding:20px 24px}
@@ -128,8 +121,8 @@ button:not(.btn):not(.btnx):not(.lbtn):not(.btn-logout):not(.chk):not(.os-tab):n
 .btn-sm{height:30px;padding:0 11px;font-size:11px}
 .btn-xs{height:26px;padding:0 9px;font-size:11px;border-radius:6px}
 .btn-lg{height:40px;padding:0 18px;font-size:13px}
-.btn-primary{background:linear-gradient(135deg,#0f2554,#1e4080);color:#fff;border:1.5px solid var(--nv)}.btn-primary:hover{background:var(--bl);border-color:var(--bl)}
-.btn-accent{background:linear-gradient(135deg,#d97706,#f59e0b);color:#fff}.btn-accent:hover{background:var(--ac2);border-color:var(--ac2)}
+.btn-primary{background:var(--nv);color:#fff;border:1.5px solid var(--nv)}.btn-primary:hover{background:var(--bl);border-color:var(--bl)}
+.btn-accent{background:var(--ac);color:#fff;border:1.5px solid var(--ac)}.btn-accent:hover{background:var(--ac2);border-color:var(--ac2)}
 .btn-ghost{background:#fff;color:var(--tx2);border:1.5px solid var(--bd2)}.btn-ghost:hover{background:var(--sf2);border-color:var(--bd)}
 .btn-danger{background:var(--rdbg);color:var(--rd);border:1.5px solid var(--rdbd)}.btn-danger:hover{background:#f5d8d4}
 .btn-success{background:var(--gnbg);color:var(--gn);border:1.5px solid var(--gnbd)}.btn-success:hover{background:#cce8d8}
@@ -270,7 +263,7 @@ button:not(.btn):not(.btnx):not(.lbtn):not(.btn-logout):not(.chk):not(.os-tab):n
 .cfg-toggle input:checked+span::before{transform:translateX(18px)}
 
 /* CARDS */
-.card{background:#ffffff;border:1px solid var(--bd);border-radius:var(--rlg);padding:18px}
+.card{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rlg);padding:18px}
 .card-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.07)}
 .card-title{font-size:12px;font-weight:700;color:var(--nv)}
 
@@ -403,7 +396,7 @@ button:not(.btn):not(.btnx):not(.lbtn):not(.btn-logout):not(.chk):not(.os-tab):n
 /* TABLE */
 .twrap{overflow-x:auto}
 table{width:100%;border-collapse:collapse;font-size:12px}
-th{background:var(--sf2);color:var(--tx3);font-weight:700;font-size:10px;letter-spacing:.7px;text-transform:uppercase;padding:8px 11px;text-align:left;border-bottom:1px solid rgba(255,255,255,.07)}
+th{background:#f4f6fb;color:#334155;font-weight:700;font-size:10px;letter-spacing:.7px;text-transform:uppercase;padding:8px 11px;text-align:left;border-bottom:1px solid #e2e8f0}
 td{padding:9px 11px;border-bottom:1px solid rgba(255,255,255,.07);color:var(--tx);vertical-align:middle}
 tr:last-child td{border-bottom:none}
 tr:hover td{background:var(--sf2)}
@@ -424,7 +417,7 @@ tr:hover td{background:var(--sf2)}
 /* MODAL */
 .mov{position:fixed;inset:0;background:rgba(8,16,36,.55);z-index:1000;display:none;align-items:center;justify-content:center;padding:14px}
 .mov.open{display:flex}
-.modal{background:#ffffff;border-radius:var(--rlg);width:100%;max-width:840px;max-height:93vh;overflow-y:auto;box-shadow:var(--shlg)}
+.modal{background:var(--sf);border-radius:var(--rlg);width:100%;max-width:840px;max-height:93vh;overflow-y:auto;box-shadow:var(--shlg)}
 .mhd{padding:14px 20px;border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--sf);z-index:2}
 .mhd-title{font-size:14px;font-weight:700;color:var(--nv)}
 .mbody{padding:16px 20px}
@@ -723,6 +716,18 @@ tr:hover td { background: var(--sf2) !important; }
 }
 .llogo-icon { background: linear-gradient(135deg,#0ea5e9,#38bdf8) !important; }
 .lbtn { background: linear-gradient(135deg,#0284c7,#0ea5e9) !important; }
+
+
+/* ══ ANEXOS ══ */
+.anx-card{background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;position:relative;transition:transform .15s,box-shadow .15s;cursor:pointer}
+.anx-card:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(15,23,42,.1)}
+.anx-card-img{width:100%;height:85px;object-fit:cover;display:block}
+.anx-card-doc{width:100%;height:85px;display:flex;align-items:center;justify-content:center;font-size:36px;background:#f8fafc}
+.anx-card-info{padding:7px 9px}
+.anx-card-nome{font-size:10px;font-weight:600;color:#334155;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.anx-card-size{font-size:9px;color:#94a3b8;margin-top:2px}
+.anx-card-del{position:absolute;top:4px;right:4px;width:22px;height:22px;background:rgba(0,0,0,.55);border-radius:50%;display:none;align-items:center;justify-content:center;color:#fff;font-size:13px;border:none;cursor:pointer}
+.anx-card:hover .anx-card-del{display:flex}
 
 </style>
 </head>
@@ -1458,6 +1463,7 @@ tr:hover td { background: var(--sf2) !important; }
     <button class="os-tab" onclick="osTab('gastos',this)">💰 Gastos</button>
     <button class="os-tab" onclick="osTab('historico',this)" id="os-tab-btn-hist">📂 Hist. Equipamento</button>
     <button class="os-tab" onclick="osTab('sigs',this)">✍ Assinaturas</button>
+    <button class="os-tab" onclick="osTab('anexos',this)">📎 Anexos <span id="os-anx-badge" style="display:none;background:#ef4444;color:#fff;border-radius:10px;padding:1px 6px;font-size:9px;font-weight:700;margin-left:3px">0</span></button>
   </div>
   <div class="mbody" style="padding:14px 20px">
     <!-- Aba Resumo -->
@@ -1528,6 +1534,35 @@ tr:hover td { background: var(--sf2) !important; }
         </div>
       </div>
     </div>
+
+    <!-- ═══ Aba Anexos ═══ -->
+    <div id="os-tab-anexos" class="os-tab-panel" style="display:none">
+      <div style="background:#f8fafc;border:2px dashed #c0cbdf;border-radius:12px;padding:20px;text-align:center;margin-bottom:14px">
+        <div style="font-size:32px;margin-bottom:8px">📎</div>
+        <div style="font-size:13px;font-weight:600;color:#0f172a;margin-bottom:4px">Arraste arquivos ou clique para enviar</div>
+        <div style="font-size:11px;color:#64748b;margin-bottom:12px">Fotos (JPG, PNG), documentos (PDF), até 20MB</div>
+        <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+          <label>
+            <input type="file" id="anx-input-file" multiple accept="image/*,.pdf,.doc,.docx" style="display:none" onchange="uploadAnexos(this.files)">
+            <span class="btn btn-accent btn-sm" style="cursor:pointer" onclick="document.getElementById('anx-input-file').click()">📁 Escolher arquivo</span>
+          </label>
+          <label>
+            <input type="file" id="anx-input-cam" accept="image/*" capture="environment" style="display:none" onchange="uploadAnexos(this.files)">
+            <span class="btn btn-ghost btn-sm" style="cursor:pointer;color:#1d4ed8;border-color:#93c5fd" onclick="document.getElementById('anx-input-cam').click()">📷 Tirar Foto</span>
+          </label>
+        </div>
+      </div>
+      <div id="anx-progress-wrap" style="display:none;margin-bottom:12px">
+        <div style="font-size:11px;color:#475569;margin-bottom:4px" id="anx-progress-label">Enviando...</div>
+        <div style="background:#e2e8f0;border-radius:4px;height:6px;overflow:hidden">
+          <div id="anx-progress-bar" style="height:100%;background:linear-gradient(90deg,#1d4ed8,#38bdf8);border-radius:4px;width:0%;transition:width .3s"></div>
+        </div>
+      </div>
+      <div id="anx-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px">
+        <div id="anx-empty" style="grid-column:1/-1;text-align:center;padding:24px;font-size:12px;color:#64748b">Nenhum anexo. Envie fotos ou documentos acima.</div>
+      </div>
+    </div>
+
   </div>
 </div></div>
 
@@ -9621,6 +9656,109 @@ async function confirmarResetSistema() {
     btn.disabled = false; btn.textContent = '⚠️ Confirmar — Apagar Tudo';
   }
 }
+
+// ══ ANEXOS OS ══
+let _anxOsId = null;
+
+async function carregarAnexos(osId) {
+  _anxOsId = osId;
+  const grid  = document.getElementById('anx-grid');
+  const badge = document.getElementById('os-anx-badge');
+  if (!grid) return;
+  grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px;color:#64748b;font-size:11px">Carregando...</div>';
+  try {
+    const r = await fetch('/api/ordens/' + osId + '/anexos', { credentials:'include' });
+    const anexos = await r.json();
+    renderAnexosGrid(anexos);
+    if (badge) { badge.textContent = anexos.length; badge.style.display = anexos.length > 0 ? 'inline' : 'none'; }
+  } catch(e) {
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px;color:#ef4444;font-size:11px">Erro ao carregar anexos</div>';
+  }
+}
+
+function renderAnexosGrid(anexos) {
+  const grid = document.getElementById('anx-grid');
+  if (!grid) return;
+  window._anxList = anexos;
+  if (!anexos.length) {
+    grid.innerHTML = '<div id="anx-empty" style="grid-column:1/-1;text-align:center;padding:24px;font-size:12px;color:#64748b">Nenhum anexo. Envie fotos ou documentos acima.</div>';
+    return;
+  }
+  grid.innerHTML = anexos.map((a, i) => {
+    const isImg = a.tipo?.startsWith('image/');
+    const isPdf = a.tipo === 'application/pdf';
+    const icon  = isPdf ? '📄' : a.tipo?.includes('word') ? '📝' : '📎';
+    const size  = a.tamanho > 1048576 ? (a.tamanho/1048576).toFixed(1)+'MB' : Math.round(a.tamanho/1024)+'KB';
+    const thumb = isImg
+      ? '<img class="anx-card-img" src="'+a.url+'" alt="'+a.nome+'" loading="lazy" onclick="verAnexo('+i+')">'
+      : '<div class="anx-card-doc" onclick="window.open(''+a.url+'','_blank')">'+icon+'</div>';
+    return '<div class="anx-card">'+thumb+'<div class="anx-card-info"><div class="anx-card-nome" title="'+a.nome+'">'+a.nome+'</div><div class="anx-card-size">'+size+'</div></div><button class="anx-card-del" onclick="deletarAnexo(''+encodeURIComponent(a.public_id)+'',this)">×</button></div>';
+  }).join('');
+}
+
+async function uploadAnexos(files) {
+  if (!files?.length || !_anxOsId) return;
+  const wrap = document.getElementById('anx-progress-wrap');
+  const bar  = document.getElementById('anx-progress-bar');
+  const lbl  = document.getElementById('anx-progress-label');
+  if (wrap) wrap.style.display = 'block';
+  for (let i = 0; i < files.length; i++) {
+    if (lbl) lbl.textContent = 'Enviando ' + (i+1) + '/' + files.length + ': ' + files[i].name;
+    if (bar) bar.style.width = Math.round(i/files.length*100) + '%';
+    const fd = new FormData(); fd.append('arquivo', files[i]);
+    try { await fetch('/api/ordens/'+_anxOsId+'/anexos', { method:'POST', body:fd, credentials:'include' }); } catch(e) {}
+  }
+  if (bar) bar.style.width = '100%';
+  if (lbl) lbl.textContent = 'Concluído!';
+  setTimeout(() => { if (wrap) wrap.style.display = 'none'; if (bar) bar.style.width = '0'; }, 1500);
+  await carregarAnexos(_anxOsId);
+  ['anx-input-file','anx-input-cam'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+}
+
+async function deletarAnexo(publicId, btn) {
+  if (!confirm('Remover este anexo?')) return;
+  btn.disabled = true;
+  try {
+    await fetch('/api/ordens/'+_anxOsId+'/anexos/'+publicId, { method:'DELETE', credentials:'include' });
+    await carregarAnexos(_anxOsId);
+  } catch(e) { alert('Erro: '+e.message); btn.disabled = false; }
+}
+
+function verAnexo(idx) {
+  const list = (window._anxList||[]).filter(a => a.tipo?.startsWith('image/'));
+  if (!list[idx]) return;
+  const box = document.createElement('div');
+  box.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;cursor:zoom-out';
+  box.onclick = () => box.remove();
+  box.innerHTML = '<img src="'+list[idx].url+'" style="max-width:90vw;max-height:82vh;border-radius:8px"><div style="color:#fff;font-size:11px;opacity:.6">'+list[idx].nome+' — clique para fechar</div>';
+  document.body.appendChild(box);
+}
+
+// Hook na osTab para carregar ao abrir aba
+const _origOsTab = window.osTab;
+window.osTab = function(tab, btn) {
+  if (_origOsTab) _origOsTab(tab, btn);
+  if (tab === 'anexos' && _anxOsId) carregarAnexos(_anxOsId);
+};
+
+// Hook no openM para capturar osId
+const _origOpenM = window.openM;
+window.openM = function(id) {
+  if (_origOpenM) _origOpenM(id);
+  if (id === 'm-os-det') {
+    setTimeout(() => {
+      const titleEl = document.getElementById('m-os-det-title');
+      if (titleEl) {
+        const num = titleEl.textContent.replace('OS ','').trim();
+        if (num && window.G?.ordens) {
+          const os = window.G.ordens.find(o => o.num === num);
+          if (os) _anxOsId = os.id || os._id?.toString();
+        }
+      }
+    }, 100);
+  }
+};
+
 </script>
 
 
