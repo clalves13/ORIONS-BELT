@@ -55,8 +55,8 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--tx);font-siz
 #sidebar.collapsed .sb-av{width:32px;height:32px}
 #sidebar.collapsed .sb-toggle{justify-content:center;padding:9px}
 /* Toggle button — dentro da sidebar */
-.sb-toggle{display:flex;align-items:center;justify-content:space-between;padding:9px 14px;cursor:pointer;color:rgba(255,255,255,.4);font-size:10px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;border-top:1px solid rgba(255,255,255,.07);transition:color .15s;margin-top:auto;flex-shrink:0}
-.sb-toggle:hover{color:rgba(255,255,255,.7);background:rgba(255,255,255,.04)}
+.sb-toggle{display:flex;align-items:center;justify-content:space-between;padding:9px 14px;cursor:pointer;color:#64748b;font-size:10px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;border-top:1px solid rgba(255,255,255,.07);transition:color .15s;margin-top:auto;flex-shrink:0}
+.sb-toggle:hover{color:#334155;background:rgba(255,255,255,.04)}
 .sb-toggle-ico{width:22px;height:22px;background:rgba(255,255,255,.08);border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .sb-toggle svg{transition:transform .22s}
 #sidebar.collapsed .sb-toggle svg{transform:rotate(180deg)}
@@ -65,7 +65,7 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--tx);font-siz
 .logo-row{display:flex;align-items:center;gap:9px}
 .logo-ico{width:34px;height:34px;background:var(--ac);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
 .logo-name{color:#fff;font-size:13px;font-weight:700}
-.logo-sub{color:rgba(255,255,255,.4);font-size:10px;margin-top:1px}
+.logo-sub{color:#64748b;font-size:10px;margin-top:1px}
 .nav-sec{padding:12px 0 3px 16px;font-size:9px;font-weight:700;color:rgba(255,255,255,.25);letter-spacing:1.4px;text-transform:uppercase}
 .ni{display:flex;align-items:center;gap:8px;padding:8px 16px;cursor:pointer;color:rgba(255,255,255,.55);font-size:12px;font-weight:500;transition:all .15s;border-left:3px solid transparent}
 .ni:hover{background:rgba(255,255,255,.1);color:#ffffff}
@@ -106,6 +106,7 @@ input:not([type=range]),select,textarea{
 input:not([type=range]):focus,select:focus,textarea:focus{border-color:var(--bl)!important}
 input[readonly],input[disabled]{background:var(--sf2)!important;color:var(--tx2)!important;cursor:default!important}
 input[type=date],input[type=time],input[type=datetime-local]{padding:6px 10px!important}
+select option{color:#0f172a!important;background:#ffffff!important}
 textarea{resize:vertical!important;height:auto!important;min-height:60px!important}
 /* Sobrescreve inline styles problemáticos nos filtros */
 .filter-row input,.filter-row select{height:34px!important;padding:0 10px!important}
@@ -244,7 +245,7 @@ button:not(.btn):not(.btnx):not(.lbtn):not(.btn-logout):not(.chk):not(.os-tab):n
 .ni-parent.open .ni-chevron{transform:rotate(90deg)}
 .ni-children{overflow:hidden;max-height:0;transition:max-height .25s cubic-bezier(.4,0,.2,1)}
 .ni-children.open{max-height:400px}
-.ni-child{display:flex;align-items:center;gap:7px;padding:6px 16px 6px 36px;cursor:pointer;color:rgba(255,255,255,.4);font-size:11px;font-weight:500;transition:all .12s;border-left:3px solid transparent}
+.ni-child{display:flex;align-items:center;gap:7px;padding:6px 16px 6px 36px;cursor:pointer;color:#64748b;font-size:11px;font-weight:500;transition:all .12s;border-left:3px solid transparent}
 .ni-child:hover{color:rgba(255,255,255,.75);background:rgba(255,255,255,.04)}
 .ni-child.active{color:var(--ac2);background:rgba(224,120,24,.1);border-left-color:var(--ac)}
 .ni-child-dot{width:4px;height:4px;border-radius:50%;background:rgba(255,255,255,.25);flex-shrink:0;margin-left:2px}
@@ -522,7 +523,7 @@ tr:hover td{background:var(--sf2)}
 .os-hd{display:flex;border:2px solid #1e4080;border-radius:6px 6px 0 0;overflow:hidden}
 .os-logo-col{background:#0d1f3c;padding:10px 14px;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:100px}
 .os-logo-txt{color:#e07818;font-size:14px;font-weight:800;letter-spacing:1px}
-.os-logo-sub{color:rgba(255,255,255,.5);font-size:8px;text-align:center;margin-top:2px}
+.os-logo-sub{color:#64748b;font-size:8px;text-align:center;margin-top:2px}
 .os-mid{flex:1;padding:9px 13px;border-left:2px solid #1e4080;border-right:2px solid #1e4080}
 .os-co-name{font-size:13px;font-weight:800;color:#0d1f3c;margin-bottom:1px}
 .os-co-tag{font-size:8px;color:#667;margin-bottom:3px}
@@ -1176,10 +1177,10 @@ tr:hover td { background: var(--sf2) !important; }
       <div class="tb-sub" id="ag-topbar-sub">Visitas e OS por técnico</div>
     </div>
     <div class="tb-right">
-      <select id="ag-f-tec" onchange="renderAgenda()" style="font-size:11px;height:32px;background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.1);border-radius:8px;font-family:inherit;padding:0 10px;color:#e2e8f8">
+      <select id="ag-f-tec" onchange="renderAgenda()" style="font-size:11px;height:32px;background:#ffffff;border:1.5px solid #d1d5db;border-radius:8px;font-family:inherit;padding:0 10px;color:#0f172a">
         <option value="">Todos os técnicos</option>
       </select>
-      <select id="ag-f-tipo" onchange="renderAgenda()" style="font-size:11px;height:32px;background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.1);border-radius:8px;font-family:inherit;padding:0 10px;color:#e2e8f8">
+      <select id="ag-f-tipo" onchange="renderAgenda()" style="font-size:11px;height:32px;background:#ffffff;border:1.5px solid #d1d5db;border-radius:8px;font-family:inherit;padding:0 10px;color:#0f172a">
         <option value="">Todos os tipos</option>
         <option>OS</option>
         <option>Visita</option>
@@ -1408,27 +1409,27 @@ tr:hover td { background: var(--sf2) !important; }
     <div class="card" style="padding:10px 14px;margin-bottom:12px">
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
         <div style="display:flex;align-items:center;gap:6px">
-          <span style="font-size:9px;font-weight:800;color:rgba(255,255,255,.25);text-transform:uppercase;letter-spacing:.8px">Status</span>
+          <span style="font-size:9px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.8px">Status</span>
           <select id="f-os-status" onchange="renderOS()" style="font-size:11px;padding:4px 10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-family:inherit;color:#e2e8f8;height:30px">
             <option value="">Todos</option>
             <option>Aberta</option><option>Em andamento</option><option>Concluída</option><option>Cancelada</option>
           </select>
         </div>
         <div style="display:flex;align-items:center;gap:6px">
-          <span style="font-size:9px;font-weight:800;color:rgba(255,255,255,.25);text-transform:uppercase;letter-spacing:.8px">Técnico</span>
+          <span style="font-size:9px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.8px">Técnico</span>
           <select id="f-os-tec" onchange="renderOS()" style="font-size:11px;padding:4px 10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-family:inherit;color:#e2e8f8;height:30px">
             <option value="">Todos</option>
           </select>
         </div>
         <div style="display:flex;align-items:center;gap:6px">
-          <span style="font-size:9px;font-weight:800;color:rgba(255,255,255,.25);text-transform:uppercase;letter-spacing:.8px">De</span>
+          <span style="font-size:9px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.8px">De</span>
           <input type="date" id="f-os-de" onchange="renderOS()" style="font-size:11px;padding:4px 10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-family:inherit;color:#e2e8f8;height:30px">
         </div>
         <div style="display:flex;align-items:center;gap:6px">
-          <span style="font-size:9px;font-weight:800;color:rgba(255,255,255,.25);text-transform:uppercase;letter-spacing:.8px">Até</span>
+          <span style="font-size:9px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.8px">Até</span>
           <input type="date" id="f-os-ate" onchange="renderOS()" style="font-size:11px;padding:4px 10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-family:inherit;color:#e2e8f8;height:30px">
         </div>
-        <button class="btn btn-ghost btn-xs" onclick="limparFiltrosOS()" style="background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.1);color:rgba(255,255,255,.4)">✕ Limpar</button>
+        <button class="btn btn-ghost btn-xs" onclick="limparFiltrosOS()" style="background:#ffffff;border-color:#d1d5db;color:#64748b">✕ Limpar</button>
         <span id="os-count-label" style="margin-left:auto;font-size:11px;color:#64748b"></span>
       </div>
     </div>
@@ -3174,19 +3175,26 @@ Outros</textarea>
       </div>
     </div>
     <div style="margin-top:13px"><div class="fsec">Assinaturas</div>
-      <div class="fgrid fg2">
-        <div>
-          <div style="font-size:10px;font-weight:700;color:var(--tx2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px">Assinatura do Técnico</div>
-          <canvas id="sig-tec" height="100" style="width:100%;display:block;border:1.5px solid var(--bd2);border-radius:var(--r);background:#fff;cursor:crosshair;touch-action:none"></canvas>
-          <button class="btn btn-ghost btn-xs" style="margin-top:4px" onclick="sigOSClear('tec')">Limpar</button>
+      <div class="fgrid fg2" style="gap:16px">
+        <div style="background:#f0f7ff;border:2px solid #bfdbfe;border-radius:10px;padding:12px">
+          <div style="font-size:11px;font-weight:700;color:#1d4ed8;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;display:flex;align-items:center;gap:6px">
+            🔧 Assinatura do Técnico
+          </div>
+          <canvas id="sig-tec" height="100" style="width:100%;display:block;border:1.5px solid #93c5fd;border-radius:6px;background:#fff;cursor:crosshair;touch-action:none"></canvas>
+          <button class="btn btn-ghost btn-xs" style="margin-top:6px;font-size:10px" onclick="sigOSClear('tec')">🗑 Limpar</button>
         </div>
-        <div>
-          <div style="font-size:10px;font-weight:700;color:var(--tx2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px">Assinatura do Cliente</div>
-          <canvas id="sig-cli" height="100" style="width:100%;display:block;border:1.5px solid var(--bd2);border-radius:var(--r);background:#fff;cursor:crosshair;touch-action:none"></canvas>
-          <button class="btn btn-ghost btn-xs" style="margin-top:4px" onclick="sigOSClear('cli')">Limpar</button>
+        <div style="background:#f0fdf4;border:2px solid #bbf7d0;border-radius:10px;padding:12px">
+          <div style="font-size:11px;font-weight:700;color:#15803d;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;display:flex;align-items:center;gap:6px">
+            👤 Assinatura do Cliente
+          </div>
+          <canvas id="sig-cli" height="100" style="width:100%;display:block;border:1.5px solid #86efac;border-radius:6px;background:#fff;cursor:crosshair;touch-action:none"></canvas>
+          <button class="btn btn-ghost btn-xs" style="margin-top:6px;font-size:10px" onclick="sigOSClear('cli')">🗑 Limpar</button>
         </div>
       </div>
     </div>
+  </div>
+  <div id="os-form-camera-tip" style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:8px 14px;margin:0 20px 10px;font-size:11px;color:#1d4ed8;display:none">
+    📷 <strong>Fotos e anexos:</strong> Após salvar, abra a OS pelo botão 👁 para adicionar fotos pela câmera ou do celular.
   </div>
   <div class="mfoot">
     <button class="btn btn-ghost" onclick="closeM('m-os')">Cancelar</button>
@@ -4544,7 +4552,7 @@ function printFromPreview() {
   openPrintWindow(buildOSDoc(G.currentOSData), getOSPrintStyles());
 }
 function getOSPrintStyles() {
-  return `.os-doc{font-family:'Sora',sans-serif;color:#111;font-size:11px}.os-hd{display:flex;border:2px solid #1e4080;border-radius:6px 6px 0 0;overflow:hidden}.os-logo-col{background:#0d1f3c;padding:10px 14px;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:100px}.os-logo-txt{color:#e07818;font-size:14px;font-weight:800;letter-spacing:1px}.os-logo-sub{color:rgba(255,255,255,.5);font-size:8px;text-align:center;margin-top:2px}.os-mid{flex:1;padding:9px 13px;border-left:2px solid #1e4080;border-right:2px solid #1e4080}.os-co-name{font-size:13px;font-weight:800;color:#0d1f3c;margin-bottom:1px}.os-co-tag{font-size:8px;color:#667;margin-bottom:3px}.os-co-addr{font-size:8px;color:#445;line-height:1.5}.os-right-col{padding:9px 12px;text-align:center;min-width:120px;display:flex;flex-direction:column;justify-content:center;align-items:center}.os-right-lbl{font-size:8px;font-weight:700;color:#1e4080;text-transform:uppercase;letter-spacing:.8px}.os-right-num{font-size:16px;font-weight:800;color:#e07818;margin:2px 0}.os-right-date{font-size:9px;color:#445}.os-sec{border:1px solid #c0cbdf;border-top:none;padding:7px 10px}.os-sec-title{font-size:7px;font-weight:800;color:#fff;background:#1e4080;padding:2px 7px;border-radius:3px;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;display:inline-block}.os-g2{display:grid;grid-template-columns:1fr 1fr;gap:5px}.os-g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:5px}.os-field label{font-size:7px;color:#667;font-weight:700;text-transform:uppercase;display:block;margin-bottom:1px}.os-field p{font-size:9px;color:#111;border-bottom:1px solid #dde3ee;padding-bottom:2px;min-height:14px}.os-ta{border:1px solid #dde3ee;border-radius:3px;min-height:48px;padding:5px 7px;font-size:9px;line-height:1.5;color:#111}.os-gtbl{width:100%;border-collapse:collapse;font-size:9px}.os-gtbl td{padding:2px 7px;border-bottom:1px solid #eef}.os-gtbl td:last-child{text-align:right;font-weight:600}.os-gtot td{background:#0d1f3c;color:#fff;font-weight:700;font-size:10px;padding:3px 7px}.os-gtot td:last-child{color:#f5a030}.os-sigs{display:grid;grid-template-columns:1fr 1fr;gap:40px;padding:12px 14px;border:1px solid #c0cbdf;border-top:none;border-radius:0 0 6px 6px}.os-sigs{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:16px;padding:0 4px}
+  return `.os-doc{font-family:'Sora',sans-serif;color:#111;font-size:11px}.os-hd{display:flex;border:2px solid #1e4080;border-radius:6px 6px 0 0;overflow:hidden}.os-logo-col{background:#0d1f3c;padding:10px 14px;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:100px}.os-logo-txt{color:#e07818;font-size:14px;font-weight:800;letter-spacing:1px}.os-logo-sub{color:#64748b;font-size:8px;text-align:center;margin-top:2px}.os-mid{flex:1;padding:9px 13px;border-left:2px solid #1e4080;border-right:2px solid #1e4080}.os-co-name{font-size:13px;font-weight:800;color:#0d1f3c;margin-bottom:1px}.os-co-tag{font-size:8px;color:#667;margin-bottom:3px}.os-co-addr{font-size:8px;color:#445;line-height:1.5}.os-right-col{padding:9px 12px;text-align:center;min-width:120px;display:flex;flex-direction:column;justify-content:center;align-items:center}.os-right-lbl{font-size:8px;font-weight:700;color:#1e4080;text-transform:uppercase;letter-spacing:.8px}.os-right-num{font-size:16px;font-weight:800;color:#e07818;margin:2px 0}.os-right-date{font-size:9px;color:#445}.os-sec{border:1px solid #c0cbdf;border-top:none;padding:7px 10px}.os-sec-title{font-size:7px;font-weight:800;color:#fff;background:#1e4080;padding:2px 7px;border-radius:3px;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;display:inline-block}.os-g2{display:grid;grid-template-columns:1fr 1fr;gap:5px}.os-g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:5px}.os-field label{font-size:7px;color:#667;font-weight:700;text-transform:uppercase;display:block;margin-bottom:1px}.os-field p{font-size:9px;color:#111;border-bottom:1px solid #dde3ee;padding-bottom:2px;min-height:14px}.os-ta{border:1px solid #dde3ee;border-radius:3px;min-height:48px;padding:5px 7px;font-size:9px;line-height:1.5;color:#111}.os-gtbl{width:100%;border-collapse:collapse;font-size:9px}.os-gtbl td{padding:2px 7px;border-bottom:1px solid #eef}.os-gtbl td:last-child{text-align:right;font-weight:600}.os-gtot td{background:#0d1f3c;color:#fff;font-weight:700;font-size:10px;padding:3px 7px}.os-gtot td:last-child{color:#f5a030}.os-sigs{display:grid;grid-template-columns:1fr 1fr;gap:40px;padding:12px 14px;border:1px solid #c0cbdf;border-top:none;border-radius:0 0 6px 6px}.os-sigs{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:16px;padding:0 4px}
 .os-sig-block{text-align:center}
 .os-sig-img{max-height:65px;max-width:220px;display:block;margin:0 auto 6px}
 .os-sig-empty{height:55px}
@@ -5283,7 +5291,7 @@ function abrirTimeline(osId) {
       <div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px">💰 Custos do Atendimento</div>
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:6px">
         ${[['Viagem',os.viag],['Alimentação',os.alim],['Hospedagem',os.hosp],['Combustível',os.comb],['Pedágio',os.ped],['Outros',os.outros]].filter(([,v])=>v>0).map(([l,v])=>`<div style="text-align:center;padding:6px 8px;background:var(--sf);border:1px solid var(--bd);border-radius:6px"><div style="font-size:10px;color:var(--tx3)">${l}</div><div style="font-weight:700;font-size:13px">${fm(v)}</div></div>`).join('')}
-        <div style="text-align:center;padding:6px 8px;background:var(--ac1);border-radius:6px"><div style="font-size:10px;color:rgba(255,255,255,.8)">TOTAL</div><div style="font-weight:800;font-size:14px;color:#fff">${fm(custo)}</div></div>
+        <div style="text-align:center;padding:6px 8px;background:var(--ac1);border-radius:6px"><div style="font-size:10px;color:#64748b">TOTAL</div><div style="font-weight:800;font-size:14px;color:#fff">${fm(custo)}</div></div>
       </div>
     </div>`:'';
 
