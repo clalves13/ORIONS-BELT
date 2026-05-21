@@ -162,7 +162,7 @@ button:not(.btn):not(.btnx):not(.lbtn):not(.btn-logout):not(.chk):not(.os-tab):n
 .help-nav-item:hover{background:var(--sf2)}
 .help-nav-item.active{background:var(--bl2bg);color:var(--bl2);font-weight:700}
 .help-topic{display:none}.help-topic.active{display:block}
-.help-topic h3{font-size:13px;font-weight:700;color:var(--nv);margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,.07)}
+.help-topic h3{font-size:13px;font-weight:700;color:var(--nv);margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #e2e8f0}
 .help-topic h4{font-size:12px;font-weight:700;color:var(--bl);margin:12px 0 5px}
 .help-topic p,.help-topic li{font-size:12px;color:var(--tx2);line-height:1.7}
 .help-topic ul{padding-left:16px;margin-top:4px}
@@ -179,7 +179,7 @@ button:not(.btn):not(.btnx):not(.lbtn):not(.btn-logout):not(.chk):not(.os-tab):n
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
 .cal-dow{text-align:center;padding:6px 0;font-size:9px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.8px}
 .cal-dow.dom{color:var(--rd)}
-.cal-day{min-height:88px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:6px 7px;cursor:pointer;transition:all .15s;position:relative;overflow:hidden}
+.cal-day{min-height:88px;background:#ffffff;border:1px solid #e2e8f0;border-radius:10px;padding:6px 7px;cursor:pointer;transition:all .15s;position:relative;overflow:hidden}
 .cal-day:hover{border-color:rgba(255,255,255,.15);background:rgba(255,255,255,.06);box-shadow:0 4px 16px rgba(0,0,0,.3)}
 .cal-day.outro-mes{background:var(--sf2);opacity:.55}
 .cal-day.hoje{border-color:#f59e0b;border-width:2px;box-shadow:0 0 0 1px rgba(245,158,11,.2),0 4px 16px rgba(245,158,11,.15)}
@@ -203,7 +203,7 @@ button:not(.btn):not(.btnx):not(.lbtn):not(.btn-logout):not(.chk):not(.os-tab):n
 .cal-side-day{font-size:12px;font-weight:700;color:var(--nv);margin-bottom:8px}
 .cal-side-ev{background:var(--sf);border:1px solid var(--bd);border-radius:8px;padding:9px 11px;cursor:pointer;transition:all .12s;display:flex;flex-direction:column;gap:3px;border-left:3px solid var(--bd2)}
 .cal-side-ev:hover{box-shadow:var(--sh);border-color:var(--bd2)}
-.cal-side-ev-title{font-size:12px;font-weight:700;color:#e2e8f8}
+.cal-side-ev-title{font-size:12px;font-weight:700;color:#0f172a}
 .cal-side-ev-sub{font-size:10px;color:var(--tx3)}
 .cal-side-ev-tec{display:inline-flex;align-items:center;gap:4px;font-size:10px;color:var(--tx2);background:var(--sf2);border-radius:4px;padding:2px 6px;width:fit-content}
 .cal-side-empty{font-size:11px;color:var(--tx3);text-align:center;padding:20px 0;border:1.5px dashed var(--bd2);border-radius:8px}
@@ -269,11 +269,11 @@ button:not(.btn):not(.btnx):not(.lbtn):not(.btn-logout):not(.chk):not(.os-tab):n
 
 /* STATS */
 .sgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:11px;margin-bottom:16px}
-.scard{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:14px 16px;transition:all .18s}
+.scard{background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;padding:14px 16px;transition:all .18s;box-shadow:0 1px 6px rgba(30,64,128,.06)}
 .sico{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px;margin-bottom:8px}
-.slabel{font-size:9px;color:rgba(255,255,255,.35);font-weight:700;text-transform:uppercase;letter-spacing:.9px}
+.slabel{font-size:9px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.9px}
 .sval{font-size:22px;font-weight:800;color:#0f172a;margin-top:2px;line-height:1;letter-spacing:-.5px}
-.ssub{font-size:9px;color:rgba(255,255,255,.25);margin-top:3px}
+.ssub{font-size:9px;color:#94a3b8;margin-top:3px}
 
 /* ══════════════════════════════════════════════
    DASHBOARD v8 — VISUAL RICO / PRODUCTION GRADE
@@ -357,10 +357,10 @@ button:not(.btn):not(.btnx):not(.lbtn):not(.btn-logout):not(.chk):not(.os-tab):n
 
 /* Dashboard chart cards */
 .dash-card{
-  background:rgba(255,255,255,.03);border-radius:14px;
-  border:1px solid rgba(255,255,255,.07);
+  background:#ffffff;border-radius:14px;
+  border:1px solid #e2e8f0;
   padding:16px 18px;
-  box-shadow:0 4px 24px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.05);
+  box-shadow:0 2px 12px rgba(30,64,128,.08);
   animation:dkpi-enter .5s both;
   display:flex;flex-direction:column;
   min-height:180px;
@@ -683,7 +683,7 @@ tr:hover td { background: var(--sf2) !important; }
   box-shadow: 0 6px 20px rgba(30,64,128,.14) !important;
   border-color: var(--cy) !important;
 }
-.dkpi-mini-val { color: #0f1e3d !important; }
+.dkpi-mini-val { color: #0f172a !important; }
 
 /* Dashboard chart cards */
 .dash-card {
@@ -1362,15 +1362,15 @@ tr:hover td { background: var(--sf2) !important; }
       <div class="tb-sub">Gestão completa de OS e Atendimentos</div>
     </div>
     <div class="tb-right">
-      <div class="swrap" style="background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.1)">
+      <div class="swrap" style="background:#ffffff;border-color:#d1d5db">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.3)" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         <input type="text" placeholder="Buscar OS, cliente, série..." id="s-os" oninput="renderOS()" style="color:#0f172a">
       </div>
-      <button class="btn btn-ghost btn-sm" onclick="printRelatorio('os')" style="background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.1);color:rgba(255,255,255,.6)">
+      <button class="btn btn-ghost btn-sm" onclick="printRelatorio('os')" style="background:#f1f5f9;border-color:#d1d5db;color:#475569">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
         PDF
       </button>
-      <button class="btn btn-ghost btn-sm" onclick="exportOSExcel()" style="background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.1);color:rgba(255,255,255,.6)">
+      <button class="btn btn-ghost btn-sm" onclick="exportOSExcel()" style="background:#f1f5f9;border-color:#d1d5db;color:#475569">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
         Excel
       </button>
@@ -1608,15 +1608,15 @@ tr:hover td { background: var(--sf2) !important; }
       <div class="tb-sub">Bancada · Pedidos de Peças · Escopo · Baixados</div>
     </div>
     <div class="tb-right">
-      <div class="swrap" style="background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.1)">
+      <div class="swrap" style="background:#ffffff;border-color:#d1d5db">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.3)" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         <input type="text" placeholder="Buscar equipamento, cliente..." id="s-lab" oninput="renderLab()" style="color:#0f172a">
       </div>
-      <button class="btn btn-ghost btn-sm" onclick="printRelatorio('lab')" style="background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.1);color:rgba(255,255,255,.6)">
+      <button class="btn btn-ghost btn-sm" onclick="printRelatorio('lab')" style="background:#f1f5f9;border-color:#d1d5db;color:#475569">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
         PDF
       </button>
-      <button class="btn btn-ghost btn-sm" onclick="exportLabExcel()" style="background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.1);color:rgba(255,255,255,.6)">
+      <button class="btn btn-ghost btn-sm" onclick="exportLabExcel()" style="background:#f1f5f9;border-color:#d1d5db;color:#475569">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
         Excel
       </button>
@@ -2774,15 +2774,15 @@ Outros</textarea>
       <div class="tb-sub">Rotas · Abastecimento · Checklist · Manutenção · Frota</div>
     </div>
     <div class="tb-right">
-      <div class="swrap" style="background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.1)">
+      <div class="swrap" style="background:#ffffff;border-color:#d1d5db">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.3)" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         <input type="text" id="s-log" placeholder="Buscar rota, técnico..." oninput="renderLogistica()" style="color:#0f172a">
       </div>
-      <button class="btn btn-ghost btn-sm" onclick="printRelatorio('logistica')" style="background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.1);color:rgba(255,255,255,.6)">
+      <button class="btn btn-ghost btn-sm" onclick="printRelatorio('logistica')" style="background:#f1f5f9;border-color:#d1d5db;color:#475569">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
         PDF
       </button>
-      <button class="btn btn-ghost btn-sm" onclick="exportLogExcel()" style="background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.1);color:rgba(255,255,255,.6)">
+      <button class="btn btn-ghost btn-sm" onclick="exportLogExcel()" style="background:#f1f5f9;border-color:#d1d5db;color:#475569">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
         Excel
       </button>
