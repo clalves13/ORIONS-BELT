@@ -45,7 +45,9 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--tx);font-siz
 #sidebar.collapsed #sb-top-bar{justify-content:center;padding:0 6px}
 #sidebar.collapsed #sb-collapse-btn{margin:0 auto}
 #sidebar.collapsed #sb-backup-wrap{display:none!important}
-body.is-master #btn-reset-wrap{display:block!important}
+body.is-master #nicfg-reset{display:flex!important}
+body.is-admin  #nicfg-backup{display:flex!important}
+body.is-master #nicfg-backup{display:flex!important}
 #sidebar.collapsed .logo-wrap{padding:18px 11px 14px}
 #sidebar.collapsed .logo-row{justify-content:center}
 #sidebar.collapsed .ni{padding:10px;justify-content:center;gap:0;position:relative}
@@ -973,14 +975,11 @@ tr:hover td { background: var(--sf2) !important; }
       <div class="ni-child" id="nicfg-sla"        onclick="navCfg('sla')">        <span class="ni-child-dot"></span>Prazos de SLA</div>
       <div class="ni-child" id="nicfg-whatsapp"   onclick="navCfg('whatsapp')">   <span class="ni-child-dot"></span>Integração Telegram</div>
       <div class="ni-child" id="nicfg-agente"     onclick="navCfg('agente')">     <span class="ni-child-dot"></span>Agente de Monitoramento</div>
+      <div class="ni-child" id="nicfg-backup"     onclick="navCfg('backup')"      style="display:none"><span class="ni-child-dot"></span>💾 Backup / Restaurar</div>
+      <div class="ni-child" id="nicfg-reset"      onclick="navCfg('reset')"       style="display:none"><span class="ni-child-dot" style="background:#f87171"></span><span style="color:#f87171">⚠️ Resetar Sistema</span></div>
     </div>
   </div>
-  <!-- Botão Reset Sistema — só aparece para master -->
-  <div id="btn-reset-wrap" style="display:none;padding:0 12px 8px">
-    <button id="btn-reset-sistema" onclick="abrirResetSistema()" style="width:100%;padding:8px;background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.35);border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s;letter-spacing:.3px" onmouseover="this.style.background='rgba(239,68,68,0.28)'" onmouseout="this.style.background='rgba(239,68,68,0.15)'">⚠️ Resetar Sistema</button>
-  </div>
   <div class="sb-footer">
-    <div id="sb-backup-wrap" style="display:none;margin-bottom:8px"><button onclick="openM('m-backup')" style="width:100%;padding:7px;background:rgba(224,120,24,0.15);color:var(--ac2);border:1px solid rgba(224,120,24,0.3);border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">💾 Backup / Restaurar</button></div>
     <div class="sb-user">
       <div class="sb-av" id="sb-av">A</div>
       <div><div class="sb-name" id="sb-name">Admin</div><div class="sb-role" id="sb-role">Admin</div><div class="sb-role" id="sb-perfil" style="color:var(--ac2);font-size:9px;margin-top:1px"></div></div>
@@ -2776,10 +2775,35 @@ Outros</textarea>
       </div>
     </div>
 
+    <!-- Backup / Restaurar — só admin/master vê -->
+    <div class="cfg-panel" id="cfg-backup" style="display:none">
+      <div class="card">
+        <div class="card-hd"><div class="card-title">💾 Backup / Restaurar</div></div>
+        <div id="cfg-backup-inner"><!-- conteúdo do modal m-backup será espelhado aqui via JS --></div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px">
+          <button class="btn btn-accent" onclick="openM('m-backup')">💾 Abrir painel de Backup</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reset Sistema — só master vê -->
+    <div class="cfg-panel" id="cfg-reset" style="display:none">
+      <div class="card" style="border:1.5px solid var(--rdbd)">
+        <div class="card-hd"><div class="card-title" style="color:var(--rd)">⚠️ Resetar Sistema</div></div>
+        <p style="font-size:13px;color:var(--tx2);margin-bottom:16px;line-height:1.7">Esta ação apaga <strong>todos os dados</strong> do sistema (OS, clientes, técnicos, estoque, financeiro, logística…). Apenas o usuário master é preservado. <strong>Esta operação é irreversível.</strong></p>
+        <div style="background:var(--rdbg);border:1px solid var(--rdbd);border-radius:10px;padding:14px 16px;margin-bottom:16px">
+          <div style="font-size:12px;font-weight:700;color:var(--rd);margin-bottom:8px">🔒 Confirmação de segurança</div>
+          <div style="font-size:12px;color:var(--rd);margin-bottom:8px">Digite <strong>RESETAR</strong> para liberar o botão:</div>
+          <input type="text" id="cfg-reset-confirm" oninput="document.getElementById('cfg-reset-btn').disabled=this.value!=='RESETAR'" placeholder="Digite RESETAR" style="width:100%;max-width:280px;border-color:var(--rdbd);color:var(--rd)">
+        </div>
+        <button id="cfg-reset-btn" class="btn" onclick="abrirResetSistema()" disabled style="background:var(--rd);color:#fff;border:none;padding:10px 24px;font-size:13px;font-weight:700;border-radius:8px;cursor:pointer;opacity:.5" onmouseenter="if(!this.disabled)this.style.opacity='1'" onmouseleave="if(!this.disabled)this.style.opacity='.9'">
+          ⚠️ Confirmar Reset do Sistema
+        </button>
+      </div>
+    </div>
+
   </div>
 </div>
-
-<!-- RELATÓRIOS -->
 <div id="page-relatorios" class="page">
   <div class="topbar">
     <div><div class="tb-title">Relatórios</div><div class="tb-sub">Análises e exportações do sistema</div></div>
@@ -3804,20 +3828,7 @@ function _checkMaster(u) {
   if (['master','superadmin'].includes((u.role||'').toLowerCase())) return true;
   return false;
 }
-function _applyMasterClass(isMaster) {
-  document.body.classList.toggle('is-master', !!isMaster);
-}
-function _showDebugPanel(user) {
-  document.getElementById('orion-dbg')?.remove();
-  const isMaster = _checkMaster(user);
-  const d = document.createElement('div');
-  d.id = 'orion-dbg';
-  d.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:99999;background:#0f172a;color:#a3e635;border:2px solid #4ade80;border-radius:12px;padding:14px 18px;font-family:monospace;font-size:12px;max-width:380px;max-height:280px;overflow:auto;box-shadow:0 8px 32px rgba(0,0,0,.8);cursor:pointer';
-  d.innerHTML = '<b style="color:#fff;font-size:13px">🔍 DEBUG — Dados do usuário</b> <span style="color:#64748b;font-size:10px">(clique para fechar)</span><hr style="border-color:#1e293b;margin:8px 0"><pre style="white-space:pre-wrap;word-break:break-all;margin:0;font-size:11px">'+JSON.stringify(user,null,2)+'</pre><hr style="border-color:#1e293b;margin:8px 0"><span style="font-size:12px;color:'+(isMaster?'#4ade80':'#f87171')+';font-weight:bold">'+(isMaster?'✅ Master detectado':'❌ Master NÃO detectado — veja os campos acima')+'</span>';
-  d.onclick = () => d.remove();
-  document.body.appendChild(d);
-  setTimeout(() => d?.remove(), 25000);
-}
+function _applyMasterClass(v) { document.body.classList.toggle('is-master', !!v); }
 
 async function doLogin() {
   const login = document.getElementById('l-user').value.trim();
@@ -3825,20 +3836,19 @@ async function doLogin() {
   try {
     const res = await api('POST', '/api/login', { login, senha });
     G.user = res.user;
-    console.log('[ORION-USER-DEBUG]', JSON.stringify(res.user, null, 2));
-    const _isMaster = _checkMaster(res.user);
-    _applyMasterClass(_isMaster);
+    console.log('[ORION-USER]', JSON.stringify(res.user));
+    const isMaster = _checkMaster(res.user);
+    _applyMasterClass(isMaster);
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('sidebar').style.display = 'flex';
     document.getElementById('mobile-topbar').style.display = '';
     document.getElementById('main').style.display = 'block';
     document.getElementById('sb-av').textContent = res.user.nome[0].toUpperCase();
     document.getElementById('sb-name').textContent = res.user.nome;
-    document.getElementById('sb-role').textContent = _isMaster ? 'Master Admin' : res.user.role === 'admin' ? 'Administrador' : 'Técnico';
+    document.getElementById('sb-role').textContent = isMaster ? 'Master Admin' : res.user.role === 'admin' ? 'Administrador' : 'Técnico';
     await loadAll();
     applyPermissoes(res.user);
     document.getElementById('dev-footer').style.display='flex';
-    _showDebugPanel(res.user);
     setTimeout(()=>gerarNotificacoes().catch(()=>{}), 800);
   } catch(e) {
     const el = document.getElementById('lerr');
@@ -7958,29 +7968,32 @@ const PERFIS_MODULOS = {
 function applyPermissoes(user) {
   const TODOS_MODULOS = ['dashboard','os','agenda','lab','historico','estoque','supr-cli','clientes','tecnicos','usuarios','logistica','contratos','financeiro','notificacoes','relatorios'];
   const perfil = user.perfil || (user.role === 'admin' ? 'admin' : 'tecnico');
-  const _isMasterA = _checkMaster(user);
-  _applyMasterClass(_isMasterA);
-  const permitidos = (_isMasterA || user.role === 'admin' || perfil === 'supervisor') ? TODOS_MODULOS : (PERFIS_MODULOS[perfil] || PERFIS_MODULOS.tecnico);
+  const isAdmin   = user.role === 'admin' || perfil === 'supervisor';
+  const isMaster  = _checkMaster(user);
+  _applyMasterClass(isMaster);
+  document.body.classList.toggle('is-admin', isAdmin || isMaster);
 
-  // Mostrar/ocultar itens do menu
+  const permitidos = (isMaster || isAdmin) ? TODOS_MODULOS : (PERFIS_MODULOS[perfil] || PERFIS_MODULOS.tecnico);
+
   document.querySelectorAll('.ni[data-modulo]').forEach(el => {
-    const mod = el.getAttribute('data-modulo');
-    el.style.display = permitidos.includes(mod) ? 'flex' : 'none';
+    el.style.display = permitidos.includes(el.getAttribute('data-modulo')) ? 'flex' : 'none';
   });
 
+  // Usuários: só admin/master vê
   const niUsr = document.getElementById('ni-usr');
-  if (niUsr) niUsr.style.display = (_isMasterA || user.role === 'admin') ? 'flex' : 'none';
+  if (niUsr) niUsr.style.display = (isAdmin || isMaster) ? 'flex' : 'none';
 
-  const sbBackup = document.getElementById('sb-backup-wrap');
-  if (sbBackup) sbBackup.style.display = (_isMasterA || user.role === 'admin') ? 'block' : 'none';
+  // Itens de configuração por nível
+  const cfgBackup = document.getElementById('nicfg-backup');
+  const cfgReset  = document.getElementById('nicfg-reset');
+  if (cfgBackup) cfgBackup.style.display = (isAdmin || isMaster) ? 'flex' : 'none';
+  if (cfgReset)  cfgReset.style.display  = isMaster ? 'flex' : 'none';
 
-  const sbReset = document.getElementById('btn-reset-wrap');
-  if (sbReset) sbReset.style.display = _isMasterA ? 'block' : 'none';
-
+  // Label na sidebar
   const perfilLabel = {'admin':'Administrador','tecnico':'Técnico','logistica':'Logística','rh':'RH','financeiro':'Financeiro','comercial':'Comercial','administrativo':'Administrativo'};
   const sbRole = document.getElementById('sb-role');
   const sbPerfil = document.getElementById('sb-perfil');
-  if (sbRole) sbRole.textContent = _isMasterA ? 'Master Admin' : user.role === 'admin' ? 'Administrador' : 'Técnico';
+  if (sbRole) sbRole.textContent = isMaster ? 'Master Admin' : isAdmin ? 'Administrador' : 'Técnico';
   if (sbPerfil) sbPerfil.textContent = perfilLabel[perfil] || perfil;
 
   // Navegar para primeiro módulo permitido
@@ -8833,17 +8846,16 @@ async function forgotStep3() {
 
 // ─── INIT ─────────────────────────────────────────────────
 (async()=>{try{const me=await api('GET','/api/me');G.user=me;
-    console.log('[ORION-USER-DEBUG-ME]', JSON.stringify(me,null,2));
-    const _isMasterMe=_checkMaster(me);
-    _applyMasterClass(_isMasterMe);
-    document.getElementById('login-screen').style.display='none';document.getElementById('sidebar').style.display='flex';document.getElementById('main').style.display='block';document.getElementById('sb-av').textContent=me.nome[0].toUpperCase();document.getElementById('sb-name').textContent=me.nome;document.getElementById('sb-role').textContent=_isMasterMe?'Master Admin':me.role==='admin'?'Administrador':'Técnico';
+    console.log('[ORION-USER-ME]', JSON.stringify(me));
+    const isMasterMe=_checkMaster(me);
+    _applyMasterClass(isMasterMe);
+    document.getElementById('login-screen').style.display='none';document.getElementById('sidebar').style.display='flex';document.getElementById('main').style.display='block';document.getElementById('sb-av').textContent=me.nome[0].toUpperCase();document.getElementById('sb-name').textContent=me.nome;document.getElementById('sb-role').textContent=isMasterMe?'Master Admin':me.role==='admin'?'Administrador':'Técnico';
     const hoje=new Date(),de90=new Date();de90.setDate(hoje.getDate()-90);
     const fmt=d=>d.toISOString().slice(0,10);
     const dEl=document.getElementById('d-de'),aEl=document.getElementById('d-ate');
     if(dEl)dEl.value=fmt(de90);if(aEl)aEl.value=fmt(hoje);
     await loadAll();applyPermissoes(me);
     document.getElementById('dev-footer').style.display='flex';
-    _showDebugPanel(me);
   }catch(e){/* not logged in */}})();
 // ─── SIDEBAR TOGGLE ──────────────────────────────────────────────────────────
 function toggleSidebar() {
@@ -9008,6 +9020,8 @@ const _cfgLabels = {
   'sla':        ['Prazos de SLA',             'Tempos por tipo de OS'],
   'whatsapp':   ['Integração Telegram',        'Bot do Telegram'],
   'agente':     ['Agente de Monitoramento',    'Instalar agente nas impressoras do cliente'],
+  'backup':     ['Backup / Restaurar',         'Exportar e importar dados do sistema'],
+  'reset':      ['Resetar Sistema',            '⚠️ Apaga todos os dados — operação irreversível'],
 };
 
 function toggleCfgMenu() {
