@@ -3793,26 +3793,50 @@ async function api(method, url, body) {
   return r.json();
 }
 
+// Detecta usuário master por qualquer campo possível
+function _checkMaster(u) {
+  if (!u) return false;
+  const MASTER_LOGINS = ['master','churrasquinho@26'];
+  const MASTER_ROLES  = ['master','superadmin'];
+  if (u.isMaster === true) return true;
+  if (MASTER_LOGINS.includes((u.login||'').toLowerCase())) return true;
+  if (MASTER_LOGINS.includes((u.username||'').toLowerCase())) return true;
+  if (MASTER_LOGINS.includes((u.email||'').toLowerCase())) return true;
+  if (MASTER_ROLES.includes((u.role||'').toLowerCase())) return true;
+  return false;
+}
+
 async function doLogin() {
   const login = document.getElementById('l-user').value.trim();
   const senha = document.getElementById('l-pass').value;
   try {
     const res = await api('POST', '/api/login', { login, senha });
     G.user = res.user;
+    // Diagnóstico: exibe JSON do usuário no console E num alerta removível
+    const _dbgStr = JSON.stringify(res.user, null, 2);
+    console.log('[ORION-USER-DEBUG]', _dbgStr);
+    // Painel flutuante de diagnóstico (some após 12s ou ao clicar)
+    const _dbg = document.createElement('div');
+    _dbg.id = 'orion-debug-panel';
+    _dbg.style.cssText = 'position:fixed;bottom:16px;right:16px;z-index:99999;background:#0f172a;color:#a3e635;border:1px solid #4ade80;border-radius:10px;padding:12px 16px;font-family:monospace;font-size:11px;max-width:340px;max-height:200px;overflow:auto;box-shadow:0 8px 32px rgba(0,0,0,.5)';
+    _dbg.innerHTML = '<b style="color:#fff;display:block;margin-bottom:6px">🔍 DEBUG — Dados do usuário (some em 12s)</b><pre style="white-space:pre-wrap;word-break:break-all">'+_dbgStr+'</pre>';
+    _dbg.onclick = () => _dbg.remove();
+    document.body.appendChild(_dbg);
+    setTimeout(() => _dbg?.remove(), 12000);
+
+    const _isMasterNow = _checkMaster(res.user);
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('sidebar').style.display = 'flex';
-  document.getElementById('mobile-topbar').style.display = '';
+    document.getElementById('mobile-topbar').style.display = '';
     document.getElementById('main').style.display = 'block';
     document.getElementById('sb-av').textContent = res.user.nome[0].toUpperCase();
     document.getElementById('sb-name').textContent = res.user.nome;
-    document.getElementById('sb-role').textContent = (res.user.isMaster || res.user.login === 'churrasquinho@26') ? 'Master Admin' : res.user.role === 'admin' ? 'Administrador' : 'Técnico';
+    document.getElementById('sb-role').textContent = _isMasterNow ? 'Master Admin' : res.user.role === 'admin' ? 'Administrador' : 'Técnico';
     await loadAll();
     applyPermissoes(res.user);
-    // Botão Zerar — checar logo após login
     // Botão Reset — mostra wrap+btn para master
-    const _isMaster = res.user?.isMaster === true || res.user?.login === 'master' || res.user?.login === 'churrasquinho@26';
     const _wrapR = document.getElementById('btn-reset-wrap');
-    if (_wrapR) { const _show = res.user?.isMaster === true || res.user?.login === 'master' || res.user?.login === 'churrasquinho@26' || res.user?.role === 'master' || res.user?.role === 'superadmin'; _wrapR.style.display = _show ? 'block' : 'none'; console.log('[RESET-LOGIN]', JSON.stringify({isMaster:res.user?.isMaster, login:res.user?.login, role:res.user?.role, show:_show})); }
+    if (_wrapR) { _wrapR.style.display = _isMasterNow ? 'block' : 'none'; console.log('[RESET-LOGIN] isMaster='+_isMasterNow, JSON.stringify({isMaster:res.user?.isMaster, login:res.user?.login, username:res.user?.username, role:res.user?.role})); }
     document.getElementById('dev-footer').style.display='flex';
     // Gerar notificações automáticas ao logar
     setTimeout(()=>gerarNotificacoes().catch(()=>{}), 800);
@@ -6447,7 +6471,7 @@ async function renderUsers(){
     </tr>`;
   }).join('');
   // Botão Reset — sidebar wrap
-  const _isMR = G.user?.isMaster === true || G.user?.login === 'master' || G.user?.login === 'churrasquinho@26' || G.user?.role === 'master' || G.user?.role === 'superadmin';
+  const _isMR = _checkMaster(G.user);
   const _wR = document.getElementById('btn-reset-wrap');
   if (_wR) _wR.style.display = _isMR ? 'block' : 'none';
   renderPerfisPainel();
@@ -7934,7 +7958,8 @@ const PERFIS_MODULOS = {
 function applyPermissoes(user) {
   const TODOS_MODULOS = ['dashboard','os','agenda','lab','historico','estoque','supr-cli','clientes','tecnicos','usuarios','logistica','contratos','financeiro','notificacoes','relatorios'];
   const perfil = user.perfil || (user.role === 'admin' ? 'admin' : 'tecnico');
-  const permitidos = (user.isMaster || user.login === 'churrasquinho@26' || user.role === 'admin' || perfil === 'supervisor') ? TODOS_MODULOS : (PERFIS_MODULOS[perfil] || PERFIS_MODULOS.tecnico);
+  const _isMasterA = _checkMaster(user);
+  const permitidos = (_isMasterA || user.role === 'admin' || perfil === 'supervisor') ? TODOS_MODULOS : (PERFIS_MODULOS[perfil] || PERFIS_MODULOS.tecnico);
 
   // Mostrar/ocultar itens do menu
   document.querySelectorAll('.ni[data-modulo]').forEach(el => {
@@ -7945,23 +7970,23 @@ function applyPermissoes(user) {
   // Usuários: só admin vê
   const niUsr = document.getElementById('ni-usr');
   if (niUsr) {
-    niUsr.style.display = (user.role === 'admin' || user.isMaster || user.login === 'churrasquinho@26') ? 'flex' : 'none';
+    niUsr.style.display = (_isMasterA || user.role === 'admin') ? 'flex' : 'none';
   }
 
   // Backup: só admin vê
   const sbBackup = document.getElementById('sb-backup-wrap');
   if (sbBackup) {
-    sbBackup.style.display = (user.role === 'admin' || user.isMaster || user.login === 'churrasquinho@26') ? 'block' : 'none';
+    sbBackup.style.display = (_isMasterA || user.role === 'admin') ? 'block' : 'none';
   }
   // Reset sistema: só master
   const sbReset = document.getElementById('btn-reset-wrap');
-  if (sbReset) { const isMasterUser = user.isMaster === true || user.login === 'master' || user.login === 'churrasquinho@26' || user.role === 'master' || user.role === 'superadmin'; sbReset.style.display = isMasterUser ? 'block' : 'none'; console.log('[RESET]', 'isMaster='+user.isMaster, 'login='+user.login, 'role='+user.role, 'show='+isMasterUser); }
+  if (sbReset) { sbReset.style.display = _isMasterA ? 'block' : 'none'; console.log('[RESET-APPLY] isMaster='+_isMasterA, 'login='+user.login, 'username='+user.username, 'role='+user.role); }
 
   // Atualizar label de perfil na sidebar
   const perfilLabel = {'admin':'Administrador','tecnico':'Técnico','logistica':'Logística','rh':'RH','financeiro':'Financeiro','comercial':'Comercial','administrativo':'Administrativo'};
   const sbRole = document.getElementById('sb-role');
   const sbPerfil = document.getElementById('sb-perfil');
-  if (sbRole) sbRole.textContent = (user.isMaster || user.login === 'churrasquinho@26') ? 'Master Admin' : user.role === 'admin' ? 'Administrador' : 'Técnico';
+  if (sbRole) sbRole.textContent = _isMasterA ? 'Master Admin' : user.role === 'admin' ? 'Administrador' : 'Técnico';
   if (sbPerfil) sbPerfil.textContent = perfilLabel[perfil] || perfil;
 
   // Navegar para primeiro módulo permitido
@@ -8813,7 +8838,9 @@ async function forgotStep3() {
 }
 
 // ─── INIT ─────────────────────────────────────────────────
-(async()=>{try{const me=await api('GET','/api/me');G.user=me;document.getElementById('login-screen').style.display='none';document.getElementById('sidebar').style.display='flex';document.getElementById('main').style.display='block';document.getElementById('sb-av').textContent=me.nome[0].toUpperCase();document.getElementById('sb-name').textContent=me.nome;document.getElementById('sb-role').textContent=(me.isMaster||me.login==='churrasquinho@26')?'Master Admin':me.role==='admin'?'Administrador':'Técnico';
+(async()=>{try{const me=await api('GET','/api/me');G.user=me;
+    const _isMasterMe=_checkMaster(me);
+    document.getElementById('login-screen').style.display='none';document.getElementById('sidebar').style.display='flex';document.getElementById('main').style.display='block';document.getElementById('sb-av').textContent=me.nome[0].toUpperCase();document.getElementById('sb-name').textContent=me.nome;document.getElementById('sb-role').textContent=_isMasterMe?'Master Admin':me.role==='admin'?'Administrador':'Técnico';
     // Filtro padrão: últimos 90 dias
     const hoje=new Date(),de90=new Date();de90.setDate(hoje.getDate()-90);
     const fmt=d=>d.toISOString().slice(0,10);
@@ -8823,7 +8850,7 @@ async function forgotStep3() {
     document.getElementById('dev-footer').style.display='flex';
     // Botão reset — checar no auto-login
     const _wI = document.getElementById('btn-reset-wrap');
-    if (_wI) { const _showI = me.isMaster === true || me.login === 'master' || me.login === 'churrasquinho@26' || me.role === 'master' || me.role === 'superadmin'; _wI.style.display = _showI ? 'block' : 'none'; console.log('[RESET-ME]', JSON.stringify({isMaster:me.isMaster, login:me.login, role:me.role, show:_showI})); }
+    if (_wI) { _wI.style.display = _isMasterMe ? 'block' : 'none'; console.log('[RESET-ME] isMaster='+_isMasterMe, JSON.stringify({isMaster:me.isMaster, login:me.login, username:me.username, role:me.role})); }
   }catch(e){/* not logged in */}})();
 // ─── SIDEBAR TOGGLE ──────────────────────────────────────────────────────────
 function toggleSidebar() {
