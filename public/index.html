@@ -1298,7 +1298,7 @@ label { font-size: 11px !important; font-weight: 600 !important; color: #475569 
     <div class="nav-sec">Cadastros</div>
     <div class="ni" data-modulo="clientes" data-tip="Clientes / Equip." onclick="nav('clientes',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg><span>Clientes / Equip.</span></div>
     <div class="ni" data-modulo="tecnicos" data-tip="Técnicos" onclick="nav('tecnicos',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Técnicos</span></div>
-    <div class="ni" id="ni-usr" data-tip="Usuários" onclick="nav('usuarios',this)" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg><span>Usuários</span></div>
+    <div class="ni" id="ni-usr" data-modulo="usuarios" data-tip="Usuários" onclick="nav('usuarios',this)" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg><span>Usuários</span></div>
     <div class="nav-sec">Gestão</div>
     <div class="ni" data-modulo="contratos" data-tip="Contratos" onclick="nav('contratos',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10,9 9,9 8,9"/></svg><span>Contratos</span><span class="ni-badge" id="b-contratos" style="display:none">0</span></div>
     <div class="ni" data-modulo="financeiro" data-tip="Financeiro" onclick="nav('financeiro',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg><span>Financeiro</span></div>
@@ -1400,7 +1400,7 @@ label { font-size: 11px !important; font-weight: 600 !important; color: #475569 
   <div class="content"><div id="dash-inner" style="max-width:1400px;margin:0 auto">
 
     <!-- ══ KPIs PRINCIPAIS — 4 cards gradiente ══ -->
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px">
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px;min-width:0;overflow:hidden">
 
       <!-- OS Abertas — azul royal -->
       <div class="dkpi-card" style="background:linear-gradient(135deg,#1565c0 0%,#1e88e5 60%,#42a5f5 100%);box-shadow:0 8px 32px rgba(21,101,192,.45);cursor:pointer" onclick="nav('os',document.querySelector('[data-modulo=os]'))">
@@ -2767,7 +2767,7 @@ label { font-size: 11px !important; font-weight: 600 !important; color: #475569 
 </div>
 
 <!-- USUARIOS -->
-<div id="page-usuarios" class="page">
+<div id="page-usuarios" class="page" data-modulo="usuarios">
   <div class="topbar">
     <div><div class="tb-title">Usuários do Sistema</div><div class="tb-sub">Controle de acesso e perfis</div></div>
     <div class="tb-right">
@@ -4224,7 +4224,7 @@ async function doLogout() {
 }
 
 async function loadAll() {
-  const [tec, cli, eq, os, lab, hist, est, supr, log, abast, ck, manut, ped, baix] = await Promise.all([
+  const [tec, cli, eq, os, lab, hist, est, supr, log, abast, ck, manut, veic, ped, baix] = await Promise.all([
     api('GET','/api/tecnicos'), api('GET','/api/clientes'), api('GET','/api/equipamentos'),
     api('GET','/api/ordens'), api('GET','/api/laboratorio'),
     api('GET','/api/historico'), api('GET','/api/estoque'), api('GET','/api/estoque-supr'),
@@ -4637,7 +4637,12 @@ function popTec(ids) { popSel(ids, G.tecnicos, t=>t.id, t=>t.nome); }
 function popCli(ids) { popSel(ids, G.clientes, c=>c.id, c=>c.nome); }
 function loadEqs(pfx) {
   const cid = document.getElementById(pfx+'-cli').value;
-  const eqs = G.equipamentos.filter(e=>e.cliente_id===cid);
+  let eqs = G.equipamentos.filter(e=>e.cliente_id===cid);
+  // FIX: Equipamentos em laboratório NÃO aparecem disponíveis para OS de atendimento
+  if (pfx === 'o') {
+    const emLab = new Set((G.laboratorio||[]).filter(l=>l.status!=='Concluído'&&l.status!=='Baixado').map(l=>l.nserie).filter(Boolean));
+    eqs = eqs.filter(e => !e.nserie || !emLab.has(e.nserie));
+  }
   const el = document.getElementById(pfx+'-eq'); if(!el) return;
   el.innerHTML = '<option value="">Selecionar...</option>' + eqs.map(e=>`<option value="${e.id}">${e.nome} — ${e.modelo||''}</option>`).join('');
 }
@@ -4645,7 +4650,18 @@ function fillEq(pfx) {
   const eid = document.getElementById(pfx+'-eq').value;
   const e = G.equipamentos.find(x=>x.id===eid); if(!e) return;
   const m=document.getElementById(pfx+'-modelo'); const ns=document.getElementById(pfx+'-nserie');
+  const ct=document.getElementById(pfx+'-cont');
   if(m) m.value=e.modelo||''; if(ns) ns.value=e.nserie||'';
+  if(ct) ct.value=e.contador||0;
+  // Ao selecionar equipamento em OS, auto-buscar histórico por NS
+  if(pfx==='o' && e.nserie) {
+    const existOS = (G.ordens||[]).filter(o => o.nserie===e.nserie && o.status!=='Concluída' && o.status!=='Cancelada' && o.id!==document.getElementById('o-id').value);
+    if(existOS.length) {
+      const osAberta = existOS[0];
+      const cli = (G.clientes||[]).find(x=>x.id===osAberta.cliente_id);
+      alert('⚠ Atenção: Este equipamento (NS: '+e.nserie+') já possui OS em aberto!\n\nOS: '+osAberta.num+' — Status: '+osAberta.status+'\nCliente: '+(cli?.nome||'—')+'\n\nVerifique antes de criar nova OS.');
+    }
+  }
 }
 function fillCliOS() {
   const cid = document.getElementById('o-cli').value;
@@ -6878,7 +6894,15 @@ function renderContKpis() {
   const ativos=G_contratos.filter(c=>c.status==='Ativo').length;
   const avencer=G_contratos.filter(c=>c.status==='Ativo'&&c.vencimento>=hoje&&c.vencimento<=em30s).length;
   const vencidos=G_contratos.filter(c=>c.status==='Ativo'&&c.vencimento<hoje).length;
-  const mrr=G_contratos.filter(c=>c.status==='Ativo'&&c.tipo==='Fixo Mensal').reduce((s,c)=>s+(c.valor_mensal||0),0);
+  // Calcula MRR real: para periodicidade anual, divide por 12; semestral por 6; trimestral por 3
+  const mrr=G_contratos.filter(c=>c.status==='Ativo'&&c.tipo==='Fixo Mensal').reduce((s,c)=>{
+    const v=c.valor_mensal||0;
+    const per=c.periodicidade||'Mensal';
+    if(per==='Anual') return s+(v/12);
+    if(per==='Semestral') return s+(v/6);
+    if(per==='Trimestral') return s+(v/3);
+    return s+v;
+  },0);
   const badge=document.getElementById('b-contratos');
   if(badge){const urg=avencer+vencidos;badge.textContent=urg;badge.style.display=urg>0?'':'none';}
   el.innerHTML=[
@@ -6938,8 +6962,8 @@ function renderContratos(tab) {
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
           ${c.tipo==='Fixo Mensal'?`
             <div style="text-align:center;padding:7px;background:var(--sf2);border-radius:6px">
-              <div style="font-size:18px;font-weight:800;color:var(--gn)">${fm(c.valor_mensal||0)}</div>
-              <div style="font-size:10px;color:var(--tx3)">Mensalidade</div>
+              <div style="font-size:18px;font-weight:800;color:var(--gn)">${(()=>{const v=c.valor_mensal||0;const p=c.periodicidade||'Mensal';if(p==='Anual')return fm(v/12);if(p==='Semestral')return fm(v/6);if(p==='Trimestral')return fm(v/3);return fm(v);})()}</div>
+              <div style="font-size:10px;color:var(--tx3)">${(c.periodicidade&&c.periodicidade!=='Mensal')?'Mensal ('+c.periodicidade+'/'+({'Anual':12,'Semestral':6,'Trimestral':3}[c.periodicidade]||1)+'x)':'Mensalidade'}</div>
             </div>`:
           `<div style="text-align:center;padding:7px;background:var(--sf2);border-radius:6px">
               <div style="font-size:14px;font-weight:700">P&B: ${c.franq_pb||0}</div>
@@ -7103,11 +7127,18 @@ function renderFinKpis() {
   const saldoMes=recMes-despMes;
   const recTotal=G_financeiro.filter(l=>l.tipo==='receita').reduce((s,l)=>s+(l.valor||0),0);
   const despTotal=G_financeiro.filter(l=>l.tipo==='despesa').reduce((s,l)=>s+(l.valor||0),0);
+  // MRR real de contratos ativos (anual/12, semestral/6, trimestral/3)
+  const mrrContratos=(G_contratos||[]).filter(c=>c.status==='Ativo'&&c.tipo==='Fixo Mensal').reduce((s,c)=>{
+    const v=c.valor_mensal||0;const p=c.periodicidade||'Mensal';
+    if(p==='Anual')return s+(v/12);if(p==='Semestral')return s+(v/6);if(p==='Trimestral')return s+(v/3);
+    return s+v;
+  },0);
   el.innerHTML=[
     {icon:'📈',val:fm(recMes),lab:'Receitas (mês)',cor:'color:var(--gn)'},
     {icon:'📉',val:fm(despMes),lab:'Despesas (mês)',cor:'color:var(--rd)'},
     {icon:'💰',val:fm(saldoMes),lab:'Saldo do Mês',cor:`color:${saldoMes>=0?'var(--gn)':'var(--rd)'}`},
     {icon:'🏦',val:fm(recTotal-despTotal),lab:'Saldo Geral',cor:`color:${(recTotal-despTotal)>=0?'var(--gn)':'var(--rd)'}`},
+    {icon:'📋',val:fm(mrrContratos),lab:'MRR Contratos',cor:'color:var(--bl2)'},
   ].map(k=>`<div class="scard"><div class="snum" style="${k.cor}">${k.icon} ${k.val}</div><div class="slabel">${k.lab}</div></div>`).join('');
 }
 
@@ -8364,43 +8395,42 @@ const sigOS = { tec:{drawing:false,ctx:null,last:{x:0,y:0}}, cli:{drawing:false,
 
 function sigOSInit() {
   ['tec','cli'].forEach(k => {
-    const c = document.getElementById('sig-'+k);
-    if (!c) return;
+    const orig = document.getElementById('sig-'+k);
+    if (!orig) return;
     const s = sigOS[k];
-    // Define width real do canvas igual ao tamanho visual para coordenadas corretas
-    c.width = c.offsetWidth || 600;
-    s.canvas = c;
-    s.drawing = false;
-    // Remove listeners antigos trocando o nó
-    const newC = c.cloneNode(true);
-    newC.width = c.width;
-    c.parentNode.replaceChild(newC, c);
+    // Cria canvas limpo substituindo o existente
+    const newC = document.createElement('canvas');
+    newC.id = 'sig-'+k;
+    newC.height = orig.height || 110;
+    newC.style.cssText = orig.style.cssText || 'width:100%;display:block;background:#fff;cursor:crosshair;touch-action:none';
+    orig.parentNode.replaceChild(newC, orig);
+    // Agora define tamanho APÓS inserção no DOM para obter offsetWidth correto
+    newC.width = newC.offsetWidth || 600;
     s.canvas = newC;
+    s.drawing = false;
     const ctx = newC.getContext('2d');
-    ctx.strokeStyle = '#1a2340'; ctx.lineWidth = 2.2; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.strokeStyle = '#1a2340'; ctx.lineWidth = 2.5; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
     s.ctx = ctx;
     const getPos = e => {
       const r = newC.getBoundingClientRect();
       const t = e.touches ? e.touches[0] : e;
       return { x:(t.clientX-r.left)*(newC.width/r.width), y:(t.clientY-r.top)*(newC.height/r.height) };
     };
-    newC.addEventListener('mousedown',  e => { s.drawing=true; s.last=getPos(e); e.preventDefault(); });
-    newC.addEventListener('mousemove',  e => {
+    const start = e => { s.drawing=true; const p=getPos(e); s.last=p; e.preventDefault(); };
+    const move  = e => {
       if (!s.drawing) return;
       const p = getPos(e);
       ctx.beginPath(); ctx.moveTo(s.last.x, s.last.y); ctx.lineTo(p.x, p.y); ctx.stroke();
       s.last = p; e.preventDefault();
-    });
-    newC.addEventListener('mouseup',    () => s.drawing=false);
-    newC.addEventListener('mouseleave', () => s.drawing=false);
-    newC.addEventListener('touchstart', e => { s.drawing=true; s.last=getPos(e); e.preventDefault(); }, {passive:false});
-    newC.addEventListener('touchmove',  e => {
-      if (!s.drawing) return;
-      const p = getPos(e);
-      ctx.beginPath(); ctx.moveTo(s.last.x, s.last.y); ctx.lineTo(p.x, p.y); ctx.stroke();
-      s.last = p; e.preventDefault();
-    }, {passive:false});
-    newC.addEventListener('touchend', () => s.drawing=false);
+    };
+    const end = () => { s.drawing=false; };
+    newC.addEventListener('mousedown',  start);
+    newC.addEventListener('mousemove',  move);
+    newC.addEventListener('mouseup',    end);
+    newC.addEventListener('mouseleave', end);
+    newC.addEventListener('touchstart', start, {passive:false});
+    newC.addEventListener('touchmove',  move,  {passive:false});
+    newC.addEventListener('touchend',   end);
   });
 }
 
@@ -10221,6 +10251,205 @@ async function osFormDeletar(publicId, btn) {
     await osFormCarregarAnexos(_osFormOsId);
   } catch(e) { btn.disabled = false; }
 }
+
+
+// ── FIX: Formatação automática de campos data (type=text com máscara) ──
+function setupDateMasks() {
+  document.querySelectorAll('input[data-mask="date"]').forEach(el => {
+    el.placeholder = el.placeholder || 'DD/MM/AAAA';
+    el.addEventListener('input', function() {
+      let v = this.value.replace(/\D/g,'');
+      if (v.length > 8) v = v.slice(0,8);
+      if (v.length > 4) v = v.slice(0,2)+'/'+v.slice(2,4)+'/'+v.slice(4);
+      else if (v.length > 2) v = v.slice(0,2)+'/'+v.slice(2);
+      this.value = v;
+    });
+    el.addEventListener('blur', function() {
+      const parts = this.value.split('/');
+      if (parts.length === 3 && parts[2].length === 4) {
+        const iso = parts[2]+'-'+parts[1]+'-'+parts[0];
+        if (!isNaN(new Date(iso))) this.dataset.isoValue = iso;
+      }
+    });
+  });
+}
+
+// Aplicar masks quando modal abrir
+const _origOpenM_masks = window.openM;
+window.openM = function(id) {
+  if (_origOpenM_masks) _origOpenM_masks(id);
+  setTimeout(setupDateMasks, 50);
+};
+
+
+// ── FIX: CEP auto-complete via ViaCEP ──
+async function buscarCEP(cepValue, prefixo) {
+  const cep = cepValue.replace(/\D/g,'');
+  if (cep.length !== 8) return;
+  try {
+    const r = await fetch('https://viacep.com.br/ws/'+cep+'/json/');
+    const d = await r.json();
+    if (d.erro) return;
+    const fields = {
+      end: d.logradouro, cidade: d.localidade, estado: d.uf, bairro: d.bairro
+    };
+    Object.entries(fields).forEach(([k,v]) => {
+      const el = document.getElementById(prefixo+'-'+k);
+      if (el && v && !el.value) el.value = v;
+    });
+    // Também tenta 'end_logradouro' como alias
+    const endEl = document.getElementById(prefixo+'-end');
+    if (endEl && d.logradouro && !endEl.value) endEl.value = d.logradouro;
+  } catch(e) {}
+}
+
+// Hook nos inputs de CEP para auto-completar
+document.addEventListener('DOMContentLoaded', function() {
+  // Monitorar mudanças em inputs de CEP
+  document.body.addEventListener('input', function(e) {
+    const el = e.target;
+    if (!el.matches('input[id$="-cep"]')) return;
+    const cep = el.value.replace(/\D/g,'');
+    // Formatar: 00000-000
+    if (cep.length <= 8) {
+      el.value = cep.length > 5 ? cep.slice(0,5)+'-'+cep.slice(5) : cep;
+    }
+    if (cep.length === 8) {
+      const prefix = el.id.replace('-cep','');
+      buscarCEP(cep, prefix);
+    }
+  });
+});
+
+
+// ── FIX: Formatação e validação de CPF/CNPJ ──
+function formatCPF(v) {
+  v = v.replace(/\D/g,'').slice(0,11);
+  if (v.length > 9) return v.slice(0,3)+'.'+v.slice(3,6)+'.'+v.slice(6,9)+'-'+v.slice(9);
+  if (v.length > 6) return v.slice(0,3)+'.'+v.slice(3,6)+'.'+v.slice(6);
+  if (v.length > 3) return v.slice(0,3)+'.'+v.slice(3);
+  return v;
+}
+function formatCNPJ(v) {
+  v = v.replace(/\D/g,'').slice(0,14);
+  if (v.length > 12) return v.slice(0,2)+'.'+v.slice(2,5)+'.'+v.slice(5,8)+'/'+v.slice(8,12)+'-'+v.slice(12);
+  if (v.length > 8) return v.slice(0,2)+'.'+v.slice(2,5)+'.'+v.slice(5,8)+'/'+v.slice(8);
+  if (v.length > 5) return v.slice(0,2)+'.'+v.slice(2,5)+'.'+v.slice(5);
+  if (v.length > 2) return v.slice(0,2)+'.'+v.slice(2);
+  return v;
+}
+function validarCPF(cpf) {
+  cpf = cpf.replace(/\D/g,'');
+  if (cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) return false;
+  let s = 0; for (let i=0;i<9;i++) s += +cpf[i]*(10-i);
+  let r = (s*10)%11; if (r===10||r===11) r=0; if (r!==+cpf[9]) return false;
+  s=0; for (let i=0;i<10;i++) s += +cpf[i]*(11-i);
+  r=(s*10)%11; if (r===10||r===11) r=0; return r===+cpf[10];
+}
+function validarCNPJ(cnpj) {
+  cnpj = cnpj.replace(/\D/g,'');
+  if (cnpj.length !== 14) return false;
+  const calc = (n, c) => { let s=0,pos=c-7; for(let i=0;i<c;i++){s+=+n[i]*(pos--);if(pos<2)pos=9;} const r=s%11; return r<2?0:11-r; };
+  return calc(cnpj,12)===+cnpj[12] && calc(cnpj,13)===+cnpj[13];
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  document.body.addEventListener('input', function(e) {
+    const el = e.target;
+    // Formatar CPF
+    if (el.matches('input[id$="-cpf"]') || el.getAttribute('data-mask') === 'cpf') {
+      const pos = el.selectionStart;
+      el.value = formatCPF(el.value);
+      // Validar e mostrar feedback
+      const raw = el.value.replace(/\D/g,'');
+      if (raw.length === 11) {
+        el.style.borderColor = validarCPF(raw) ? 'var(--gn)' : 'var(--rd)';
+        el.title = validarCPF(raw) ? 'CPF válido' : '⚠ CPF inválido';
+        if (!validarCPF(raw)) el.style.borderColor = 'var(--rd)';
+        // Buscar titular pelo CPF nos técnicos
+        if (validarCPF(raw)) {
+          const tec = (G.tecnicos||[]).find(t => t.cpf && t.cpf.replace(/\D/g,'') === raw);
+          if (tec && el.id === 't-cpf') {
+            // Já está no modal de técnico, apenas feedback
+            el.title = 'CPF válido ✓ — '+tec.nome;
+          }
+        }
+      } else {
+        el.style.borderColor = '';
+        el.title = '';
+      }
+    }
+    // Formatar CNPJ
+    if (el.matches('input[id$="-cnpj"]') || el.getAttribute('data-mask') === 'cnpj') {
+      el.value = formatCNPJ(el.value);
+      const raw = el.value.replace(/\D/g,'');
+      if (raw.length === 14) {
+        el.style.borderColor = validarCNPJ(raw) ? 'var(--gn)' : 'var(--rd)';
+        el.title = validarCNPJ(raw) ? 'CNPJ válido' : '⚠ CNPJ inválido';
+      } else {
+        el.style.borderColor = '';
+        el.title = '';
+      }
+    }
+  });
+});
+
+
+// ── FIX: Atualizar todos os selects dependentes após cadastro ──
+function populateAllSelects() {
+  // Repovoar selects de técnicos em todos os modais abertos
+  ['o-tec','log-mot','lanc-tec','mv-tec'].forEach(id => {
+    const el = document.getElementById(id); if(!el) return;
+    const cur = el.value;
+    el.innerHTML = '<option value="">Selecionar...</option>' + (G.tecnicos||[]).map(t=>`<option value="${t.id}">${t.nome}</option>`).join('');
+    if (cur) el.value = cur;
+  });
+  // Repovoar selects de clientes
+  ['o-cli','e-cli','fin-cli','cont-cli','lanc-cli','ped-lab','ped-os','bx-os','bx-lab'].forEach(id => {
+    const el = document.getElementById(id); if(!el) return;
+    const cur = el.value;
+    const firstOpt = el.options[0]?.value === '' ? el.options[0].outerHTML : '<option value="">Selecionar...</option>';
+    el.innerHTML = firstOpt + (G.clientes||[]).map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
+    if (cur) el.value = cur;
+  });
+  // Repovoar filtros de OS e histórico
+  populateFiltroTec && populateFiltroTec();
+  // Repovoar select de equipamentos nos relatórios
+  const relEquip = document.getElementById('rel-hist-equip');
+  if (relEquip) {
+    const cur = relEquip.value;
+    relEquip.innerHTML = '<option value="">Ou selecione um equipamento...</option>' + (G.equipamentos||[]).map(e=>`<option value="${e.id}">${e.marca||''} ${e.modelo||''} ${e.nserie?'('+e.nserie+')':''}</option>`).join('');
+    if (cur) relEquip.value = cur;
+  }
+}
+
+// Wrapar saveTec para chamar populateAllSelects
+const _origSaveTec = window.saveTec;
+window.saveTec = async function() {
+  if (_origSaveTec) await _origSaveTec();
+  setTimeout(populateAllSelects, 300);
+};
+
+// Wrapar saveCli para chamar populateAllSelects
+const _origSaveCli = window.saveCli;
+window.saveCli = async function() {
+  if (_origSaveCli) await _origSaveCli();
+  setTimeout(populateAllSelects, 300);
+};
+
+// Wrapar saveEq para chamar populateAllSelects
+const _origSaveEq = window.saveEq;
+window.saveEq = async function() {
+  if (_origSaveEq) await _origSaveEq();
+  setTimeout(populateAllSelects, 300);
+};
+
+// Wrapar saveEstoque para chamar populateAllSelects
+const _origSaveEstoque = window.saveEstoque;
+window.saveEstoque = async function() {
+  if (_origSaveEstoque) await _origSaveEstoque();
+  setTimeout(populateAllSelects, 300);
+};
 
 // Called after saving a NEW OS — upload pending files
 async function osFormFlushPending(osId) {
