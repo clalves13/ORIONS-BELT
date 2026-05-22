@@ -734,6 +734,136 @@ tr:hover td { background: var(--sf2) !important; }
 /* FIX VISIBILIDADE FILTROS */
 .filter-row select,.filter-row input,.filter-row button{color:var(--tx)!important;opacity:1!important} 
 .filter-row select option{color:#0f172a!important;background:#fff!important}
+
+/* ═══════════════════════════════════════════════
+   RESPONSIVO — TABLET (≤ 1024px)
+═══════════════════════════════════════════════ */
+@media (max-width:1024px){
+  /* Sidebar recolhida por padrão no tablet */
+  #sidebar{width:56px}
+  #sidebar .logo-name,#sidebar .logo-sub,#sidebar .nav-sec,
+  #sidebar .ni-badge,#sidebar .ni span:not(.ni-badge),
+  #sidebar .sb-name,#sidebar .sb-role,#sidebar .sb-toggle-lbl,
+  #sidebar #sb-menu-label,#sidebar #sb-backup-wrap,
+  #sidebar .ni-parent-left span,#sidebar .ni-chevron,
+  #sidebar .ni-children{display:none!important}
+  #sidebar #sb-top-bar{justify-content:center;padding:0 6px}
+  #sidebar #sb-collapse-btn{margin:0 auto}
+  #sidebar .logo-wrap{padding:18px 11px 14px}
+  #sidebar .logo-row{justify-content:center}
+  #sidebar .ni{padding:10px;justify-content:center;gap:0;position:relative}
+  #sidebar .ni-parent{padding:10px;justify-content:center}
+  #sidebar .sb-footer{padding:12px 8px}
+  #sidebar .sb-user{flex-direction:column;gap:5px;align-items:center}
+  #sidebar .btn-logout{margin-left:0}
+  #sidebar .sb-av{width:32px;height:32px}
+  #sidebar .sb-toggle{justify-content:center;padding:9px}
+  /* Main content ajusta */
+  #main{margin-left:56px}
+  #main.sb-collapsed{margin-left:56px}
+  /* Grids de 4 colunas → 2 */
+  .sgrid{grid-template-columns:repeat(2,1fr)!important}
+  .supr-grid{grid-template-columns:repeat(3,1fr)!important}
+  /* KPI dashboard 4→2 */
+  #dash-inner > div[style*="repeat(4,1fr)"]{grid-template-columns:repeat(2,1fr)!important}
+  /* Calendário empilha */
+  .cal-wrap{grid-template-columns:1fr!important}
+  /* Grids de formulário */
+  .fg4{grid-template-columns:1fr 1fr!important}
+  .os-g4{grid-template-columns:1fr 1fr!important}
+  /* Colunas de resumo financeiro */
+  div[style*="grid-template-columns:1fr 1fr"]{grid-template-columns:1fr!important}
+}
+
+/* ═══════════════════════════════════════════════
+   RESPONSIVO — CELULAR (≤ 768px)
+═══════════════════════════════════════════════ */
+@media (max-width:768px){
+  /* ── Sidebar vira overlay ── */
+  #sidebar{
+    width:240px!important;
+    transform:translateX(-100%);
+    transition:transform .25s cubic-bezier(.4,0,.2,1), width .25s;
+    z-index:500;
+    /* restaura todos os textos */
+  }
+  #sidebar.mobile-open{transform:translateX(0)!important}
+  /* Mostra tudo dentro da sidebar quando aberta */
+  #sidebar.mobile-open .logo-name,#sidebar.mobile-open .logo-sub,
+  #sidebar.mobile-open .nav-sec,#sidebar.mobile-open .ni-badge,
+  #sidebar.mobile-open .ni span:not(.ni-badge),
+  #sidebar.mobile-open .sb-name,#sidebar.mobile-open .sb-role,
+  #sidebar.mobile-open .sb-toggle-lbl,
+  #sidebar.mobile-open #sb-menu-label,#sidebar.mobile-open #sb-backup-wrap,
+  #sidebar.mobile-open .ni-parent-left span,
+  #sidebar.mobile-open .ni-chevron{display:revert!important}
+  #sidebar.mobile-open .ni{padding:10px 16px;justify-content:flex-start;gap:10px}
+  #sidebar.mobile-open .ni-parent{padding:10px 16px;justify-content:flex-start}
+  #sidebar.mobile-open #sb-top-bar{justify-content:space-between;padding:0 10px}
+  #sidebar.mobile-open .logo-row{justify-content:flex-start}
+  #sidebar.mobile-open .logo-wrap{padding:18px 16px 14px}
+  #sidebar.mobile-open .sb-user{flex-direction:row;align-items:center}
+  #sidebar.mobile-open .btn-logout{margin-left:auto}
+  #sidebar.mobile-open .sb-footer{padding:12px 16px}
+  #sidebar.mobile-open .sb-toggle{justify-content:space-between;padding:9px 14px}
+  /* Overlay escuro quando sidebar aberta */
+  #sb-overlay{
+    display:none;position:fixed;inset:0;
+    background:rgba(0,0,0,.45);z-index:499
+  }
+  #sb-overlay.visible{display:block}
+  /* Main ocupa tela toda */
+  #main,#main.sb-collapsed{margin-left:0!important}
+  .content{padding:12px 14px!important}
+  /* ── Top bar mobile com botão hamburguer ── */
+  #mobile-topbar{
+    display:flex!important;
+    align-items:center;
+    gap:10px;
+    padding:10px 14px 6px;
+    position:sticky;top:0;
+    background:var(--sf);
+    border-bottom:1px solid var(--bd);
+    z-index:100;
+  }
+  #mobile-topbar .mb-title{font-size:14px;font-weight:700;color:var(--nv);flex:1}
+  /* ── Grids adaptados ── */
+  .sgrid{grid-template-columns:repeat(2,1fr)!important}
+  .supr-grid{grid-template-columns:repeat(2,1fr)!important}
+  .fg2,.fg3,.fg4{grid-template-columns:1fr!important}
+  .os-g2,.os-g4{grid-template-columns:1fr!important}
+  .os-sigs{grid-template-columns:1fr!important;gap:16px!important}
+  .cal-wrap{grid-template-columns:1fr!important}
+  /* KPI dashboard → 2 por linha */
+  #dash-inner > div[style*="repeat(4,1fr)"]{grid-template-columns:repeat(2,1fr)!important}
+  /* Resumo financeiro lado a lado → empilhado */
+  div[style*="grid-template-columns:1fr 1fr"]{grid-template-columns:1fr!important}
+  /* eq-row: colunas fixas → fluido */
+  .eq-row{grid-template-columns:1fr 1fr!important;font-size:10px}
+  /* Tabelas: scroll horizontal */
+  .twrap{overflow-x:auto!important;-webkit-overflow-scrolling:touch}
+  .twrap table{min-width:560px}
+  /* ── Modais ── */
+  .mov{padding:0!important;align-items:flex-end!important}
+  .modal{
+    max-width:100%!important;width:100%!important;
+    max-height:92vh!important;
+    border-radius:16px 16px 0 0!important;
+  }
+  /* ── Botões de ação nas páginas ── */
+  .filter-row{flex-wrap:wrap!important;gap:6px!important}
+  .filter-row select,.filter-row input{flex:1 1 140px!important;min-width:0}
+  /* ── Cards ── */
+  .card{padding:12px!important}
+  .scard{padding:10px 12px!important}
+  /* ── Assinaturas ── */
+  .os-sigs{padding:8px 4px!important}
+}
+
+/* ═══════════════════════════════════════════════
+   MOBILE TOP BAR (escondido no desktop)
+═══════════════════════════════════════════════ */
+#mobile-topbar{display:none}
 </style>
 </head>
 <body>
@@ -842,6 +972,17 @@ tr:hover td { background: var(--sf2) !important; }
     </div>
   </div>
 
+</div>
+
+<!-- OVERLAY MOBILE (fecha sidebar ao clicar fora) -->
+<div id="sb-overlay" onclick="closeMobileSidebar()"></div>
+
+<!-- TOP BAR MOBILE (hamburguer + título da página atual) -->
+<div id="mobile-topbar">
+  <button onclick="openMobileSidebar()" style="background:none;border:none;cursor:pointer;padding:4px;display:flex;align-items:center;color:var(--nv)">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
+  <span class="mb-title" id="mobile-page-title">Dashboard</span>
 </div>
 
 <!-- MAIN -->
@@ -3645,6 +3786,7 @@ async function doLogin() {
     G.user = res.user;
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('sidebar').style.display = 'flex';
+  document.getElementById('mobile-topbar').style.display = '';
     document.getElementById('main').style.display = 'block';
     document.getElementById('sb-av').textContent = res.user.nome[0].toUpperCase();
     document.getElementById('sb-name').textContent = res.user.nome;
@@ -4060,6 +4202,20 @@ function nav(p, el) {
   if(el) el.classList.add('active');
   const renders = { os:renderOS, logistica:renderLogistica, lab:renderLab, clientes:renderClientes, tecnicos:renderTec, usuarios:renderUsers, historico:renderHist, estoque:async()=>{await loadEstMovs();renderEstoque();renderEstKpis();}, 'supr-cli':renderSuprCli, dashboard:loadDash, contratos:async()=>{await loadContratos();renderContratos();}, financeiro:async()=>{await loadFinanceiro();renderFinLanc();renderFinKpis();}, notificacoes:async()=>{await gerarNotificacoes();}, relatorios:()=>{ setRelPeriodo('mes'); renderRelatorios(); }, configuracoes:()=>{loadCfg();}, agenda:async()=>{await loadAgenda();renderAgenda();} };
   if(renders[p]) renders[p]();
+  // Atualiza título mobile e fecha sidebar no celular
+  const titleEl = document.getElementById('mobile-page-title');
+  if (titleEl) {
+    const labels = {
+      dashboard:'Dashboard', os:'Ordens de Serviço', logistica:'Logística',
+      lab:'Laboratório', clientes:'Clientes', tecnicos:'Técnicos',
+      usuarios:'Usuários', historico:'Histórico', estoque:'Estoque',
+      'supr-cli':'Suprimentos', contratos:'Contratos', financeiro:'Financeiro',
+      notificacoes:'Notificações', relatorios:'Relatórios',
+      configuracoes:'Configurações', agenda:'Agenda'
+    };
+    titleEl.textContent = labels[p] || p;
+  }
+  if (window.innerWidth <= 768) closeMobileSidebar();
 }
 
 function closeM(id) { document.getElementById(id).classList.remove('open'); }
@@ -8673,6 +8829,18 @@ function toggleSidebar() {
   if (ico) ico.style.transform = isCollapsed ? 'rotate(180deg)' : 'rotate(0deg)';
   if (lbl) lbl.style.opacity = isCollapsed ? '0' : '1';
   localStorage.setItem('sb_collapsed', sb.classList.contains('collapsed') ? '1' : '0');
+}
+
+/* ── Mobile sidebar ── */
+function openMobileSidebar() {
+  document.getElementById('sidebar').classList.add('mobile-open');
+  document.getElementById('sb-overlay').classList.add('visible');
+  document.body.style.overflow = 'hidden';
+}
+function closeMobileSidebar() {
+  document.getElementById('sidebar').classList.remove('mobile-open');
+  document.getElementById('sb-overlay').classList.remove('visible');
+  document.body.style.overflow = '';
 }
 // Reset button — controlled by applyPermissoes only
 
