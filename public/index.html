@@ -91,7 +91,7 @@ body.is-master #nicfg-backup{display:flex!important}
 .tb-sub{font-size:10px;color:var(--tx3);margin-top:1px}
 .tb-right{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
 .content{padding:20px 24px}
-#dash-inner{max-width:1600px;margin:0 auto;width:100%;min-width:0;overflow:hidden}
+#dash-inner{max-width:1600px;margin:0 auto;width:100%}
 
 /* ═══ RESET GLOBAL — garante consistência em TODOS inputs/selects/buttons ═══ */
 input,select,textarea,button{font-family:'Sora',sans-serif!important;font-size:12px!important;box-sizing:border-box}
@@ -308,8 +308,6 @@ button:not(.btn):not(.btnx):not(.lbtn):not(.btn-logout):not(.chk):not(.os-tab):n
   animation:dkpi-enter .55s cubic-bezier(.34,1.3,.64,1) both;
   cursor:default;
   min-height:140px;
-  min-width:0;
-  box-sizing:border-box;
 }
 .dkpi-card:nth-child(2){animation-delay:.1s}
 .dkpi-card:nth-child(3){animation-delay:.18s}
@@ -344,7 +342,7 @@ button:not(.btn):not(.btnx):not(.lbtn):not(.btn-logout):not(.chk):not(.os-tab):n
   box-shadow:0 4px 12px rgba(0,0,0,.15);
 }
 .dkpi-icon svg{width:26px;height:26px}
-.dkpi-val{font-size:38px;font-weight:800;line-height:1;letter-spacing:-1.5px;margin-bottom:10px;text-shadow:0 2px 8px rgba(0,0,0,.15);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+.dkpi-val{font-size:38px;font-weight:800;line-height:1;letter-spacing:-1.5px;margin-bottom:10px;text-shadow:0 2px 8px rgba(0,0,0,.15)}
 .dkpi-sub{font-size:11px;opacity:.85;display:flex;align-items:center;gap:6px}
 .dkpi-pill{background:rgba(255,255,255,.22);padding:3px 10px;border-radius:20px;font-size:10px;font-weight:600;backdrop-filter:blur(4px)}
 .dkpi-trend{display:inline-flex;align-items:center;gap:3px;background:rgba(255,255,255,.22);padding:3px 8px;border-radius:12px;font-size:10px;font-weight:700}
@@ -413,7 +411,7 @@ button:not(.btn):not(.btnx):not(.lbtn):not(.btn-logout):not(.chk):not(.os-tab):n
 .ret-sub{font-size:10px;color:var(--tx3);margin-top:3px}
 
 /* TABLE */
-.twrap{overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch;max-width:100%}
+.twrap{overflow-x:auto}
 table{width:100%;border-collapse:collapse;font-size:12px}
 th{background:#f4f6fb;color:#334155;font-weight:700;font-size:10px;letter-spacing:.7px;text-transform:uppercase;padding:8px 11px;text-align:left;border-bottom:1px solid #e2e8f0}
 td{padding:9px 11px;border-bottom:1px solid #e2e8f0;color:var(--tx);vertical-align:middle}
@@ -901,12 +899,10 @@ body { background: #f0f2f5 !important; }
   border: 1px solid #e2e8f0 !important;
   box-shadow: 0 1px 4px rgba(0,0,0,.07), 0 4px 16px rgba(0,0,0,.05) !important;
   color: #0f172a !important;
-  overflow: hidden !important;
+  overflow: visible !important;
   position: relative !important;
   transition: box-shadow .18s, transform .18s !important;
   padding-left: 28px !important;
-  min-width: 0 !important;
-  box-sizing: border-box !important;
 }
 .dkpi-card:hover {
   transform: translateY(-2px) scale(1) !important;
@@ -976,11 +972,6 @@ body { background: #f0f2f5 !important; }
   text-shadow: none !important;
   font-size: 36px !important;
   font-weight: 800 !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-  white-space: nowrap !important;
-  max-width: 100% !important;
-  display: block !important;
 }
 .dkpi-sub { opacity: 1 !important; }
 .dkpi-pill {
@@ -3800,19 +3791,120 @@ Outros</textarea>
 
 <!-- Cliente -->
 <div class="mov" id="m-cli">
-<div class="modal" style="max-width:580px">
+<div class="modal" style="max-width:680px">
   <div class="mhd"><div class="mhd-title" id="m-cli-title">Novo Cliente</div><button class="btnx" onclick="closeM('m-cli')">×</button></div>
   <div class="mbody">
     <input type="hidden" id="c-id">
-    <div class="fgrid fg2">
-      <div class="fg" style="grid-column:1/-1"><label>Nome *</label><input type="text" id="c-nome"></div>
-      <div class="fg" style="grid-column:1/-1"><label>Endereço</label><input type="text" id="c-end"></div>
-      <div class="fg"><label>Cidade/UF</label><input type="text" id="c-cidade"></div>
-      <div class="fg"><label>CEP</label><input type="text" id="c-cep"></div>
-      <div class="fg"><label>Contato</label><input type="text" id="c-contato"></div>
-      <div class="fg"><label>Telefone</label><input type="text" id="c-tel"></div>
-      <div class="fg" style="grid-column:1/-1"><label>E-mail</label><input type="text" id="c-email"></div>
-      <div class="fg" style="grid-column:1/-1"><label>Obs</label><textarea id="c-obs" rows="2"></textarea></div>
+    <!-- Abas -->
+    <div class="os-tabs" style="margin-bottom:14px">
+      <button class="os-tab active" onclick="cliTab('geral',this)">📋 Geral</button>
+      <button class="os-tab" onclick="cliTab('fiscal',this)">🏛 Fiscal / Jurídico</button>
+      <button class="os-tab" onclick="cliTab('fatur',this)">💰 Faturamento</button>
+    </div>
+
+    <!-- ABA: GERAL -->
+    <div id="cli-tab-geral">
+      <div class="fgrid fg2">
+        <div class="fg" style="grid-column:1/-1"><label>Nome / Razão Social *</label><input type="text" id="c-nome"></div>
+        <div class="fg"><label>Tipo</label>
+          <select id="c-tipo">
+            <option value="PJ">Pessoa Jurídica</option>
+            <option value="PF">Pessoa Física</option>
+            <option value="GOV">Governo / Órgão Público</option>
+          </select>
+        </div>
+        <div class="fg"><label>Nome Fantasia</label><input type="text" id="c-fantasia"></div>
+        <div class="fg"><label>Contato</label><input type="text" id="c-contato"></div>
+        <div class="fg"><label>Telefone</label><input type="text" id="c-tel"></div>
+        <div class="fg" style="grid-column:1/-1"><label>E-mail</label><input type="text" id="c-email"></div>
+        <div class="fg" style="grid-column:1/-1"><label>Site</label><input type="text" id="c-site" placeholder="https://"></div>
+        <div class="fg" style="grid-column:1/-1"><label>Obs</label><textarea id="c-obs" rows="2"></textarea></div>
+      </div>
+      <!-- Endereço -->
+      <div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.7px;margin:14px 0 8px">📍 Endereço</div>
+      <div class="fgrid fg2">
+        <div class="fg"><label>CEP</label><input type="text" id="c-cep" placeholder="00000-000"></div>
+        <div class="fg"><label>Bairro</label><input type="text" id="c-bairro"></div>
+        <div class="fg" style="grid-column:1/-1"><label>Logradouro</label><input type="text" id="c-end"></div>
+        <div class="fg"><label>Número</label><input type="text" id="c-end-num"></div>
+        <div class="fg"><label>Complemento</label><input type="text" id="c-comp"></div>
+        <div class="fg"><label>Cidade</label><input type="text" id="c-cidade"></div>
+        <div class="fg"><label>Estado</label><input type="text" id="c-estado" maxlength="2" placeholder="SP"></div>
+      </div>
+    </div>
+
+    <!-- ABA: FISCAL / JURÍDICO -->
+    <div id="cli-tab-fiscal" style="display:none">
+      <div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">🏛 Dados Fiscais</div>
+      <div class="fgrid fg2">
+        <div class="fg"><label>CNPJ</label><input type="text" id="c-cnpj" placeholder="00.000.000/0000-00"></div>
+        <div class="fg"><label>CPF (PF)</label><input type="text" id="c-cpf" placeholder="000.000.000-00"></div>
+        <div class="fg"><label>Inscrição Estadual</label><input type="text" id="c-ie"></div>
+        <div class="fg"><label>Inscrição Municipal</label><input type="text" id="c-im"></div>
+        <div class="fg"><label>Regime Tributário</label>
+          <select id="c-regime">
+            <option value="">— Selecione —</option>
+            <option value="SN">Simples Nacional</option>
+            <option value="LP">Lucro Presumido</option>
+            <option value="LR">Lucro Real</option>
+            <option value="MEI">MEI</option>
+            <option value="isento">Isento</option>
+          </select>
+        </div>
+        <div class="fg"><label>CNAE Principal</label><input type="text" id="c-cnae" placeholder="Ex: 8299-7/99"></div>
+      </div>
+      <div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.7px;margin:14px 0 8px">⚖️ Dados Jurídicos</div>
+      <div class="fgrid fg2">
+        <div class="fg"><label>Responsável Legal</label><input type="text" id="c-resp-legal"></div>
+        <div class="fg"><label>CPF do Responsável</label><input type="text" id="c-resp-cpf" placeholder="000.000.000-00"></div>
+        <div class="fg"><label>Cargo / Função</label><input type="text" id="c-resp-cargo"></div>
+        <div class="fg"><label>E-mail Responsável</label><input type="text" id="c-resp-email"></div>
+        <div class="fg" style="grid-column:1/-1"><label>Obs Jurídicas</label><textarea id="c-obs-jur" rows="2" placeholder="Condições contratuais, restrições, observações legais..."></textarea></div>
+      </div>
+    </div>
+
+    <!-- ABA: FATURAMENTO -->
+    <div id="cli-tab-fatur" style="display:none">
+      <div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">💰 Dados de Faturamento</div>
+      <div class="fgrid fg2">
+        <div class="fg"><label>Condição de Pagamento</label>
+          <select id="c-cond-pag">
+            <option value="">— Selecione —</option>
+            <option value="à vista">À Vista</option>
+            <option value="7d">7 dias</option>
+            <option value="15d">15 dias</option>
+            <option value="30d">30 dias</option>
+            <option value="30/60">30/60 dias</option>
+            <option value="30/60/90">30/60/90 dias</option>
+            <option value="boleto">Boleto Bancário</option>
+            <option value="pix">PIX</option>
+            <option value="cartao">Cartão de Crédito</option>
+          </select>
+        </div>
+        <div class="fg"><label>Limite de Crédito (R$)</label><input type="number" id="c-limite" min="0" step="0.01" placeholder="0,00"></div>
+        <div class="fg"><label>E-mail para NF / Cobrança</label><input type="text" id="c-email-nf"></div>
+        <div class="fg"><label>E-mail CC (cópia)</label><input type="text" id="c-email-cc"></div>
+        <div class="fg"><label>Desconto Padrão (%)</label><input type="number" id="c-desconto" min="0" max="100" step="0.1" placeholder="0"></div>
+        <div class="fg"><label>Tabela de Preços</label>
+          <select id="c-tabela-preco">
+            <option value="padrao">Padrão</option>
+            <option value="especial">Especial</option>
+            <option value="contrato">Contrato</option>
+            <option value="governo">Governo</option>
+          </select>
+        </div>
+        <div class="fg" style="grid-column:1/-1"><label>Dados Bancários (para reembolso)</label><input type="text" id="c-banco" placeholder="Ex: Banco Bradesco — Ag: 1234-5 / CC: 12345-6"></div>
+        <div class="fg" style="grid-column:1/-1"><label>Obs de Faturamento</label><textarea id="c-obs-fat" rows="2" placeholder="Instruções especiais de cobrança, NF, etc..."></textarea></div>
+      </div>
+      <div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.7px;margin:14px 0 8px">📬 Endereço de Cobrança</div>
+      <div style="font-size:11px;color:var(--tx3);margin-bottom:8px">Se diferente do endereço principal</div>
+      <div class="fgrid fg2">
+        <div class="fg"><label>CEP Cobrança</label><input type="text" id="c-cob-cep" placeholder="00000-000"></div>
+        <div class="fg"><label>Bairro</label><input type="text" id="c-cob-bairro"></div>
+        <div class="fg" style="grid-column:1/-1"><label>Logradouro</label><input type="text" id="c-cob-end"></div>
+        <div class="fg"><label>Cidade</label><input type="text" id="c-cob-cidade"></div>
+        <div class="fg"><label>Estado</label><input type="text" id="c-cob-estado" maxlength="2" placeholder="SP"></div>
+      </div>
     </div>
   </div>
   <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('m-cli')">Cancelar</button><button class="btn btn-primary" onclick="saveCli()">Salvar</button></div>
@@ -4751,7 +4843,6 @@ function openOS(id) {
     if (os.status !== 'Concluída' && os.status !== 'Cancelada' && os.nserie) {
       document.getElementById('btn-troca-serie').style.display='inline-flex';
     }
-    setTimeout(()=>{sigOSInit();sigOSSet('tec',os.sig_tec||'');sigOSSet('cli',os.sig_cli||'');},80);
     _osFormPendingFiles=[]; osFormSetOsId(os.id);
   } else {
     document.getElementById('o-id').value=''; document.getElementById('o-num-val').value=''; document.getElementById('o-num').value='(gerado ao salvar)';
@@ -4767,6 +4858,14 @@ function openOS(id) {
   }
 
   openM('m-os');
+  // Inicializar assinaturas SEMPRE após openM (novo ou editar) — canvas precisa estar no DOM visível
+  const _osId_for_sig = document.getElementById('o-id').value;
+  const _os_for_sig = _osId_for_sig ? G.ordens.find(x=>x.id===_osId_for_sig) : null;
+  setTimeout(()=>{
+    sigOSInit();
+    if(_os_for_sig){sigOSSet('tec',_os_for_sig.sig_tec||'');sigOSSet('cli',_os_for_sig.sig_cli||'');}
+    else{sigOSClear('tec');sigOSClear('cli');}
+  },120);
 }
 
 async function saveOS() {
@@ -4782,7 +4881,21 @@ async function saveOS() {
     );
     if (osAberta) {
       const c = G.clientes.find(x=>x.id===osAberta.cliente_id);
-      alert(`⚠ Já existe uma OS em aberto para o Nº Série "${nserie}".\n\nOS: ${osAberta.num} — Status: ${osAberta.status}\nCliente: ${c?.nome||'—'}\n\nEncerre a OS anterior antes de abrir uma nova para este equipamento.`);
+      alert('⚠ Já existe uma OS em aberto para o Nº Série "'+nserie+'".' +
+        '\n\nOS: '+osAberta.num+' — Status: '+osAberta.status+
+        '\nCliente: '+(c?.nome||'—')+
+        '\n\nEncerre a OS anterior antes de abrir uma nova para este equipamento.');
+      return;
+    }
+    // ── Bloquear se equipamento está no laboratório com entrada ativa ──
+    const labAtivoOS = (G.laboratorio||[]).find(l =>
+      l.nserie && l.nserie.trim().toLowerCase() === nserie.toLowerCase() &&
+      l.status !== 'Concluído' && l.status !== 'Baixado'
+    );
+    if (labAtivoOS) {
+      alert('⚠ Este equipamento (NS: '+nserie+') está atualmente no laboratório!' +
+        '\n\nEntrada: '+labAtivoOS.nome+' — Status: '+labAtivoOS.status+
+        '\n\nNão é possível abrir OS de atendimento para um equipamento que está em bancada.');
       return;
     }
   }
@@ -5299,10 +5412,7 @@ function openLab(id) {
   popTec(['l-tec']);
   // Preenche selects de OS
   const osSel=document.getElementById('l-os');
-  if(osSel){osSel.innerHTML='<option value="">Nenhuma</option>'+G.ordens.map(o=>{const c=G.clientes.find(x=>x.id===o.cliente_id);return`<option value="${o.id}">${o.num} — ${c?.nome||'—'}</option>`;}).join('');
-    // Auto-preencher campos a partir da OS selecionada
-    osSel.onchange = function() { _fillLabFromOS(this.value); };
-  }
+  if(osSel){osSel.innerHTML='<option value="">Nenhuma</option>'+G.ordens.map(o=>{const c=G.clientes.find(x=>x.id===o.cliente_id);return`<option value="${o.id}">${o.num} — ${c?.nome||'—'}</option>`;}).join('');}
 
   document.getElementById('m-lab-title').textContent=id?'Editar Entrada':'Nova Entrada — Laboratório';
   document.getElementById('m-lab-sub').textContent='';
@@ -5345,6 +5455,29 @@ function openLab(id) {
 async function saveLab() {
   const nome=document.getElementById('l-nome').value.trim(); if(!nome){alert('Informe o equipamento.');return}
   const eid=document.getElementById('l-id').value;
+  const nserie=(document.getElementById('l-nserie').value||'').trim();
+
+  // ── Bloquear se Nº Série já tem OS de atendimento aberta ──
+  if (!eid && nserie) {
+    const osAberta = (G.ordens||[]).find(o =>
+      o.nserie && o.nserie.trim().toLowerCase() === nserie.toLowerCase() &&
+      o.status !== 'Concluída' && o.status !== 'Cancelada'
+    );
+    if (osAberta) {
+      const c = (G.clientes||[]).find(x=>x.id===osAberta.cliente_id);
+      alert(`⚠ Este equipamento (NS: ${nserie}) já possui OS de atendimento em aberto!\n\nOS: ${osAberta.num} — Status: ${osAberta.status}\nCliente: ${c?.nome||'—'}\n\nO equipamento não pode entrar no laboratório enquanto houver OS ativa para ele.`);
+      return;
+    }
+    // ── Bloquear se já existe entrada ativa no laboratório com este NS ──
+    const labAtivo = (G.laboratorio||[]).find(l =>
+      l.nserie && l.nserie.trim().toLowerCase() === nserie.toLowerCase() &&
+      l.status !== 'Concluído' && l.status !== 'Baixado' && l.id !== eid
+    );
+    if (labAtivo) {
+      alert(`⚠ Este equipamento (NS: ${nserie}) já está no laboratório!\n\nEntrada: ${labAtivo.nome} — Status: ${labAtivo.status}\n\nEncerre ou baixe a entrada atual antes de abrir outra.`);
+      return;
+    }
+  }
   const body={dataEntrada:document.getElementById('l-dent').value,dataSaida:document.getElementById('l-dsai').value,tecnicoId:document.getElementById('l-tec').value,osId:document.getElementById('l-os').value,origem:document.getElementById('l-origem').value,tipoManutencao:document.getElementById('l-tipo').value,nome,marca:document.getElementById('l-marca').value,modelo:document.getElementById('l-modelo').value,nserie:document.getElementById('l-nserie').value,contadorEntrada:document.getElementById('l-cont').value,contadorSaida:document.getElementById('l-conts').value,tempoHoras:+document.getElementById('l-tempo').value||0,status:document.getElementById('l-status').value,problemas:document.getElementById('l-prob').value,procedimento:document.getElementById('l-proc').value,obs:document.getElementById('l-obs').value,pecasRetiradas:document.getElementById('l-pecas-ret').value,obsRetiradas:document.getElementById('l-obs-ret').value,gPecas:+document.getElementById('l-gpec').value||0,gSupr:+document.getElementById('l-gsup').value||0,gOutros:+document.getElementById('l-gout').value||0,checklist:getChkd(),statusFinal:document.getElementById('l-status-final').value};
   try{
     if(eid) await api('PUT',`/api/laboratorio/${eid}`,body); else await api('POST','/api/laboratorio',body);
@@ -6285,13 +6418,103 @@ async function saveMov(){
 }
 
 // ─── CLIENTES ─────────────────────────────────────────────
+function cliTab(tab, btn) {
+  ['geral','fiscal','fatur'].forEach(t => {
+    const el = document.getElementById('cli-tab-'+t);
+    if (el) el.style.display = t===tab ? '' : 'none';
+  });
+  document.querySelectorAll('#m-cli .os-tab').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+}
 function openCliente(id){
   document.getElementById('m-cli-title').textContent=id?'Editar Cliente':'Novo Cliente';
-  if(id){const c=G.clientes.find(x=>x.id===id);if(!c)return;document.getElementById('c-id').value=c.id;document.getElementById('c-nome').value=c.nome||'';document.getElementById('c-end').value=c.end_logradouro||'';document.getElementById('c-cidade').value=c.cidade||'';document.getElementById('c-cep').value=c.cep||'';document.getElementById('c-contato').value=c.contato||'';document.getElementById('c-tel').value=c.tel||'';document.getElementById('c-email').value=c.email||'';document.getElementById('c-obs').value=c.obs||'';}
-  else{['c-id','c-nome','c-end','c-cidade','c-cep','c-contato','c-tel','c-email','c-obs'].forEach(f=>document.getElementById(f).value='')}
+  cliTab('geral', document.querySelector('#m-cli .os-tab'));
+  const allFields=['c-id','c-nome','c-fantasia','c-tipo','c-contato','c-tel','c-email','c-site','c-obs',
+    'c-cep','c-bairro','c-end','c-end-num','c-comp','c-cidade','c-estado',
+    'c-cnpj','c-cpf','c-ie','c-im','c-regime','c-cnae',
+    'c-resp-legal','c-resp-cpf','c-resp-cargo','c-resp-email','c-obs-jur',
+    'c-cond-pag','c-limite','c-email-nf','c-email-cc','c-desconto','c-tabela-preco','c-banco','c-obs-fat',
+    'c-cob-cep','c-cob-bairro','c-cob-end','c-cob-cidade','c-cob-estado'];
+  allFields.forEach(f=>{const el=document.getElementById(f);if(el)el.value='';});
+  if(id){
+    const c=G.clientes.find(x=>x.id===id); if(!c) return;
+    document.getElementById('c-id').value=c.id;
+    document.getElementById('c-nome').value=c.nome||'';
+    document.getElementById('c-fantasia').value=c.fantasia||'';
+    document.getElementById('c-tipo').value=c.tipo||'PJ';
+    document.getElementById('c-contato').value=c.contato||'';
+    document.getElementById('c-tel').value=c.tel||'';
+    document.getElementById('c-email').value=c.email||'';
+    document.getElementById('c-site').value=c.site||'';
+    document.getElementById('c-obs').value=c.obs||'';
+    document.getElementById('c-cep').value=c.cep||'';
+    document.getElementById('c-bairro').value=c.bairro||'';
+    document.getElementById('c-end').value=c.end_logradouro||c.end||'';
+    document.getElementById('c-end-num').value=c.end_num||'';
+    document.getElementById('c-comp').value=c.complemento||'';
+    document.getElementById('c-cidade').value=c.cidade||'';
+    document.getElementById('c-estado').value=c.estado||'';
+    document.getElementById('c-cnpj').value=c.cnpj||'';
+    document.getElementById('c-cpf').value=c.cpf||'';
+    document.getElementById('c-ie').value=c.ie||'';
+    document.getElementById('c-im').value=c.im||'';
+    document.getElementById('c-regime').value=c.regime||'';
+    document.getElementById('c-cnae').value=c.cnae||'';
+    document.getElementById('c-resp-legal').value=c.resp_legal||'';
+    document.getElementById('c-resp-cpf').value=c.resp_cpf||'';
+    document.getElementById('c-resp-cargo').value=c.resp_cargo||'';
+    document.getElementById('c-resp-email').value=c.resp_email||'';
+    document.getElementById('c-obs-jur').value=c.obs_jur||'';
+    document.getElementById('c-cond-pag').value=c.cond_pag||'';
+    document.getElementById('c-limite').value=c.limite_credito||'';
+    document.getElementById('c-email-nf').value=c.email_nf||'';
+    document.getElementById('c-email-cc').value=c.email_cc||'';
+    document.getElementById('c-desconto').value=c.desconto||'';
+    document.getElementById('c-tabela-preco').value=c.tabela_preco||'padrao';
+    document.getElementById('c-banco').value=c.banco||'';
+    document.getElementById('c-obs-fat').value=c.obs_fat||'';
+    document.getElementById('c-cob-cep').value=c.cob_cep||'';
+    document.getElementById('c-cob-bairro').value=c.cob_bairro||'';
+    document.getElementById('c-cob-end').value=c.cob_end||'';
+    document.getElementById('c-cob-cidade').value=c.cob_cidade||'';
+    document.getElementById('c-cob-estado').value=c.cob_estado||'';
+  } else {
+    document.getElementById('c-tipo').value='PJ';
+    document.getElementById('c-tabela-preco').value='padrao';
+  }
   openM('m-cli');
 }
-async function saveCli(){const nome=document.getElementById('c-nome').value.trim();if(!nome){alert('Informe o nome.');return}const eid=document.getElementById('c-id').value;const body={nome,end:document.getElementById('c-end').value,cidade:document.getElementById('c-cidade').value,cep:document.getElementById('c-cep').value,contato:document.getElementById('c-contato').value,tel:document.getElementById('c-tel').value,email:document.getElementById('c-email').value,obs:document.getElementById('c-obs').value};try{if(eid)await api('PUT',`/api/clientes/${eid}`,body);else await api('POST','/api/clientes',body);await loadAll();closeM('m-cli');renderClientes();}catch(e){alert(e.message)}}
+async function saveCli(){
+  const nome=document.getElementById('c-nome').value.trim(); if(!nome){alert('Informe o nome.');return}
+  const eid=document.getElementById('c-id').value;
+  const body={
+    nome, fantasia:document.getElementById('c-fantasia').value,
+    tipo:document.getElementById('c-tipo').value,
+    contato:document.getElementById('c-contato').value, tel:document.getElementById('c-tel').value,
+    email:document.getElementById('c-email').value, site:document.getElementById('c-site').value,
+    obs:document.getElementById('c-obs').value,
+    cep:document.getElementById('c-cep').value, bairro:document.getElementById('c-bairro').value,
+    end_logradouro:document.getElementById('c-end').value, end:document.getElementById('c-end').value,
+    end_num:document.getElementById('c-end-num').value, complemento:document.getElementById('c-comp').value,
+    cidade:document.getElementById('c-cidade').value, estado:document.getElementById('c-estado').value,
+    cnpj:document.getElementById('c-cnpj').value, cpf:document.getElementById('c-cpf').value,
+    ie:document.getElementById('c-ie').value, im:document.getElementById('c-im').value,
+    regime:document.getElementById('c-regime').value, cnae:document.getElementById('c-cnae').value,
+    resp_legal:document.getElementById('c-resp-legal').value, resp_cpf:document.getElementById('c-resp-cpf').value,
+    resp_cargo:document.getElementById('c-resp-cargo').value, resp_email:document.getElementById('c-resp-email').value,
+    obs_jur:document.getElementById('c-obs-jur').value,
+    cond_pag:document.getElementById('c-cond-pag').value,
+    limite_credito:+document.getElementById('c-limite').value||0,
+    email_nf:document.getElementById('c-email-nf').value, email_cc:document.getElementById('c-email-cc').value,
+    desconto:+document.getElementById('c-desconto').value||0,
+    tabela_preco:document.getElementById('c-tabela-preco').value,
+    banco:document.getElementById('c-banco').value, obs_fat:document.getElementById('c-obs-fat').value,
+    cob_cep:document.getElementById('c-cob-cep').value, cob_bairro:document.getElementById('c-cob-bairro').value,
+    cob_end:document.getElementById('c-cob-end').value, cob_cidade:document.getElementById('c-cob-cidade').value,
+    cob_estado:document.getElementById('c-cob-estado').value,
+  };
+  try{if(eid)await api('PUT',`/api/clientes/${eid}`,body);else await api('POST','/api/clientes',body);await loadAll();closeM('m-cli');renderClientes();}catch(e){alert(e.message)}
+}
 async function delCli(id){if(confirm('Excluir cliente e equipamentos?')){await api('DELETE',`/api/clientes/${id}`);await loadAll();renderClientes()}}
 function renderClientes(){
   const q=(document.getElementById('s-cli')?.value||'').toLowerCase();
@@ -10302,30 +10525,16 @@ async function buscarCEP(cepValue, prefixo) {
     const r = await fetch('https://viacep.com.br/ws/'+cep+'/json/');
     const d = await r.json();
     if (d.erro) return;
-    // Mapeamento completo de campos (sobrescreve sempre ao trocar CEP)
-    const map = {
-      'end':           d.logradouro,
-      'end_logradouro':d.logradouro,
-      'cidade':        d.localidade,
-      'estado':        d.uf,
-      'bairro':        d.bairro,
-      'uf':            d.uf,
-      'logradouro':    d.logradouro,
-      'localidade':    d.localidade,
+    const fields = {
+      end: d.logradouro, cidade: d.localidade, estado: d.uf, bairro: d.bairro
     };
-    Object.entries(map).forEach(([k,v]) => {
+    Object.entries(fields).forEach(([k,v]) => {
       const el = document.getElementById(prefixo+'-'+k);
-      if (el && v !== undefined) el.value = v || '';
+      if (el && v && !el.value) el.value = v;
     });
-    // Fallback genérico: qualquer campo terminando nos suffixes acima
-    ['end','cidade','estado','bairro'].forEach(k => {
-      const el = document.getElementById(prefixo+'-'+k);
-      if (!el) return;
-      if (k==='end'&&d.logradouro) el.value=d.logradouro;
-      if (k==='cidade'&&d.localidade) el.value=d.localidade;
-      if (k==='estado'&&d.uf) el.value=d.uf;
-      if (k==='bairro'&&d.bairro) el.value=d.bairro;
-    });
+    // Também tenta 'end_logradouro' como alias
+    const endEl = document.getElementById(prefixo+'-end');
+    if (endEl && d.logradouro && !endEl.value) endEl.value = d.logradouro;
   } catch(e) {}
 }
 
@@ -10382,84 +10591,43 @@ function validarCNPJ(cnpj) {
 document.addEventListener('DOMContentLoaded', function() {
   document.body.addEventListener('input', function(e) {
     const el = e.target;
-
-    // ── CPF ──
+    // Formatar CPF
     if (el.matches('input[id$="-cpf"]') || el.getAttribute('data-mask') === 'cpf') {
+      const pos = el.selectionStart;
       el.value = formatCPF(el.value);
+      // Validar e mostrar feedback
       const raw = el.value.replace(/\D/g,'');
       if (raw.length === 11) {
-        const ok = validarCPF(raw);
-        el.style.borderColor = ok ? 'var(--gn)' : 'var(--rd)';
-        if (!ok) {
-          el.title = '⚠ CPF inválido';
-          // mostrar aviso inline se existir elemento de feedback
-          _cpfCnpjFeedback(el, '⚠ CPF inválido', false);
-          return;
-        }
-        // CPF válido — buscar titular em clientes e técnicos
-        const tec = (G.tecnicos||[]).find(t => t.cpf && t.cpf.replace(/\D/g,'') === raw);
-        const cli = (G.clientes||[]).find(c => c.cpf && c.cpf.replace(/\D/g,'') === raw);
-        const titular = tec ? 'Técnico: '+tec.nome : cli ? 'Cliente: '+cli.nome : null;
-        el.title = titular ? '✓ CPF válido — '+titular : '✓ CPF válido';
-        _cpfCnpjFeedback(el, titular ? '✓ '+titular : '✓ CPF válido', true);
-        // Se o campo está num modal de técnico e já existe outro técnico com este CPF → avisa
-        if (tec && el.closest('#m-tec') && tec.id !== document.getElementById('t-id')?.value) {
-          _cpfCnpjFeedback(el, '⚠ CPF já cadastrado para: '+tec.nome, false);
-          el.style.borderColor = 'var(--rd)';
+        el.style.borderColor = validarCPF(raw) ? 'var(--gn)' : 'var(--rd)';
+        el.title = validarCPF(raw) ? 'CPF válido' : '⚠ CPF inválido';
+        if (!validarCPF(raw)) el.style.borderColor = 'var(--rd)';
+        // Buscar titular pelo CPF nos técnicos
+        if (validarCPF(raw)) {
+          const tec = (G.tecnicos||[]).find(t => t.cpf && t.cpf.replace(/\D/g,'') === raw);
+          if (tec && el.id === 't-cpf') {
+            // Já está no modal de técnico, apenas feedback
+            el.title = 'CPF válido ✓ — '+tec.nome;
+          }
         }
       } else {
         el.style.borderColor = '';
         el.title = '';
-        _cpfCnpjFeedback(el, '', null);
       }
     }
-
-    // ── CNPJ ──
+    // Formatar CNPJ
     if (el.matches('input[id$="-cnpj"]') || el.getAttribute('data-mask') === 'cnpj') {
       el.value = formatCNPJ(el.value);
       const raw = el.value.replace(/\D/g,'');
       if (raw.length === 14) {
-        const ok = validarCNPJ(raw);
-        el.style.borderColor = ok ? 'var(--gn)' : 'var(--rd)';
-        if (!ok) {
-          el.title = '⚠ CNPJ inválido';
-          _cpfCnpjFeedback(el, '⚠ CNPJ inválido', false);
-          return;
-        }
-        // CNPJ válido — buscar titular em clientes
-        const cli = (G.clientes||[]).find(c => c.cnpj && c.cnpj.replace(/\D/g,'') === raw);
-        const titular = cli ? 'Cliente: '+cli.nome : null;
-        el.title = titular ? '✓ CNPJ válido — '+titular : '✓ CNPJ válido';
-        _cpfCnpjFeedback(el, titular ? '✓ '+titular : '✓ CNPJ válido', true);
-        // CNPJ já cadastrado em outro cliente → avisa
-        if (cli && el.closest('#m-cli') && cli.id !== document.getElementById('cli-id')?.value) {
-          _cpfCnpjFeedback(el, '⚠ CNPJ já cadastrado para: '+cli.nome, false);
-          el.style.borderColor = 'var(--rd)';
-        }
+        el.style.borderColor = validarCNPJ(raw) ? 'var(--gn)' : 'var(--rd)';
+        el.title = validarCNPJ(raw) ? 'CNPJ válido' : '⚠ CNPJ inválido';
       } else {
         el.style.borderColor = '';
         el.title = '';
-        _cpfCnpjFeedback(el, '', null);
       }
     }
   });
 });
-
-// Helper: exibe mensagem de feedback abaixo do input
-function _cpfCnpjFeedback(el, msg, ok) {
-  let tip = el.nextElementSibling;
-  if (!tip || !tip.classList.contains('_doc-tip')) {
-    tip = document.createElement('div');
-    tip.className = '_doc-tip';
-    tip.style.cssText = 'font-size:10px;font-weight:600;margin-top:3px;padding:2px 6px;border-radius:5px;transition:all .2s';
-    el.parentNode.insertBefore(tip, el.nextSibling);
-  }
-  if (!msg) { tip.style.display='none'; tip.textContent=''; return; }
-  tip.style.display = 'block';
-  tip.style.color = ok ? '#15803d' : '#b91c1c';
-  tip.style.background = ok ? '#dcfce7' : '#fee2e2';
-  tip.textContent = msg;
-}
 
 
 // ── FIX: Atualizar todos os selects dependentes após cadastro ──
@@ -10489,48 +10657,6 @@ function populateAllSelects() {
     if (cur) relEquip.value = cur;
   }
 }
-
-// ── FIX: Auto-preencher laboratório a partir de OS selecionada ──
-function _fillLabFromOS(osId) {
-  if (!osId) return;
-  const os = (G.ordens||[]).find(x => x.id === osId);
-  if (!os) return;
-  // Preencher técnico
-  const tecEl = document.getElementById('l-tec');
-  if (tecEl && os.tecnico_id && !tecEl.value) tecEl.value = os.tecnico_id;
-  // Equipamento: preencher nome, modelo, nserie, contador
-  const eq = (G.equipamentos||[]).find(x => x.id === os.equip_id);
-  if (eq) {
-    const map = { 'l-nome': eq.nome||eq.modelo||'', 'l-marca': eq.marca||'', 'l-modelo': eq.modelo||'', 'l-nserie': eq.nserie||'', 'l-cont': eq.contador||'' };
-    Object.entries(map).forEach(([k,v]) => { const el=document.getElementById(k); if(el && !el.value && v) el.value=v; });
-  } else if (os.nserie || os.modelo) {
-    // Fallback: preencher direto dos campos da OS
-    const map2 = { 'l-nserie': os.nserie||'', 'l-modelo': os.modelo||'', 'l-cont': os.contador||'' };
-    Object.entries(map2).forEach(([k,v]) => { const el=document.getElementById(k); if(el && !el.value && v) el.value=v; });
-  }
-  // Problema descrito na OS → problemas do lab
-  if (os.defeito) {
-    const probEl = document.getElementById('l-prob');
-    if (probEl && !probEl.value) probEl.value = os.defeito;
-  }
-}
-
-// ── FIX: fillEq aprimorado — funciona para OS ('o') e lab ('l') ──
-// Patch sobre a função original no bloco 1
-const _origFillEq = window.fillEq;
-window.fillEq = function(pfx) {
-  if (_origFillEq) _origFillEq(pfx);
-  // Para prefixo 'l' (laboratório): preencher campos específicos
-  if (pfx === 'l') {
-    const eqEl = document.getElementById('l-eq');
-    if (!eqEl) return;
-    const eid = eqEl.value;
-    const eq = (G.equipamentos||[]).find(x => x.id === eid);
-    if (!eq) return;
-    const map = { 'l-nome': eq.nome||eq.modelo||'', 'l-marca': eq.marca||'', 'l-modelo': eq.modelo||'', 'l-nserie': eq.nserie||'', 'l-cont': eq.contador||'' };
-    Object.entries(map).forEach(([k,v]) => { const el=document.getElementById(k); if(el) el.value=v||''; });
-  }
-};
 
 // Wrapar saveTec para chamar populateAllSelects
 const _origSaveTec = window.saveTec;
