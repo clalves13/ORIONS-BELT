@@ -91,7 +91,7 @@ body.is-master #nicfg-backup{display:flex!important}
 .tb-sub{font-size:10px;color:var(--tx3);margin-top:1px}
 .tb-right{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
 .content{padding:20px 24px}
-#dash-inner{max-width:1600px;margin:0 auto;width:100%}
+#dash-inner{max-width:1600px;margin:0 auto;width:100%;min-width:0;overflow:hidden}
 
 /* ═══ RESET GLOBAL — garante consistência em TODOS inputs/selects/buttons ═══ */
 input,select,textarea,button{font-family:'Sora',sans-serif!important;font-size:12px!important;box-sizing:border-box}
@@ -308,6 +308,8 @@ button:not(.btn):not(.btnx):not(.lbtn):not(.btn-logout):not(.chk):not(.os-tab):n
   animation:dkpi-enter .55s cubic-bezier(.34,1.3,.64,1) both;
   cursor:default;
   min-height:140px;
+  min-width:0;
+  box-sizing:border-box;
 }
 .dkpi-card:nth-child(2){animation-delay:.1s}
 .dkpi-card:nth-child(3){animation-delay:.18s}
@@ -342,7 +344,7 @@ button:not(.btn):not(.btnx):not(.lbtn):not(.btn-logout):not(.chk):not(.os-tab):n
   box-shadow:0 4px 12px rgba(0,0,0,.15);
 }
 .dkpi-icon svg{width:26px;height:26px}
-.dkpi-val{font-size:38px;font-weight:800;line-height:1;letter-spacing:-1.5px;margin-bottom:10px;text-shadow:0 2px 8px rgba(0,0,0,.15)}
+.dkpi-val{font-size:38px;font-weight:800;line-height:1;letter-spacing:-1.5px;margin-bottom:10px;text-shadow:0 2px 8px rgba(0,0,0,.15);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
 .dkpi-sub{font-size:11px;opacity:.85;display:flex;align-items:center;gap:6px}
 .dkpi-pill{background:rgba(255,255,255,.22);padding:3px 10px;border-radius:20px;font-size:10px;font-weight:600;backdrop-filter:blur(4px)}
 .dkpi-trend{display:inline-flex;align-items:center;gap:3px;background:rgba(255,255,255,.22);padding:3px 8px;border-radius:12px;font-size:10px;font-weight:700}
@@ -411,7 +413,7 @@ button:not(.btn):not(.btnx):not(.lbtn):not(.btn-logout):not(.chk):not(.os-tab):n
 .ret-sub{font-size:10px;color:var(--tx3);margin-top:3px}
 
 /* TABLE */
-.twrap{overflow-x:auto}
+.twrap{overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch;max-width:100%}
 table{width:100%;border-collapse:collapse;font-size:12px}
 th{background:#f4f6fb;color:#334155;font-weight:700;font-size:10px;letter-spacing:.7px;text-transform:uppercase;padding:8px 11px;text-align:left;border-bottom:1px solid #e2e8f0}
 td{padding:9px 11px;border-bottom:1px solid #e2e8f0;color:var(--tx);vertical-align:middle}
@@ -899,10 +901,12 @@ body { background: #f0f2f5 !important; }
   border: 1px solid #e2e8f0 !important;
   box-shadow: 0 1px 4px rgba(0,0,0,.07), 0 4px 16px rgba(0,0,0,.05) !important;
   color: #0f172a !important;
-  overflow: visible !important;
+  overflow: hidden !important;
   position: relative !important;
   transition: box-shadow .18s, transform .18s !important;
   padding-left: 28px !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
 }
 .dkpi-card:hover {
   transform: translateY(-2px) scale(1) !important;
@@ -972,6 +976,11 @@ body { background: #f0f2f5 !important; }
   text-shadow: none !important;
   font-size: 36px !important;
   font-weight: 800 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  max-width: 100% !important;
+  display: block !important;
 }
 .dkpi-sub { opacity: 1 !important; }
 .dkpi-pill {
@@ -5290,7 +5299,10 @@ function openLab(id) {
   popTec(['l-tec']);
   // Preenche selects de OS
   const osSel=document.getElementById('l-os');
-  if(osSel){osSel.innerHTML='<option value="">Nenhuma</option>'+G.ordens.map(o=>{const c=G.clientes.find(x=>x.id===o.cliente_id);return`<option value="${o.id}">${o.num} — ${c?.nome||'—'}</option>`;}).join('');}
+  if(osSel){osSel.innerHTML='<option value="">Nenhuma</option>'+G.ordens.map(o=>{const c=G.clientes.find(x=>x.id===o.cliente_id);return`<option value="${o.id}">${o.num} — ${c?.nome||'—'}</option>`;}).join('');
+    // Auto-preencher campos a partir da OS selecionada
+    osSel.onchange = function() { _fillLabFromOS(this.value); };
+  }
 
   document.getElementById('m-lab-title').textContent=id?'Editar Entrada':'Nova Entrada — Laboratório';
   document.getElementById('m-lab-sub').textContent='';
@@ -10290,16 +10302,30 @@ async function buscarCEP(cepValue, prefixo) {
     const r = await fetch('https://viacep.com.br/ws/'+cep+'/json/');
     const d = await r.json();
     if (d.erro) return;
-    const fields = {
-      end: d.logradouro, cidade: d.localidade, estado: d.uf, bairro: d.bairro
+    // Mapeamento completo de campos (sobrescreve sempre ao trocar CEP)
+    const map = {
+      'end':           d.logradouro,
+      'end_logradouro':d.logradouro,
+      'cidade':        d.localidade,
+      'estado':        d.uf,
+      'bairro':        d.bairro,
+      'uf':            d.uf,
+      'logradouro':    d.logradouro,
+      'localidade':    d.localidade,
     };
-    Object.entries(fields).forEach(([k,v]) => {
+    Object.entries(map).forEach(([k,v]) => {
       const el = document.getElementById(prefixo+'-'+k);
-      if (el && v && !el.value) el.value = v;
+      if (el && v !== undefined) el.value = v || '';
     });
-    // Também tenta 'end_logradouro' como alias
-    const endEl = document.getElementById(prefixo+'-end');
-    if (endEl && d.logradouro && !endEl.value) endEl.value = d.logradouro;
+    // Fallback genérico: qualquer campo terminando nos suffixes acima
+    ['end','cidade','estado','bairro'].forEach(k => {
+      const el = document.getElementById(prefixo+'-'+k);
+      if (!el) return;
+      if (k==='end'&&d.logradouro) el.value=d.logradouro;
+      if (k==='cidade'&&d.localidade) el.value=d.localidade;
+      if (k==='estado'&&d.uf) el.value=d.uf;
+      if (k==='bairro'&&d.bairro) el.value=d.bairro;
+    });
   } catch(e) {}
 }
 
@@ -10356,43 +10382,84 @@ function validarCNPJ(cnpj) {
 document.addEventListener('DOMContentLoaded', function() {
   document.body.addEventListener('input', function(e) {
     const el = e.target;
-    // Formatar CPF
+
+    // ── CPF ──
     if (el.matches('input[id$="-cpf"]') || el.getAttribute('data-mask') === 'cpf') {
-      const pos = el.selectionStart;
       el.value = formatCPF(el.value);
-      // Validar e mostrar feedback
       const raw = el.value.replace(/\D/g,'');
       if (raw.length === 11) {
-        el.style.borderColor = validarCPF(raw) ? 'var(--gn)' : 'var(--rd)';
-        el.title = validarCPF(raw) ? 'CPF válido' : '⚠ CPF inválido';
-        if (!validarCPF(raw)) el.style.borderColor = 'var(--rd)';
-        // Buscar titular pelo CPF nos técnicos
-        if (validarCPF(raw)) {
-          const tec = (G.tecnicos||[]).find(t => t.cpf && t.cpf.replace(/\D/g,'') === raw);
-          if (tec && el.id === 't-cpf') {
-            // Já está no modal de técnico, apenas feedback
-            el.title = 'CPF válido ✓ — '+tec.nome;
-          }
+        const ok = validarCPF(raw);
+        el.style.borderColor = ok ? 'var(--gn)' : 'var(--rd)';
+        if (!ok) {
+          el.title = '⚠ CPF inválido';
+          // mostrar aviso inline se existir elemento de feedback
+          _cpfCnpjFeedback(el, '⚠ CPF inválido', false);
+          return;
+        }
+        // CPF válido — buscar titular em clientes e técnicos
+        const tec = (G.tecnicos||[]).find(t => t.cpf && t.cpf.replace(/\D/g,'') === raw);
+        const cli = (G.clientes||[]).find(c => c.cpf && c.cpf.replace(/\D/g,'') === raw);
+        const titular = tec ? 'Técnico: '+tec.nome : cli ? 'Cliente: '+cli.nome : null;
+        el.title = titular ? '✓ CPF válido — '+titular : '✓ CPF válido';
+        _cpfCnpjFeedback(el, titular ? '✓ '+titular : '✓ CPF válido', true);
+        // Se o campo está num modal de técnico e já existe outro técnico com este CPF → avisa
+        if (tec && el.closest('#m-tec') && tec.id !== document.getElementById('t-id')?.value) {
+          _cpfCnpjFeedback(el, '⚠ CPF já cadastrado para: '+tec.nome, false);
+          el.style.borderColor = 'var(--rd)';
         }
       } else {
         el.style.borderColor = '';
         el.title = '';
+        _cpfCnpjFeedback(el, '', null);
       }
     }
-    // Formatar CNPJ
+
+    // ── CNPJ ──
     if (el.matches('input[id$="-cnpj"]') || el.getAttribute('data-mask') === 'cnpj') {
       el.value = formatCNPJ(el.value);
       const raw = el.value.replace(/\D/g,'');
       if (raw.length === 14) {
-        el.style.borderColor = validarCNPJ(raw) ? 'var(--gn)' : 'var(--rd)';
-        el.title = validarCNPJ(raw) ? 'CNPJ válido' : '⚠ CNPJ inválido';
+        const ok = validarCNPJ(raw);
+        el.style.borderColor = ok ? 'var(--gn)' : 'var(--rd)';
+        if (!ok) {
+          el.title = '⚠ CNPJ inválido';
+          _cpfCnpjFeedback(el, '⚠ CNPJ inválido', false);
+          return;
+        }
+        // CNPJ válido — buscar titular em clientes
+        const cli = (G.clientes||[]).find(c => c.cnpj && c.cnpj.replace(/\D/g,'') === raw);
+        const titular = cli ? 'Cliente: '+cli.nome : null;
+        el.title = titular ? '✓ CNPJ válido — '+titular : '✓ CNPJ válido';
+        _cpfCnpjFeedback(el, titular ? '✓ '+titular : '✓ CNPJ válido', true);
+        // CNPJ já cadastrado em outro cliente → avisa
+        if (cli && el.closest('#m-cli') && cli.id !== document.getElementById('cli-id')?.value) {
+          _cpfCnpjFeedback(el, '⚠ CNPJ já cadastrado para: '+cli.nome, false);
+          el.style.borderColor = 'var(--rd)';
+        }
       } else {
         el.style.borderColor = '';
         el.title = '';
+        _cpfCnpjFeedback(el, '', null);
       }
     }
   });
 });
+
+// Helper: exibe mensagem de feedback abaixo do input
+function _cpfCnpjFeedback(el, msg, ok) {
+  let tip = el.nextElementSibling;
+  if (!tip || !tip.classList.contains('_doc-tip')) {
+    tip = document.createElement('div');
+    tip.className = '_doc-tip';
+    tip.style.cssText = 'font-size:10px;font-weight:600;margin-top:3px;padding:2px 6px;border-radius:5px;transition:all .2s';
+    el.parentNode.insertBefore(tip, el.nextSibling);
+  }
+  if (!msg) { tip.style.display='none'; tip.textContent=''; return; }
+  tip.style.display = 'block';
+  tip.style.color = ok ? '#15803d' : '#b91c1c';
+  tip.style.background = ok ? '#dcfce7' : '#fee2e2';
+  tip.textContent = msg;
+}
 
 
 // ── FIX: Atualizar todos os selects dependentes após cadastro ──
@@ -10422,6 +10489,48 @@ function populateAllSelects() {
     if (cur) relEquip.value = cur;
   }
 }
+
+// ── FIX: Auto-preencher laboratório a partir de OS selecionada ──
+function _fillLabFromOS(osId) {
+  if (!osId) return;
+  const os = (G.ordens||[]).find(x => x.id === osId);
+  if (!os) return;
+  // Preencher técnico
+  const tecEl = document.getElementById('l-tec');
+  if (tecEl && os.tecnico_id && !tecEl.value) tecEl.value = os.tecnico_id;
+  // Equipamento: preencher nome, modelo, nserie, contador
+  const eq = (G.equipamentos||[]).find(x => x.id === os.equip_id);
+  if (eq) {
+    const map = { 'l-nome': eq.nome||eq.modelo||'', 'l-marca': eq.marca||'', 'l-modelo': eq.modelo||'', 'l-nserie': eq.nserie||'', 'l-cont': eq.contador||'' };
+    Object.entries(map).forEach(([k,v]) => { const el=document.getElementById(k); if(el && !el.value && v) el.value=v; });
+  } else if (os.nserie || os.modelo) {
+    // Fallback: preencher direto dos campos da OS
+    const map2 = { 'l-nserie': os.nserie||'', 'l-modelo': os.modelo||'', 'l-cont': os.contador||'' };
+    Object.entries(map2).forEach(([k,v]) => { const el=document.getElementById(k); if(el && !el.value && v) el.value=v; });
+  }
+  // Problema descrito na OS → problemas do lab
+  if (os.defeito) {
+    const probEl = document.getElementById('l-prob');
+    if (probEl && !probEl.value) probEl.value = os.defeito;
+  }
+}
+
+// ── FIX: fillEq aprimorado — funciona para OS ('o') e lab ('l') ──
+// Patch sobre a função original no bloco 1
+const _origFillEq = window.fillEq;
+window.fillEq = function(pfx) {
+  if (_origFillEq) _origFillEq(pfx);
+  // Para prefixo 'l' (laboratório): preencher campos específicos
+  if (pfx === 'l') {
+    const eqEl = document.getElementById('l-eq');
+    if (!eqEl) return;
+    const eid = eqEl.value;
+    const eq = (G.equipamentos||[]).find(x => x.id === eid);
+    if (!eq) return;
+    const map = { 'l-nome': eq.nome||eq.modelo||'', 'l-marca': eq.marca||'', 'l-modelo': eq.modelo||'', 'l-nserie': eq.nserie||'', 'l-cont': eq.contador||'' };
+    Object.entries(map).forEach(([k,v]) => { const el=document.getElementById(k); if(el) el.value=v||''; });
+  }
+};
 
 // Wrapar saveTec para chamar populateAllSelects
 const _origSaveTec = window.saveTec;
