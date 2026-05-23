@@ -381,9 +381,11 @@ button:not(.btn):not(.btnx):not(.lbtn):not(.btn-logout):not(.chk):not(.os-tab):n
   animation:dkpi-enter .5s both;
   display:flex;flex-direction:column;
   min-height:180px;
+  max-height:420px;
+  overflow:hidden;
   transition:border-color .18s,box-shadow .18s;
 }
-.dash-card:hover{border-color:rgba(255,255,255,.12);box-shadow:0 8px 32px rgba(0,0,0,.4)}
+.dash-card:hover{border-color:#c7d7f5;box-shadow:0 6px 24px rgba(30,64,128,.13)}
 .dash-card-hd{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px}
 .dash-card-title{font-size:12.5px;font-weight:700;color:#0f172a}
 .dash-card-sub{font-size:10px;color:var(--tx3);margin-top:3px}
@@ -537,46 +539,37 @@ tr:hover td{background:var(--sf2)}
   body>*:not(#print-window){display:none!important}
   #print-window{display:block!important;position:fixed;inset:0;background:#fff;z-index:99999;padding:16px}
 }
-.os-doc{display:flex;flex-direction:column;width:100%;font-family:'Sora',sans-serif;font-size:10.5px;color:#1a1a2e;background:#fff}
-.os-hd{display:flex;align-items:center;padding-bottom:8px;margin-bottom:6px;border-bottom:2px solid #1e4080;flex-shrink:0}
-.os-hd-left{display:flex;align-items:center;gap:10px;flex:1}
-.os-hd-logo{width:52px;height:52px;object-fit:contain;flex-shrink:0}
-.os-hd-info{}
-.os-co-name{font-size:13px;font-weight:800;color:#1e4080;margin-bottom:1px}
-.os-co-tag{font-size:7.5px;color:#64748b;margin-bottom:2px}
-.os-co-addr{font-size:7.5px;color:#445;line-height:1.4}
-.os-hd-right{padding:4px 0 4px 14px;text-align:right;min-width:120px;border-left:1.5px solid #e2e8f0;display:flex;flex-direction:column;align-items:flex-end;justify-content:center}
-.os-right-lbl{font-size:7px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.8px}
-.os-right-num{font-size:17px;font-weight:800;color:#1e4080;margin:2px 0;letter-spacing:.5px}
-.os-right-date{font-size:8px;color:#64748b}
-.os-row2{display:grid;grid-template-columns:1fr 1fr;gap:0 8px}
-.os-sec{border:1px solid #e2e8f0;border-top:none;padding:5px 8px 6px}
-.os-sec-first{border-top:1px solid #e2e8f0}
-.os-sec-nb{border:none;padding:5px 8px}
-.os-grow1{flex:1;display:flex;flex-direction:column}
-.os-grow1 .os-ta-grow{flex:1}
-.os-grow2{flex:2;display:flex;flex-direction:column}
-.os-grow2 .os-ta-grow{flex:1}
-.os-sec-title{display:inline-block;font-size:6.5px;font-weight:700;color:#1e4080;text-transform:uppercase;letter-spacing:.8px;border-bottom:1.5px solid #1e4080;padding-bottom:1px;margin-bottom:4px}
-.os-g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:4px}
-.os-fg2{display:grid;grid-template-columns:1fr 1fr;gap:4px}
-.os-field{margin-bottom:3px}
-.os-field label{display:block;font-size:6.5px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:1px}
-.os-field p{font-size:9px;color:#1a1a2e;border-bottom:1px solid #e2e8f0;padding-bottom:2px;min-height:12px}
-.os-ta{font-size:9px;color:#1a1a2e;line-height:1.45;min-height:24px;padding:2px 0}
-.os-gastos-wrap{display:grid;grid-template-columns:1fr 1fr;gap:0 24px}
-.os-gtbl{width:100%;border-collapse:collapse;font-size:8.5px}
-.os-gtbl td{padding:2px 4px;border-bottom:1px solid #f1f5f9}
-.os-gtbl td:last-child{text-align:right;font-weight:600}
-.os-gtot td{background:#f8fafc;color:#1e4080;font-weight:700;font-size:9px;padding:3px 4px;border-top:1.5px solid #1e4080}
-.os-gtot td:last-child{color:#c05000}
-.os-sigs{display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:10px 8px 4px;margin-top:8px;border-top:1px solid #e2e8f0}
+.os-doc{font-family:'Sora',sans-serif;color:#111;font-size:11px;background:#fff}
+.os-hd{display:flex;border-bottom:2.5px solid #1e4080;padding-bottom:10px;margin-bottom:2px}
+.os-logo-col{display:none}
+.os-logo-txt{color:#e07818;font-size:14px;font-weight:800;letter-spacing:1px}
+.os-logo-sub{color:#64748b;font-size:8px;text-align:center;margin-top:2px}
+.os-mid{display:none}
+.os-co-name{font-size:13px;font-weight:800;color:#0d1f3c;margin-bottom:1px}
+.os-co-tag{font-size:8px;color:#667;margin-bottom:3px}
+.os-co-addr{font-size:8px;color:#445;line-height:1.5}
+.os-right-col{padding:9px 12px;text-align:center;min-width:120px;display:flex;flex-direction:column;justify-content:center;align-items:center}
+.os-right-lbl{font-size:8px;font-weight:700;color:#1e4080;text-transform:uppercase;letter-spacing:.8px}
+.os-right-num{font-size:16px;font-weight:800;color:#e07818;margin:2px 0}
+.os-right-date{font-size:9px;color:#445}
+.os-sec{border:1px solid #c0cbdf;border-top:none;padding:7px 10px}
+.os-sec:last-of-type{border-radius:0 0 6px 6px}
+.os-sec-title{font-size:7px;font-weight:800;color:#fff;background:#1e4080;padding:2px 7px;border-radius:3px;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;display:inline-block}
+.os-g2{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.os-g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:5px}
+.os-field label{font-size:7px;color:#667;font-weight:700;text-transform:uppercase;display:block;margin-bottom:1px}
+.os-field p{font-size:9px;color:#111;border-bottom:1px solid #dde3ee;padding-bottom:2px;min-height:14px}
+.os-ta{border:1px solid #dde3ee;border-radius:3px;min-height:48px;padding:5px 7px;font-size:9px;line-height:1.5;color:#111}
+.os-gtbl{width:100%;border-collapse:collapse;font-size:9px}
+.os-gtbl td{padding:2px 7px;border-bottom:1px solid #eef}.os-gtbl td:last-child{text-align:right;font-weight:600}
+.os-gtot td{background:#0d1f3c;color:#fff;font-weight:700;font-size:10px;padding:3px 7px}.os-gtot td:last-child{color:#f5a030}
+.os-sigs{display:grid;grid-template-columns:1fr 1fr;gap:40px;padding:12px 14px;border:1px solid #c0cbdf;border-top:none;border-radius:0 0 6px 6px}
+.os-sigs{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:16px;padding:0 4px}
 .os-sig-block{text-align:center}
-.os-sig-img{max-height:50px;max-width:160px;display:block;margin:0 auto 4px}
-.os-sig-empty{height:40px}
-.os-sig-line{border-top:1px solid #334155;padding-top:4px;font-size:8px;color:#64748b}
-#tbl-os td,#tbl-os th{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-#tbl-os td:last-child{overflow:visible;white-space:normal;padding:2px 4px}
+.os-sig-img{max-height:65px;max-width:220px;display:block;margin:0 auto 6px}
+.os-sig-empty{height:55px}
+.os-sig-line{border-top:1.5px solid #444;padding-top:5px;font-size:9px;color:#555;margin-top:4px}
+.os-sig{border-top:1px solid #555;padding-top:4px;text-align:center;font-size:8px;color:#667;margin-top:26px}
 
 /* ══════════════════════════════════════════════
    ORION THEME v8 — EMBUTIDO — não requer arquivo externo
@@ -1249,6 +1242,7 @@ label { font-size: 11px !important; font-weight: 600 !important; color: #475569 
 }
 .crit-pulse { animation: dkpi-enter .55s both, crit-glow 3s ease-in-out 1s infinite !important; }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 </head>
 <body>
 
@@ -1635,7 +1629,31 @@ label { font-size: 11px !important; font-weight: 600 !important; color: #475569 
 
     </div>
 
-    <!-- ══ LINHA 4 — Retrabalho ══ -->
+    <!-- ══ LINHA 4 — Financeiro + Mapa ══ -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+      <div class="dash-card">
+        <div class="dash-card-hd">
+          <div>
+            <div class="dash-card-title">💰 Receita vs Despesa</div>
+            <div class="dash-card-sub">Evolução mensal (R$)</div>
+          </div>
+          <span class="dash-card-badge">Financeiro</span>
+        </div>
+        <canvas id="chart-fin-linha" height="160" style="width:100%;display:block"></canvas>
+      </div>
+      <div class="dash-card">
+        <div class="dash-card-hd">
+          <div>
+            <div class="dash-card-title">📍 Equipamentos por Região</div>
+            <div class="dash-card-sub">Minas Gerais — instalações ativas</div>
+          </div>
+          <span class="dash-card-badge">Equipamentos</span>
+        </div>
+        <canvas id="chart-mapa-mg" height="160" style="width:100%;display:block"></canvas>
+      </div>
+    </div>
+
+    <!-- ══ LINHA 5 — Retrabalho ══ -->
     <div style="display:grid;grid-template-columns:1fr 2fr;gap:16px;margin-bottom:16px">
       <div class="dash-card">
         <div class="dash-card-hd">
@@ -1960,20 +1978,7 @@ label { font-size: 11px !important; font-weight: 600 !important; color: #475569 
       </div>
     </div>
     <!-- Tabela -->
-    <div class="card" style="padding:0"><div class="twrap"><table id="tbl-os" style="table-layout:fixed;width:100%">
-      <colgroup>
-        <col style="width:88px">
-        <col style="width:76px">
-        <col style="width:13%">
-        <col style="width:10%">
-        <col style="width:10%">
-        <col style="width:15%">
-        <col style="width:9%">
-        <col style="width:64px">
-        <col style="width:78px">
-        <col style="width:68px">
-        <col style="width:108px;min-width:108px">
-      </colgroup>
+    <div class="card" style="padding:0"><div class="twrap"><table>
       <thead><tr>
         <th>Nº OS</th><th>Abertura</th><th>Cliente</th><th>Equipamento</th><th>Nº Série</th>
         <th>Defeito</th><th>Técnico</th><th>Origem</th><th>SLA</th><th>Status</th><th>Ações</th>
@@ -8363,13 +8368,45 @@ async function doImport(){
 }
 
 // ─── GRÁFICOS ──────────────────────────────────────────────
+// ─── Registro de instâncias Chart.js para destruição antes de recriar ───
+const _charts = {};
+function _destroyChart(id) { if (_charts[id]) { _charts[id].destroy(); delete _charts[id]; } }
+
+// Paleta Power BI
+const PBI = {
+  blue:   '#2F80ED', navy:   '#0D3B8E', teal:   '#00A8A8',
+  orange: '#F2994A', red:    '#EB5757', green:  '#27AE60',
+  purple: '#9B51E0', gray:   '#8898AA', yellow: '#F2C94C',
+  blues:  ['#2F80ED','#56CCF2','#0D3B8E','#00A8A8','#9B51E0'],
+  warm:   ['#F2994A','#EB5757','#F2C94C','#27AE60','#2F80ED'],
+};
+
+const PBI_GRID = { color: '#EDF2F7', lineWidth: 1 };
+const PBI_FONT = { family: "'Sora', sans-serif", size: 10 };
+
+function pbiDefaults() {
+  if (!window.Chart) return;
+  Chart.defaults.font = PBI_FONT;
+  Chart.defaults.color = '#64748B';
+  Chart.defaults.plugins.legend.labels.boxWidth = 10;
+  Chart.defaults.plugins.legend.labels.padding = 14;
+  Chart.defaults.plugins.tooltip.backgroundColor = '#1E293B';
+  Chart.defaults.plugins.tooltip.titleFont = { size: 11, weight: 'bold' };
+  Chart.defaults.plugins.tooltip.bodyFont = { size: 10 };
+  Chart.defaults.plugins.tooltip.padding = 10;
+  Chart.defaults.plugins.tooltip.cornerRadius = 8;
+}
+
 function renderGraficos(d, osF, logF) {
   if (!d) return;
+  pbiDefaults();
   setTimeout(() => {
     renderGraficoLinhaAtend(d, osF);
     renderGraficoLinhaGastos(d, logF);
     renderGraficoPizzaToner(d);
     renderGraficoPizzaOS(osF);
+    renderGraficoFinanceiro(d);
+    renderMapaMG();
   }, 150);
 }
 
@@ -8387,6 +8424,12 @@ function getCanvasCtx(id) {
   ctx.scale(dpr, dpr);
   ctx.clearRect(0, 0, W, H);
   return { ctx, W, H };
+}
+// Helpers Chart.js
+function _mkGradient(ctx, color, h) {
+  const g = ctx.createLinearGradient(0, 0, 0, h);
+  g.addColorStop(0, color + 'CC'); g.addColorStop(1, color + '08');
+  return g;
 }
 
 function drawLineChart(id, labels, datasets, title) {
@@ -8501,109 +8544,356 @@ function drawPieChart(id, labels, values, title) {
 }
 
 function renderGraficoLinhaAtend(d, osF) {
+  if (!window.Chart) return;
+  _destroyChart('chart-atend-linha');
+  const el = document.getElementById('chart-atend-linha'); if (!el) return;
   const ordens = osF || G.ordens;
   const mesesSet = new Set();
   ordens.forEach(o => { if (o.data_ab) mesesSet.add(o.data_ab.slice(0,7)); });
   const meses = Array.from(mesesSet).sort().slice(-8);
-  const labels = meses.length
-    ? meses.map(m => { const [y,mo]=m.split('-'); return mo+'/'+y.slice(2); })
-    : ['Sem dados'];
-
-  if (!meses.length) {
-    const c = getCanvasCtx('chart-atend-linha'); if(!c) return;
-    c.ctx.fillStyle='#8899bb'; c.ctx.font='12px Sora,sans-serif'; c.ctx.textAlign='center';
-    c.ctx.fillText('Nenhum dado no período', c.W/2, c.H/2); return;
-  }
-
+  if (!meses.length) return;
+  const labels = meses.map(m => { const [y,mo]=m.split('-'); return mo+'/'+y.slice(2); });
   const tecs = [...new Map(ordens.filter(o=>o.tecnico_id).map(o=>{
     const t=G.tecnicos.find(x=>x.id===o.tecnico_id); return t?[t.id,t]:null;
-  }).filter(Boolean)).values()].slice(0,4);
-
-  const datasets = tecs.map(t => ({
-    label: t.nome.split(' ')[0],
-    data: meses.map(mes => ordens.filter(o =>
-      o.data_ab && o.data_ab.startsWith(mes) && o.tecnico_id === t.id
-    ).length)
-  }));
-  if (!datasets.length) datasets.push({ label:'Total', data: meses.map(mes => ordens.filter(o=>o.data_ab&&o.data_ab.startsWith(mes)).length) });
-
-  // legenda HTML
-  const COLORS=['#1e4080','#e07818','#1a7a4a','#b83030','#6b3fa0'];
+  }).filter(Boolean)).values()].slice(0,5);
+  const COLORS = PBI.blues;
+  const datasets = (tecs.length ? tecs : [{id:null,nome:'Total'}]).map((t,i) => {
+    const color = COLORS[i % COLORS.length];
+    const data = meses.map(mes => ordens.filter(o =>
+      o.data_ab && o.data_ab.startsWith(mes) && (t.id === null || o.tecnico_id === t.id)
+    ).length);
+    return {
+      label: t.nome.split(' ')[0],
+      data, borderColor: color, backgroundColor: color+'22',
+      borderWidth: 2.5, pointRadius: 4, pointHoverRadius: 6,
+      pointBackgroundColor: '#fff', pointBorderColor: color,
+      fill: tecs.length === 1, tension: 0.4
+    };
+  });
   const legEl = document.getElementById('d-leg-tec');
-  if (legEl) legEl.innerHTML = datasets.map((ds,i)=>`<span style="display:flex;align-items:center;gap:3px;font-size:9px;color:var(--tx2)"><span style="width:10px;height:10px;border-radius:2px;background:${COLORS[i%COLORS.length]};display:inline-block"></span>${ds.label}</span>`).join('');
-
-  drawLineChart('chart-atend-linha', labels, datasets, '');
+  if (legEl) legEl.innerHTML = '';
+  _charts['chart-atend-linha'] = new Chart(el, {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { position: 'top', align: 'end', labels: { font: PBI_FONT, usePointStyle: true, pointStyleWidth: 8 } },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y} OS` } }
+      },
+      scales: {
+        x: { grid: PBI_GRID, ticks: { font: PBI_FONT } },
+        y: { grid: PBI_GRID, ticks: { font: PBI_FONT, stepSize: 1 }, beginAtZero: true }
+      }
+    }
+  });
 }
 
 function renderGraficoPizzaOS(osF) {
+  if (!window.Chart) return;
+  _destroyChart('chart-os-pizza');
+  const el = document.getElementById('chart-os-pizza'); if (!el) return;
   const ordens = osF || G.ordens;
   const counts = { Aberta:0, 'Em andamento':0, Concluída:0, Cancelada:0 };
   ordens.forEach(o => { if(counts[o.status]!==undefined) counts[o.status]++; });
   const labels = Object.keys(counts).filter(k=>counts[k]>0);
   const values = labels.map(k=>counts[k]);
-  const COLORS = { Aberta:'#e07818', 'Em andamento':'#1a50b0', Concluída:'#1a7a4a', Cancelada:'#b83030' };
-  drawPieChartCustom('chart-os-pizza', labels, values, labels.map(l=>COLORS[l]||'#888'), '');
+  const COLORS = { Aberta: PBI.orange, 'Em andamento': PBI.blue, Concluída: PBI.green, Cancelada: PBI.red };
+  const total = values.reduce((a,b)=>a+b,0);
+  _charts['chart-os-pizza'] = new Chart(el, {
+    type: 'doughnut',
+    data: { labels, datasets: [{ data: values, backgroundColor: labels.map(l=>COLORS[l]||PBI.gray), borderColor: '#fff', borderWidth: 3, hoverOffset: 8 }] },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '62%',
+      plugins: {
+        legend: { position: 'right', labels: { font: PBI_FONT, padding: 12, usePointStyle: true } },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed} (${Math.round(ctx.parsed*100/total)}%)` } }
+      }
+    },
+    plugins: [{
+      id: 'centerText',
+      afterDraw(chart) {
+        const { ctx, chartArea: { top, bottom, left, right } } = chart;
+        const cx = (left+right)/2, cy = (top+bottom)/2;
+        ctx.save();
+        ctx.font = 'bold 22px Sora,sans-serif'; ctx.fillStyle = '#0F172A';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(total, cx, cy-8);
+        ctx.font = '10px Sora,sans-serif'; ctx.fillStyle = '#94A3B8';
+        ctx.fillText('Total OS', cx, cy+10);
+        ctx.restore();
+      }
+    }]
+  });
 }
 
 function renderGraficoLinhaGastos(d, logF) {
+  if (!window.Chart) return;
+  _destroyChart('chart-gastos-linha');
+  const el = document.getElementById('chart-gastos-linha'); if (!el) return;
   const logData = logF || G.logistica || [];
-  if (!logData.length) {
-    const gastos = d.gastos_mensais||[];
-    if (!gastos.length) return;
-    const labels = gastos.map(g => { const [y,m]=g.mes.split('-'); return m+'/'+y.slice(2); });
-    drawLineChart('chart-gastos-linha', labels,
-      [{ label: 'Gastos em Rota (R$)', data: gastos.map(g=>g.total) }], '');
-    return;
-  }
   const mesesSet = new Set();
-  logData.forEach(l => { if(l.data_saida) mesesSet.add(l.data_saida.slice(0,7)); });
+  (logData.length ? logData : (d.gastos_mensais||[]).map(g=>({data_saida:g.mes+'-01',valor_total:g.total}))).forEach(l => {
+    if(l.data_saida) mesesSet.add(l.data_saida.slice(0,7));
+  });
   const meses = Array.from(mesesSet).sort().slice(-8);
   if (!meses.length) return;
   const labels = meses.map(m => { const [y,mo]=m.split('-'); return mo+'/'+y.slice(2); });
-  const totals = meses.map(mes => logData.filter(l=>l.data_saida&&l.data_saida.startsWith(mes)).reduce((s,l)=>s+(l.valor_total||0),0));
-  drawLineChart('chart-gastos-linha', labels, [{label:'Gastos Rota (R$)', data:totals}], '');
+  const src = logData.length ? logData : (d.gastos_mensais||[]).map(g=>({data_saida:g.mes+'-01',valor_total:g.total}));
+  const totals = meses.map(mes => src.filter(l=>l.data_saida&&l.data_saida.startsWith(mes)).reduce((s,l)=>s+(l.valor_total||0),0));
+  _charts['chart-gastos-linha'] = new Chart(el, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Gastos Rota (R$)',
+        data: totals,
+        backgroundColor: PBI.orange + 'CC',
+        borderColor: PBI.orange,
+        borderWidth: 0, borderRadius: 6, borderSkipped: false
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ` R$ ${ctx.parsed.y.toLocaleString('pt-BR',{minimumFractionDigits:0})}` } }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: PBI_FONT } },
+        y: { grid: PBI_GRID, ticks: { font: PBI_FONT, callback: v => 'R$'+Math.round(v/1000)+'k' }, beginAtZero: true }
+      }
+    }
+  });
 }
 
 function drawPieChartCustom(id, labels, values, colors, title) {
+  // Legacy fallback — usar Chart.js se disponível
+  if (window.Chart) {
+    _destroyChart(id);
+    const el = document.getElementById(id); if (!el) return;
+    const total = values.reduce((a,b)=>a+b,0);
+    if (!total) { const c=getCanvasCtx(id);if(c){c.ctx.fillStyle='#8899bb';c.ctx.font='12px Sora,sans-serif';c.ctx.textAlign='center';c.ctx.fillText('Sem dados',c.W/2,c.H/2);} return; }
+    _charts[id] = new Chart(el, {
+      type:'doughnut',
+      data:{labels, datasets:[{data:values, backgroundColor:colors, borderColor:'#fff', borderWidth:3, hoverOffset:6}]},
+      options:{ responsive:true, maintainAspectRatio:false, cutout:'58%',
+        plugins:{ legend:{position:'right',labels:{font:PBI_FONT,padding:10,usePointStyle:true}},
+          tooltip:{callbacks:{label:ctx=>` ${ctx.label}: ${ctx.parsed} (${Math.round(ctx.parsed*100/total)}%)`}}
+        }
+      }
+    });
+    return;
+  }
+  // Fallback canvas manual
   const c = getCanvasCtx(id); if (!c) return;
   const { ctx, W, H } = c;
   const total = values.reduce((a,b) => a+b, 0);
   ctx.fillStyle = '#f8faff'; ctx.fillRect(0, 0, W, H);
-  if (title) { ctx.fillStyle='#1a2340'; ctx.font='bold 12px Sora,sans-serif'; ctx.textAlign='center'; ctx.fillText(title, W/2, 22); }
   if (!total) { ctx.fillStyle='#8899bb'; ctx.font='12px Sora,sans-serif'; ctx.textAlign='center'; ctx.fillText('Sem dados', W/2, H/2); return; }
-  const legendW = 160;
-  const cx = (W - legendW) / 2, cy = title ? (H+30)/2 : H/2;
-  const r = Math.min(cx-20, (H-60)/2);
+  const legendW = 160, cx2 = (W - legendW) / 2, cy2 = H/2, r = Math.min(cx2-20, (H-60)/2);
   let angle = -Math.PI/2;
   values.forEach((v, i) => {
     const slice = 2*Math.PI*v/total;
-    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,r,angle,angle+slice);
+    ctx.beginPath(); ctx.moveTo(cx2,cy2); ctx.arc(cx2,cy2,r,angle,angle+slice);
     ctx.closePath(); ctx.fillStyle=colors[i%colors.length]; ctx.fill();
     ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.stroke();
-    const midA=angle+slice/2, pct=Math.round(v*100/total);
-    if(pct>5){ ctx.fillStyle='#fff'; ctx.font='bold 11px Sora,sans-serif'; ctx.textAlign='center'; ctx.fillText(pct+'%',cx+Math.cos(midA)*r*0.65,cy+Math.sin(midA)*r*0.65+4); }
     angle+=slice;
-  });
-  const lx=W-legendW+10;
-  labels.forEach((lb,i)=>{
-    const ly=36+i*24;
-    ctx.fillStyle=colors[i%colors.length]; ctx.fillRect(lx,ly,12,12);
-    ctx.fillStyle='#1a2340'; ctx.font='10px Sora,sans-serif'; ctx.textAlign='left';
-    const pct=Math.round(values[i]*100/total);
-    ctx.fillText(`${lb}: ${values[i]} (${pct}%)`,lx+16,ly+10);
   });
 }
 
 function renderGraficoPizzaToner(d) {
+  if (!window.Chart) return;
+  _destroyChart('chart-toner-pizza');
+  const el = document.getElementById('chart-toner-pizza'); if (!el) return;
   const ct = d.consumo_toner||[];
   const tots = { Preto:0, Magenta:0, Ciano:0, Amarelo:0, Grampos:0 };
   ct.forEach(c => { tots.Preto+=(c.preto||0); tots.Magenta+=(c.magenta||0); tots.Ciano+=(c.ciano||0); tots.Amarelo+=(c.amarelo||0); tots.Grampos+=(c.grampos||0); });
   const labels = Object.keys(tots).filter(k=>tots[k]>0);
   const values = labels.map(k=>tots[k]);
-  const COLORS = {'Preto':'#1a2340','Magenta':'#c0105a','Ciano':'#0090c0','Amarelo':'#d4a000','Grampos':'#6b3fa0'};
-  drawPieChartCustom('chart-toner-pizza', labels, values, labels.map(l=>COLORS[l]||'#888'), '');
+  const COLORS = {Preto:'#1E293B',Magenta:'#E91E63',Ciano:'#00BCD4',Amarelo:'#FFC107',Grampos:'#9B51E0'};
+  const total = values.reduce((a,b)=>a+b,0);
+  if (!total) { const c=getCanvasCtx('chart-toner-pizza');if(c){c.ctx.fillStyle='#8899bb';c.ctx.font='12px Sora,sans-serif';c.ctx.textAlign='center';c.ctx.fillText('Sem dados',c.W/2,c.H/2);} return; }
+  _charts['chart-toner-pizza'] = new Chart(el, {
+    type: 'doughnut',
+    data: { labels, datasets:[{data:values,backgroundColor:labels.map(l=>COLORS[l]||PBI.gray),borderColor:'#fff',borderWidth:3,hoverOffset:6}] },
+    options: {
+      responsive:true, maintainAspectRatio:false, cutout:'62%',
+      plugins: {
+        legend:{position:'right',labels:{font:PBI_FONT,padding:12,usePointStyle:true}},
+        tooltip:{callbacks:{label:ctx=>` ${ctx.label}: ${ctx.parsed} un. (${Math.round(ctx.parsed*100/total)}%)`}}
+      }
+    },
+    plugins:[{id:'centerText',afterDraw(chart){
+      const{ctx,chartArea:{top,bottom,left,right}}=chart;
+      const cx=(left+right)/2,cy=(top+bottom)/2;
+      ctx.save();ctx.font='bold 20px Sora,sans-serif';ctx.fillStyle='#0F172A';
+      ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(total,cx,cy-8);
+      ctx.font='10px Sora,sans-serif';ctx.fillStyle='#94A3B8';ctx.fillText('un. total',cx,cy+10);ctx.restore();
+    }}]
+  });
 }
 
+
+function renderGraficoFinanceiro(d) {
+  if (!window.Chart) return;
+  _destroyChart('chart-fin-linha');
+  const el = document.getElementById('chart-fin-linha'); if (!el) return;
+  const lancs = G.financeiro || [];
+  const mesesSet = new Set();
+  lancs.forEach(l => { if(l.data) mesesSet.add(l.data.slice(0,7)); });
+  // também puxar de contratos ativos para MRR
+  const meses = Array.from(mesesSet).sort().slice(-8);
+  if (!meses.length) return;
+  const labels = meses.map(m => { const [y,mo]=m.split('-'); return mo+'/'+y.slice(2); });
+  const receitas  = meses.map(mes => lancs.filter(l=>l.data&&l.data.startsWith(mes)&&l.tipo==='receita').reduce((s,l)=>s+(l.valor||0),0));
+  const despesas  = meses.map(mes => lancs.filter(l=>l.data&&l.data.startsWith(mes)&&l.tipo==='despesa').reduce((s,l)=>s+(l.valor||0),0));
+  _charts['chart-fin-linha'] = new Chart(el, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label:'Receitas', data:receitas, backgroundColor: PBI.green+'CC', borderColor: PBI.green, borderWidth:0, borderRadius:5, borderSkipped:false, order:2 },
+        { label:'Despesas', data:despesas, backgroundColor: PBI.red+'CC',   borderColor: PBI.red,   borderWidth:0, borderRadius:5, borderSkipped:false, order:2 },
+        { label:'Saldo',
+          data: receitas.map((r,i)=>r-despesas[i]),
+          type:'line', borderColor: PBI.blue, backgroundColor:'transparent',
+          borderWidth:2.5, pointRadius:4, pointBackgroundColor:'#fff', pointBorderColor:PBI.blue,
+          tension:0.4, order:1
+        }
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{
+        legend:{position:'top',align:'end',labels:{font:PBI_FONT,usePointStyle:true}},
+        tooltip:{callbacks:{label:ctx=>` ${ctx.dataset.label}: R$ ${(ctx.parsed.y||0).toLocaleString('pt-BR',{minimumFractionDigits:0})}`}}
+      },
+      scales:{
+        x:{grid:{display:false},ticks:{font:PBI_FONT}},
+        y:{grid:PBI_GRID,ticks:{font:PBI_FONT,callback:v=>'R$'+Math.round(v/1000)+'k'},beginAtZero:true}
+      }
+    }
+  });
+}
+
+function renderMapaMG() {
+  const el = document.getElementById('chart-mapa-mg'); if (!el) return;
+  const dpr = window.devicePixelRatio || 1;
+  const W = el.parentElement ? el.parentElement.offsetWidth || 500 : 500;
+  const H = parseInt(el.getAttribute('height')) || 180;
+  el.width = W * dpr; el.height = H * dpr;
+  el.style.width = W+'px'; el.style.height = H+'px';
+  const ctx = el.getContext('2d');
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, W, H);
+
+  // Distribuição de equipamentos por região de MG (dos dados reais ou placeholder)
+  const eqs = G.equipamentos || [];
+  const regioes = {};
+  eqs.forEach(e => {
+    const cidade = (e.cidade || e.end_cidade || '').trim();
+    if (cidade) regioes[cidade] = (regioes[cidade]||0)+1;
+  });
+
+  // Pontos fixos das principais cidades de MG (coordenadas normalizadas 0-1 para canvas)
+  const cidadesMG = [
+    {nome:'Belo Horizonte',  x:.48, y:.42, principal:true},
+    {nome:'Uberlândia',      x:.45, y:.22},
+    {nome:'Contagem',        x:.46, y:.43},
+    {nome:'Juiz de Fora',    x:.60, y:.57},
+    {nome:'Betim',           x:.44, y:.43},
+    {nome:'Montes Claros',   x:.48, y:.18},
+    {nome:'Ribeirão Preto',  x:.36, y:.25},
+    {nome:'Uberaba',         x:.38, y:.27},
+    {nome:'Governador Val.', x:.73, y:.37},
+    {nome:'Ipatinga',        x:.72, y:.39},
+    {nome:'Sete Lagoas',     x:.48, y:.38},
+    {nome:'Varginha',        x:.46, y:.55},
+    {nome:'Divinópolis',     x:.41, y:.45},
+    {nome:'Patos de Minas',  x:.43, y:.26},
+    {nome:'Poços de Caldas', x:.40, y:.60},
+  ];
+
+  // Fundo do mapa — silhueta simplificada de MG (retângulo arredondado)
+  const pad = 20;
+  ctx.save();
+  ctx.fillStyle = '#EBF5FB';
+  ctx.strokeStyle = '#2F80ED44';
+  ctx.lineWidth = 1.5;
+  const rr = 12;
+  ctx.beginPath();
+  ctx.moveTo(pad+rr, pad); ctx.lineTo(W-pad-rr, pad);
+  ctx.arcTo(W-pad, pad, W-pad, pad+rr, rr);
+  ctx.lineTo(W-pad, H-pad-rr);
+  ctx.arcTo(W-pad, H-pad, W-pad-rr, H-pad, rr);
+  ctx.lineTo(pad+rr, H-pad);
+  ctx.arcTo(pad, H-pad, pad, H-pad-rr, rr);
+  ctx.lineTo(pad, pad+rr);
+  ctx.arcTo(pad, pad, pad+rr, pad, rr);
+  ctx.closePath();
+  ctx.fill(); ctx.stroke();
+
+  // Grade leve
+  ctx.strokeStyle = '#D5E8F5'; ctx.lineWidth = 0.5;
+  for (let i=1;i<4;i++) {
+    const x = pad + (W-2*pad)*i/4;
+    ctx.beginPath(); ctx.moveTo(x,pad); ctx.lineTo(x,H-pad); ctx.stroke();
+  }
+  for (let i=1;i<3;i++) {
+    const y = pad + (H-2*pad)*i/3;
+    ctx.beginPath(); ctx.moveTo(pad,y); ctx.lineTo(W-pad,y); ctx.stroke();
+  }
+
+  // Label MG
+  ctx.fillStyle = '#CBD5E1'; ctx.font = 'bold 32px Sora,sans-serif';
+  ctx.textAlign = 'center'; ctx.globalAlpha = 0.18;
+  ctx.fillText('MG', W/2, H/2+12); ctx.globalAlpha = 1;
+
+  // Pontos de cidades
+  cidadesMG.forEach(c => {
+    const px = pad + c.x * (W - 2*pad);
+    const py = pad + c.y * (H - 2*pad);
+    const count = Object.keys(regioes).reduce((s,k)=>k.toLowerCase().includes(c.nome.toLowerCase().slice(0,4))?s+regioes[k]:s, 0);
+    const r = c.principal ? 7 : count > 0 ? 5 : 3;
+    const col = count > 0 ? PBI.blue : c.principal ? PBI.navy : '#CBD5E1';
+
+    // Pulso se tiver equipamento
+    if (count > 0) {
+      ctx.beginPath(); ctx.arc(px, py, r+5, 0, Math.PI*2);
+      ctx.fillStyle = col + '22'; ctx.fill();
+    }
+    ctx.beginPath(); ctx.arc(px, py, r, 0, Math.PI*2);
+    ctx.fillStyle = col; ctx.fill();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke();
+
+    if (count > 0) {
+      ctx.fillStyle = '#fff'; ctx.font = 'bold 8px Sora,sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(count, px, py+3);
+    }
+
+    // Label cidade para as principais
+    if (c.principal || count > 0) {
+      ctx.fillStyle = '#334155'; ctx.font = `${c.principal?'bold ':''}9px Sora,sans-serif`;
+      ctx.textAlign = 'left';
+      ctx.fillText(c.nome.split(' ')[0], px+r+4, py+3);
+    }
+  });
+
+  // Legenda
+  const legY = H-10;
+  [[PBI.blue,'Com equip.'],[PBI.navy,'BH'],[('#CBD5E1'),'Sem equip.']].forEach(([col,lbl],i)=>{
+    const lx = pad + i*90;
+    ctx.beginPath(); ctx.arc(lx+5, legY-4, 4, 0, Math.PI*2);
+    ctx.fillStyle = col; ctx.fill();
+    ctx.fillStyle = '#64748B'; ctx.font = '8.5px Sora,sans-serif'; ctx.textAlign='left';
+    ctx.fillText(lbl, lx+12, legY);
+  });
+  ctx.restore();
+}
 
 // ─── PERFIS DE ACESSO ─────────────────────────────────────────
 const PERFIS_MODULOS = {
