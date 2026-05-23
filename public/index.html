@@ -538,11 +538,11 @@ tr:hover td{background:var(--sf2)}
   #print-window{display:block!important;position:fixed;inset:0;background:#fff;z-index:99999;padding:16px}
 }
 .os-doc{font-family:'Sora',sans-serif;color:#111;font-size:11px;background:#fff}
-.os-hd{display:flex;border:2px solid #1e4080;border-radius:6px 6px 0 0;overflow:hidden}
-.os-logo-col{background:#0d1f3c;padding:10px 14px;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:100px}
+.os-hd{display:flex;border-bottom:2.5px solid #1e4080;padding-bottom:10px;margin-bottom:2px}
+.os-logo-col{display:none}
 .os-logo-txt{color:#e07818;font-size:14px;font-weight:800;letter-spacing:1px}
 .os-logo-sub{color:#64748b;font-size:8px;text-align:center;margin-top:2px}
-.os-mid{flex:1;padding:9px 13px;border-left:2px solid #1e4080;border-right:2px solid #1e4080}
+.os-mid{display:none}
 .os-co-name{font-size:13px;font-weight:800;color:#0d1f3c;margin-bottom:1px}
 .os-co-tag{font-size:8px;color:#667;margin-bottom:3px}
 .os-co-addr{font-size:8px;color:#445;line-height:1.5}
@@ -5233,20 +5233,22 @@ body{font-family:'Sora',sans-serif;font-size:10.5px;color:#111;background:#fff;p
   .os-sigs{page-break-inside:avoid}
 }
 /* ── Cabeçalho ── */
-.os-hd{display:flex;align-items:stretch;border:2px solid #1e4080;border-radius:6px 6px 0 0;overflow:hidden}
-.os-hd-left{display:flex;align-items:center;gap:12px;flex:1;background:#0d1f3c;padding:10px 14px}
-.os-hd-logo{width:54px;height:54px;object-fit:contain;flex-shrink:0}
+/* ── Cabeçalho branco ── */
+.os-hd{display:flex;align-items:stretch;border-bottom:2.5px solid #1e4080;padding-bottom:10px;margin-bottom:2px}
+.os-hd-left{display:flex;align-items:center;gap:11px;flex:1}
+.os-hd-logo{width:58px;height:58px;object-fit:contain;flex-shrink:0}
 .os-hd-info{}
-.os-co-name{font-size:13px;font-weight:800;color:#e07818;margin-bottom:1px}
-.os-co-tag{font-size:7.5px;color:#94a3b8;margin-bottom:2px}
-.os-co-addr{font-size:7.5px;color:#cbd5e1;line-height:1.5}
-.os-hd-right{padding:10px 14px;text-align:center;min-width:130px;display:flex;flex-direction:column;justify-content:center;align-items:center;border-left:2px solid #1e4080}
-.os-right-lbl{font-size:7.5px;font-weight:700;color:#1e4080;text-transform:uppercase;letter-spacing:.8px}
-.os-right-num{font-size:17px;font-weight:800;color:#e07818;margin:2px 0}
-.os-right-date{font-size:8.5px;color:#445}
+.os-co-name{font-size:14px;font-weight:800;color:#1e4080;margin-bottom:1px}
+.os-co-tag{font-size:8px;color:#64748b;margin-bottom:2px}
+.os-co-addr{font-size:8px;color:#445;line-height:1.5}
+.os-hd-right{padding:4px 0 4px 16px;text-align:right;min-width:130px;display:flex;flex-direction:column;justify-content:center;align-items:flex-end;border-left:2px solid #e2e8f0}
+.os-right-lbl{font-size:7.5px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.8px}
+.os-right-num{font-size:18px;font-weight:800;color:#1e4080;margin:1px 0;letter-spacing:0.5px}
+.os-right-date{font-size:8px;color:#64748b}
 /* ── Seções ── */
-.os-sec{border:1px solid #c0cbdf;border-top:none;padding:6px 10px}
-.os-sec-title{font-size:7px;font-weight:800;color:#fff;background:#1e4080;padding:2px 7px;border-radius:3px;text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px;display:inline-block}
+.os-sec{border:1px solid #e2e8f0;border-top:none;padding:5px 10px}
+.os-sec:first-of-type{border-top:1px solid #e2e8f0;margin-top:6px}
+.os-sec-title{font-size:7px;font-weight:700;color:#1e4080;letter-spacing:.8px;text-transform:uppercase;margin-bottom:4px;display:inline-block;border-bottom:1.5px solid #1e4080;padding-bottom:1px}
 .os-g2{display:grid;grid-template-columns:1fr 1fr;gap:4px}
 .os-g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:4px}
 .os-g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px}
@@ -5258,10 +5260,10 @@ body{font-family:'Sora',sans-serif;font-size:10.5px;color:#111;background:#fff;p
 .os-gtbl{width:100%;border-collapse:collapse;font-size:9px}
 .os-gtbl td{padding:2px 5px;border-bottom:1px solid #eef}
 .os-gtbl td:last-child{text-align:right;font-weight:600}
-.os-gtot td{background:#0d1f3c;color:#fff;font-weight:700;font-size:9.5px;padding:3px 5px}
-.os-gtot td:last-child{color:#f5a030}
+.os-gtot td{background:#f1f5f9;color:#1e4080;font-weight:700;font-size:9.5px;padding:3px 5px;border-top:1.5px solid #1e4080}
+.os-gtot td:last-child{color:#c05000}
 /* ── Assinaturas ── */
-.os-sigs{display:grid;grid-template-columns:1fr 1fr;gap:30px;padding:10px 14px;border:1px solid #c0cbdf;border-top:none;border-radius:0 0 6px 6px}
+.os-sigs{display:grid;grid-template-columns:1fr 1fr;gap:30px;padding:10px 14px;border-top:1px solid #e2e8f0;margin-top:2px}
 .os-sig-block{text-align:center}
 .os-sig-img{max-height:55px;max-width:180px;display:block;margin:0 auto 4px}
 .os-sig-empty{height:44px}
@@ -5270,7 +5272,7 @@ body{font-family:'Sora',sans-serif;font-size:10.5px;color:#111;background:#fff;p
 }
 function openPrintWindow(html, styles) {
   const w=window.open('','_blank','width=820,height=1100');
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Impressão</title><link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet"><style>@page{size:A4;margin:10mm 12mm}*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Sora',sans-serif;padding:0;background:#fff}${styles}</style></head><body>${html}
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Impressão</title><link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet"><style>@page{size:A4;margin:12mm 14mm}*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Sora',sans-serif;padding:0;background:#fff;width:100%}${styles}</style></head><body>${html}
 
 
 </body></html>`);
