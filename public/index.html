@@ -5303,25 +5303,26 @@ body {
   display: flex;
   align-items: stretch;
   justify-content: space-between;
-  background: linear-gradient(135deg, #0d1f3c 0%, #1a3a6b 100%);
+  background: #ffffff;
+  border: 2px solid #1e3a6e;
   border-radius: 8px;
   margin-bottom: 14px;
   overflow: hidden;
   flex-shrink: 0;
 }
-.os-hd-left { display: flex; align-items: center; gap: 14px; flex: 1; padding: 14px 18px; }
-.os-hd-logo { width: 58px; height: 58px; object-fit: contain; flex-shrink: 0; background: rgba(255,255,255,.08); border-radius: 8px; padding: 4px; }
-.os-co-name { font-size: 14px; font-weight: 800; color: #ffffff; margin-bottom: 2px; letter-spacing: .3px; }
-.os-co-tag  { font-size: 8px; color: #93c5fd; margin-bottom: 3px; font-weight: 500; letter-spacing: .3px; }
-.os-co-addr { font-size: 7.5px; color: rgba(255,255,255,.5); line-height: 1.5; }
+.os-hd-left { display: flex; align-items: center; gap: 14px; flex: 1; padding: 14px 18px; border-right: 2px solid #1e3a6e; }
+.os-hd-logo { width: 58px; height: 58px; object-fit: contain; flex-shrink: 0; }
+.os-co-name { font-size: 14px; font-weight: 800; color: #0d1f3c; margin-bottom: 2px; letter-spacing: .3px; }
+.os-co-tag  { font-size: 8px; color: #1e4080; margin-bottom: 3px; font-weight: 600; letter-spacing: .3px; }
+.os-co-addr { font-size: 7.5px; color: #475569; line-height: 1.5; }
 .os-hd-right {
   display: flex; flex-direction: column; align-items: flex-end; justify-content: center;
-  background: rgba(255,255,255,.06); border-left: 1px solid rgba(255,255,255,.1);
+  background: #f8fafc;
   padding: 14px 20px; min-width: 150px; gap: 3px; text-align: right;
 }
-.os-right-lbl  { font-size: 7px; font-weight: 700; color: #93c5fd; text-transform: uppercase; letter-spacing: 1px; }
-.os-right-num  { font-size: 18px; font-weight: 800; color: #f97316; letter-spacing: .5px; line-height: 1.1; }
-.os-right-date { font-size: 8px; color: rgba(255,255,255,.55); }
+.os-right-lbl  { font-size: 7px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 1px; }
+.os-right-num  { font-size: 18px; font-weight: 800; color: #e07818; letter-spacing: .5px; line-height: 1.1; }
+.os-right-date { font-size: 8px; color: #64748b; }
 
 /* ── Seções genéricas ── */
 .os-sec {
