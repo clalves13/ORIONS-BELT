@@ -4638,22 +4638,25 @@ function popCli(ids) { popSel(ids, G.clientes, c=>c.id, c=>c.nome); }
 function loadEqs(pfx) {
   const cid = document.getElementById(pfx+'-cli').value;
   let eqs = G.equipamentos.filter(e=>e.cliente_id===cid);
-  // FIX: Equipamentos em laboratório NÃO aparecem disponíveis para OS de atendimento
+
+  // ── OS de atendimento: ocultar equipamentos em laboratório ──
   if (pfx === 'o') {
-    const emLab = new Set((G.laboratorio||[]).filter(l=>l.status!=='Concluído'&&l.status!=='Baixado').map(l=>l.nserie).filter(Boolean));
-    eqs = eqs.filter(e => !e.nserie || !emLab.has(e.nserie));
+    // Laboratórios ativos (não concluídos/baixados)
+    const labAtivos = (G.laboratorio||[]).filter(l => l.status!=='Concluído' && l.status!=='Baixado');
+    const nsEmLab   = new Set(labAtivos.map(l=>l.nserie).filter(Boolean));
+    const idEmLab   = new Set(labAtivos.map(l=>l.equip_id).filter(Boolean));
+    eqs = eqs.filter(e => !idEmLab.has(e.id) && (!e.nserie || !nsEmLab.has(e.nserie)));
   }
-  // FIX: Para lab, equipamentos em OS aberta de atendimento (campo) aparecem com aviso
+
+  // ── Laboratório: ocultar equipamentos com OS de campo aberta ──
   if (pfx === 'l') {
-    const emOSAberta = new Set((G.ordens||[]).filter(o=>o.status!=='Concluída'&&o.status!=='Cancelada'&&o.tipo!=='Laboratório').map(o=>o.nserie).filter(Boolean));
-    // Não bloquear, apenas marcar visualmente — a restrição é na abertura
-    eqs = eqs.map(e => {
-      if (e.nserie && emOSAberta.has(e.nserie)) {
-        return { ...e, nome: e.nome + ' ⚠ (em OS campo)' };
-      }
-      return e;
-    });
+    const osAbertas = (G.ordens||[]).filter(o => o.status!=='Concluída' && o.status!=='Cancelada');
+    const nsEmOS    = new Set(osAbertas.map(o=>o.nserie).filter(Boolean));
+    const idEmOS    = new Set(osAbertas.map(o=>o.equip_id).filter(Boolean));
+    // Remover do select (não apenas marcar)
+    eqs = eqs.filter(e => !idEmOS.has(e.id) && (!e.nserie || !nsEmOS.has(e.nserie)));
   }
+
   const el = document.getElementById(pfx+'-eq'); if(!el) return;
   el.innerHTML = '<option value="">Selecionar...</option>' + eqs.map(e=>`<option value="${e.id}">${e.nome} — ${e.modelo||''}</option>`).join('');
 }
@@ -4749,8 +4752,8 @@ function openOS(id) {
     }
     calcSLADeadline();
     document.getElementById('btn-prev').style.display='inline-flex';
-    // Mostrar botão de troca de série só se OS não estiver encerrada
-    if (os.status !== 'Concluída' && os.status !== 'Cancelada' && os.nserie) {
+    // Botão de troca de série: só faz sentido em OS Concluída (registrar troca de peça principal pós-reparo)
+    if (os.status === 'Concluída' && os.nserie) {
       document.getElementById('btn-troca-serie').style.display='inline-flex';
     }
     setTimeout(()=>{sigOSInit();sigOSSet('tec',os.sig_tec||'');sigOSSet('cli',os.sig_cli||'');},80);
@@ -5301,27 +5304,26 @@ body {
 /* ── Cabeçalho ── */
 .os-hd {
   display: flex;
-  align-items: stretch;
-  justify-content: space-between;
-  background: #ffffff;
-  border: 2px solid #1e3a6e;
-  border-radius: 8px;
-  margin-bottom: 14px;
-  overflow: hidden;
+  align-items: center;
+  padding-bottom: 8px;
+  margin-bottom: 6px;
+  border-bottom: 2px solid #1e4080;
   flex-shrink: 0;
 }
-.os-hd-left { display: flex; align-items: center; gap: 14px; flex: 1; padding: 14px 18px; border-right: 2px solid #1e3a6e; }
-.os-hd-logo { width: 58px; height: 58px; object-fit: contain; flex-shrink: 0; }
-.os-co-name { font-size: 14px; font-weight: 800; color: #0d1f3c; margin-bottom: 2px; letter-spacing: .3px; }
-.os-co-tag  { font-size: 8px; color: #1e4080; margin-bottom: 3px; font-weight: 600; letter-spacing: .3px; }
-.os-co-addr { font-size: 7.5px; color: #475569; line-height: 1.5; }
+.os-hd-left { display: flex; align-items: center; gap: 10px; flex: 1; }
+.os-hd-logo { width: 52px; height: 52px; object-fit: contain; flex-shrink: 0; }
+.os-co-name { font-size: 13px; font-weight: 800; color: #1e4080; margin-bottom: 1px; }
+.os-co-tag  { font-size: 7.5px; color: #64748b; margin-bottom: 2px; }
+.os-co-addr { font-size: 7.5px; color: #445; line-height: 1.4; }
 .os-hd-right {
+  padding: 4px 0 4px 14px;
+  text-align: right;
+  min-width: 120px;
+  border-left: 1.5px solid #e2e8f0;
   display: flex; flex-direction: column; align-items: flex-end; justify-content: center;
-  background: #f8fafc;
-  padding: 14px 20px; min-width: 150px; gap: 3px; text-align: right;
 }
-.os-right-lbl  { font-size: 7px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 1px; }
-.os-right-num  { font-size: 18px; font-weight: 800; color: #e07818; letter-spacing: .5px; line-height: 1.1; }
+.os-right-lbl  { font-size: 7px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: .8px; }
+.os-right-num  { font-size: 17px; font-weight: 800; color: #1e4080; margin: 2px 0; letter-spacing: .5px; }
 .os-right-date { font-size: 8px; color: #64748b; }
 
 /* ── Seções genéricas ── */
