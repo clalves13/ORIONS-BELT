@@ -1630,7 +1630,7 @@ label { font-size: 11px !important; font-weight: 600 !important; color: #475569 
     </div>
 
     <!-- ══ LINHA 4 — Financeiro + Mapa ══ -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+    <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:16px;margin-bottom:16px;align-items:start">
       <div class="dash-card">
         <div class="dash-card-hd">
           <div>
@@ -1641,7 +1641,7 @@ label { font-size: 11px !important; font-weight: 600 !important; color: #475569 
         </div>
         <canvas id="chart-fin-linha" height="160" style="width:100%;display:block"></canvas>
       </div>
-      <div class="dash-card">
+      <div class="dash-card" style="max-height:none;overflow:visible">
         <div class="dash-card-hd">
           <div>
             <div class="dash-card-title">📍 Equipamentos por Região</div>
@@ -1649,7 +1649,8 @@ label { font-size: 11px !important; font-weight: 600 !important; color: #475569 
           </div>
           <span class="dash-card-badge">Equipamentos</span>
         </div>
-        <canvas id="chart-mapa-mg" height="160" style="width:100%;display:block"></canvas>
+        <div id="mg-map-wrap" style="display:flex;justify-content:center;align-items:center;width:100%;padding:4px 0"></div>
+        <canvas id="chart-mapa-mg" style="display:none"></canvas>
       </div>
     </div>
 
@@ -8780,14 +8781,18 @@ function renderGraficoFinanceiro(d) {
 }
 
 function renderMapaMG() {
-  const el = document.getElementById('chart-mapa-mg'); if (!el) return;
-  const cont = el.parentElement;
-  el.style.display = 'none';
-  const old = cont.querySelector('svg.mg-map');
+  // Usar o wrapper centralizado
+  const wrap = document.getElementById('mg-map-wrap');
+  const el   = document.getElementById('chart-mapa-mg');
+  if (!wrap) return;
+  el && (el.style.display = 'none');
+  const old = wrap.querySelector('svg.mg-map');
   if (old) old.remove();
 
-  const W = Math.max((cont.offsetWidth || 480) - 8, 300);
-  const H = Math.round(W * 0.88);
+  // Tamanho máximo que cabe no card sem overflow
+  const cardW = wrap.offsetWidth || 280;
+  const W = Math.min(cardW - 8, 280);   // máx 280px — cabe em qualquer card
+  const H = Math.round(W * 1.02);       // MG é levemente mais alto que largo
 
   // Equipamentos por cidade
   const eqs = G.equipamentos || [];
@@ -9179,7 +9184,7 @@ function renderMapaMG() {
     lt.textContent=lbl; svg.appendChild(lt);
   });
 
-  cont.appendChild(svg);
+  wrap.appendChild(svg);
 }
 
 // ─── PERFIS DE ACESSO ─────────────────────────────────────────
