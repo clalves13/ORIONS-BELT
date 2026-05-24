@@ -9,11 +9,12 @@
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
   --bg:#f0f2f5;--tx:#0f172a;--tx2:#475569;--tx3:#94a3b8;
+  --sf:#ffffff;--sf2:#f8fafc;--bd:#e2e8f0;--bd2:rgba(15,23,42,.14);
   --nv:#0d1f3c;--bl:#2563eb;--bl2:#1d4ed8;
   --gn:#16a34a;--gnbg:#dcfce7;--gnbd:#86efac;
   --rd:#dc2626;--rdbg:#fee2e2;--rdbd:#fca5a5;
   --or:#ea580c;--orbg:#ffedd5;--orbd:#fdba74;
-  --r:10px;--rlg:12px;
+  --pu:#7c3aed;--r:10px;--rlg:12px;
   --sh:0 1px 4px rgba(0,0,0,.07),0 4px 16px rgba(0,0,0,.05);
 }
 body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--tx);font-size:14px;min-height:100vh}
@@ -25,13 +26,10 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--bl);box-
 ::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:3px}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:0 16px;height:36px;border-radius:8px;border:none;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;white-space:nowrap}
 .btn-primary{background:var(--bl);color:#fff}.btn-primary:hover{background:var(--bl2)}
-.btn-ghost{background:#f8fafc;color:var(--tx2);border:1px solid #e2e8f0}.btn-ghost:hover{background:#f1f5f9}
+.btn-ghost{background:#f8fafc;color:var(--tx2);border:1px solid var(--bd)}.btn-ghost:hover{background:#f1f5f9}
 .btn-sm{height:30px;padding:0 12px;font-size:11px}
 .btn-lg{height:44px;padding:0 24px;font-size:14px;font-weight:700}
-.card{background:#fff;border-radius:var(--rlg);border:1px solid #e2e8f0;padding:20px;box-shadow:var(--sh)}
-.label{display:block;font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:5px}
-.fg{margin-bottom:14px}
-
+.card{background:#fff;border-radius:var(--rlg);border:1px solid var(--bd);padding:20px;box-shadow:var(--sh)}
 /* LOGIN */
 #portal-login{position:fixed;inset:0;background:linear-gradient(135deg,#0d1f3c 0%,#1a3560 50%,#0f3460 100%);display:flex;align-items:center;justify-content:center;z-index:9999}
 .pbox{background:#fff;border-radius:20px;padding:36px;width:370px;box-shadow:0 32px 80px rgba(0,0,0,.3)}
@@ -39,15 +37,14 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--bl);box-
 .plogo-badge{display:inline-block;background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;border-radius:5px;padding:3px 9px;font-size:9px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-top:4px}
 .plogo-title{font-size:18px;font-weight:800;color:#0d1f3c;margin-top:6px}
 .plogo-sub{font-size:11px;color:#64748b;margin-top:2px}
-.perr{background:#fee2e2;color:#b91c1c;border:1px solid #fca5a5;border-radius:8px;padding:9px 13px;font-size:12px;margin-bottom:12px;display:none}
+.p-err{background:#fee2e2;color:#b91c1c;border:1px solid #fca5a5;border-radius:8px;padding:9px 13px;font-size:12px;margin-bottom:12px;display:none}
 .lfg{margin-bottom:12px}
 .lfg label{display:block;font-size:10px;font-weight:700;color:#475569;margin-bottom:4px;text-transform:uppercase;letter-spacing:.6px}
-.lfg input{width:100%;padding:9px 12px;border:1.5px solid #d1d9e6;border-radius:8px;font-size:13px;font-family:inherit;color:#0f172a;background:#fff;transition:border .15s}
+.lfg input{width:100%;padding:9px 12px;border:1.5px solid #d1d9e6;border-radius:8px;font-size:13px;font-family:'Sora',sans-serif;color:#0f172a;background:#fff;transition:border .15s}
 .lfg input:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.1)}
-.plbtn{width:100%;height:42px;background:linear-gradient(135deg,#1d4ed8,#2563eb);color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:700;font-family:'Sora',sans-serif;cursor:pointer;margin-top:8px;transition:opacity .2s}
+.plbtn{width:100%;height:42px;background:linear-gradient(135deg,#1d4ed8,#2563eb);color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer;margin-top:8px;transition:opacity .2s}
 .plbtn:hover{opacity:.9}
 .forgot-link{background:none;border:none;color:#e07818;font-size:11px;cursor:pointer;text-decoration:underline;padding:0;display:block;text-align:right;margin:-4px 0 10px}
-
 /* MODAL RECUPERAÇÃO */
 .rec-modal{display:none;position:fixed;inset:0;background:rgba(15,23,42,.5);align-items:center;justify-content:center;z-index:10000;backdrop-filter:blur(4px)}
 .rec-modal.open{display:flex}
@@ -55,78 +52,84 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--bl);box-
 .rec-title{font-size:15px;font-weight:700;color:#0d1f3c;margin-bottom:4px}
 .rec-sub{font-size:11px;color:#64748b;margin-bottom:16px}
 .rec-ok{background:#dcfce7;border:1px solid #86efac;color:#15803d;border-radius:8px;padding:10px 14px;font-size:12px;font-weight:600;display:none;margin-bottom:12px}
-
 /* APP */
 #portal-app{display:none;min-height:100vh;flex-direction:column}
-.portal-header{background:#fff;padding:0 28px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;border-bottom:1px solid #e2e8f0;box-shadow:0 1px 4px rgba(0,0,0,.05)}
+.portal-header{background:#fff;padding:0 28px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;border-bottom:1px solid var(--bd);box-shadow:0 1px 4px rgba(0,0,0,.05)}
 .portal-logo{display:flex;align-items:center;gap:10px}
 .portal-logo-badge{font-size:9px;color:#2563eb;background:#eff6ff;border:1px solid #bfdbfe;border-radius:4px;padding:2px 7px;margin-left:4px;font-weight:700;letter-spacing:.8px;text-transform:uppercase}
 .portal-logo-name{color:#0d1f3c;font-size:14px;font-weight:700}
 .portal-user{display:flex;align-items:center;gap:8px;font-size:12px}
 .portal-av{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#2563eb,#7c3aed);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700}
 .portal-content{flex:1;padding:24px 28px;max-width:1100px;margin:0 auto;width:100%}
-.portal-nav{display:flex;gap:2px;margin-bottom:22px;border-bottom:1px solid #e2e8f0}
+.portal-nav{display:flex;gap:2px;margin-bottom:22px;border-bottom:1px solid var(--bd)}
 .pnav-btn{padding:10px 18px;border:none;background:none;font-family:'Sora',sans-serif;font-size:12px;font-weight:600;color:var(--tx3);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;margin-bottom:-1px}
 .pnav-btn:hover{color:var(--tx)}
 .pnav-btn.active{color:#2563eb;border-bottom-color:#2563eb}
 .ppage{display:none}.ppage.active{display:block}
-
+/* KPI */
+.kpi-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
+.kpi-card{background:#fff;border:1px solid var(--bd);border-radius:var(--rlg);padding:16px;text-align:center;position:relative;overflow:hidden;transition:transform .2s;box-shadow:var(--sh)}
+.kpi-card:hover{transform:translateY(-2px)}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#2563eb,#7c3aed)}
+.kpi-val{font-size:26px;font-weight:800;color:#2563eb}
+.kpi-lbl{font-size:9px;color:var(--tx3);font-weight:700;text-transform:uppercase;letter-spacing:.7px;margin-top:4px}
 /* OS CARDS */
 .os-cards{display:flex;flex-direction:column;gap:10px}
-.os-card{background:#fff;border:1px solid #e2e8f0;border-radius:var(--rlg);padding:16px 18px 16px 22px;position:relative;overflow:hidden;transition:all .2s;box-shadow:var(--sh)}
-.os-card::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;background:#e2e8f0}
+.os-card{background:#fff;border:1px solid var(--bd);border-radius:var(--rlg);padding:16px 18px 16px 22px;position:relative;overflow:hidden;transition:all .2s;box-shadow:var(--sh)}
+.os-card::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;background:var(--bd)}
 .os-card:hover{border-color:#c7d7f0;box-shadow:0 4px 20px rgba(15,23,42,.1)}
 .os-card.aberta::before{background:#3b82f6}
-.os-card.andamento::before{background:#ea580c}
-.os-card.concluida::before{background:#16a34a}
-.os-card.cancelada::before{background:#dc2626}
+.os-card.andamento::before{background:var(--or)}
+.os-card.concluida::before{background:var(--gn)}
+.os-card.cancelada::before{background:var(--rd)}
 .os-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
 .os-card-num{font-size:13px;font-weight:700;color:#2563eb}
-.os-card-body{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;margin-bottom:10px}
+.os-card-body{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-bottom:10px}
 .os-info-item{display:flex;flex-direction:column;gap:2px}
 .os-info-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--tx3)}
 .os-info-val{font-size:12px;font-weight:500}
 .os-card-foot{display:flex;align-items:center;justify-content:space-between;padding-top:10px;border-top:1px solid #f1f5f9}
 .status-pill{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;border:1px solid transparent}
 .sp-aberta{background:#eff6ff;color:#2563eb;border-color:#bfdbfe}
-.sp-andamento{background:#ffedd5;color:#ea580c;border-color:#fdba74}
-.sp-concluida{background:#dcfce7;color:#16a34a;border-color:#86efac}
-.sp-cancelada{background:#fee2e2;color:#dc2626;border-color:#fca5a5}
+.sp-andamento{background:var(--orbg);color:var(--or);border-color:var(--orbd)}
+.sp-concluida{background:var(--gnbg);color:var(--gn);border-color:var(--gnbd)}
+.sp-cancelada{background:var(--rdbg);color:var(--rd);border-color:var(--rdbd)}
 .sp-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;background:currentColor}
-
-/* CHAMADO */
-.chamado-form{max-width:640px}
-.fsec{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.9px;color:#2563eb;padding-bottom:6px;border-bottom:1px solid #e2e8f0;margin-bottom:12px;margin-top:18px}
+/* CHAMADO FORM */
+.fsec{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.9px;color:#2563eb;padding-bottom:6px;border-bottom:1px solid var(--bd);margin-bottom:12px;margin-top:18px}
 .fsec:first-child{margin-top:0}
+.fg{margin-bottom:12px}
+.label{display:block;font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:5px}
 .fgrid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.ok-msg{background:#dcfce7;border:1px solid #86efac;color:#15803d;border-radius:var(--r);padding:12px 16px;font-size:13px;font-weight:600;display:none;margin-bottom:14px}
-
 /* EMPTY */
 .empty-state{text-align:center;padding:48px 20px;color:var(--tx3)}
 .empty-ico{font-size:40px;margin-bottom:12px;opacity:.4}
 .empty-title{font-size:14px;font-weight:700;color:var(--tx2);margin-bottom:6px}
-
+.empty-sub{font-size:12px}
 /* MODAL */
 .mov{position:fixed;inset:0;background:rgba(15,23,42,.5);display:none;align-items:center;justify-content:center;z-index:500;backdrop-filter:blur(4px)}
 .mov.open{display:flex}
-.modal{background:#fff;border-radius:var(--rlg);width:100%;max-width:680px;max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(15,23,42,.2);border:1px solid #e2e8f0}
+.modal{background:#fff;border-radius:var(--rlg);width:100%;max-width:700px;max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(15,23,42,.2);border:1px solid var(--bd)}
 .mhd{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid #f1f5f9}
 .mhd-title{font-size:14px;font-weight:700}
 .mbody{padding:20px 22px}
 .mfoot{padding:14px 22px;border-top:1px solid #f1f5f9;display:flex;justify-content:flex-end;gap:8px}
-.btnx{width:30px;height:30px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:7px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--tx3);transition:all .15s}
-.btnx:hover{background:#fee2e2;color:#b91c1c;border-color:#fca5a5}
-
-/* KPI */
-.kpi-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
-.kpi-card{background:#fff;border:1px solid #e2e8f0;border-radius:var(--rlg);padding:14px 16px;text-align:center;position:relative;overflow:hidden;transition:transform .2s;box-shadow:var(--sh)}
-.kpi-card:hover{transform:translateY(-2px)}
-.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#2563eb,#7c3aed)}
-.kpi-val{font-size:24px;font-weight:800;color:#2563eb}
-.kpi-lbl{font-size:9px;color:var(--tx3);font-weight:600;text-transform:uppercase;letter-spacing:.7px;margin-top:3px}
-
+.btnx{width:30px;height:30px;background:#f8fafc;border:1px solid var(--bd);border-radius:7px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--tx3)}
+.btnx:hover{background:var(--rdbg);color:var(--rd);border-color:var(--rdbd)}
+/* OS PRINT */
+.os-print-wrap{font-size:12px;line-height:1.7}
+.os-print-header{background:linear-gradient(135deg,#0d1f3c,#1a3560);color:#fff;border-radius:10px;padding:16px 20px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}
+.os-print-empresa{font-size:15px;font-weight:700}
+.os-print-num{font-size:22px;font-weight:800;color:#e07818}
+.os-print-section{margin-bottom:14px}
+.os-print-title{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.9px;color:#2563eb;margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid var(--bd)}
+.os-print-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.os-print-item{background:#f8fafc;border-radius:7px;padding:8px 11px;border:1px solid var(--bd)}
+.os-print-item-label{font-size:9px;font-weight:700;text-transform:uppercase;color:var(--tx3);margin-bottom:2px}
+.os-print-item-val{font-size:12px;font-weight:600}
+.os-print-text{background:#f8fafc;border-radius:7px;padding:10px 13px;font-size:12px;min-height:36px;line-height:1.7;border:1px solid var(--bd)}
 @media print{
-  #portal-login,#portal-app .portal-header,#portal-app .portal-nav,.mfoot,.btnx{display:none!important}
+  #portal-login,.portal-header,.portal-nav,.mfoot,.btnx{display:none!important}
   body{background:#fff}
   .mov.open{position:static;background:none;display:block}
   .modal{box-shadow:none;max-height:none;border:none}
@@ -135,6 +138,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--bl);box-
 </head>
 <body>
 
+<!-- LOGIN -->
 <div id="portal-login">
   <div class="pbox">
     <div class="plogo">
@@ -143,13 +147,11 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--bl);box-
       <div class="plogo-sub">Portal do Cliente</div>
       <div class="plogo-badge">Orion Soluções — AT</div>
     </div>
-    <div class="perr" id="p-err"></div>
-    <div class="lfg">
-      <label>Usuário</label>
+    <div class="p-err" id="p-err"></div>
+    <div class="lfg"><label>Usuário</label>
       <input type="text" id="p-login" placeholder="Seu login" autocomplete="username" onkeydown="if(event.key==='Enter')doPortalLogin()">
     </div>
-    <div class="lfg">
-      <label>Senha</label>
+    <div class="lfg"><label>Senha</label>
       <div style="position:relative;display:flex;align-items:center">
         <input type="password" id="p-pass" placeholder="Sua senha" autocomplete="current-password" onkeydown="if(event.key==='Enter')doPortalLogin()" style="padding-right:40px;width:100%">
         <button type="button" onclick="toggleSenha('p-pass','eye-portal')" style="position:absolute;right:10px;background:none;border:none;cursor:pointer;color:#94a3b8;padding:0;line-height:1">
@@ -159,9 +161,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--bl);box-
         </button>
       </div>
     </div>
-    <div style="text-align:right;margin:-4px 0 10px">
-      <button type="button" class="forgot-link" onclick="abrirRecuperacao()">Esqueceu a senha?</button>
-    </div>
+    <button type="button" class="forgot-link" onclick="abrirRecuperacao()">Esqueceu a senha?</button>
     <button class="plbtn" id="p-btn-login" onclick="doPortalLogin()">Entrar no Orion Client</button>
   </div>
 </div>
@@ -172,8 +172,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--bl);box-
     <div class="rec-title">🔑 Recuperar Senha</div>
     <div class="rec-sub">Informe seu usuário ou e-mail. O suporte receberá a solicitação e entrará em contato.</div>
     <div class="rec-ok" id="rec-ok">✅ Solicitação enviada! Aguarde contato do suporte.</div>
-    <div class="lfg">
-      <label>Usuário ou E-mail</label>
+    <div class="lfg"><label>Usuário ou E-mail</label>
       <input type="text" id="rec-user" placeholder="Seu login ou e-mail" onkeydown="if(event.key==='Enter')enviarRecuperacao()">
     </div>
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
@@ -183,6 +182,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--bl);box-
   </div>
 </div>
 
+<!-- APP -->
 <div id="portal-app" style="display:none;min-height:100vh;flex-direction:column">
   <header class="portal-header">
     <div class="portal-logo">
@@ -191,84 +191,147 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--bl);box-
       <span class="portal-logo-badge">Portal</span>
     </div>
     <div class="portal-user">
-      <span id="p-nome-hdr" style="color:var(--tx2)"></span>
-      <div class="portal-av" id="p-av-hdr">?</div>
-      <button class="btn btn-ghost btn-sm" onclick="doLogout()">Sair</button>
+      <span id="p-nome-hd" style="color:var(--tx2)"></span>
+      <div class="portal-av" id="p-av">?</div>
+      <button class="btn btn-ghost btn-sm" onclick="doPortalLogout()">Sair</button>
     </div>
   </header>
+
   <div class="portal-content">
     <nav class="portal-nav">
-      <button class="pnav-btn active" onclick="setPage('dashboard')">📊 Resumo</button>
-      <button class="pnav-btn" onclick="setPage('os')">🔧 Atendimentos</button>
-      <button class="pnav-btn" onclick="setPage('chamado')">➕ Abrir Chamado</button>
+      <button class="pnav-btn active" onclick="pNav('dashboard',this)">📊 Resumo</button>
+      <button class="pnav-btn" onclick="pNav('chamados',this)">🔧 Atendimentos</button>
+      <button class="pnav-btn" onclick="pNav('abrir',this)">➕ Abrir Chamado</button>
     </nav>
+
+    <!-- DASHBOARD -->
     <div class="ppage active" id="pp-dashboard">
-      <div class="kpi-strip">
-        <div class="kpi-card"><div class="kpi-val" id="kpi-total">—</div><div class="kpi-lbl">Total OS</div></div>
-        <div class="kpi-card"><div class="kpi-val" id="kpi-abertas" style="color:#3b82f6">—</div><div class="kpi-lbl">Abertas</div></div>
-        <div class="kpi-card"><div class="kpi-val" id="kpi-andamento" style="color:#ea580c">—</div><div class="kpi-lbl">Em Andamento</div></div>
-        <div class="kpi-card"><div class="kpi-val" id="kpi-concluidas" style="color:#16a34a">—</div><div class="kpi-lbl">Concluídas</div></div>
+      <div class="kpi-strip" id="p-kpis">
+        <div class="kpi-card"><div class="kpi-val">—</div><div class="kpi-lbl">Total</div></div>
+        <div class="kpi-card"><div class="kpi-val">—</div><div class="kpi-lbl">Em Aberto</div></div>
+        <div class="kpi-card"><div class="kpi-val">—</div><div class="kpi-lbl">Concluídos</div></div>
+        <div class="kpi-card"><div class="kpi-val">—</div><div class="kpi-lbl">Equipamentos</div></div>
       </div>
-      <div id="dash-recentes"></div>
+      <div class="card" style="padding:0;overflow:hidden">
+        <div style="padding:14px 18px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between">
+          <div style="font-size:12px;font-weight:700;color:var(--tx)">Atendimentos Recentes</div>
+          <select id="p-f-status" onchange="renderPortalOS()" style="width:auto;min-width:130px;height:28px;font-size:11px">
+            <option value="">Todos os status</option>
+            <option value="Aberta">Abertas</option>
+            <option value="Em andamento">Em andamento</option>
+            <option value="Concluída">Concluídas</option>
+            <option value="Cancelada">Canceladas</option>
+          </select>
+        </div>
+        <div style="padding:14px 18px">
+          <div class="os-cards" id="p-os-list">
+            <div class="empty-state"><div class="empty-ico">🔧</div><div class="empty-title">Carregando...</div></div>
+          </div>
+        </div>
+      </div>
     </div>
-    <div class="ppage" id="pp-os">
+
+    <!-- ATENDIMENTOS -->
+    <div class="ppage" id="pp-chamados">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-        <div style="font-size:14px;font-weight:600">Meus Atendimentos</div>
-        <select id="filtro-status" onchange="filtrarOS()" style="width:auto;min-width:140px">
+        <div style="font-size:14px;font-weight:700">Meus Atendimentos</div>
+        <select id="p-f-status-2" onchange="document.getElementById('p-f-status').value=this.value;renderPortalOS()" style="width:auto;min-width:140px;height:30px;font-size:11px">
           <option value="">Todos</option>
-          <option value="aberta">Abertas</option>
-          <option value="andamento">Em andamento</option>
-          <option value="concluida">Concluídas</option>
-          <option value="cancelada">Canceladas</option>
+          <option value="Aberta">Abertas</option>
+          <option value="Em andamento">Em andamento</option>
+          <option value="Concluída">Concluídas</option>
+          <option value="Cancelada">Canceladas</option>
         </select>
       </div>
-      <div class="os-cards" id="os-lista">
-        <div class="empty-state"><div class="empty-ico">🔧</div><div class="empty-title">Carregando...</div></div>
-      </div>
+      <div class="os-cards" id="p-os-list-chamados"></div>
     </div>
-    <div class="ppage" id="pp-chamado">
-      <div class="card chamado-form">
-        <div class="ok-msg" id="ok-chamado">✅ Chamado aberto! Em breve entraremos em contato.</div>
-        <div class="fsec">Dados do Equipamento</div>
-        <div class="fgrid2">
-          <div><label class="label">Equipamento / Máquina</label><input type="text" id="ch-equip" placeholder="Ex: Impressora Recepção"></div>
-          <div><label class="label">Localização / Setor</label><input type="text" id="ch-local" placeholder="Ex: 2º andar, sala 205"></div>
+
+    <!-- ABRIR CHAMADO -->
+    <div class="ppage" id="pp-abrir">
+      <div class="card" style="max-width:700px">
+        <div id="p-ok-msg" style="background:#dcfce7;border:1px solid #86efac;color:#15803d;border-radius:var(--r);padding:12px 16px;font-size:13px;font-weight:600;display:none;margin-bottom:14px">
+          ✅ Chamado <strong id="p-ok-num"></strong> aberto com sucesso! Em breve entraremos em contato.
         </div>
-        <div class="fsec">Descrição do Problema</div>
-        <div class="fg"><label class="label">Descreva o problema</label><textarea id="ch-desc" rows="4" placeholder="Descreva com o máximo de detalhes..."></textarea></div>
+        <div class="fsec">Equipamento</div>
+        <div class="fg">
+          <label class="label">Selecionar Equipamento Cadastrado</label>
+          <select id="p-eq-sel" onchange="preencherEq()"></select>
+        </div>
         <div class="fgrid2">
-          <div><label class="label">Urgência</label>
-            <select id="ch-urg">
-              <option value="normal">Normal</option>
-              <option value="alta">Alta</option>
-              <option value="critica">Crítica — equipamento parado</option>
+          <div class="fg"><label class="label">Modelo</label><input type="text" id="p-modelo" placeholder="Modelo do equipamento"></div>
+          <div class="fg"><label class="label">Nº de Série</label><input type="text" id="p-nserie" placeholder="Número de série"></div>
+        </div>
+        <div class="fg"><label class="label">Contador Atual</label><input type="number" id="p-contador" placeholder="Ex: 25000"></div>
+        <div class="fsec">Chamado</div>
+        <div class="fgrid2">
+          <div class="fg"><label class="label">Tipo</label>
+            <select id="p-tipo">
+              <option value="Corretiva">Corretiva</option>
+              <option value="Preventiva">Preventiva</option>
+              <option value="Instalação">Instalação</option>
             </select>
           </div>
-          <div><label class="label">Telefone (opcional)</label><input type="tel" id="ch-tel" placeholder="(11) 9 9999-9999"></div>
+          <div class="fg"><label class="label">Urgência / SLA</label>
+            <select id="p-sla">
+              <option value="24h">24 horas</option>
+              <option value="48h">48 horas</option>
+              <option value="4h">4 horas (urgente)</option>
+              <option value="Contrato">Conforme contrato</option>
+            </select>
+          </div>
         </div>
-        <div style="margin-top:8px">
-          <button class="btn btn-primary btn-lg" onclick="abrirChamado()">➕ Abrir Chamado</button>
+        <div class="fg"><label class="label">Defeito / Problema *</label>
+          <textarea id="p-defeito" rows="4" placeholder="Descreva o problema detalhadamente — quanto mais informações, melhor!"></textarea>
         </div>
+        <div class="fg"><label class="label">Observações</label>
+          <textarea id="p-obs" rows="2" placeholder="Informações adicionais, horários de acesso, etc."></textarea>
+        </div>
+        <div class="fsec">Contato</div>
+        <div class="fgrid2">
+          <div class="fg"><label class="label">Nome do Solicitante</label><input type="text" id="p-contato" placeholder="Seu nome"></div>
+          <div class="fg"><label class="label">Telefone</label><input type="tel" id="p-tel" placeholder="(11) 9 9999-9999"></div>
+        </div>
+        <button class="btn btn-primary btn-lg" onclick="abrirChamado()">➕ Abrir Chamado</button>
       </div>
     </div>
   </div>
 </div>
 
-<div class="mov" id="m-os">
-<div class="modal">
-  <div class="mhd">
-    <div class="mhd-title">Detalhes do Atendimento</div>
-    <button class="btnx" onclick="document.getElementById('m-os').classList.remove('open')">×</button>
+<!-- MODAL OS DETALHE -->
+<div class="mov" id="m-os-portal">
+  <div class="modal">
+    <div class="mhd">
+      <div class="mhd-title" id="m-os-portal-title">Detalhes do Atendimento</div>
+      <button class="btnx" onclick="fecharModal()">×</button>
+    </div>
+    <div class="mbody" id="m-os-portal-body"></div>
+    <div class="mfoot">
+      <button class="btn btn-ghost" onclick="fecharModal()">Fechar</button>
+      <button class="btn btn-primary" onclick="imprimirOS()">🖨 Imprimir</button>
+    </div>
   </div>
-  <div class="mbody" id="m-os-body"></div>
-  <div class="mfoot">
-    <button class="btn btn-ghost" onclick="document.getElementById('m-os').classList.remove('open')">Fechar</button>
-    <button class="btn btn-primary" onclick="window.print()">🖨 Imprimir</button>
-  </div>
-</div>
 </div>
 
 <script>
+const PG = { ordens:[], equips:[] };
+async function api(method,url,body) {
+  const opts={method,headers:{'Content-Type':'application/json'},credentials:'include'};
+  if(body) opts.body=JSON.stringify(body);
+  const r=await fetch(url,opts);
+  if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.error||e.message||r.statusText);}
+  return r.json();
+}
+
+// Sincronizar lista de atendimentos na aba Atendimentos
+const _origRenderPortalOS = window.renderPortalOS;
+function renderPortalOS() {
+  if(typeof _origRenderPortalOS==='function') _origRenderPortalOS();
+  // Espelhar no segundo container
+  const src = document.getElementById('p-os-list');
+  const dst = document.getElementById('p-os-list-chamados');
+  if(src && dst) dst.innerHTML = src.innerHTML;
+}
+
 
 function toggleSenha(inputId, iconId) {
   const inp = document.getElementById(inputId);
@@ -282,14 +345,20 @@ function toggleSenha(inputId, iconId) {
       : '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
   }
 }
-function doLogout() {
-  fetch('/api/portal/logout', { method:'POST', credentials:'include' })
-    .finally(() => {
-      document.getElementById('portal-login').style.display = 'flex';
-      document.getElementById('portal-app').style.display = 'none';
-      document.getElementById('p-login').value = '';
-      document.getElementById('p-pass').value = '';
-    });
+function abrirRecuperacao() {
+  document.getElementById('rec-modal').classList.add('open');
+  document.getElementById('rec-ok').style.display = 'none';
+  document.getElementById('rec-user').value = '';
+}
+function fecharRecuperacao() {
+  document.getElementById('rec-modal').classList.remove('open');
+}
+async function enviarRecuperacao() {
+  const user = document.getElementById('rec-user').value.trim();
+  if (!user) { alert('Informe o usuário ou e-mail.'); return; }
+  try { await fetch('/api/portal/forgot', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({login:user}) }); } catch(e) {}
+  document.getElementById('rec-ok').style.display = 'block';
+  setTimeout(fecharRecuperacao, 3000);
 }
 
 const PG = { ordens:[], equips:[], clienteId:'' };
@@ -562,27 +631,20 @@ function fmtDataHora(d) {
 })();
 
 
-function abrirRecuperacao() {
-  document.getElementById('rec-modal').classList.add('open');
-  document.getElementById('rec-ok').style.display = 'none';
-  document.getElementById('rec-user').value = '';
-}
-function fecharRecuperacao() {
-  document.getElementById('rec-modal').classList.remove('open');
-}
-async function enviarRecuperacao() {
-  const user = document.getElementById('rec-user').value.trim();
-  if (!user) { alert('Informe o usuário ou e-mail.'); return; }
-  try {
-    await fetch('/api/portal/forgot', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({login: user})
-    });
-  } catch(e) {}
-  document.getElementById('rec-ok').style.display = 'block';
-  setTimeout(fecharRecuperacao, 3000);
-}
+// Sobrescrever pNav para também renderizar atendimentos na aba certa
+const _pNavOrig = window.pNav;
+window.pNav = function(pg, el) {
+  document.querySelectorAll('.ppage').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.pnav-btn').forEach(x=>x.classList.remove('active'));
+  document.getElementById('pp-'+pg).classList.add('active');
+  if(el) el.classList.add('active');
+  if(pg==='chamados') {
+    const src=document.getElementById('p-os-list');
+    const dst=document.getElementById('p-os-list-chamados');
+    if(src&&dst) dst.innerHTML=src.innerHTML;
+  }
+  if(pg==='abrir') document.getElementById('p-ok-msg').style.display='none';
+};
 </script>
 </body>
 </html>
