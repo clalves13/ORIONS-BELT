@@ -313,15 +313,6 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--bl);box-
 </div>
 
 <script>
-const PG = { ordens:[], equips:[] };
-async function api(method,url,body) {
-  const opts={method,headers:{'Content-Type':'application/json'},credentials:'include'};
-  if(body) opts.body=JSON.stringify(body);
-  const r=await fetch(url,opts);
-  if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.error||e.message||r.statusText);}
-  return r.json();
-}
-
 // Sincronizar lista de atendimentos na aba Atendimentos
 const _origRenderPortalOS = window.renderPortalOS;
 function renderPortalOS() {
