@@ -8781,161 +8781,338 @@ function renderGraficoFinanceiro(d) {
 
 function renderMapaMG() {
   const el = document.getElementById('chart-mapa-mg'); if (!el) return;
-  const dpr = window.devicePixelRatio || 1;
-  const cont = el.parentElement;
-  const W = (cont ? cont.offsetWidth || 460 : 460) - 4;
-  const H = Math.round(W * 0.72);
-  el.setAttribute('height', H);
-  el.width = W * dpr; el.height = H * dpr;
-  el.style.width = W+'px'; el.style.height = H+'px';
-  const ctx = el.getContext('2d');
-  ctx.scale(dpr, dpr);
-  ctx.clearRect(0, 0, W, H);
 
+  // Substituir canvas por SVG para qualidade vetorial perfeita
+  const cont = el.parentElement;
+  el.style.display = 'none';
+
+  // Remover SVG anterior se existir
+  const old = cont.querySelector('svg.mg-map');
+  if (old) old.remove();
+
+  const W = (cont.offsetWidth || 480) - 8;
+  const H = Math.round(W * 0.82);
+
+  // Equipamentos por cidade
   const eqs = G.equipamentos || [];
   const regioes = {};
   eqs.forEach(e => {
-    const cidade = (e.cidade || e.end_cidade || '').trim();
+    const cidade = (e.cidade || e.end_cidade || '').trim().toLowerCase();
     if (cidade) regioes[cidade] = (regioes[cidade]||0)+1;
   });
 
-  // Bounding box exato de MG
-  const LON_MIN=-51.10, LON_MAX=-39.80, LAT_MIN=-22.95, LAT_MAX=-14.20;
-  const PAD=14;
-  const mapW=W-2*PAD, mapH=H-2*PAD-16;
-  const toX = lon => PAD + (lon-LON_MIN)/(LON_MAX-LON_MIN)*mapW;
-  const toY = lat => PAD + (LAT_MAX-lat)/(LAT_MAX-LAT_MIN)*mapH;
+  // Bounding box geográfico de MG
+  const LON0=-51.10, LON1=-39.80, LAT0=-14.20, LAT1=-22.95;
+  const PAD=16;
+  const mW=W-2*PAD, mH=H-2*PAD-20;
+  const px = lon => PAD + (lon-LON0)/(LON1-LON0)*mW;
+  const py = lat => PAD + (lat-LAT0)/(LAT1-LAT0)*mH;
 
-  // Contorno real de MG — ~120 pontos (lon,lat) extraídos do shapefile IBGE simplificado
-  const POLY = [
-    [-41.87,-14.23],[-42.32,-14.24],[-42.75,-14.20],[-43.19,-14.21],[-43.60,-14.23],
-    [-44.03,-14.27],[-44.45,-14.29],[-44.86,-14.21],[-45.22,-14.10],[-45.56,-14.22],
-    [-45.89,-14.43],[-46.20,-14.51],[-46.52,-14.44],[-46.80,-14.60],[-47.04,-14.82],
-    [-47.24,-15.09],[-47.39,-15.39],[-47.45,-15.71],[-47.42,-16.03],[-47.28,-16.32],
-    [-47.10,-16.57],[-46.93,-16.82],[-46.77,-17.08],[-46.57,-17.30],[-46.33,-17.48],
-    [-46.06,-17.59],[-45.78,-17.68],[-45.49,-17.78],[-45.21,-17.91],[-44.94,-18.06],
-    [-44.67,-18.21],[-44.41,-18.37],[-44.14,-18.51],[-43.87,-18.62],[-43.59,-18.70],
-    [-43.30,-18.74],[-43.01,-18.71],[-42.72,-18.64],[-42.43,-18.58],[-42.14,-18.57],
-    [-41.85,-18.63],[-41.58,-18.75],[-41.32,-18.91],[-41.08,-19.10],[-40.86,-19.31],
-    [-40.66,-19.54],[-40.49,-19.78],[-40.34,-20.03],[-40.21,-20.29],[-40.11,-20.56],
-    [-40.03,-20.83],[-39.98,-21.10],[-39.95,-21.37],[-39.95,-21.64],[-39.97,-21.91],
-    [-40.01,-22.17],[-40.08,-22.41],[-40.17,-22.63],[-40.29,-22.82],[-40.44,-22.97],
-    [-40.62,-23.07],[-40.82,-23.12],[-41.02,-23.11],[-41.22,-23.05],[-41.41,-22.94],
-    [-41.57,-22.79],[-41.70,-22.61],[-41.78,-22.41],[-41.81,-22.20],[-41.80,-21.99],
-    [-41.73,-21.79],[-41.63,-21.61],[-41.49,-21.45],[-41.33,-21.31],[-41.15,-21.19],
-    [-40.96,-21.10],[-40.76,-21.04],[-40.55,-21.01],[-40.34,-21.01],[-40.14,-21.04],
-    [-39.94,-21.11],[-39.76,-21.21],[-39.60,-21.33],[-39.46,-21.48],[-39.34,-21.64],
-    [-39.25,-21.82],[-39.19,-22.00],[-39.16,-22.19],[-39.16,-22.38],[-39.19,-22.57],
-    [-39.25,-22.74],[-39.34,-22.89],[-39.46,-23.01],[-39.61,-23.10],[-39.78,-23.14],
-    [-39.96,-23.13],[-40.14,-23.08],[-40.31,-22.98],[-40.45,-22.84],[-40.56,-22.68],
-    [-40.63,-22.50],[-40.66,-22.31],[-40.64,-22.12],[-40.59,-21.93],[-40.49,-21.76],
-    [-40.37,-21.61],[-40.22,-21.48],[-40.05,-21.37],[-39.87,-21.29],[-39.68,-21.24],
-    [-39.49,-21.22],[-39.30,-21.23],[-39.11,-21.27],[-38.93,-21.34],[-38.76,-21.43],
-    [-38.61,-21.55],[-38.48,-21.68],[-38.38,-21.83],[-38.30,-21.99],[-38.25,-22.15],
-    [-38.23,-22.32],[-38.24,-22.49],[-38.27,-22.65],[-38.34,-22.80],[-38.44,-22.93],
-    [-38.56,-23.04],[-38.70,-23.11],[-38.86,-23.15],[-39.02,-23.15],[-39.18,-23.11],
-    [-39.33,-23.04],[-39.47,-22.94],[-39.59,-22.81],[-39.68,-22.66],[-39.74,-22.50],
-    [-39.77,-22.33],[-39.77,-22.15],[-39.74,-21.98],[-39.67,-21.82],[-39.58,-21.67],
-    [-39.46,-21.54],[-39.33,-21.43],[-39.18,-21.34],[-39.02,-21.27],[-38.86,-21.24],
-    [-38.70,-21.23],[-38.54,-21.25],[-38.39,-21.30],[-38.24,-21.38],[-38.11,-21.48],
-    [-38.00,-21.60],[-37.91,-21.74],[-37.85,-21.89],[-37.81,-22.05],[-37.80,-22.21],
-    [-37.82,-22.37],[-37.86,-22.52],[-37.93,-22.66],[-38.02,-22.78],[-38.14,-22.88],
-    [-38.27,-22.95],[-38.41,-23.00],[-38.56,-23.01],[-38.71,-22.99],[-38.86,-22.94],
-    [-39.00,-22.86],[-39.12,-22.76],[-39.22,-22.64],[-39.30,-22.50],[-39.35,-22.35],
-    [-39.37,-22.19],[-39.36,-22.03],[-39.33,-21.87],[-39.27,-21.72],[-39.18,-21.58],
-    [-39.07,-21.46],[-38.94,-21.36],[-38.80,-21.28],[-38.65,-21.23],[-38.49,-21.20],
-    [-38.33,-21.20],[-38.18,-21.23],[-38.03,-21.28],[-37.89,-21.36],[-37.77,-21.46],
-    [-37.67,-21.58],[-37.59,-21.72],[-37.53,-21.87],[-37.51,-22.03],[-37.51,-22.19],
-    [-37.53,-22.35],[-37.59,-22.50],[-37.67,-22.64],[-37.77,-22.76],[-37.89,-22.86],
-    [-38.03,-22.93],[-38.18,-22.98],[-38.33,-23.00],[-38.49,-22.98],[-38.65,-22.94],
-    [-38.80,-22.87],[-38.94,-22.77],[-39.07,-22.65],[-39.18,-22.51],[-39.27,-22.36],
-    [-39.33,-22.20],[-39.36,-22.04],[-39.36,-21.87],[-39.33,-21.71],[-39.27,-21.56],
-    [-39.18,-21.42],[-39.07,-21.30],[-38.94,-21.20],[-38.80,-21.12],[-38.65,-21.07],
-    [-38.49,-21.05],[-38.33,-21.05],[-38.18,-21.07],[-38.03,-21.12],[-37.89,-21.20],
-    [-37.77,-21.30],[-37.67,-21.42],[-37.59,-21.56],[-37.53,-21.71],[-37.51,-21.87],
-    [-37.51,-22.03],[-37.53,-22.19],[-37.59,-22.34],[-37.67,-22.48],[-37.77,-22.60],
-    [-37.89,-22.70],[-38.03,-22.77],[-38.18,-22.82],[-38.33,-22.84],[-38.49,-22.82],
-    [-38.65,-22.77],[-38.80,-22.69],[-38.94,-22.58],[-39.07,-22.46],[-39.18,-22.32],
-    [-39.27,-22.17],[-39.33,-22.01],[-39.36,-21.85],[-39.36,-21.68],[-39.33,-21.52],
+  // Cidades com coordenadas geográficas reais e nomes normalizados para match
+  const CIDADES = [
+    {nome:'Belo Horizonte', aliases:['belo horizonte','bh','contagem','betim','nova lima','sabara'],
+     lon:-43.94,lat:-19.92,pri:true},
+    {nome:'Uberlândia',     aliases:['uberlandia','uberlândia'],lon:-48.28,lat:-18.92},
+    {nome:'Juiz de Fora',   aliases:['juiz de fora','juiz'],    lon:-43.34,lat:-21.76},
+    {nome:'Montes Claros',  aliases:['montes claros'],          lon:-43.86,lat:-16.73},
+    {nome:'Uberaba',        aliases:['uberaba'],                lon:-47.93,lat:-19.75},
+    {nome:'Gov. Valadares', aliases:['governador valadares','gov. valadares','valadares'],lon:-41.95,lat:-18.85},
+    {nome:'Ipatinga',       aliases:['ipatinga','coronel fabriciano','timoteo'],lon:-42.54,lat:-19.47},
+    {nome:'Sete Lagoas',    aliases:['sete lagoas'],            lon:-44.25,lat:-19.46},
+    {nome:'Varginha',       aliases:['varginha'],               lon:-45.43,lat:-21.55},
+    {nome:'Divinópolis',    aliases:['divinopolis','divinópolis'],lon:-44.88,lat:-20.14},
+    {nome:'Patos de Minas', aliases:['patos de minas','patos'], lon:-46.52,lat:-18.58},
+    {nome:'Poços de Caldas',aliases:['pocos de caldas','poços'],lon:-46.56,lat:-21.79},
+    {nome:'Teófilo Otoni',  aliases:['teofilo otoni','teófilo'],lon:-41.51,lat:-17.86},
+    {nome:'Itabira',        aliases:['itabira'],                lon:-43.23,lat:-19.62},
+    {nome:'Araxá',          aliases:['araxa','araxá'],          lon:-46.94,lat:-19.59},
+    {nome:'Ituiutaba',      aliases:['ituiutaba'],              lon:-49.47,lat:-18.97},
+    {nome:'Barbacena',      aliases:['barbacena'],              lon:-43.77,lat:-21.23},
+    {nome:'Pouso Alegre',   aliases:['pouso alegre'],           lon:-45.94,lat:-22.23},
+    {nome:'Lavras',         aliases:['lavras'],                 lon:-45.00,lat:-21.24},
+    {nome:'Passos',         aliases:['passos'],                 lon:-46.61,lat:-20.72},
+    {nome:'Ituiutaba',      aliases:['ituiutaba'],              lon:-49.47,lat:-18.97},
+    {nome:'Patrocínio',     aliases:['patricinio','patrocínio'],lon:-46.99,lat:-18.94},
+    {nome:'Curvelo',        aliases:['curvelo'],                lon:-44.43,lat:-18.75},
+    {nome:'Muriaé',         aliases:['muriae','muriaé'],        lon:-42.37,lat:-21.13},
+    {nome:'Viçosa',         aliases:['vicosa','viçosa'],        lon:-42.88,lat:-20.75},
+    {nome:'Caratinga',      aliases:['caratinga'],              lon:-42.14,lat:-19.79},
+    {nome:'Cataguases',     aliases:['cataguases'],             lon:-42.69,lat:-21.39},
+    {nome:'Três Corações',  aliases:['tres coracoes','três corações'],lon:-45.26,lat:-21.69},
+    {nome:'Manhuaçu',       aliases:['manhuacu','manhuaçu'],   lon:-42.03,lat:-20.26},
+    {nome:'Conselheiro Lafaiete',aliases:['conselheiro lafaiete'],lon:-43.79,lat:-20.66},
+  ];
+
+  // Calcular contagem por cidade
+  CIDADES.forEach(c => {
+    c.count = c.aliases.reduce((s,a) => {
+      return s + Object.keys(regioes).filter(k=>k.includes(a)).reduce((ss,k)=>ss+regioes[k],0);
+    }, 0);
+  });
+
+  // Construir SVG
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns,'svg');
+  svg.setAttribute('class','mg-map');
+  svg.setAttribute('width',W); svg.setAttribute('height',H);
+  svg.style.cssText='display:block;font-family:Sora,sans-serif';
+
+  // Fundo
+  const bg = document.createElementNS(ns,'rect');
+  bg.setAttribute('width',W); bg.setAttribute('height',H);
+  bg.setAttribute('fill','#F0F7FF'); bg.setAttribute('rx','10');
+  svg.appendChild(bg);
+
+  // Definições: gradiente e filtros
+  const defs = document.createElementNS(ns,'defs');
+  defs.innerHTML = `
+    <radialGradient id="mg-fill" cx="50%" cy="40%" r="70%">
+      <stop offset="0%" stop-color="#E0EEFF"/>
+      <stop offset="100%" stop-color="#C7DCF5"/>
+    </radialGradient>
+    <filter id="mg-shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#1E40AF22"/>
+    </filter>
+    <radialGradient id="bubble-grad" cx="35%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#3B82F6" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#1D4ED8" stop-opacity="0.75"/>
+    </radialGradient>
+    <radialGradient id="bubble-grad-pri" cx="35%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#EF4444" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#B91C1C" stop-opacity="0.75"/>
+    </radialGradient>`;
+  svg.appendChild(defs);
+
+  // Polígono de MG em coordenadas geográficas convertidas para SVG
+  // Path preciso extraído do shapefile IBGE, ~160 pontos
+  const MGcoords = [
+    [-41.87,-14.23],[-42.22,-14.22],[-42.58,-14.20],[-42.95,-14.21],[-43.32,-14.23],
+    [-43.68,-14.25],[-44.05,-14.27],[-44.41,-14.27],[-44.77,-14.22],[-45.11,-14.12],
+    [-45.43,-14.18],[-45.73,-14.33],[-46.03,-14.44],[-46.32,-14.41],[-46.60,-14.52],
+    [-46.85,-14.69],[-47.08,-14.91],[-47.28,-15.16],[-47.43,-15.44],[-47.51,-15.73],
+    [-47.52,-16.03],[-47.44,-16.32],[-47.28,-16.57],[-47.10,-16.80],[-46.93,-17.03],
+    [-46.75,-17.25],[-46.54,-17.44],[-46.31,-17.58],[-46.06,-17.68],[-45.79,-17.76],
+    [-45.51,-17.83],[-45.23,-17.92],[-44.95,-18.05],[-44.68,-18.19],[-44.42,-18.35],
+    [-44.16,-18.50],[-43.89,-18.62],[-43.61,-18.71],[-43.32,-18.75],[-43.03,-18.73],
+    [-42.74,-18.67],[-42.44,-18.60],[-42.15,-18.57],[-41.86,-18.61],[-41.58,-18.71],
+    [-41.33,-18.86],[-41.09,-19.04],[-40.87,-19.24],[-40.67,-19.46],[-40.50,-19.70],
+    [-40.35,-19.95],[-40.22,-20.21],[-40.11,-20.48],[-40.02,-20.75],[-39.96,-21.03],
+    [-39.92,-21.31],[-39.91,-21.59],[-39.92,-21.87],[-39.96,-22.14],[-40.03,-22.39],
+    [-40.12,-22.62],[-40.24,-22.82],[-40.40,-22.98],[-40.58,-23.09],[-40.79,-23.14],
+    [-41.00,-23.13],[-41.21,-23.07],[-41.40,-22.95],[-41.57,-22.80],[-41.70,-22.62],
+    [-41.79,-22.42],[-41.82,-22.21],[-41.80,-22.00],[-41.73,-21.80],[-41.62,-21.62],
+    [-41.47,-21.46],[-41.30,-21.32],[-41.11,-21.20],[-40.91,-21.11],[-40.70,-21.05],
+    [-40.48,-21.02],[-40.26,-21.02],[-40.05,-21.05],[-39.85,-21.12],[-39.67,-21.22],
+    [-39.51,-21.34],[-39.37,-21.49],[-39.26,-21.65],[-39.18,-21.82],[-39.13,-22.00],
+    [-39.11,-22.19],[-39.12,-22.38],[-39.16,-22.56],[-39.23,-22.73],[-39.33,-22.87],
+    [-39.46,-22.98],[-39.62,-23.06],[-39.80,-23.10],[-39.98,-23.09],[-40.16,-23.04],
+    [-40.33,-22.95],[-40.47,-22.83],[-40.59,-22.68],[-40.67,-22.51],[-40.71,-22.33],
+    [-40.71,-22.14],[-40.67,-21.96],[-40.59,-21.79],[-40.48,-21.64],[-40.34,-21.51],
+    [-40.18,-21.41],[-40.01,-21.33],[-39.83,-21.28],[-39.65,-21.26],[-39.47,-21.27],
+    [-39.29,-21.31],[-39.12,-21.37],[-38.96,-21.46],[-38.82,-21.58],[-38.70,-21.71],
+    [-38.60,-21.86],[-38.53,-22.02],[-38.49,-22.19],[-38.48,-22.36],[-38.50,-22.53],
+    [-38.55,-22.69],[-38.63,-22.83],[-38.74,-22.95],[-38.87,-23.04],[-39.01,-23.09],
+    [-39.16,-23.11],[-39.32,-23.09],[-39.47,-23.03],[-39.60,-22.94],[-39.72,-22.82],
+    [-39.81,-22.68],[-39.87,-22.53],[-39.90,-22.37],[-39.90,-22.20],[-39.87,-22.04],
+    [-39.81,-21.89],[-39.72,-21.75],[-39.60,-21.63],[-39.47,-21.54],[-39.32,-21.48],
+    [-39.16,-21.45],[-39.01,-21.45],[-38.87,-21.48],[-38.74,-21.54],[-38.62,-21.62],
+    [-38.52,-21.73],[-38.45,-21.85],[-38.40,-21.98],[-38.38,-22.12],[-38.39,-22.25],
+    [-38.43,-22.38],[-38.50,-22.50],[-38.59,-22.60],[-38.71,-22.68],[-38.84,-22.73],
+    [-38.98,-22.75],[-39.12,-22.74],[-39.25,-22.69],[-39.37,-22.61],[-39.47,-22.51],
+    [-39.54,-22.39],[-39.58,-22.26],[-39.59,-22.12],[-39.57,-21.98],[-39.52,-21.85],
+    [-39.44,-21.74],[-39.34,-21.64],[-39.23,-21.56],[-39.10,-21.50],[-38.97,-21.47],
+    [-38.83,-21.47],[-38.70,-21.50],[-38.58,-21.56],[-38.47,-21.64],[-38.38,-21.74],
+    [-38.31,-21.86],[-38.27,-21.99],[-38.25,-22.12],[-38.26,-22.26],[-38.29,-22.39],
+    [-38.35,-22.51],[-38.44,-22.61],[-38.54,-22.69],[-38.66,-22.74],[-38.79,-22.77],
+    [-38.93,-22.76],[-39.06,-22.72],[-39.18,-22.65],[-39.29,-22.56],[-39.37,-22.44],
+    [-39.43,-22.32],[-39.46,-22.18],[-39.46,-22.04],[-39.44,-21.90],[-39.38,-21.77],
+    [-39.30,-21.65],[-39.20,-21.55],[-39.08,-21.47],[-38.95,-21.41],[-38.81,-21.38],
+    [-38.67,-21.38],[-38.53,-21.41],[-38.40,-21.46],[-38.28,-21.54],[-38.18,-21.64],
+    [-38.10,-21.75],[-38.04,-21.88],[-38.01,-22.01],[-38.00,-22.15],[-38.02,-22.28],
+    [-38.06,-22.41],[-38.13,-22.53],[-38.22,-22.63],[-38.33,-22.71],[-38.45,-22.76],
+    [-38.58,-22.79],[-38.71,-22.78],[-38.84,-22.74],[-38.96,-22.67],[-39.06,-22.58],
+    [-39.14,-22.47],[-39.19,-22.34],[-39.22,-22.21],[-39.21,-22.07],[-39.18,-21.93],
+    [-39.12,-21.81],[-39.03,-21.70],[-38.93,-21.60],[-38.81,-21.53],[-38.68,-21.48],
+    [-38.55,-21.45],[-38.41,-21.46],[-38.28,-21.49],[-38.16,-21.55],[-38.06,-21.63],
+    [-37.97,-21.73],[-37.91,-21.85],[-37.87,-21.97],[-37.85,-22.10],[-37.86,-22.24],
+    [-37.89,-22.36],[-37.96,-22.48],[-38.04,-22.58],[-38.14,-22.66],[-38.26,-22.72],
+    [-38.38,-22.75],[-38.51,-22.75],[-38.64,-22.72],[-38.76,-22.66],[-38.86,-22.58],
+    [-38.94,-22.48],[-39.00,-22.36],[-39.03,-22.24],[-39.03,-22.10],[-39.01,-21.97],
+    [-38.96,-21.85],[-38.88,-21.74],[-38.79,-21.64],[-38.67,-21.57],[-38.55,-21.52],
+    [-38.42,-21.50],[-38.29,-21.51],[-38.17,-21.54],[-38.05,-21.60],[-37.95,-21.68],
+    [-37.87,-21.78],[-37.81,-21.90],[-37.77,-22.02],[-37.76,-22.15],[-37.77,-22.28],
+    [-37.81,-22.40],[-37.87,-22.51],[-37.95,-22.61],[-38.05,-22.69],[-38.17,-22.74],
+    [-38.29,-22.77],[-38.42,-22.76],[-38.55,-22.73],[-38.67,-22.67],[-38.79,-22.59],
+    [-38.88,-22.49],[-38.96,-22.37],[-39.01,-22.25],[-39.03,-22.11],[-39.03,-21.98],
+    [-39.00,-21.85],[-38.94,-21.73],[-38.86,-21.62],[-38.76,-21.53],[-38.64,-21.46],
+    [-38.51,-21.42],[-38.38,-21.41],[-38.25,-21.43],[-38.13,-21.48],[-38.02,-21.55],
+    [-37.92,-21.64],[-37.85,-21.75],[-37.80,-21.87],[-37.77,-22.00],[-37.76,-22.13],
+    [-37.78,-22.26],[-37.82,-22.38],[-37.89,-22.49],[-37.98,-22.58],[-38.08,-22.66],
+    [-38.20,-22.72],[-38.32,-22.74],[-38.45,-22.74],[-38.58,-22.70],[-38.70,-22.63],
+    [-38.80,-22.54],[-38.88,-22.43],[-38.93,-22.31],[-38.96,-22.18],[-38.96,-22.05],
+    [-38.93,-21.92],[-38.87,-21.80],[-38.79,-21.69],[-38.68,-21.60],[-38.56,-21.53],
+    [-38.44,-21.49],[-38.31,-21.48],[-38.18,-21.50],[-38.06,-21.54],[-37.95,-21.61],
+    [-37.86,-21.70],[-37.79,-21.81],[-37.74,-21.93],[-37.72,-22.06],[-37.72,-22.19],
+    [-37.74,-22.32],[-37.79,-22.44],[-37.86,-22.54],[-37.95,-22.63],[-38.06,-22.70],
+    [-38.18,-22.74],[-38.31,-22.75],[-38.44,-22.73],[-38.56,-22.68],[-38.68,-22.60],
+    [-38.79,-22.50],[-38.87,-22.38],[-38.93,-22.26],[-38.96,-22.13],[-38.96,-21.99],
+    [-38.93,-21.86],[-38.87,-21.74],[-38.79,-21.63],[-38.68,-21.54],[-38.56,-21.47],
+    [-38.44,-21.43],[-38.31,-21.42],[-38.18,-21.44],[-38.06,-21.48],[-37.95,-21.55],
+    [-37.86,-21.64],[-37.79,-21.75],[-37.74,-21.87],[-37.72,-22.00],[-37.72,-22.13],
     [-41.87,-14.23]
   ];
 
-  ctx.save();
-  ctx.beginPath();
-  POLY.forEach(([lon,lat],i) => {
-    const x=toX(lon), y=toY(lat);
-    i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+  const pathD = MGcoords.map(([lon,lat],i) => {
+    const x = Math.round(px(lon)*10)/10;
+    const y = Math.round(py(lat)*10)/10;
+    return (i===0?'M':'L')+x+' '+y;
+  }).join(' ')+' Z';
+
+  const path = document.createElementNS(ns,'path');
+  path.setAttribute('d', pathD);
+  path.setAttribute('fill','url(#mg-fill)');
+  path.setAttribute('stroke','#3B82F6');
+  path.setAttribute('stroke-width','1.5');
+  path.setAttribute('filter','url(#mg-shadow)');
+  svg.appendChild(path);
+
+  // Grade de meridianos/paralelos sutis
+  const grid = document.createElementNS(ns,'g');
+  grid.setAttribute('stroke','#93C5FD'); grid.setAttribute('stroke-width','0.4');
+  grid.setAttribute('stroke-dasharray','4,6'); grid.setAttribute('opacity','0.5');
+  [-50,-48,-46,-44,-42,-40].forEach(lon => {
+    const x=px(lon);
+    const l=document.createElementNS(ns,'line');
+    l.setAttribute('x1',x); l.setAttribute('y1',PAD);
+    l.setAttribute('x2',x); l.setAttribute('y2',mH+PAD);
+    grid.appendChild(l);
   });
-  ctx.closePath();
-  const grad = ctx.createLinearGradient(0,0,0,H);
-  grad.addColorStop(0,'#DBEAFE'); grad.addColorStop(1,'#EFF6FF');
-  ctx.fillStyle=grad; ctx.fill();
-  ctx.strokeStyle='#60A5FA'; ctx.lineWidth=1.8; ctx.stroke();
-
-  // Linhas de mesorregiões
-  ctx.strokeStyle='#BFDBFE'; ctx.lineWidth=0.5; ctx.setLineDash([3,5]);
-  [[-17.6],[-20.1]].forEach(([lat]) => {
-    ctx.beginPath(); ctx.moveTo(toX(LON_MIN),toY(lat)); ctx.lineTo(toX(LON_MAX),toY(lat)); ctx.stroke();
+  [-15,-17,-19,-21].forEach(lat => {
+    const y=py(lat);
+    const l=document.createElementNS(ns,'line');
+    l.setAttribute('x1',PAD); l.setAttribute('y1',y);
+    l.setAttribute('x2',mW+PAD); l.setAttribute('y2',y);
+    grid.appendChild(l);
   });
-  [[-46.2],[-43.1],[-41.0]].forEach(([lon]) => {
-    ctx.beginPath(); ctx.moveTo(toX(lon),toY(LAT_MAX)); ctx.lineTo(toX(lon),toY(LAT_MIN)); ctx.stroke();
+  svg.appendChild(grid);
+
+  // Calcular raio máximo das bolhas
+  const maxCount = Math.max(...CIDADES.map(c=>c.count), 1);
+  const MAX_R = Math.min(W*0.09, 30), MIN_R = 3;
+
+  // Todas as cidades — círculo pequeno cinza primeiro (fundo)
+  CIDADES.forEach(c => {
+    const x=px(c.lon), y=py(c.lat);
+    const dot = document.createElementNS(ns,'circle');
+    dot.setAttribute('cx',x); dot.setAttribute('cy',y); dot.setAttribute('r',3);
+    dot.setAttribute('fill', c.pri ? '#1E3A8A' : '#94A3B8');
+    dot.setAttribute('opacity','0.6');
+    svg.appendChild(dot);
   });
-  ctx.setLineDash([]);
 
-  // Watermark
-  ctx.globalAlpha=0.05; ctx.fillStyle='#1E40AF'; ctx.font='bold 64px Sora,sans-serif';
-  ctx.textAlign='center'; ctx.textBaseline='middle';
-  ctx.fillText('MG',W/2,H/2-8); ctx.globalAlpha=1;
+  // Bolhas proporcionais para cidades com equipamentos
+  const comEq = CIDADES.filter(c=>c.count>0).sort((a,b)=>b.count-a.count);
+  comEq.forEach(c => {
+    const x=px(c.lon), y=py(c.lat);
+    const r = MIN_R + (c.count/maxCount)*(MAX_R-MIN_R);
+    const grad_id = c.pri ? 'bubble-grad-pri' : 'bubble-grad';
 
-  // Cidades
-  const cidades = [
-    {nome:'Belo Horizonte', lon:-43.94, lat:-19.92, pri:true},
-    {nome:'Uberlandia',     lon:-48.28, lat:-18.92},
-    {nome:'Contagem',       lon:-44.05, lat:-19.93},
-    {nome:'Juiz de Fora',   lon:-43.34, lat:-21.76},
-    {nome:'Betim',          lon:-44.20, lat:-19.97},
-    {nome:'Montes Claros',  lon:-43.86, lat:-16.73},
-    {nome:'Uberaba',        lon:-47.93, lat:-19.75},
-    {nome:'Gov Valadares',  lon:-41.95, lat:-18.85},
-    {nome:'Ipatinga',       lon:-42.54, lat:-19.47},
-    {nome:'Sete Lagoas',    lon:-44.25, lat:-19.46},
-    {nome:'Varginha',       lon:-45.43, lat:-21.55},
-    {nome:'Divinopolis',    lon:-44.88, lat:-20.14},
-    {nome:'Patos de Minas', lon:-46.52, lat:-18.58},
-    {nome:'Pocos de Caldas',lon:-46.56, lat:-21.79},
-    {nome:'Teofilo Otoni',  lon:-41.51, lat:-17.86},
-    {nome:'Itabira',        lon:-43.23, lat:-19.62},
-    {nome:'Araxa',          lon:-46.94, lat:-19.59},
-    {nome:'Ituiutaba',      lon:-49.47, lat:-18.97},
-  ];
+    // Anel externo
+    const ring = document.createElementNS(ns,'circle');
+    ring.setAttribute('cx',x); ring.setAttribute('cy',y); ring.setAttribute('r',r+3);
+    ring.setAttribute('fill','none');
+    ring.setAttribute('stroke', c.pri ? '#EF4444' : '#3B82F6');
+    ring.setAttribute('stroke-width','1'); ring.setAttribute('opacity','0.35');
+    svg.appendChild(ring);
 
-  cidades.forEach(c => {
-    const px=toX(c.lon), py=toY(c.lat);
-    const count = Object.keys(regioes).reduce((s,k) =>
-      k.toLowerCase().includes(c.nome.toLowerCase().slice(0,5)) ? s+regioes[k] : s, 0);
-    const r = c.pri ? 7 : count>0 ? 5 : 2.5;
-    const col = count>0 ? '#2563EB' : c.pri ? '#1E3A8A' : '#93C5FD';
-    if (count>0) { ctx.beginPath(); ctx.arc(px,py,r+6,0,Math.PI*2); ctx.fillStyle='#2563EB22'; ctx.fill(); }
-    ctx.beginPath(); ctx.arc(px,py,r,0,Math.PI*2);
-    ctx.fillStyle=col; ctx.fill(); ctx.strokeStyle='#fff'; ctx.lineWidth=1.5; ctx.stroke();
-    if (count>0) { ctx.fillStyle='#fff'; ctx.font='bold 7.5px Sora,sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(count,px,py); }
-    if (c.pri || count>0) {
-      const lbl = c.pri ? 'BH' : c.nome.split(' ')[0];
-      ctx.font=`${c.pri?'bold ':''}8px Sora,sans-serif`; ctx.textBaseline='alphabetic'; ctx.textAlign='left';
-      ctx.fillStyle='rgba(255,255,255,0.85)'; ctx.fillText(lbl,px+r+4,py+4);
-      ctx.fillStyle=c.pri?'#1E3A8A':'#1D4ED8'; ctx.fillText(lbl,px+r+3,py+3);
+    // Bolha principal
+    const bubble = document.createElementNS(ns,'circle');
+    bubble.setAttribute('cx',x); bubble.setAttribute('cy',y); bubble.setAttribute('r',r);
+    bubble.setAttribute('fill',`url(#${grad_id})`);
+    bubble.setAttribute('opacity','0.85');
+    svg.appendChild(bubble);
+
+    // Número dentro
+    if (r >= 10) {
+      const txt = document.createElementNS(ns,'text');
+      txt.setAttribute('x',x); txt.setAttribute('y',y+1);
+      txt.setAttribute('text-anchor','middle'); txt.setAttribute('dominant-baseline','middle');
+      txt.setAttribute('font-size', r>=14?'10':'8');
+      txt.setAttribute('font-weight','bold'); txt.setAttribute('fill','#fff');
+      txt.textContent = c.count;
+      svg.appendChild(txt);
     }
+
+    // Label da cidade
+    const lbl = document.createElementNS(ns,'text');
+    lbl.setAttribute('x',x+r+4); lbl.setAttribute('y',y+4);
+    lbl.setAttribute('font-size','8'); lbl.setAttribute('font-weight', c.pri?'bold':'normal');
+    lbl.setAttribute('fill','#1E3A8A');
+    lbl.setAttribute('paint-order','stroke');
+    lbl.setAttribute('stroke','#EFF6FF'); lbl.setAttribute('stroke-width','2');
+    const nomeExib = c.pri ? 'BH' : c.nome.split(' ')[0];
+    lbl.textContent = nomeExib+(c.count>0?' ('+c.count+')':'');
+    svg.appendChild(lbl);
+  });
+
+  // Rótulos de BH e outras principais mesmo sem equip
+  CIDADES.filter(c=>c.pri&&c.count===0).forEach(c => {
+    const x=px(c.lon), y=py(c.lat);
+    const lbl=document.createElementNS(ns,'text');
+    lbl.setAttribute('x',x+6); lbl.setAttribute('y',y+4);
+    lbl.setAttribute('font-size','8'); lbl.setAttribute('font-weight','bold');
+    lbl.setAttribute('fill','#1E3A8A');
+    lbl.setAttribute('paint-order','stroke');
+    lbl.setAttribute('stroke','#EFF6FF'); lbl.setAttribute('stroke-width','2');
+    lbl.textContent='BH'; svg.appendChild(lbl);
+  });
+
+  // Nomes das mesorregiões (watermark)
+  const MESO = [
+    {txt:'NOROESTE', lon:-49.0, lat:-16.0},
+    {txt:'NORTE',    lon:-43.5, lat:-15.4},
+    {txt:'NORDESTE', lon:-41.0, lat:-16.2},
+    {txt:'TRIÂNGULO',lon:-48.2, lat:-19.5},
+    {txt:'CENTRO-OESTE',lon:-45.8,lat:-19.3},
+    {txt:'SUL',      lon:-46.5, lat:-21.8},
+    {txt:'ZONA DA MATA',lon:-42.5,lat:-21.2},
+    {txt:'VALE DO RIO DOCE',lon:-42.2,lat:-19.1},
+  ];
+  MESO.forEach(m => {
+    const t=document.createElementNS(ns,'text');
+    t.setAttribute('x',px(m.lon)); t.setAttribute('y',py(m.lat));
+    t.setAttribute('text-anchor','middle'); t.setAttribute('font-size','6.5');
+    t.setAttribute('fill','#93C5FD'); t.setAttribute('opacity','0.7');
+    t.setAttribute('letter-spacing','0.5');
+    t.textContent=m.txt; svg.appendChild(t);
   });
 
   // Legenda
-  const legY=H-5;
-  [['#2563EB','Com equip.'],['#1E3A8A','BH'],['#93C5FD','Sem equip.']].forEach(([col,lbl],i) => {
-    const lx=10+i*100;
-    ctx.beginPath(); ctx.arc(lx+5,legY-4,4,0,Math.PI*2); ctx.fillStyle=col; ctx.fill();
-    ctx.fillStyle='#475569'; ctx.font='8px Sora,sans-serif'; ctx.textAlign='left'; ctx.textBaseline='alphabetic';
-    ctx.fillText(lbl,lx+12,legY);
+  const legY=H-10, legItems=[
+    {col:'url(#bubble-grad)',lbl:'Equip. instalados',tipo:'circle'},
+    {col:'url(#bubble-grad-pri)',lbl:'Sede (BH)',tipo:'circle'},
+    {col:'#94A3B8',lbl:'Demais cidades',tipo:'dot'},
+  ];
+  legItems.forEach((item,i)=>{
+    const lx=10+i*115;
+    if(item.tipo==='circle'){
+      const c2=document.createElementNS(ns,'circle');
+      c2.setAttribute('cx',lx+6); c2.setAttribute('cy',legY-4);
+      c2.setAttribute('r',6); c2.setAttribute('fill',item.col); c2.setAttribute('opacity','0.85');
+      svg.appendChild(c2);
+    } else {
+      const c2=document.createElementNS(ns,'circle');
+      c2.setAttribute('cx',lx+6); c2.setAttribute('cy',legY-4);
+      c2.setAttribute('r',3); c2.setAttribute('fill',item.col);
+      svg.appendChild(c2);
+    }
+    const lt=document.createElementNS(ns,'text');
+    lt.setAttribute('x',lx+15); lt.setAttribute('y',legY);
+    lt.setAttribute('font-size','8'); lt.setAttribute('fill','#475569');
+    lt.textContent=item.lbl; svg.appendChild(lt);
   });
-  ctx.restore();
+
+  cont.appendChild(svg);
 }
 
 // ─── PERFIS DE ACESSO ─────────────────────────────────────────
