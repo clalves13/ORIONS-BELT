@@ -248,17 +248,6 @@ document.addEventListener('DOMContentLoaded', function() {
   atualizar();
 });
 
-const MON = { impressoras: [], view: 'cards', chart: null };
-let _authOk = false;
-
-async function api(method, url, body) {
-  const opts = { method, headers:{'Content-Type':'application/json'}, credentials:'include' };
-  if (body) opts.body = JSON.stringify(body);
-  const r = await fetch(url, opts);
-  if (r.status === 401) { window.location.href = '/'; return null; }
-  return r.json();
-}
-
 async function atualizar() {
   document.getElementById('hdr-last').textContent = 'Atualizando...';
   try {
