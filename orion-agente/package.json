@@ -1,16 +1,15 @@
 {
-  "name": "theikos-agente",
-  "version": "1.0.0",
-  "description": "Agente de monitoramento de impressoras — Theikós AT",
-  "main": "agent.js",
+  "name": "orion-agente",
+  "version": "2.1.0",
+  "description": "Orion Agente — Monitor de Impressoras via SNMP",
+  "main": "orion-agente.js",
   "scripts": {
-    "start": "node agent.js",
-    "install-service": "node service-install.js",
-    "uninstall-service": "node service-uninstall.js"
+    "build": "pkg orion-agente.js --target node18-win-x64 --output dist/OrionAgente.exe --compress GZip",
+    "build:all": "pkg orion-agente.js --targets node18-win-x64,node18-linux-x64 --output dist/OrionAgente --compress GZip"
   },
-  "dependencies": {
-    "axios": "^1.6.0",
-    "net-snmp": "^3.26.3",
-    "node-windows": "^1.0.0-beta.6"
-  }
+  "pkg": {
+    "assets": [],
+    "targets": ["node18-win-x64"]
+  },
+  "dependencies": {}
 }
