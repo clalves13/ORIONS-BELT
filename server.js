@@ -1314,8 +1314,131 @@ async function ciclo(){
 })();
 `.trim();
 
+// ─── UPLOAD DO OrionAgente.exe (admin faz uma vez após compilar) ──────────────
+// POST /api/monitor/upload-exe  (multipart, campo "exe")
+// Sobe o .exe para o Cloudinary e salva a URL nas configurações do sistema.
+app.post('/api/monitor/upload-exe', requireAuth, requireAdmin, upload.single('exe'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'Nenhum arquivo enviado.' });
+    if (!req.file.originalname.endsWith('.exe')) return res.status(400).json({ error: 'Envie um arquivo .exe.' });
+
+    const uploadResult = await new Promise((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        { folder: 'orion/agente', resource_type: 'raw', public_id: 'OrionAgente', overwrite: true },
+        (err, result) => err ? reject(err) : resolve(result)
+      );
+      streamifier.createReadStream(req.file.buffer).pipe(stream);
+    });
+
+    await col('configuracoes').updateOne(
+      { chave: 'agente_exe_url' },
+      { $set: { chave: 'agente_exe_url', valor: uploadResult.secure_url, atualizado_em: now() } },
+      { upsert: true }
+    );
+
+    res.json({ ok: true, url: uploadResult.secure_url, tamanho_mb: (req.file.size / 1024 / 1024).toFixed(1) });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/monitor/exe-info — retorna URL e data do .exe atual
+app.get('/api/monitor/exe-info', requireAuth, async (req, res) => {
+  const cfg = await col('configuracoes').findOne({ chave: 'agente_exe_url' });
+  res.json(cfg ? { url: cfg.valor, atualizado_em: cfg.atualizado_em } : { url: null });
+});
+
+// ─── DOWNLOAD DO PACOTE (ZIP com .exe + config.json personalizado) ────────────
 // Rota principal: ZIP com agente + config personalizado do cliente
 app.get('/download/pacote-agente/:clienteId', requireAuth, async (req, res) => {
+  try {
+    const cliente = await col('clientes').findOne({ _id: new ObjectId(req.params.clienteId) });
+    if (!cliente) return res.status(404).json({ error: 'Cliente não encontrado' });
+    if (!cliente.monitor_key) return res.status(400).json({ error: 'Este cliente não possui chave de monitoramento. Gere a chave primeiro.' });
+
+    // Busca URL do .exe no Cloudinary
+    const exeCfg = await col('configuracoes').findOne({ chave: 'agente_exe_url' });
+    if (!exeCfg?.valor) {
+      return res.status(400).json({
+        error: 'O executável OrionAgente.exe ainda não foi enviado ao servidor. ' +
+               'Compile o agente e faça o upload em: Configurações → Monitor → Enviar Executável.'
+      });
+    }
+
+    const nomeSeguro = (cliente.nome || 'cliente').toLowerCase().replace(/[^a-z0-9]/g, '_');
+
+    const config = {
+      serverUrl:   'https://orion-at-production.up.railway.app',
+      clientKey:   cliente.monitor_key,
+      clientId:    cliente._id.toString(),
+      clientNome:  cliente.nome,
+      intervalMin: 15,
+      subnet:      '',
+      snmpTimeout: 3000,
+      snmpRetries: 1,
+    };
+
+    // Baixa o .exe do Cloudinary (em memória)
+    const exeBuffer = await new Promise((resolve, reject) => {
+      https.get(exeCfg.valor, (r) => {
+        const chunks = [];
+        r.on('data', c => chunks.push(c));
+        r.on('end', () => resolve(Buffer.concat(chunks)));
+        r.on('error', reject);
+      }).on('error', reject);
+    });
+
+    const LEIA_ME =
+`Orion Agente — Pacote de Instalação
+Cliente: ${cliente.nome}
+Gerado em: ${new Date().toLocaleString('pt-BR')}
+
+INSTALAÇÃO (apenas 2 passos):
+  1. Extraia esta pasta para qualquer lugar do PC
+  2. Clique com o botão direito em "OrionAgente.exe"
+     → Executar como administrador → clique em "Mais informações" → "Executar assim mesmo"
+
+  O instalador fará automaticamente:
+    • Copia os arquivos para C:\\OrionAgente
+    • Registra o agente como Serviço do Windows (sc.exe nativo)
+    • Inicia o agente imediatamente
+    • Configura inicialização automática com o Windows
+
+COMANDOS ÚTEIS (após instalação):
+  sc query OrionAgente          — verifica se o serviço está rodando
+  sc stop  OrionAgente          — para o serviço
+  sc start OrionAgente          — inicia o serviço
+
+DESINSTALAÇÃO:
+  OrionAgente.exe --uninstall   (como Administrador)
+
+SUBNET (opcional):
+  Edite C:\\OrionAgente\\config.json e preencha "subnet",
+  ex: "192.168.5". Deixe vazio para descoberta automática.
+
+Suporte: Orion Soluções — https://orion-at-production.up.railway.app
+`;
+
+    const arquivos = [
+      { nome: 'OrionAgente.exe', conteudo: exeBuffer },
+      { nome: 'config.json',     conteudo: Buffer.from(JSON.stringify(config, null, 2), 'utf8') },
+      { nome: 'LEIA-ME.txt',     conteudo: Buffer.from(LEIA_ME, 'utf8') },
+    ];
+
+    const zip = gerarZip(arquivos);
+
+    res.setHeader('Content-Disposition', `attachment; filename="orion-agente-${nomeSeguro}.zip"`);
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Length', zip.length);
+    res.send(zip);
+
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// ROTA LEGADA — mantida apenas para não quebrar links antigos
+// Substitui o antigo zip com .bat pelo novo zip com .exe
+// (código abaixo pode ser removido após migração completa)
+// Rota legada — ZIP com .bat (mantida temporariamente, use /download/pacote-agente)
+app.get('/download/pacote-agente-legacy/:clienteId', requireAuth, async (req, res) => {
   try {
     const cliente = await col('clientes').findOne({ _id: new ObjectId(req.params.clienteId) });
     if (!cliente) return res.status(404).json({ error: 'Cliente não encontrado' });
@@ -1473,41 +1596,12 @@ pause
       { nome: 'config.json',      conteudo: Buffer.from(JSON.stringify(config, null, 2), 'utf8') },
       { nome: 'instalar.bat',     conteudo: Buffer.from(INSTALAR_BAT, 'utf8') },
       { nome: 'desinstalar.bat',  conteudo: Buffer.from(DESINSTALAR_BAT, 'utf8') },
-      { nome: 'LEIA-ME.txt',      conteudo: Buffer.from(
-`Orion Agente — Pacote de Instalação
-Cliente: ${cliente.nome}
-Gerado em: ${new Date().toLocaleString('pt-BR')}
-
-INSTALAÇÃO RÁPIDA (recomendada):
-  1. Extraia esta pasta para qualquer lugar do PC
-  2. Clique com o botão direito em "instalar.bat"
-  3. Selecione "Executar como administrador"
-  4. Aguarde — o instalador faz tudo automaticamente:
-       • Instala o Node.js se necessário
-       • Copia os arquivos para C:\\OrionAgente
-       • Inicia o agente em segundo plano
-       • Configura inicialização automática com o Windows
-
-COMANDOS ÚTEIS (após instalação):
-  pm2 status               — verifica se o agente está rodando
-  pm2 logs orion-agente    — exibe os logs em tempo real
-  pm2 restart orion-agente — reinicia o agente
-
-DESINSTALAÇÃO:
-  Execute "desinstalar.bat" como Administrador.
-
-SUBNET (opcional):
-  Se as impressoras estão em uma subnet específica, edite
-  C:\\OrionAgente\\config.json e preencha o campo "subnet",
-  ex: "192.168.5". Deixe vazio para descoberta automática.
-
-Suporte: Orion Soluções — https://orion-at-production.up.railway.app
-`, 'utf8') },
+      { nome: 'LEIA-ME.txt',      conteudo: Buffer.from(`Orion Agente (legado) — ${cliente.nome}\nUse o pacote .exe para instalação mais fácil.\n`, 'utf8') },
     ];
 
     const zip = gerarZip(arquivos);
 
-    res.setHeader('Content-Disposition', `attachment; filename="orion-agente-${nomeSeguro}.zip"`);
+    res.setHeader('Content-Disposition', `attachment; filename="orion-agente-bat-${nomeSeguro}.zip"`);
     res.setHeader('Content-Type', 'application/zip');
     res.setHeader('Content-Length', zip.length);
     res.send(zip);
