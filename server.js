@@ -1375,8 +1375,22 @@ Suporte: Orion Soluções — https://orion-at-production.up.railway.app
 });
 
 // Rota legada mantida por compatibilidade (redireciona para explicação)
-app.get('/download/agente', requireAuth, (req, res) => {
-  res.status(400).json({ error: 'Use /download/pacote-agente/:clienteId para baixar o pacote completo com config personalizado.' });
+app.get('/download/agente/:clienteId?', requireAuth, async (req, res) => {
+  try {
+
+    const clienteId = req.params.clienteId || req.query.clienteId;
+
+    if (!clienteId) {
+      return res.status(400).json({
+        error: 'Cliente ID obrigatório.'
+      });
+    }
+
+    return res.redirect(`/download/pacote-agente/${clienteId}`);
+
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // ─── MONITORAMENTO DE IMPRESSORAS ───────────────────────────────────────────
