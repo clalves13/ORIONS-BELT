@@ -1094,14 +1094,289 @@ app.get('/api/portal/clientes-acesso', requireAuth, requireAdmin, async (req,res
 
 // ─── DOWNLOAD DO AGENTE ─────────────────────────────────────────────────────
 
-app.get('/download/agente', requireAuth, (req, res) => {
-  const exePath = path.join(__dirname, 'orion-agente', 'dist', 'orion-agente-win.exe');
-  if (!fs.existsSync(exePath)) {
-    return res.status(404).json({ error: 'Agente não encontrado. Execute o build primeiro.' });
+// ─── DOWNLOAD PACOTE AGENTE (agente + config personalizado em ZIP) ────────────
+
+// Gerador de ZIP mínimo sem dependência externa
+function gerarZip(arquivos) {
+  // arquivos = [{ nome, conteudo: Buffer }]
+  const partes = [];
+  const centralDir = [];
+  let offset = 0;
+
+  const crc32 = (buf) => {
+    let crc = 0xffffffff;
+    const table = [];
+    for (let i = 0; i < 256; i++) {
+      let c = i;
+      for (let j = 0; j < 8; j++) c = (c & 1) ? (0xedb88320 ^ (c >>> 1)) : (c >>> 1);
+      table[i] = c;
+    }
+    for (let i = 0; i < buf.length; i++) crc = table[(crc ^ buf[i]) & 0xff] ^ (crc >>> 8);
+    return (crc ^ 0xffffffff) >>> 0;
+  };
+
+  const u16 = (n) => { const b = Buffer.alloc(2); b.writeUInt16LE(n); return b; };
+  const u32 = (n) => { const b = Buffer.alloc(4); b.writeUInt32LE(n >>> 0); return b; };
+
+  for (const { nome, conteudo } of arquivos) {
+    const nBuf  = Buffer.from(nome, 'utf8');
+    const crc   = crc32(conteudo);
+    const local = Buffer.concat([
+      Buffer.from([0x50,0x4b,0x03,0x04]), // signature
+      u16(20), u16(0), u16(0),            // version, flags, compression (store)
+      u16(0), u16(0),                     // mod time, mod date
+      u32(crc), u32(conteudo.length), u32(conteudo.length),
+      u16(nBuf.length), u16(0),           // name len, extra len
+      nBuf, conteudo,
+    ]);
+    partes.push(local);
+    centralDir.push(Buffer.concat([
+      Buffer.from([0x50,0x4b,0x01,0x02]), // central dir signature
+      u16(20), u16(20), u16(0), u16(0),  // versions, flags
+      u16(0), u16(0), u16(0),            // compression, time, date
+      u32(crc), u32(conteudo.length), u32(conteudo.length),
+      u16(nBuf.length), u16(0), u16(0),  // name, extra, comment len
+      u16(0), u16(0), u32(0),            // disk, attrs
+      u32(offset),                        // local header offset
+      nBuf,
+    ]));
+    offset += local.length;
   }
-  res.setHeader('Content-Disposition', 'attachment; filename="orion-agente-win.exe"');
-  res.setHeader('Content-Type', 'application/octet-stream');
-  res.sendFile(exePath);
+
+  const cdBuf  = Buffer.concat(centralDir);
+  const eocd   = Buffer.concat([
+    Buffer.from([0x50,0x4b,0x05,0x06]),  // end of central dir
+    u16(0), u16(0),                       // disk numbers
+    u16(arquivos.length), u16(arquivos.length),
+    u32(cdBuf.length), u32(offset),
+    u16(0),                               // comment len
+  ]);
+
+  return Buffer.concat([...partes, cdBuf, eocd]);
+}
+
+// Conteúdo do orion-agente.js embutido diretamente no servidor
+const AGENTE_JS = `
+/**
+ * Orion Agente v2.0.0 — Coletor de Impressoras via SNMP
+ * Descoberta automática de subnets RFC 1918
+ * Uso: node orion-agente.js
+ */
+const os=require('os'),fs=require('fs'),path=require('path'),https=require('https'),dgram=require('dgram');
+const CFG_PATH=path.join(__dirname,'config.json');
+if(!fs.existsSync(CFG_PATH)){console.error('\\u274c config.json não encontrado.');process.exit(1);}
+const CFG=JSON.parse(fs.readFileSync(CFG_PATH,'utf8'));
+const SERVER_URL=CFG.serverUrl||'https://orion-at-production.up.railway.app';
+const CLIENT_KEY=CFG.clientKey||'';
+const INTERVAL=(CFG.intervalMin||15)*60*1000;
+const SNMP_TO=CFG.snmpTimeout||3000;
+const SUBNET_FIXO=CFG.subnet||'';
+
+const OID={
+  descricao:'1.3.6.1.2.1.1.1.0',nome_rede:'1.3.6.1.2.1.1.5.0',
+  serial:'1.3.6.1.2.1.43.5.1.1.17.1',
+  pag_total:'1.3.6.1.2.1.43.10.2.1.4.1.1',pag_pb:'1.3.6.1.2.1.43.10.2.1.4.1.2',pag_cor:'1.3.6.1.2.1.43.10.2.1.4.1.3',
+  tn1:'1.3.6.1.2.1.43.11.1.1.9.1.1',tm1:'1.3.6.1.2.1.43.11.1.1.8.1.1',
+  tn2:'1.3.6.1.2.1.43.11.1.1.9.1.2',tm2:'1.3.6.1.2.1.43.11.1.1.8.1.2',
+  tn3:'1.3.6.1.2.1.43.11.1.1.9.1.3',tm3:'1.3.6.1.2.1.43.11.1.1.8.1.3',
+  tn4:'1.3.6.1.2.1.43.11.1.1.9.1.4',tm4:'1.3.6.1.2.1.43.11.1.1.8.1.4',
+  drum_n:'1.3.6.1.2.1.43.11.1.1.9.1.5',drum_m:'1.3.6.1.2.1.43.11.1.1.8.1.5',
+  status:'1.3.6.1.2.1.25.3.5.1.1.1',papel:'1.3.6.1.2.1.43.8.2.1.10.1.1',
+};
+
+function descobrirSubnets(){
+  if(SUBNET_FIXO) return SUBNET_FIXO.split(',').map(s=>s.trim()).filter(Boolean);
+  const subs=new Set();
+  for(const[n,addrs]of Object.entries(os.networkInterfaces()||{})){
+    if(/loopback|lo$|vmnet|vbox|docker|wsl|hyper/i.test(n))continue;
+    for(const a of(addrs||[])){
+      if(a.family!=='IPv4'||a.internal)continue;
+      const ip=a.address;
+      if(ip.startsWith('10.')||ip.startsWith('192.168.')||(ip.startsWith('172.')&&+ip.split('.')[1]>=16&&+ip.split('.')[1]<=31)){
+        subs.add(ip.split('.').slice(0,3).join('.'));
+        console.log('\\u{1F4E1} Interface '+n+' ('+ip+') → '+ip.split('.').slice(0,3).join('.')+'.0/24');
+      }
+    }
+  }
+  if(!subs.size){console.warn('\\u26a0\\ufe0f Fallback: 192.168.0, 192.168.1, 10.0.0');return['192.168.0','192.168.1','10.0.0'];}
+  return[...subs];
+}
+
+function buildPDU(oid,comm){
+  const encInt=n=>n<128?Buffer.from([2,1,n]):Buffer.from([2,2,(n>>8)&255,n&255]);
+  const encOID=s=>{const p=s.split('.').map(Number);const e=[p[0]*40+p[1]];for(let i=2;i<p.length;i++){let v=p[i];if(v<128){e.push(v);}else{const b=[];while(v>0){b.unshift(v&127);v>>=7;}for(let j=0;j<b.length-1;j++)b[j]|=128;e.push(...b);}}return Buffer.concat([Buffer.from([6,e.length]),Buffer.from(e)]);};
+  const encStr=s=>{const b=Buffer.from(s,'ascii');return Buffer.concat([Buffer.from([4,b.length]),b]);};
+  const encSeq=(t,c)=>{const b=Buffer.isBuffer(c)?c:Buffer.concat(c);return Buffer.concat([Buffer.from([t,b.length]),b]);};
+  const rid=encInt(Math.floor(Math.random()*65535));
+  const e0=Buffer.from([2,1,0]),e1=Buffer.from([2,1,0]);
+  const vb=encSeq(0x30,[encOID(oid),Buffer.from([5,0])]);
+  const pdu=encSeq(0xa0,[rid,e0,e1,encSeq(0x30,[vb])]);
+  return encSeq(0x30,[Buffer.from([2,1,0]),encStr(comm),pdu]);
+}
+
+function parseResp(buf){
+  let i=0;
+  const rLen=()=>{const l=buf[i++];if(l<128)return l;const nb=l&127;let r=0;for(let j=0;j<nb;j++)r=(r<<8)|buf[i++];return r;};
+  const find=(end)=>{while(i<end){const t=buf[i++],l=rLen(),s=i;if(t===0x30||t===0xa2||t===0xa0){const v=find(i+l);if(v!==null)return v;}else if(t===4){return buf.slice(i,i+l).toString('utf8').replace(/\0/g,'').trim();}else if(t===2){let v=buf[i]&128?-1:0;for(let j=0;j<l;j++)v=(v<<8)|buf[i+j];return v;}else if(t===0x43||t===0x41){let v=0;for(let j=0;j<l;j++)v=v*256+buf[i+j];return v;}i=s+l;}return null;};
+  try{return find(buf.length);}catch{return null;}
+}
+
+function snmpGet(ip,oid){
+  return new Promise(r=>{
+    const pdu=buildPDU(oid,'public'),sock=dgram.createSocket('udp4');
+    let done=false;
+    const t=setTimeout(()=>{if(!done){done=true;try{sock.close();}catch{}r(null);}},SNMP_TO);
+    sock.on('message',m=>{if(!done){done=true;clearTimeout(t);try{sock.close();}catch{}r(parseResp(m));}});
+    sock.on('error',()=>{if(!done){done=true;clearTimeout(t);r(null);}});
+    sock.send(pdu,161,ip,e=>{if(e&&!done){done=true;clearTimeout(t);try{sock.close();}catch{}r(null);}});
+  });
+}
+
+const fab=d=>{const u=(d||'').toUpperCase();if(u.includes('HP')||u.includes('HEWLETT'))return'HP';if(u.includes('KYOCERA'))return'KYOCERA';if(u.includes('RICOH'))return'RICOH';if(u.includes('XEROX'))return'XEROX';if(u.includes('CANON'))return'CANON';if(u.includes('KONICA')||u.includes('MINOLTA'))return'MINOLTA';if(u.includes('BROTHER'))return'BROTHER';if(u.includes('EPSON'))return'EPSON';return'OUTRO';};
+const pct=(n,m)=>n===null||m===null||m<=0?null:n<0?0:Math.round(n/m*100);
+const stTxt=v=>({1:'other',2:'unknown',3:'idle',4:'printing',5:'warmup'}[v]||'unknown');
+
+async function coletarImp(ip){
+  const desc=await snmpGet(ip,OID.descricao);
+  if(!desc)return null;
+  const[nr,ser,pt,ppb,pc,tn1,tm1,tn2,tm2,tn3,tm3,tn4,tm4,dn,dm,sv,pap]=await Promise.all([
+    snmpGet(ip,OID.nome_rede),snmpGet(ip,OID.serial),
+    snmpGet(ip,OID.pag_total),snmpGet(ip,OID.pag_pb),snmpGet(ip,OID.pag_cor),
+    snmpGet(ip,OID.tn1),snmpGet(ip,OID.tm1),snmpGet(ip,OID.tn2),snmpGet(ip,OID.tm2),
+    snmpGet(ip,OID.tn3),snmpGet(ip,OID.tm3),snmpGet(ip,OID.tn4),snmpGet(ip,OID.tm4),
+    snmpGet(ip,OID.drum_n),snmpGet(ip,OID.drum_m),snmpGet(ip,OID.status),snmpGet(ip,OID.papel),
+  ]);
+  const preto=pct(tn1,tm1),ciano=pct(tn2,tm2),magenta=pct(tn3,tm3),amarelo=pct(tn4,tm4),drum=pct(dn,dm);
+  const erros=[];
+  if(preto!==null&&preto<10)erros.push('toner-baixo');
+  if(ciano!==null&&ciano<10)erros.push('ciano-baixo');
+  if(magenta!==null&&magenta<10)erros.push('magenta-baixo');
+  if(amarelo!==null&&amarelo<10)erros.push('amarelo-baixo');
+  if(drum!==null&&drum<10)erros.push('drum-baixo');
+  if(pap===0)erros.push('sem-papel');
+  return{ip,descricao:desc,nome_rede:nr||'',fabricante:fab(desc),serial:ser||'',status:stTxt(sv),online:true,
+    paginas_total:pt||0,paginas_pb:ppb||0,paginas_color:pc||0,
+    toner:{preto,ciano,magenta,amarelo},drum_pct:drum,papel_nivel:pap,erros};
+}
+
+async function varrer(){
+  const subs=descobrirSubnets();
+  const ips=subs.flatMap(b=>{const r=[];for(let i=1;i<=254;i++)r.push(b+'.'+i);return r;});
+  console.log('\\u{1F50D} Varrendo '+ips.length+' IPs em '+subs.length+' subnet(s)...');
+  const LOTE=30,imps=[];
+  for(let i=0;i<ips.length;i+=LOTE){
+    const res=await Promise.all(ips.slice(i,i+LOTE).map(coletarImp));
+    res.forEach(r=>{if(r){imps.push(r);console.log('  \\u2705 '+r.ip+' — '+r.fabricante+' '+r.descricao.slice(0,40));}});
+    await new Promise(r=>setTimeout(r,100));
+  }
+  console.log('\\u{1F4CB} '+imps.length+' impressora(s) encontrada(s).');
+  return imps;
+}
+
+function enviar(imps){
+  return new Promise((res,rej)=>{
+    const body=JSON.stringify({clientKey:CLIENT_KEY,hostname:os.hostname(),platform:os.platform()+' '+os.release(),agente_ver:'2.0.0',timestamp:new Date().toISOString(),impressoras:imps});
+    const u=new URL(SERVER_URL+'/api/monitor/telemetria');
+    const req=https.request({hostname:u.hostname,port:443,path:u.pathname,method:'POST',headers:{'Content-Type':'application/json','Content-Length':Buffer.byteLength(body)}},(r)=>{let d='';r.on('data',c=>d+=c);r.on('end',()=>{try{res(JSON.parse(d));}catch{res({ok:false});}});});
+    req.on('error',rej);req.write(body);req.end();
+  });
+}
+
+async function registrar(){
+  return new Promise(res=>{
+    const body=JSON.stringify({clientKey:CLIENT_KEY,hostname:os.hostname(),agente_ver:'2.0.0'});
+    const u=new URL(SERVER_URL+'/api/monitor/registrar-agente');
+    const req=https.request({hostname:u.hostname,port:443,path:u.pathname,method:'POST',headers:{'Content-Type':'application/json','Content-Length':Buffer.byteLength(body)}},(r)=>{let d='';r.on('data',c=>d+=c);r.on('end',()=>{try{res(JSON.parse(d));}catch{res({});}}); });
+    req.on('error',()=>res({}));req.write(body);req.end();
+  });
+}
+
+async function ciclo(){
+  console.log('\\n['+new Date().toLocaleString('pt-BR')+'] — Iniciando coleta...');
+  try{
+    const imps=await varrer();
+    const r=await enviar(imps);
+    console.log('\\u{1F4E4} Enviado: '+(r.recebido??imps.length)+' impressora(s)');
+  }catch(e){console.error('\\u274c Erro:',e.message);}
+  console.log('\\u23f1 Próxima coleta em '+(CFG.intervalMin||15)+' min.');
+}
+
+(async()=>{
+  console.log('\\u{1F5A8}  Orion Agente v2.0.0');
+  console.log('   Servidor : '+SERVER_URL);
+  console.log('   Cliente  : '+(CFG.clientNome||'—'));
+  console.log('   Intervalo: '+(CFG.intervalMin||15)+' min');
+  console.log('   Subnet   : '+(SUBNET_FIXO||'Auto RFC 1918'));
+  const reg=await registrar();
+  if(reg.ok)console.log('\\u2705 Registrado: '+reg.clientNome);
+  await ciclo();
+  setInterval(ciclo,INTERVAL);
+})();
+`.trim();
+
+// Rota principal: ZIP com agente + config personalizado do cliente
+app.get('/download/pacote-agente/:clienteId', requireAuth, async (req, res) => {
+  try {
+    const cliente = await col('clientes').findOne({ _id: new ObjectId(req.params.clienteId) });
+    if (!cliente) return res.status(404).json({ error: 'Cliente não encontrado' });
+    if (!cliente.monitor_key) return res.status(400).json({ error: 'Este cliente não possui chave de monitoramento. Gere a chave primeiro.' });
+
+    const nomeSeguro = (cliente.nome || 'cliente').toLowerCase().replace(/[^a-z0-9]/g, '_');
+
+    const config = {
+      serverUrl:    'https://orion-at-production.up.railway.app',
+      clientKey:    cliente.monitor_key,
+      clientId:     cliente._id.toString(),
+      clientNome:   cliente.nome,
+      intervalMin:  15,
+      subnet:       '',
+      snmpTimeout:  3000,
+      snmpRetries:  1,
+    };
+
+    const arquivos = [
+      { nome: 'orion-agente.js', conteudo: Buffer.from(AGENTE_JS, 'utf8') },
+      { nome: 'config.json',     conteudo: Buffer.from(JSON.stringify(config, null, 2), 'utf8') },
+      { nome: 'LEIA-ME.txt',     conteudo: Buffer.from(
+`Orion Agente — Pacote de Instalação
+Cliente: ${cliente.nome}
+Gerado em: ${new Date().toLocaleString('pt-BR')}
+
+REQUISITOS:
+  - Node.js 18+ instalado (https://nodejs.org)
+
+INSTALAÇÃO RÁPIDA:
+  1. Copie esta pasta para o PC que ficará sempre ligado
+  2. Abra o Prompt de Comando (cmd) como Administrador nesta pasta
+  3. Execute: node orion-agente.js
+  4. Para rodar em segundo plano (recomendado):
+       npm install -g pm2
+       pm2 start orion-agente.js --name orion-agente
+       pm2 startup
+       pm2 save
+
+SUBNET (opcional):
+  Se as impressoras estão em uma subnet específica, edite config.json
+  e preencha o campo "subnet" com o range, ex: "192.168.5"
+  Deixe vazio para descoberta automática (recomendado).
+
+Suporte: Orion Soluções — https://orion-at-production.up.railway.app
+`, 'utf8') },
+    ];
+
+    const zip = gerarZip(arquivos);
+
+    res.setHeader('Content-Disposition', `attachment; filename="orion-agente-${nomeSeguro}.zip"`);
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Length', zip.length);
+    res.send(zip);
+
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Rota legada mantida por compatibilidade (redireciona para explicação)
+app.get('/download/agente', requireAuth, (req, res) => {
+  res.status(400).json({ error: 'Use /download/pacote-agente/:clienteId para baixar o pacote completo com config personalizado.' });
 });
 
 // ─── MONITORAMENTO DE IMPRESSORAS ───────────────────────────────────────────
