@@ -1132,8 +1132,8 @@ function gerarZip(arquivos) {
     partes.push(local);
     centralDir.push(Buffer.concat([
       Buffer.from([0x50,0x4b,0x01,0x02]), // central dir signature
-      u16(20), u16(20), u16(0), u16(0),  // versions, flags
-      u16(0), u16(0), u16(0),            // compression, time, date
+      u16(20), u16(20), u16(0), u16(0),  // ver_made, ver_needed, flags, compression
+      u16(0), u16(0),                    // mod time, mod date
       u32(crc), u32(conteudo.length), u32(conteudo.length),
       u16(nBuf.length), u16(0), u16(0),  // name, extra, comment len
       u16(0), u16(0), u32(0),            // disk, attrs
