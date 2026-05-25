@@ -2750,7 +2750,7 @@ label { font-size: 11px !important; font-weight: 600 !important; color: #475569 
       <div style="font-size:12px;font-weight:700;color:var(--gn);margin-bottom:8px">📦 Pacote de Instalação</div>
       <div style="font-size:11px;color:var(--tx2);margin-bottom:12px">Baixe o <code>config.json</code> e coloque na pasta <code>orion-agente/</code> antes de rodar o instalador.</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn btn-accent" onclick="baixarConfig()">⬇ Baixar config.json</button>
+        <button class="btn btn-accent" onclick="baixarPacoteAgenteModal()">⬇ Baixar Pacote do Agente (.zip)</button>
         <a href="/monitor" target="_blank" class="btn btn-ghost btn-sm">↗ Abrir Monitor</a>
       </div>
     </div>
@@ -3135,25 +3135,72 @@ Outros</textarea>
     <div class="cfg-panel" id="cfg-agente" style="display:none">
       <div class="card">
         <div class="card-hd"><div class="card-title">🖨 Agente de Monitoramento</div></div>
-        <div class="help-tip" style="margin-bottom:16px">
-          <b>Como instalar o agente no cliente:</b><br>
-          1. Clique em <b>"⬇ Baixar Agente"</b> abaixo e salve o <code>.exe</code><br>
-          2. No módulo <b>Clientes</b>, cada cliente já tem uma <b>chave gerada automaticamente</b><br>
-          3. Copie a chave do cliente e leve junto com o <code>.exe</code> ao cliente<br>
-          4. Execute o <code>.exe</code> como <b>Administrador</b> — ele pedirá a URL do servidor e a chave<br>
-          5. O agente se instala como serviço Windows e começa a monitorar automaticamente
-        </div>
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;padding:16px;background:var(--sf2);border-radius:10px;border:1px solid var(--bd)">
-          <div style="font-size:32px">🖥</div>
-          <div style="flex:1">
-            <div style="font-weight:700;color:var(--nv);margin-bottom:2px">Orion Agente — Windows</div>
-            <div style="font-size:11px;color:var(--tx3)">Serviço de monitoramento SNMP para impressoras em rede local</div>
-            <div style="font-size:10px;color:var(--tx3);margin-top:3px">Compatível com: HP, Kyocera, Ricoh, Xerox, Canon, Brother, Epson e mais</div>
+
+        <!-- Seletor de cliente -->
+        <div style="background:var(--sf2);border:1px solid var(--bd);border-radius:10px;padding:16px;margin-bottom:16px">
+          <div style="font-size:11px;font-weight:700;color:var(--nv);margin-bottom:10px">1️⃣ Selecione o cliente para gerar o pacote</div>
+          <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap">
+            <div style="flex:1;min-width:200px">
+              <label style="font-size:10px;font-weight:700;color:var(--tx3);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.6px">Cliente</label>
+              <select id="agente-cli-sel" onchange="agenteCliSelecionado()" style="width:100%">
+                <option value="">— Selecione um cliente —</option>
+              </select>
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="agenteCarregarClientes()" title="Atualizar lista">⟳</button>
           </div>
-          <button class="btn btn-accent" onclick="baixarAgente()">⬇ Baixar Agente (.exe)</button>
+
+          <!-- Info do cliente selecionado -->
+          <div id="agente-cli-info" style="display:none;margin-top:12px;padding:10px 14px;background:var(--blbg);border:1px solid var(--blbd);border-radius:8px;font-size:11px">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+              <div>
+                <div style="font-weight:700;color:var(--nv)" id="agente-cli-nome"></div>
+                <div style="color:var(--tx3);margin-top:2px">Chave: <code id="agente-cli-key" style="font-family:monospace;font-size:10px;letter-spacing:.5px"></code></div>
+              </div>
+              <div style="display:flex;gap:6px">
+                <button class="btn btn-ghost btn-sm" id="agente-btn-gerar-key" onclick="agenteGerarChave()">⚙ Gerar chave</button>
+                <button class="btn btn-primary btn-sm" id="agente-btn-copiar-key" onclick="agenteCopiarChave()" style="display:none">📋 Copiar chave</button>
+              </div>
+            </div>
+            <div id="agente-aviso-sem-key" style="color:var(--rd);font-size:10px;margin-top:6px;display:none">
+              ⚠ Este cliente ainda não tem chave de monitoramento. Clique em <b>⚙ Gerar chave</b> para criar.
+            </div>
+          </div>
         </div>
+
+        <!-- Download do pacote -->
+        <div style="background:var(--gnbg);border:1px solid var(--gnbd);border-radius:10px;padding:16px;margin-bottom:16px" id="agente-download-wrap" style="display:none">
+          <div style="font-size:11px;font-weight:700;color:var(--gn);margin-bottom:6px">2️⃣ Baixar pacote do agente</div>
+          <div style="font-size:11px;color:var(--tx2);margin-bottom:12px">
+            O arquivo <strong>.zip</strong> contém o <code>orion-agente.js</code> (universal) e o <code>config.json</code> já personalizado para <strong id="agente-dl-nome"></strong>. Extraia na máquina do cliente e siga as instruções do LEIA-ME.txt.
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <button class="btn btn-accent" id="agente-btn-download" onclick="agenteBaixarPacote()">
+              ⬇ Baixar Pacote (.zip)
+            </button>
+            <a href="/monitor" target="_blank" class="btn btn-ghost btn-sm">↗ Abrir Monitor</a>
+          </div>
+        </div>
+
+        <!-- Instruções -->
+        <div style="border:1px solid var(--bd);border-radius:10px;padding:14px 16px;margin-bottom:16px">
+          <div style="font-size:11px;font-weight:700;color:var(--nv);margin-bottom:10px">3️⃣ Instalar no PC do cliente</div>
+          <ol style="font-size:11px;color:var(--tx2);line-height:2.1;padding-left:18px">
+            <li>Extraia o <code>.zip</code> em qualquer pasta no PC do cliente</li>
+            <li>Certifique-se que o <strong>Node.js 18+</strong> está instalado — <a href="https://nodejs.org" target="_blank" style="color:var(--bl)">nodejs.org</a></li>
+            <li>Abra o <strong>Prompt de Comando como Administrador</strong> dentro da pasta extraída</li>
+            <li>Execute para instalar como serviço permanente:<br>
+              <code style="background:#f1f5f9;padding:3px 8px;border-radius:5px;display:inline-block;margin-top:4px;font-size:10px">npm install -g pm2 &amp;&amp; pm2 start orion-agente.js --name orion-agente &amp;&amp; pm2 startup &amp;&amp; pm2 save</code>
+            </li>
+            <li>Pronto — o agente descobre as impressoras automaticamente e envia dados a cada 15 min</li>
+          </ol>
+          <div style="margin-top:10px;padding:8px 12px;background:var(--blbg);border-radius:7px;font-size:10px;color:var(--bl2)">
+            💡 <strong>Subnet opcional:</strong> se as impressoras estiverem em um range específico, abra o <code>config.json</code> e preencha o campo <code>"subnet"</code> com o base do range, ex: <code>"192.168.5"</code>. Deixe vazio para descoberta automática.
+          </div>
+        </div>
+
+        <!-- URL do servidor -->
         <div style="background:var(--bl2bg);border:1px solid var(--bl2bd);border-radius:8px;padding:12px 14px;font-size:11px;color:var(--bl2)">
-          <b>URL do servidor para informar durante a instalação:</b><br>
+          <b>URL do servidor:</b><br>
           <code id="cfg-agente-url" style="font-size:12px;font-weight:700"></code>
           <button onclick="copiarUrlAgente()" style="border:none;background:none;cursor:pointer;margin-left:8px;font-size:13px" title="Copiar URL">📋</button>
         </div>
@@ -6627,32 +6674,92 @@ function copiarChave() {
   });
 }
 
-function baixarConfig() {
-  const cid = document.getElementById('mon-cli-id').value;
-  const key = document.getElementById('mon-key').value;
-  const c   = G.clientes.find(x => x.id === cid);
-  if (!key) { alert('Gere uma chave primeiro.'); return; }
-  const cfg = {
-    serverUrl:   window.location.origin,
-    clientKey:   key,
-    clientId:    cid,
-    clientNome:  c?.nome || '',
-    intervalMin: 15,
-    subnet:      '',
-    snmpTimeout: 3000,
-    snmpRetries: 1
-  };
-  const blob = new Blob([JSON.stringify(cfg, null, 2)], { type: 'application/json' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `config-${(c?.nome||'cliente').replace(/[^a-z0-9]/gi,'_').toLowerCase()}.json`;
-  a.click();
-  URL.revokeObjectURL(a.href);
+function baixarPacoteAgenteModal() {
+  const cid = document.getElementById('mon-cli-id')?.value;
+  if (!cid) { alert('Cliente não identificado.'); return; }
+  window.location.href = `/download/pacote-agente/${cid}`;
 }
 
-function baixarAgente() {
-  window.location.href = '/download/agente';
+function baixarConfig() { baixarPacoteAgenteModal(); } // compatibilidade
+
+function baixarAgente() { agenteBaixarPacote(); } // compatibilidade
+
+// ── Agente de Monitoramento — funções da aba Configurações ──
+let _agenteCliAtual = null;
+
+function agenteCarregarClientes() {
+  const sel = document.getElementById('agente-cli-sel');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">— Selecione um cliente —</option>' +
+    (G.clientes || []).map(c =>
+      `<option value="${c.id}">${c.nome}${c.monitor_key ? ' ✓' : ''}</option>`
+    ).join('');
 }
+
+function agenteCliSelecionado() {
+  const sel  = document.getElementById('agente-cli-sel');
+  const cid  = sel?.value;
+  const info = document.getElementById('agente-cli-info');
+  const wrap = document.getElementById('agente-download-wrap');
+  if (!cid) {
+    if (info) info.style.display = 'none';
+    if (wrap) wrap.style.display = 'none';
+    _agenteCliAtual = null;
+    return;
+  }
+  const c = (G.clientes || []).find(x => x.id === cid);
+  if (!c) return;
+  _agenteCliAtual = c;
+
+  document.getElementById('agente-cli-nome').textContent = c.nome;
+  document.getElementById('agente-cli-key').textContent  = c.monitor_key ? c.monitor_key.substring(0,20)+'...' : '—';
+  document.getElementById('agente-aviso-sem-key').style.display  = c.monitor_key ? 'none' : '';
+  document.getElementById('agente-btn-copiar-key').style.display = c.monitor_key ? '' : 'none';
+  document.getElementById('agente-btn-gerar-key').textContent    = c.monitor_key ? '⚙ Regenerar chave' : '⚙ Gerar chave';
+  info.style.display = '';
+
+  if (c.monitor_key) {
+    document.getElementById('agente-dl-nome').textContent = c.nome;
+    wrap.style.display = '';
+  } else {
+    wrap.style.display = 'none';
+  }
+}
+
+async function agenteGerarChave() {
+  const c = _agenteCliAtual;
+  if (!c) return;
+  if (c.monitor_key && !confirm(`Gerar nova chave para ${c.nome}?\nA chave atual deixará de funcionar e o agente precisará ser reinstalado.`)) return;
+  try {
+    await api('POST', `/api/clientes/${c.id}/gerar-chave`);
+    await loadAll();
+    _agenteCliAtual = G.clientes.find(x => x.id === c.id);
+    agenteCarregarClientes();
+    document.getElementById('agente-cli-sel').value = c.id;
+    agenteCliSelecionado();
+    showToast('Chave gerada com sucesso!');
+  } catch(e) { alert('Erro ao gerar chave: ' + e.message); }
+}
+
+function agenteCopiarChave() {
+  const c = _agenteCliAtual;
+  if (!c?.monitor_key) return;
+  navigator.clipboard.writeText(c.monitor_key).then(() => showToast('Chave copiada!'));
+}
+
+function agenteBaixarPacote() {
+  const c = _agenteCliAtual;
+  if (!c) { alert('Selecione um cliente primeiro.'); return; }
+  if (!c.monitor_key) { alert('Gere a chave de monitoramento primeiro.'); return; }
+  window.location.href = `/download/pacote-agente/${c.id}`;
+}
+
+// Também atualiza a lista ao abrir a aba
+const _origNavCfg = window.navCfg;
+window.navCfg = function(panel, el) {
+  if (typeof _origNavCfg === 'function') _origNavCfg(panel, el);
+  if (panel === 'agente') agenteCarregarClientes();
+};
 
 function copiarUrlAgente() {
   const url = document.getElementById('cfg-agente-url')?.textContent || window.location.origin;
