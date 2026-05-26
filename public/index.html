@@ -6774,7 +6774,7 @@ async function agenteCarregarExeInfo() {
   const badge  = document.getElementById('agente-exe-status-badge');
   if (!info) return;
   try {
-    const r = await fetch('/api/monitor/exe-info');
+    const r = await fetch('/api/monitor/exe-info', { credentials: 'include' });
     const d = await r.json();
     if (d.url) {
       const dt = d.atualizado_em ? new Date(d.atualizado_em).toLocaleString('pt-BR') : '—';
@@ -6811,7 +6811,7 @@ async function agenteUploadExe(input) {
     const fd = new FormData();
     fd.append('exe', file);
 
-    const r = await fetch('/api/monitor/upload-exe', { method: 'POST', body: fd });
+    const r = await fetch('/api/monitor/upload-exe', { method: 'POST', body: fd, credentials: 'include' });
     const d = await r.json();
 
     if (!r.ok) throw new Error(d.error || 'Erro no upload');

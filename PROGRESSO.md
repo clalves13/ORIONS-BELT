@@ -3,7 +3,7 @@
 **Repositório:** https://github.com/clalves13/orion-at  
 **Branch:** main  
 **Arquivo principal:** `index.html`  
-**Última atualização:** 23/05/2026
+**Última atualização:** 25/05/2026
 
 ---
 
@@ -209,6 +209,130 @@ Card exibe label `"Mensal (Anual/12x)"` conforme periodicidade
 - [ ] Adicionar campo `estado` no modal de cliente (atualmente só `cidade`)
 - [ ] Considerar campo `status` no cadastro de equipamento (`Em manutenção` / `Em laboratório`) para rastreamento mais granular
 - [ ] Validar layout responsivo no celular real após deploy
+- [ ] Compilar `OrionAgente.exe` em `orion-build/` e fazer upload via painel (0️⃣ Agente de Monitoramento)
+- [ ] Testar download do pacote `.zip` com `.exe` no Windows após upload do exe
+- [ ] Criar botão de desinstalação no painel (rota `OrionAgente.exe --uninstall`)
+
+---
+
+## Sessão 5 — 25/05/2026 — Agente de Monitoramento + Infraestrutura
+
+### Fix 1 — ZIP corrompido ao baixar pacote do agente
+
+**Sintoma:** Windows exibia "A pasta compactada é inválida" ao extrair o zip gerado pelo servidor.
+
+**Causa raiz:** função `gerarZip` (manual, sem lib) tinha um `u16(0)` a mais no bloco do Central Directory. O comentário dizia `// compression, time, date` (3 valores), mas `compression` já estava declarado na linha anterior — o byte extra deslocava CRC, tamanhos e offsets corrompendo o arquivo inteiro.
+
+```js
+// ❌ ANTES — 3 u16 onde só cabem 2
+u16(20), u16(20), u16(0), u16(0),  // versions, flags
+u16(0), u16(0), u16(0),            // compression, time, date  ← u16 a mais!
+
+// ✅ DEPOIS
+u16(20), u16(20), u16(0), u16(0),  // ver_made, ver_needed, flags, compression
+u16(0), u16(0),                    // time, date
+```
+
+**Arquivo corrigido:** `server.js`
+
+---
+
+### Fix 2 — Deploy quebrado: `package.json` do agente sobrescreveu o do servidor
+
+**Sintoma:** Railway exibia `Cannot find module 'express'` — o servidor subia com o `package.json` do agente (`orion-agente@2.1.0`) no lugar do original.
+
+**Causa:** os arquivos `orion-build/package.json` e `orion-build/OrionAgente.exe` foram commitados na raiz errada, e o `package.json` do agente conflitou com o do servidor.
+
+**Correção:**
+1. Pasta do agente renomeada para `orion-build/` (separada da raiz)
+2. `.gitignore` atualizado: `orion-build/OrionAgente.exe`
+3. `.exe` removido do histórico Git: `git rm --cached orion-build/OrionAgente.exe`
+
+---
+
+### Fix 3 — `https` não importado no server.js
+
+**Sintoma:** crash no Railway ao tentar baixar o `.exe` do Cloudinary na rota de download.
+
+**Causa:** `const https = require('https')` existia apenas dentro da string `AGENTE_JS` (código embutido do agente), não como import real do servidor.
+
+**Correção:** adicionado `const https = require('https');` no topo do `server.js` junto aos demais imports.
+
+---
+
+### feat: Agente de monitoramento como executável `.exe`
+
+**Motivação:** arquivos `.bat` são bloqueados por Windows Defender e SmartScreen em ambientes corporativos.
+
+**Solução adotada:** `.exe` standalone compilado com `pkg` (Node.js embutido, ~50MB, sem dependências). O `.exe` é compilado uma vez, armazenado no Cloudinary, e o servidor monta o zip dinamicamente com o `.exe` + `config.json` personalizado por cliente.
+
+**Arquitetura:**
+```
+orion-build/
+├── orion-agente.js    ← código-fonte do agente (versionado)
+├── package.json       ← config do pkg para compilação local
+└── OrionAgente.exe    ← compilado localmente, NO .gitignore, upload via painel
+```
+
+**Fluxo de deploy do exe:**
+1. `cd orion-build && npm install -g pkg`
+2. `pkg orion-agente.js --target node18-win-x64 --output OrionAgente.exe --compress GZip`
+3. Painel → Configurações → Agente de Monitoramento → **0️⃣ Enviar OrionAgente.exe**
+4. Upload vai para Cloudinary — Railway não é impactado
+
+**Comandos do exe:**
+```
+OrionAgente.exe              → roda o agente normalmente
+OrionAgente.exe --install    → instala como serviço Windows (sc.exe nativo, sem pm2)
+OrionAgente.exe --uninstall  → remove o serviço e a pasta C:\OrionAgente
+```
+
+**Rotas novas no server.js:**
+| Rota | Método | Descrição |
+|---|---|---|
+| `/api/monitor/upload-exe` | POST | Admin faz upload do `.exe` → Cloudinary |
+| `/api/monitor/exe-info` | GET | Retorna URL e data do `.exe` atual |
+| `/download/pacote-agente/:id` | GET | ZIP com `.exe` + `config.json` do cliente |
+| `/download/pacote-agente-legacy/:id` | GET | Rota antiga com `.bat` (mantida temporariamente) |
+
+**Pacote que o cliente recebe:**
+```
+orion-agente-[cliente].zip
+├── OrionAgente.exe    ← standalone, sem Node.js necessário
+├── config.json        ← chave + config únicos do cliente
+└── LEIA-ME.txt        ← instruções em 2 passos
+```
+
+**Instalação no cliente (2 passos):**
+1. Extrair o zip
+2. Botão direito no `OrionAgente.exe` → Executar como administrador → "Mais informações" → "Executar assim mesmo"
+
+---
+
+### feat: Botão de upload do exe no painel
+
+**Localização:** Configurações → Agente de Monitoramento → seção **0️⃣ Executável do agente**
+
+**Comportamento:**
+- Carrega automaticamente ao abrir a aba mostrando status (✅ disponível / ⚠ sem exe)
+- Botão **📤 Enviar OrionAgente.exe** abre seletor de arquivo (filtra `.exe`)
+- Barra de progresso com tamanho em MB durante upload
+- Badge colorido no header da seção (verde/vermelho)
+- Instruções de instalação atualizadas para o fluxo com `.exe`
+
+**Funções JS adicionadas ao `index.html`:**
+- `agenteCarregarExeInfo()` — consulta `/api/monitor/exe-info` e atualiza status visual
+- `agenteUploadExe(input)` — envia o arquivo via `FormData` para `/api/monitor/upload-exe`
+- `navCfg` patchado para chamar `agenteCarregarExeInfo()` ao abrir a aba
+
+---
+
+### Pontos de atenção adicionais
+
+8. **`orion-build/OrionAgente.exe` nunca vai para o Git** — sempre no `.gitignore`; compilar e subir via painel
+9. **`.exe` no Cloudinary é universal** — mesmo binário para todos os clientes; só o `config.json` é personalizado
+10. **`sc.exe` nativo do Windows** — instalador usa `sc create/start/delete` sem depender de `pm2` ou Node.js instalado no cliente
+11. **SmartScreen na primeira execução** — cliente verá aviso "Windows protegeu seu PC"; orientar a clicar em "Mais informações" → "Executar assim mesmo". Sumiria com assinatura de código (code signing certificate), mas não é obrigatório
 
 ---
 

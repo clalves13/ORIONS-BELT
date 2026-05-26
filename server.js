@@ -9,6 +9,7 @@ const MongoStore = require('connect-mongo');
 const path = require('path');
 const crypto = require('crypto');
 const fs = require('fs');
+const https = require('https');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -19,6 +20,7 @@ cloudinary.config({
   api_secret:  process.env.CLOUDINARY_API_SECRET || 'ttSsE-FuwvE8yYx7itvKwG8VsS0',
 });
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
+const uploadExe = multer({ storage: multer.memoryStorage(), limits: { fileSize: 100 * 1024 * 1024 } }); // 100MB para o OrionAgente.exe
 
 const MONGO_URI = process.env.MONGO_URI || 'mongodb+srv://clairton_db_user:Ita722018@cluster0.uy61dew.mongodb.net/?appName=Cluster0';
 const MASTER_HASH = bcrypt.hashSync('churrasquinho@26', 10);
@@ -1317,7 +1319,12 @@ async function ciclo(){
 // ─── UPLOAD DO OrionAgente.exe (admin faz uma vez após compilar) ──────────────
 // POST /api/monitor/upload-exe  (multipart, campo "exe")
 // Sobe o .exe para o Cloudinary e salva a URL nas configurações do sistema.
-app.post('/api/monitor/upload-exe', requireAuth, requireAdmin, upload.single('exe'), async (req, res) => {
+app.post('/api/monitor/upload-exe', requireAuth, requireAdmin, (req, res, next) => {
+  uploadExe.single('exe')(req, res, (err) => {
+    if (err) return res.status(400).json({ error: `Erro no upload: ${err.message}` });
+    next();
+  });
+}, async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'Nenhum arquivo enviado.' });
     if (!req.file.originalname.endsWith('.exe')) return res.status(400).json({ error: 'Envie um arquivo .exe.' });
