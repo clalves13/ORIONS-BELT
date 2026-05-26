@@ -540,7 +540,7 @@ tr:hover td{background:var(--sf2)}
   #print-window{display:block!important;position:fixed;inset:0;background:#fff;z-index:99999;padding:16px}
 }
 .os-doc{font-family:'Sora',sans-serif;color:#111;font-size:11px;background:#fff}
-.os-hd{display:none}
+
 .os-logo-col{display:none}
 .os-logo-txt{color:#e07818;font-size:14px;font-weight:800;letter-spacing:1px}
 .os-logo-sub{color:#64748b;font-size:8px;text-align:center;margin-top:2px}
@@ -3739,7 +3739,7 @@ Outros</textarea>
       <div class="fgrid fg3"><div class="fg"><label>Nº OS</label><input type="text" id="o-num" readonly></div><div class="fg"><label>Data Abertura</label><input type="date" id="o-dab"></div><div class="fg"><label>Técnico</label><select id="o-tec"></select></div></div>
     </div>
     <div style="margin-bottom:13px"><div class="fsec">Cliente</div>
-      <div class="fgrid fg2"><div class="fg"><label>Cliente *</label><select id="o-cli" onchange="loadEqs('o');fillCliOS()"></select></div><div class="fg"><label>Contato</label><input type="text" id="o-contato"></div><div class="fg"><label>Telefone</label><input type="text" id="o-tel"></div><div class="fg"><label>Endereço</label><input type="text" id="o-end"></div><div class="fg"><label>CEP</label><input type="text" id="o-cep" maxlength="9" oninput="fmtCEP(this)"></div><div class="fg"><label>Cidade</label><input type="text" id="o-cidade"></div><div class="fg"><label>UF</label><input type="text" id="o-uf" maxlength="2" style="text-transform:uppercase"></div></div>
+      <div class="fgrid fg2"><div class="fg"><label>Cliente *</label><select id="o-cli" onchange="loadEqs('o');fillCliOS()"></select></div><div class="fg"><label>Contato</label><input type="text" id="o-contato"></div><div class="fg"><label>Telefone</label><input type="text" id="o-tel"></div><div class="fg"><label>Endereço</label><input type="text" id="o-end"></div><div class="fg"><label>CEP</label><input type="text" id="o-cep" maxlength="9" oninput="fmtCEP(this);if(this.value.replace(/\D/g,'').length===8)buscarCEP(this.value,'o-')"></div><div class="fg"><label>Cidade</label><input type="text" id="o-cidade"></div><div class="fg"><label>UF</label><input type="text" id="o-uf" maxlength="2" style="text-transform:uppercase"></div></div>
     </div>
     <div style="margin-bottom:13px"><div class="fsec">Equipamento</div>
       <div class="fgrid fg2"><div class="fg"><label>Equipamento</label><select id="o-eq" onchange="fillEq('o')"></select></div><div class="fg"><label>Modelo</label><input type="text" id="o-modelo"></div><div class="fg"><label>Nº Série</label><input type="text" id="o-nserie"></div><div class="fg"><label>Contador</label><input type="text" id="o-cont"></div></div>
@@ -3887,8 +3887,9 @@ Outros</textarea>
     <div class="fgrid fg2">
       <div class="fg" style="grid-column:1/-1"><label>Nome *</label><input type="text" id="c-nome"></div>
       <div class="fg" style="grid-column:1/-1"><label>Endereço</label><input type="text" id="c-end"></div>
-      <div class="fg"><label>Cidade/UF</label><input type="text" id="c-cidade"></div>
-      <div class="fg"><label>CEP</label><input type="text" id="c-cep"></div>
+      <div class="fg"><label>Cidade</label><input type="text" id="c-cidade"></div>
+      <div class="fg"><label>UF</label><input type="text" id="c-uf" maxlength="2" style="text-transform:uppercase"></div>
+      <div class="fg"><label>CEP</label><input type="text" id="c-cep" maxlength="9" oninput="fmtCEP(this)"></div>
       <div class="fg"><label>Contato</label><input type="text" id="c-contato"></div>
       <div class="fg"><label>Telefone</label><input type="text" id="c-tel"></div>
       <div class="fg" style="grid-column:1/-1"><label>E-mail</label><input type="text" id="c-email"></div>
@@ -6617,11 +6618,11 @@ async function saveMov(){
 // ─── CLIENTES ─────────────────────────────────────────────
 function openCliente(id){
   document.getElementById('m-cli-title').textContent=id?'Editar Cliente':'Novo Cliente';
-  if(id){const c=G.clientes.find(x=>x.id===id);if(!c)return;document.getElementById('c-id').value=c.id;document.getElementById('c-nome').value=c.nome||'';document.getElementById('c-end').value=c.end_logradouro||'';document.getElementById('c-cidade').value=c.cidade||'';document.getElementById('c-cep').value=c.cep||'';document.getElementById('c-contato').value=c.contato||'';document.getElementById('c-tel').value=c.tel||'';document.getElementById('c-email').value=c.email||'';document.getElementById('c-obs').value=c.obs||'';}
-  else{['c-id','c-nome','c-end','c-cidade','c-cep','c-contato','c-tel','c-email','c-obs'].forEach(f=>document.getElementById(f).value='')}
+  if(id){const c=G.clientes.find(x=>x.id===id);if(!c)return;document.getElementById('c-id').value=c.id;document.getElementById('c-nome').value=c.nome||'';document.getElementById('c-end').value=c.end_logradouro||c.end||'';document.getElementById('c-cidade').value=c.cidade||'';document.getElementById('c-uf').value=c.uf||'';document.getElementById('c-cep').value=c.cep||'';document.getElementById('c-contato').value=c.contato||'';document.getElementById('c-tel').value=c.tel||'';document.getElementById('c-email').value=c.email||'';document.getElementById('c-obs').value=c.obs||'';}
+  else{['c-id','c-nome','c-end','c-cidade','c-uf','c-cep','c-contato','c-tel','c-email','c-obs'].forEach(f=>document.getElementById(f).value='')}
   openM('m-cli');
 }
-async function saveCli(){const nome=document.getElementById('c-nome').value.trim();if(!nome){alert('Informe o nome.');return}const eid=document.getElementById('c-id').value;const body={nome,end:document.getElementById('c-end').value,cidade:document.getElementById('c-cidade').value,cep:document.getElementById('c-cep').value,contato:document.getElementById('c-contato').value,tel:document.getElementById('c-tel').value,email:document.getElementById('c-email').value,obs:document.getElementById('c-obs').value};try{if(eid)await api('PUT',`/api/clientes/${eid}`,body);else await api('POST','/api/clientes',body);await loadAll();closeM('m-cli');renderClientes();}catch(e){alert(e.message)}}
+async function saveCli(){const nome=document.getElementById('c-nome').value.trim();if(!nome){alert('Informe o nome.');return}const eid=document.getElementById('c-id').value;const body={nome,end:document.getElementById('c-end').value,cidade:document.getElementById('c-cidade').value,uf:document.getElementById('c-uf').value,cep:document.getElementById('c-cep').value,contato:document.getElementById('c-contato').value,tel:document.getElementById('c-tel').value,email:document.getElementById('c-email').value,obs:document.getElementById('c-obs').value};try{if(eid)await api('PUT',`/api/clientes/${eid}`,body);else await api('POST','/api/clientes',body);await loadAll();closeM('m-cli');renderClientes();}catch(e){alert(e.message)}}
 async function delCli(id){if(confirm('Excluir cliente e equipamentos?')){await api('DELETE',`/api/clientes/${id}`);await loadAll();renderClientes()}}
 function renderClientes(){
   const q=(document.getElementById('s-cli')?.value||'').toLowerCase();
@@ -7945,6 +7946,7 @@ function dashFiltroRapido(dias) {
 
 async function loadDash(){
   try {
+    if (!G_financeiro || !G_financeiro.length) { try { G_financeiro = await api('GET','/api/financeiro'); } catch(e){} }
     const d = await api('GET','/api/dashboard');
     const now = new Date();
     document.getElementById('d-lastupdate').textContent = 'Atualizado às ' + now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
@@ -8946,7 +8948,7 @@ function renderGraficoFinanceiro(d) {
   if (!window.Chart) return;
   _destroyChart('chart-fin-linha');
   const el = document.getElementById('chart-fin-linha'); if (!el) return;
-  const lancs = G.financeiro || [];
+  const lancs = G_financeiro || G.financeiro || [];
   const mesesSet = new Set();
   lancs.forEach(l => { if(l.data) mesesSet.add(l.data.slice(0,7)); });
   // também puxar de contratos ativos para MRR
