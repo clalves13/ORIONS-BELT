@@ -1,0 +1,15 @@
+{
+  "name": "orion-agente",
+  "version": "2.1.0",
+  "description": "Orion Agente — Monitor de Impressoras via SNMP",
+  "main": "orion-agente.js",
+  "scripts": {
+    "build": "pkg orion-agente.js --target node18-win-x64 --output dist/OrionAgente.exe --compress GZip",
+    "build:all": "pkg orion-agente.js --targets node18-win-x64,node18-linux-x64 --output dist/OrionAgente --compress GZip"
+  },
+  "pkg": {
+    "assets": [],
+    "targets": ["node18-win-x64"]
+  },
+  "dependencies": {}
+}
