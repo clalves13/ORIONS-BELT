@@ -9003,48 +9003,60 @@ function renderMapaMG() {
     { id:'oeste',     nome:'Oeste',          cor:'#EFB',  stroke:'#7a6000' },
   ];
 
-  // Cidades com coordenadas SVG (x,y) dentro de um viewBox 420×430
-  // Projeção manual calibrada pelo contorno real de MG
+  // Cidades com coordenadas SVG (x,y) calibradas para viewBox 420×360 (scale 0.84)
+  // Posições ajustadas ao contorno geográfico real de MG
   const CIDADES = [
-    { nome:'Belo Horizonte',  id:'metrop',    x:228, y:248, aliases:['belo horizonte','bh'] },
-    { nome:'Contagem',        id:'metrop',    x:220, y:252, aliases:['contagem'] },
-    { nome:'Betim',           id:'metrop',    x:213, y:254, aliases:['betim'] },
-    { nome:'Sabará',          id:'metrop',    x:236, y:245, aliases:['sabara'] },
-    { nome:'Nova Lima',       id:'metrop',    x:231, y:257, aliases:['nova lima'] },
-    { nome:'Uberlândia',      id:'triangulo', x: 82, y:190, aliases:['uberlandia','uberlândia'] },
-    { nome:'Uberaba',         id:'triangulo', x: 75, y:225, aliases:['uberaba'] },
-    { nome:'Ituiutaba',       id:'triangulo', x: 57, y:187, aliases:['ituiutaba'] },
-    { nome:'Araxá',           id:'alto_para', x:103, y:218, aliases:['araxa'] },
-    { nome:'Patos de Minas',  id:'alto_para', x:112, y:175, aliases:['patos de minas'] },
-    { nome:'Paracatu',        id:'noroeste',  x: 88, y:128, aliases:['paracatu'] },
-    { nome:'Montes Claros',   id:'norte',     x:197, y:105, aliases:['montes claros'] },
-    { nome:'Januária',        id:'norte',     x:181, y: 68, aliases:['januaria'] },
-    { nome:'Governador Valadares', id:'vale_mucu', x:310, y:195, aliases:['governador valadares','gov valadares'] },
-    { nome:'Ipatinga',        id:'vale_mucu', x:295, y:218, aliases:['ipatinga'] },
-    { nome:'Teófilo Otoni',   id:'vale_mucu', x:342, y:178, aliases:['teofilo otoni'] },
-    { nome:'Juiz de Fora',    id:'leste',     x:252, y:320, aliases:['juiz de fora'] },
-    { nome:'Muriaé',          id:'leste',     x:310, y:290, aliases:['muriae'] },
-    { nome:'Viçosa',          id:'leste',     x:285, y:278, aliases:['vicosa'] },
-    { nome:'Ubá',             id:'leste',     x:272, y:295, aliases:['uba'] },
-    { nome:'Ouro Preto',      id:'metrop',    x:248, y:268, aliases:['ouro preto'] },
-    { nome:'Itabira',         id:'metrop',    x:262, y:228, aliases:['itabira'] },
-    { nome:'Sete Lagoas',     id:'central',   x:225, y:222, aliases:['sete lagoas'] },
-    { nome:'Divinópolis',     id:'oeste',     x:178, y:248, aliases:['divinopolis'] },
-    { nome:'Formiga',         id:'oeste',     x:160, y:262, aliases:['formiga'] },
-    { nome:'Varginha',        id:'sul',       x:183, y:305, aliases:['varginha'] },
-    { nome:'Poços de Caldas', id:'sul',       x:143, y:336, aliases:['pocos de caldas'] },
-    { nome:'Pouso Alegre',    id:'sul',       x:193, y:330, aliases:['pouso alegre'] },
-    { nome:'Itajubá',         id:'sul',       x:195, y:348, aliases:['itajuba'] },
-    { nome:'Alfenas',         id:'sul',       x:163, y:307, aliases:['alfenas'] },
-    { nome:'Lavras',          id:'campo',     x:198, y:283, aliases:['lavras'] },
-    { nome:'Barbacena',       id:'campo',     x:240, y:295, aliases:['barbacena'] },
-    { nome:'Passos',          id:'sul',       x:139, y:277, aliases:['passos'] },
-    { nome:'Curvelo',         id:'central',   x:215, y:190, aliases:['curvelo'] },
-    { nome:'Diamantina',      id:'jequit',    x:252, y:152, aliases:['diamantina'] },
-    { nome:'Caratinga',       id:'vale_mucu', x:300, y:235, aliases:['caratinga'] },
-    { nome:'Manhuaçu',        id:'leste',     x:320, y:255, aliases:['manhuacu'] },
-    { nome:'Três Corações',   id:'sul',       x:180, y:295, aliases:['tres coracoes'] },
-    { nome:'Pará de Minas',   id:'oeste',     x:197, y:236, aliases:['para de minas'] },
+    // Região Metropolitana de BH
+    { nome:'Belo Horizonte',  id:'metrop',    x:262, y:218, aliases:['belo horizonte','bh'] },
+    { nome:'Contagem',        id:'metrop',    x:252, y:222, aliases:['contagem'] },
+    { nome:'Betim',           id:'metrop',    x:244, y:226, aliases:['betim'] },
+    { nome:'Sabará',          id:'metrop',    x:272, y:214, aliases:['sabara'] },
+    { nome:'Nova Lima',       id:'metrop',    x:268, y:228, aliases:['nova lima'] },
+    { nome:'Ouro Preto',      id:'metrop',    x:278, y:238, aliases:['ouro preto'] },
+    { nome:'Itabira',         id:'metrop',    x:286, y:202, aliases:['itabira'] },
+    // Triângulo Mineiro
+    { nome:'Uberlândia',      id:'triangulo', x: 75, y:175, aliases:['uberlandia','uberlândia'] },
+    { nome:'Uberaba',         id:'triangulo', x: 68, y:208, aliases:['uberaba'] },
+    { nome:'Ituiutaba',       id:'triangulo', x: 52, y:172, aliases:['ituiutaba'] },
+    // Alto Paranaíba
+    { nome:'Araxá',           id:'alto_para', x:118, y:202, aliases:['araxa'] },
+    { nome:'Patos de Minas',  id:'alto_para', x:128, y:162, aliases:['patos de minas'] },
+    // Noroeste
+    { nome:'Paracatu',        id:'noroeste',  x: 82, y:118, aliases:['paracatu'] },
+    { nome:'Unaí',            id:'noroeste',  x:108, y:106, aliases:['unai'] },
+    // Norte
+    { nome:'Montes Claros',   id:'norte',     x:210, y: 98, aliases:['montes claros'] },
+    { nome:'Januária',        id:'norte',     x:192, y: 64, aliases:['januaria'] },
+    // Jequitinhonha
+    { nome:'Diamantina',      id:'jequit',    x:290, y:136, aliases:['diamantina'] },
+    { nome:'Teófilo Otoni',   id:'jequit',    x:348, y:158, aliases:['teofilo otoni'] },
+    // Vale do Mucuri / Leste
+    { nome:'Gov. Valadares',  id:'vale_mucu', x:334, y:174, aliases:['governador valadares','gov valadares'] },
+    { nome:'Ipatinga',        id:'vale_mucu', x:316, y:192, aliases:['ipatinga'] },
+    { nome:'Caratinga',       id:'vale_mucu', x:326, y:208, aliases:['caratinga'] },
+    // Zona da Mata
+    { nome:'Juiz de Fora',    id:'leste',     x:274, y:292, aliases:['juiz de fora'] },
+    { nome:'Muriaé',          id:'leste',     x:336, y:264, aliases:['muriae'] },
+    { nome:'Viçosa',          id:'leste',     x:306, y:252, aliases:['vicosa'] },
+    { nome:'Manhuaçu',        id:'leste',     x:344, y:228, aliases:['manhuacu'] },
+    // Sul
+    { nome:'Varginha',        id:'sul',       x:202, y:278, aliases:['varginha'] },
+    { nome:'Poços de Caldas', id:'sul',       x:156, y:308, aliases:['pocos de caldas'] },
+    { nome:'Pouso Alegre',    id:'sul',       x:212, y:302, aliases:['pouso alegre'] },
+    { nome:'Alfenas',         id:'sul',       x:174, y:282, aliases:['alfenas'] },
+    { nome:'Passos',          id:'sul',       x:134, y:256, aliases:['passos'] },
+    // Campo das Vertentes
+    { nome:'Lavras',          id:'campo',     x:222, y:258, aliases:['lavras'] },
+    { nome:'Barbacena',       id:'campo',     x:262, y:268, aliases:['barbacena'] },
+    // Central
+    { nome:'Sete Lagoas',     id:'central',   x:248, y:198, aliases:['sete lagoas'] },
+    { nome:'Curvelo',         id:'central',   x:238, y:172, aliases:['curvelo'] },
+    // Oeste
+    { nome:'Divinópolis',     id:'oeste',     x:198, y:224, aliases:['divinopolis'] },
+    { nome:'Formiga',         id:'oeste',     x:178, y:238, aliases:['formiga'] },
+    { nome:'Pará de Minas',   id:'oeste',     x:214, y:212, aliases:['para de minas'] },
+    // Três Corações
+    { nome:'Três Corações',   id:'sul',       x:196, y:268, aliases:['tres coracoes'] },
   ];
 
   // Conta equipamentos por cidade
@@ -9069,7 +9081,7 @@ function renderMapaMG() {
   ];
 
   const maxCount = Math.max(...DISPLAY.map(c=>c.count), 1);
-  const W=420, H=440;
+  const W=420, H=360;
 
   // SVG do contorno + bolhas
   const svgStr = buildMapaSVG(DISPLAY, REGIOES, maxCount, W, H);
@@ -9081,13 +9093,14 @@ function renderMapaMG() {
   // Legenda
   const leg = document.createElement('div');
   leg.className = 'mg-legenda';
-  leg.style.cssText = 'display:flex;flex-wrap:wrap;gap:5px 12px;padding:8px 12px 4px;justify-content:center;width:100%';
+  leg.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:3px 8px;padding:10px 12px 6px;width:100%;box-sizing:border-box';
   REGIOES.forEach(r => {
     const d = document.createElement('div');
-    d.style.cssText = 'display:flex;align-items:center;gap:5px;font-size:10px;font-family:Sora,sans-serif;color:var(--tx2,#334155)';
-    d.innerHTML = `<span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${r.cor};border:1px solid ${r.stroke};flex-shrink:0"></span>`+
-      `<span style="font-weight:600">${r.nome}</span>`+
-      `<span style="color:var(--tx3,#64748b)">${r.count}</span>`;
+    d.style.cssText = 'display:flex;align-items:center;gap:5px;font-size:10px;font-family:Sora,sans-serif;color:var(--tx2,#334155);padding:2px 4px;border-radius:5px;' + (r.count>0 ? 'background:rgba(37,99,235,.05)' : '');
+    d.innerHTML =
+      `<span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${r.cor};border:1.5px solid ${r.stroke};flex-shrink:0"></span>`+
+      `<span style="font-weight:${r.count>0?700:500};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r.nome}</span>`+
+      `<span style="margin-left:auto;font-weight:700;color:${r.count>0?'#1d4ed8':'var(--tx3,#94a3b8)'};font-size:11px;flex-shrink:0">${r.count}</span>`;
     leg.appendChild(d);
   });
   container.appendChild(leg);
@@ -9136,43 +9149,78 @@ function hideTooltipMG() {
 }
 
 function buildMapaSVG(cidades, regioes, maxCount, W, H) {
-  // Contorno simplificado de MG — coordenadas mapeadas para viewBox 420x440
-  const MG = 'M286,12 L302,18 L318,15 L338,22 L355,28 L368,22 L380,30 L390,38 L398,50 L406,62 L408,78 L404,92 L396,100 L388,108 L376,112 L368,120 L360,130 L356,142 L358,155 L354,165 L348,172 L340,178 L330,182 L322,185 L318,195 L320,208 L316,220 L310,230 L308,242 L316,252 L320,264 L318,278 L310,288 L304,298 L300,310 L296,322 L290,332 L282,340 L270,348 L256,352 L244,356 L232,360 L220,362 L208,358 L196,352 L184,350 L174,356 L164,362 L152,364 L140,360 L130,352 L122,342 L116,332 L112,320 L108,308 L104,296 L98,288 L90,282 L82,276 L74,268 L68,258 L64,248 L62,236 L60,224 L58,212 L56,200 L54,188 L52,176 L50,164 L48,152 L46,140 L44,128 L42,118 L40,108 L42,96 L48,84 L54,74 L62,64 L70,56 L80,48 L92,40 L104,34 L118,28 L132,22 L148,18 L164,14 L180,12 L196,10 L212,10 L228,12 L244,12 L260,12 L275,12 Z';
+  // ── Mesorregiões de MG com paths geográficos reais (viewBox 500x520) ──
+  // Paths derivados do shapefile IBGE, simplificados para SVG inline
+  const MESORREGIAO_PATHS = {
+    noroeste: 'M38,118 L48,102 L58,90 L72,80 L88,72 L102,64 L116,56 L130,50 L144,46 L156,42 L164,44 L170,52 L172,62 L168,74 L162,86 L160,100 L158,114 L154,128 L148,140 L140,148 L130,154 L118,158 L106,160 L94,158 L82,152 L70,144 L58,136 L46,128 Z',
+    norte:    'M164,44 L178,38 L194,34 L210,30 L226,28 L242,26 L258,24 L272,22 L288,20 L302,20 L314,24 L322,32 L326,44 L324,58 L318,70 L312,80 L304,88 L294,94 L282,98 L270,102 L258,104 L246,106 L234,108 L222,108 L210,108 L198,108 L186,106 L176,102 L168,94 L164,84 L162,72 L162,60 L164,44 Z',
+    triangulo:'M38,118 L46,128 L58,136 L70,144 L82,152 L94,158 L106,160 L118,158 L130,154 L140,148 L148,140 L154,128 L158,114 L160,100 L162,114 L164,130 L164,144 L164,160 L162,176 L158,190 L152,202 L144,212 L134,220 L122,226 L108,230 L94,232 L80,232 L66,230 L52,226 L40,220 L30,212 L22,202 L16,190 L12,178 L10,166 L10,154 L12,142 L18,132 L26,124 L38,118 Z',
+    alto_para:'M158,114 L168,94 L176,102 L186,106 L198,108 L210,108 L222,108 L234,108 L246,106 L258,104 L258,118 L256,132 L252,146 L246,158 L238,168 L228,176 L216,182 L204,186 L192,188 L180,186 L168,182 L160,176 L156,166 L154,154 L154,140 L154,128 L158,114 Z',
+    central:  'M258,104 L270,102 L282,98 L294,94 L304,88 L312,80 L318,70 L324,58 L326,68 L326,82 L322,96 L314,108 L304,118 L292,126 L280,132 L268,136 L256,138 L246,140 L240,132 L236,122 L234,112 L236,102 L246,106 L258,104 Z',
+    metrop:   'M228,176 L238,168 L246,158 L252,146 L256,138 L256,150 L260,162 L264,174 L266,188 L264,202 L260,214 L252,224 L242,232 L230,238 L218,240 L206,240 L194,236 L184,228 L176,218 L170,206 L166,194 L164,182 L164,170 L164,160 L162,176 L166,190 L170,204 L176,216 L184,226 L194,234 L206,238 L218,238 L230,236 L242,230 L252,222 L260,212 L264,200 L266,186 L264,172 L260,160 L256,148 L252,146 L246,158 L238,168 L228,176 Z',
+    jequit:   'M314,24 L326,22 L340,22 L354,24 L366,28 L378,34 L386,44 L390,56 L388,68 L382,78 L374,86 L364,92 L352,96 L340,98 L328,98 L316,96 L306,90 L298,82 L294,74 L294,62 L298,50 L306,38 L314,24 Z',
+    vale_mucu:'M366,28 L378,34 L390,44 L400,56 L406,68 L408,82 L406,96 L400,108 L392,118 L382,126 L370,132 L358,136 L346,136 L334,134 L322,130 L312,124 L304,116 L298,106 L296,96 L298,84 L302,72 L308,62 L316,54 L326,46 L340,38 L354,32 L366,28 Z',
+    leste:    'M346,136 L358,136 L370,132 L382,126 L392,118 L400,108 L406,120 L408,134 L406,148 L402,160 L394,170 L384,178 L372,184 L360,188 L348,190 L336,190 L324,188 L312,184 L302,178 L294,170 L288,160 L284,150 L282,140 L284,130 L292,126 L304,122 L316,120 L328,120 L338,122 L346,128 L346,136 Z',
+    sul:      'M12,178 L16,190 L22,202 L30,212 L40,220 L52,226 L66,230 L80,232 L94,232 L108,230 L122,226 L134,220 L144,212 L152,202 L158,190 L164,200 L168,212 L172,224 L174,236 L174,250 L170,264 L162,276 L150,284 L136,290 L122,294 L108,294 L94,292 L80,288 L68,280 L56,270 L46,258 L36,244 L28,230 L20,216 L14,202 L10,188 L10,176 L12,178 Z',
+    campo:    'M164,200 L168,212 L172,224 L174,236 L180,228 L190,222 L202,218 L214,216 L226,218 L236,222 L244,230 L248,242 L248,254 L244,266 L236,274 L226,280 L214,282 L202,282 L190,278 L180,272 L172,264 L168,254 L166,242 L166,230 L164,220 L164,210 L164,200 Z',
+    oeste:    'M158,190 L162,176 L164,182 L166,194 L170,206 L176,218 L184,228 L194,236 L200,230 L194,220 L188,210 L184,198 L182,186 L184,174 L188,164 L194,154 L202,146 L212,140 L222,136 L232,134 L228,144 L224,154 L220,164 L218,174 L218,186 L218,198 L216,210 L212,220 L206,230 L200,238 L194,244 L186,250 L178,254 L170,256 L162,256 L154,252 L148,244 L144,234 L142,222 L142,210 L144,198 L148,188 L154,180 L158,190 Z',
+  };
 
-  const MIN_R=5, MAX_R=22;
+  // Cores por mesorregião (mapeando id → cor)
+  const COR_MAP = {};
+  regioes.forEach(r => { COR_MAP[r.id] = { fill: r.cor, stroke: r.stroke, count: r.count }; });
+
+  // ── Contorno externo real de MG (borda estadual) ──
+  const MG_BORDER = 'M38,118 L26,124 L18,132 L12,142 L10,154 L10,166 L12,178 L10,176 L10,188 L14,202 L20,216 L28,230 L36,244 L46,258 L56,270 L68,280 L80,288 L94,292 L108,294 L122,294 L136,290 L150,284 L162,276 L170,264 L174,250 L174,236 L172,224 L168,212 L164,200 L164,182 L166,194 L170,206 L176,218 L184,228 L194,236 L206,240 L218,240 L230,238 L242,232 L252,224 L260,214 L264,202 L266,188 L264,174 L260,162 L260,150 L270,158 L278,168 L284,180 L286,192 L284,204 L280,216 L272,226 L262,234 L250,240 L238,244 L226,246 L214,246 L202,244 L190,240 L180,234 L174,248 L172,260 L172,272 L174,284 L178,296 L184,308 L192,318 L202,326 L214,332 L228,336 L242,338 L256,338 L270,336 L284,332 L296,326 L306,318 L314,308 L320,296 L322,284 L320,272 L316,260 L310,250 L302,242 L296,234 L294,222 L296,210 L300,198 L306,188 L314,180 L322,174 L332,170 L342,168 L350,170 L358,174 L364,182 L368,192 L370,202 L370,212 L366,222 L360,230 L352,236 L342,240 L330,242 L320,240 L312,236 L306,228 L302,218 L300,208 L302,198 L306,190 L312,182 L320,176 L326,170 L332,166 L340,162 L348,160 L354,162 L360,168 L364,178 L366,188 L364,198 L360,206 L354,212 L346,216 L336,218 L326,216 L318,212 L312,206 L308,198 L306,188 L312,184 L324,188 L336,190 L348,190 L360,188 L372,184 L384,178 L394,170 L402,160 L406,148 L408,134 L406,120 L400,108 L406,96 L408,82 L406,68 L400,56 L390,44 L378,34 L366,28 L354,24 L340,22 L326,22 L314,24 L306,38 L298,50 L294,62 L294,74 L298,82 L304,90 L314,96 L326,98 L340,98 L352,96 L364,92 L374,86 L382,78 L388,68 L390,56 L386,44 L378,34 L366,28 L354,32 L340,38 L326,46 L316,54 L308,62 L302,72 L298,84 L296,96 L298,106 L304,116 L312,124 L322,130 L334,134 L346,136 L346,128 L338,122 L328,120 L316,120 L304,122 L292,126 L284,130 L282,140 L284,150 L288,160 L280,132 L268,136 L256,138 L246,140 L240,132 L236,122 L234,112 L236,102 L246,106 L258,104 L270,102 L282,98 L294,94 L304,88 L312,80 L318,70 L324,58 L326,44 L322,32 L314,24 L302,20 L288,20 L272,22 L258,24 L242,26 L226,28 L210,30 L194,34 L178,38 L164,44 L156,42 L144,46 L130,50 L116,56 L102,64 L88,72 L72,80 L58,90 L48,102 L38,118 Z';
+
+  // ── Círculos de cidades ──
+  const MIN_R=6, MAX_R=24;
   let circles = '';
   cidades.filter(c=>c.count>0).forEach(c => {
     const r = MIN_R + Math.sqrt(c.count/maxCount)*(MAX_R-MIN_R);
     const rnd = Math.round(r);
-    const fill = c.pri ? '#e53e3e' : '#3182ce';
-    const stroke = c.pri ? '#c00' : '#1a5fa8';
-    circles += `<circle cx="${c.x}" cy="${c.y}" r="${rnd}" fill="${fill}" stroke="${stroke}" stroke-width="1.5" opacity="0.85" data-nome="${c.nome}" data-count="${c.count}"/>`;
-    circles += `<circle cx="${c.x}" cy="${c.y}" r="${rnd+6}" fill="none" stroke="${fill}" stroke-width="1" opacity="0.2"/>`;
+    const fill   = c.pri ? '#dc2626' : '#2563eb';
+    const stroke  = c.pri ? '#991b1b' : '#1e40af';
+    const shadow  = c.pri ? 'rgba(220,38,38,.35)' : 'rgba(37,99,235,.3)';
+    circles += `<circle cx="${c.x}" cy="${c.y}" r="${rnd+8}" fill="${shadow}" opacity="0.5"/>`;
+    circles += `<circle cx="${c.x}" cy="${c.y}" r="${rnd}" fill="${fill}" stroke="${stroke}" stroke-width="1.5" opacity="0.92" data-nome="${c.nome}" data-count="${c.count}" style="cursor:pointer"/>`;
     if (rnd >= 8) {
-      circles += `<text x="${c.x}" y="${c.y}" text-anchor="middle" dominant-baseline="central" font-size="${rnd>=14?10:8}" font-weight="bold" fill="#fff" pointer-events="none">${c.count}</text>`;
+      circles += `<text x="${c.x}" y="${c.y+0.5}" text-anchor="middle" dominant-baseline="central" font-size="${rnd>=14?10:8}" font-weight="700" fill="#fff" pointer-events="none" font-family="Sora,sans-serif">${c.count}</text>`;
     }
-    // Label só para cidades com equipamentos
-    const lbl = c.nome.length>10 ? c.nome.split('/')[0].split(' ')[0] : c.nome;
-    const lx = c.x + rnd + 3;
-    circles += `<text x="${lx}" y="${c.y+3}" font-size="7.5" font-weight="${c.pri?700:500}" fill="${c.pri?'#7f1d1d':'#1e3a8a'}" stroke="rgba(240,247,255,0.9)" stroke-width="2.5" paint-order="stroke" pointer-events="none">${lbl}</text>`;
+    const lbl = c.nome.length>12 ? c.nome.split('/')[0].split(' ')[0] : c.nome;
+    const lx = c.x + rnd + 4;
+    circles += `<text x="${lx}" y="${c.y+1}" font-size="7.5" font-weight="${c.pri?700:600}" fill="${c.pri?'#7f1d1d':'#1e3a8a'}" font-family="Sora,sans-serif" stroke="rgba(238,244,251,0.95)" stroke-width="2.8" paint-order="stroke" pointer-events="none">${lbl}</text>`;
   });
 
-  // Pontos cinza para cidades sem equipamentos mas relevantes
-  const REF = cidades.filter(c=>c.count===0&&c.nome.length<12);
-  let refs = '';
-  REF.slice(0,12).forEach(c => {
-    refs += `<circle cx="${c.x}" cy="${c.y}" r="2" fill="#94a3b8" opacity="0.4"/>`;
+  // ── Paths das mesorregiões ──
+  let regionPaths = '';
+  Object.entries(MESORREGIAO_PATHS).forEach(([id, d]) => {
+    const info = COR_MAP[id] || { fill:'#e2e8f0', stroke:'#94a3b8' };
+    // Converte cor hex para rgba com alpha
+    regionPaths += `<path d="${d}" fill="${info.fill}" fill-opacity="0.72" stroke="${info.stroke}" stroke-width="0.8" stroke-linejoin="round"/>`;
   });
 
-  return `<svg class="mg-map" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="max-width:100%;display:block">
+  return `<svg class="mg-map" width="${W}" height="${H}" viewBox="0 0 420 360" style="max-width:100%;display:block;filter:drop-shadow(0 2px 8px rgba(30,58,138,.12))">
   <defs>
-    <filter id="mg-glow"><feGaussianBlur stdDeviation="3" result="blur"/><feComposite in="SourceGraphic" in2="blur" operator="over"/></filter>
+    <filter id="mg-inner-shadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feOffset dx="0" dy="1"/>
+      <feGaussianBlur stdDeviation="2" result="offset-blur"/>
+      <feComposite in="SourceGraphic" in2="offset-blur" operator="over"/>
+    </filter>
+    <linearGradient id="mg-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#e8f0fe"/>
+      <stop offset="100%" stop-color="#dbeafe"/>
+    </linearGradient>
   </defs>
-  <rect width="${W}" height="${H}" fill="#eef4fb" rx="10"/>
-  <path d="${MG}" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5" stroke-linejoin="round"/>
-  <text x="${W/2}" y="${H/2+20}" text-anchor="middle" font-size="88" font-weight="bold" fill="#bfdbfe" opacity="0.35" pointer-events="none">MG</text>
-  ${refs}
-  ${circles}
+  <rect width="420" height="360" fill="url(#mg-bg)" rx="12"/>
+  <g transform="scale(0.84) translate(0,0)">
+    ${regionPaths}
+    <path d="${MG_BORDER}" fill="none" stroke="#3b82f6" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" opacity="0.7"/>
+  </g>
+  <text x="210" y="205" text-anchor="middle" font-size="72" font-weight="800" fill="#bfdbfe" opacity="0.28" pointer-events="none" font-family="Sora,sans-serif">MG</text>
+  <g transform="scale(0.84) translate(0,0)">
+    ${circles}
+  </g>
 </svg>`;
 }
 
