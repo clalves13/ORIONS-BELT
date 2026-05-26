@@ -8962,230 +8962,105 @@ function renderGraficoFinanceiro(d) {
 }
 
 function renderMapaMG() {
-  // Usar o wrapper centralizado
   const wrap = document.getElementById('mg-map-wrap');
   const el   = document.getElementById('chart-mapa-mg');
   if (!wrap) return;
   el && (el.style.display = 'none');
-  const old = wrap.querySelector('svg.mg-map');
-  if (old) old.remove();
+  const oldSvg = wrap.querySelector('svg.mg-map');
+  if (oldSvg) oldSvg.remove();
 
-  // Tamanho máximo que cabe no card sem overflow
-  const cardW = wrap.offsetWidth || 280;
-  const W = Math.min(cardW - 8, 280);   // máx 280px — cabe em qualquer card
-  const H = Math.round(W * 1.02);       // MG é levemente mais alto que largo
+  const cardW = wrap.offsetWidth || 300;
+  const W = Math.min(cardW - 8, 320);
+  const H = Math.round(W * 1.02);
 
-  // Equipamentos por cidade
-  const eqs = G.equipamentos || [];
+  // Equipamentos: busca cidade do equipamento OU do cliente vinculado
+  const eqs   = G.equipamentos || [];
+  const clis  = G.clientes     || [];
   const regioes = {};
   eqs.forEach(e => {
-    const cidade = (e.cidade || e.end_cidade || '').trim().toLowerCase();
+    let cidade = (e.cidade || e.end_cidade || '').trim().toLowerCase();
+    if (!cidade) {
+      const cli = clis.find(c => c.id === e.cliente_id);
+      cidade = (cli?.cidade || '').trim().toLowerCase();
+    }
     if (cidade) regioes[cidade] = (regioes[cidade]||0)+1;
   });
 
-  // Contorno REAL de MG — 169 pontos do shapefile IBGE (dissolve dos municípios)
+  // Contorno de MG
   const MG_BORDER = [
-    [-46.4065,-22.5394],
-    [-46.7228,-22.3061],
-    [-46.5981,-22.1359],
-    [-46.723,-22.0763],
-    [-46.612,-22.0044],
-    [-46.6903,-21.8372],
-    [-46.5178,-21.6123],
-    [-46.5088,-21.4694],
-    [-46.6663,-21.3608],
-    [-47.0108,-21.4218],
-    [-47.1433,-20.9819],
-    [-47.2396,-20.8848],
-    [-47.0964,-20.6441],
-    [-47.2923,-20.4473],
-    [-47.2566,-20.1657],
-    [-47.4678,-19.961],
-    [-47.6343,-20.0488],
-    [-47.8521,-19.9894],
-    [-47.8989,-20.1252],
-    [-47.9755,-20.0349],
-    [-48.1125,-20.1433],
-    [-48.2404,-20.0288],
-    [-48.2409,-20.1397],
-    [-48.8253,-20.1615],
-    [-48.8994,-20.4409],
-    [-49.0135,-20.1543],
-    [-49.2282,-20.3029],
-    [-49.3081,-20.1034],
-    [-49.2647,-19.9616],
-    [-50.0117,-19.9263],
-    [-50.4714,-19.7792],
-    [-51.0,-20.0849],
-    [-51.0455,-19.7286],
-    [-50.9227,-19.5756],
-    [-50.9628,-19.4832],
-    [-50.8262,-19.487],
-    [-50.8754,-19.4195],
-    [-50.8142,-19.2853],
-    [-50.5429,-19.1055],
-    [-50.5084,-18.9353],
-    [-50.3058,-18.695],
-    [-50.0134,-18.599],
-    [-49.7832,-18.6409],
-    [-49.5335,-18.4921],
-    [-49.3911,-18.6461],
-    [-49.2052,-18.4113],
-    [-49.0766,-18.4163],
-    [-48.9363,-18.3057],
-    [-48.8159,-18.3792],
-    [-48.262,-18.3314],
-    [-47.9545,-18.4998],
-    [-47.2828,-18.0578],
-    [-47.3726,-17.8305],
-    [-47.2654,-17.61],
-    [-47.3327,-17.523],
-    [-47.4974,-17.5242],
-    [-47.5384,-17.3883],
-    [-47.1255,-16.9813],
-    [-47.2504,-16.6655],
-    [-47.4596,-16.5046],
-    [-47.3001,-16.0166],
-    [-46.8057,-15.8715],
-    [-46.8544,-15.6179],
-    [-46.9483,-15.5574],
-    [-46.8355,-15.3261],
-    [-46.9404,-15.2303],
-    [-46.9176,-15.0486],
-    [-46.5134,-15.0609],
-    [-46.5655,-14.7859],
-    [-46.4761,-14.7047],
-    [-46.2864,-14.9277],
-    [-46.0035,-14.9018],
-    [-45.9751,-15.0384],
-    [-46.1188,-15.1918],
-    [-46.0577,-15.2623],
-    [-45.9533,-15.1391],
-    [-45.7212,-15.1118],
-    [-45.2052,-14.7443],
-    [-45.0824,-14.7483],
-    [-44.5652,-14.3396],
-    [-44.2149,-14.2327],
-    [-43.7828,-14.3388],
-    [-43.8831,-14.6528],
-    [-43.531,-14.8148],
-    [-43.1759,-14.6501],
-    [-42.9385,-14.7076],
-    [-42.4425,-15.0609],
-    [-42.1729,-15.0855],
-    [-42.0912,-15.1861],
-    [-41.8003,-15.1006],
-    [-41.3577,-15.4983],
-    [-41.3308,-15.7442],
-    [-41.144,-15.7714],
-    [-40.9627,-15.6479],
-    [-40.7673,-15.7136],
-    [-40.7068,-15.6659],
-    [-40.5631,-15.8024],
-    [-40.2307,-15.8034],
-    [-40.1703,-15.9071],
-    [-39.9148,-15.9995],
-    [-39.8565,-16.1134],
-    [-39.9163,-16.2834],
-    [-40.0993,-16.4227],
-    [-40.1595,-16.5799],
-    [-40.2873,-16.5971],
-    [-40.3451,-16.7868],
-    [-40.2522,-16.8597],
-    [-40.4798,-16.8763],
-    [-40.5704,-17.0619],
-    [-40.5474,-17.2832],
-    [-40.6231,-17.4055],
-    [-40.2236,-17.7336],
-    [-40.2216,-17.9802],
-    [-40.5267,-17.8915],
-    [-40.7033,-18.0233],
-    [-40.8823,-17.9701],
-    [-40.7711,-18.1554],
-    [-40.8927,-18.1074],
-    [-41.0557,-18.1661],
-    [-41.1584,-18.3083],
-    [-41.1817,-18.4388],
-    [-41.02,-18.4586],
-    [-41.0527,-18.6282],
-    [-40.9411,-18.6888],
-    [-40.9164,-18.8151],
-    [-41.2322,-18.7968],
-    [-41.2426,-18.8541],
-    [-41.0176,-18.973],
-    [-41.0714,-19.0234],
-    [-40.9261,-19.1881],
-    [-40.9445,-19.4596],
-    [-41.1681,-19.6717],
-    [-41.1845,-19.8885],
-    [-41.3075,-19.9479],
-    [-41.3817,-20.1883],
-    [-41.7564,-20.2064],
-    [-41.848,-20.3297],
-    [-41.8084,-20.6437],
-    [-41.9763,-20.935],
-    [-42.1513,-20.9739],
-    [-42.0801,-21.0356],
-    [-42.2081,-21.1777],
-    [-42.2526,-21.4932],
-    [-42.3687,-21.6195],
-    [-42.2669,-21.7137],
-    [-43.1361,-22.1092],
-    [-43.1307,-22.0292],
-    [-43.2461,-22.0065],
-    [-43.7656,-22.0624],
-    [-44.235,-22.2657],
-    [-44.456,-22.2568],
-    [-45.0907,-22.4826],
-    [-45.3995,-22.6532],
-    [-45.4734,-22.5884],
-    [-45.6641,-22.6499],
-    [-45.7164,-22.5772],
-    [-45.6935,-22.6512],
-    [-45.8195,-22.7222],
-    [-45.7277,-22.7232],
-    [-45.7131,-22.8143],
-    [-45.8786,-22.875],
-    [-45.9122,-22.8161],
-    [-46.1386,-22.9223],
-    [-46.1437,-22.8575],
-    [-46.3559,-22.8998],
-    [-46.3341,-22.7598],
-    [-46.4777,-22.6991],
-    [-46.3926,-22.6625],
-    [-46.4065,-22.5394]
+    [-46.4065,-22.5394],[-46.7228,-22.3061],[-46.5981,-22.1359],[-46.723,-22.0763],
+    [-46.612,-22.0044],[-46.6903,-21.8372],[-46.5178,-21.6123],[-46.5088,-21.4694],
+    [-46.6663,-21.3608],[-47.0108,-21.4218],[-47.1433,-20.9819],[-47.2396,-20.8848],
+    [-47.0964,-20.6441],[-47.2923,-20.4473],[-47.2566,-20.1657],[-47.4678,-19.961],
+    [-47.6343,-20.0488],[-47.8521,-19.9894],[-47.8989,-20.1252],[-47.9755,-20.0349],
+    [-48.1125,-20.1433],[-48.2404,-20.0288],[-48.2409,-20.1397],[-48.8253,-20.1615],
+    [-48.8994,-20.4409],[-49.0135,-20.1543],[-49.2282,-20.3029],[-49.3081,-20.1034],
+    [-49.2647,-19.9616],[-50.0117,-19.9263],[-50.4714,-19.7792],[-51.0,-20.0849],
+    [-51.0455,-19.7286],[-50.9227,-19.5756],[-50.9628,-19.4832],[-50.8262,-19.487],
+    [-50.8754,-19.4195],[-50.8142,-19.2853],[-50.5429,-19.1055],[-50.5084,-18.9353],
+    [-50.3058,-18.695],[-50.0134,-18.599],[-49.7832,-18.6409],[-49.5335,-18.4921],
+    [-49.3911,-18.6461],[-49.2052,-18.4113],[-49.0766,-18.4163],[-48.9363,-18.3057],
+    [-48.8159,-18.3792],[-48.262,-18.3314],[-47.9545,-18.4998],[-47.2828,-18.0578],
+    [-47.3726,-17.8305],[-47.2654,-17.61],[-47.3327,-17.523],[-47.4974,-17.5242],
+    [-47.5384,-17.3883],[-47.1255,-16.9813],[-47.2504,-16.6655],[-47.4596,-16.5046],
+    [-47.3001,-16.0166],[-46.8057,-15.8715],[-46.8544,-15.6179],[-46.9483,-15.5574],
+    [-46.8355,-15.3261],[-46.9404,-15.2303],[-46.9176,-15.0486],[-46.5134,-15.0609],
+    [-46.5655,-14.7859],[-46.4761,-14.7047],[-46.2864,-14.9277],[-46.0035,-14.9018],
+    [-45.9751,-15.0384],[-45.7822,-14.8717],[-45.5612,-14.9508],[-45.4315,-14.7887],
+    [-44.8753,-14.9249],[-44.6701,-14.7887],[-44.3872,-14.9596],[-44.1506,-14.8451],
+    [-43.8898,-14.9705],[-43.6805,-14.8451],[-43.4006,-15.0108],[-43.1516,-14.9063],
+    [-42.9278,-15.0449],[-42.7208,-14.9308],[-42.5088,-15.0718],[-42.1919,-14.9508],
+    [-41.9922,-15.0815],[-41.773,-14.9415],[-41.5465,-15.0625],[-41.3401,-15.0039],
+    [-41.1252,-15.2374],[-40.9854,-15.1566],[-40.8183,-15.3126],[-40.7302,-15.2374],
+    [-40.5,-15.5],[-40.35,-16.0],[-40.1,-16.5],[-39.9,-17.1],[-39.8598,-17.3],
+    [-39.9,-17.8],[-40.1,-18.2],[-40.3,-18.5],[-40.5,-18.8],[-40.7,-19.0],
+    [-40.9,-19.2],[-41.1,-19.5],[-41.2,-19.8],[-41.3,-20.1],[-41.4,-20.3],
+    [-41.5,-20.5],[-41.6,-20.7],[-41.8,-20.9],[-42.0,-21.1],[-42.2526,-21.4932],
+    [-42.3687,-21.6195],[-42.2669,-21.7137],[-43.1361,-22.1092],[-43.1307,-22.0292],
+    [-43.2461,-22.0065],[-43.7656,-22.0624],[-44.235,-22.2657],[-44.456,-22.2568],
+    [-45.0907,-22.4826],[-45.3995,-22.6532],[-45.4734,-22.5884],[-45.6641,-22.6499],
+    [-45.7164,-22.5772],[-45.6935,-22.6512],[-45.8195,-22.7222],[-45.7277,-22.7232],
+    [-45.7131,-22.8143],[-45.8786,-22.875],[-45.9122,-22.8161],[-46.1386,-22.9223],
+    [-46.1437,-22.8575],[-46.3559,-22.8998],[-46.3341,-22.7598],[-46.4777,-22.6991],
+    [-46.3926,-22.6625],[-46.4065,-22.5394]
   ];
 
-  // Bounding box real de MG (IBGE)
+  // Regiões de MG com polígonos aproximados e cores
+  const REGIOES_MG = [
+    { nome:'Norte',           cor:'#FEF3C7', corBd:'#F59E0B', lats:[-15.0,-17.5], lons:[-46.5,-42.0] },
+    { nome:'Triângulo',       cor:'#DBEAFE', corBd:'#3B82F6', lats:[-17.5,-20.5], lons:[-51.0,-47.0] },
+    { nome:'Centro-Oeste',    cor:'#D1FAE5', corBd:'#10B981', lats:[-17.5,-20.5], lons:[-47.0,-44.0] },
+    { nome:'Sudeste',         cor:'#FCE7F3', corBd:'#EC4899', lats:[-20.5,-23.0], lons:[-44.0,-40.5] },
+    { nome:'Sul',             cor:'#EDE9FE', corBd:'#8B5CF6', lats:[-20.5,-23.0], lons:[-47.0,-44.0] },
+    { nome:'Central/Metrop.', cor:'#FEE2E2', corBd:'#EF4444', lats:[-18.5,-21.5], lons:[-45.5,-42.5] },
+  ];
+
   const LON0=-51.0503, LON1=-39.8598, LAT0=-14.2305, LAT1=-22.9227;
-  const PAD=20;
-  const mW=W-2*PAD, mH=H-2*PAD-18;
+  const PAD=16;
+  const mW=W-2*PAD, mH=H-2*PAD-30;
   const toX = lon => PAD + (lon-LON0)/(LON1-LON0)*mW;
   const toY = lat => PAD + (lat-LAT0)/(LAT1-LAT0)*mH;
 
-  // SVG
   const ns='http://www.w3.org/2000/svg';
   const svg=document.createElementNS(ns,'svg');
   svg.setAttribute('class','mg-map');
   svg.setAttribute('width',W); svg.setAttribute('height',H);
-  svg.style.cssText='display:block;font-family:Sora,sans-serif;overflow:visible';
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  svg.style.cssText='display:block;font-family:Sora,sans-serif;cursor:default;transition:transform .25s ease;transform-origin:center center';
 
-  // Fundo do card
-  const bg=document.createElementNS(ns,'rect');
-  bg.setAttribute('width',W); bg.setAttribute('height',H);
-  bg.setAttribute('fill','#F8FAFF'); bg.setAttribute('rx','8');
-  svg.appendChild(bg);
+  // Zoom on hover
+  wrap.onmouseenter = () => { svg.style.transform='scale(1.18)'; svg.style.zIndex='10'; wrap.style.zIndex='10'; };
+  wrap.onmouseleave = () => { svg.style.transform='scale(1)'; svg.style.zIndex=''; wrap.style.zIndex=''; if(tooltip) tooltip.style.display='none'; };
 
   // Defs
   const defs=document.createElementNS(ns,'defs');
   defs.innerHTML=`
-    <radialGradient id="mg-state-fill" cx="50%" cy="40%" r="70%">
-      <stop offset="0%" stop-color="#DBEAFE"/>
-      <stop offset="100%" stop-color="#BFDBFE"/>
+    <filter id="mg-shadow"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#1E40AF" flood-opacity="0.2"/></filter>
+    <filter id="bub-shadow"><feDropShadow dx="0" dy="1" stdDeviation="2" flood-color="#000" flood-opacity="0.3"/></filter>
+    <radialGradient id="mg-state-grad" cx="50%" cy="40%" r="70%">
+      <stop offset="0%" stop-color="#EFF6FF"/>
+      <stop offset="100%" stop-color="#DBEAFE"/>
     </radialGradient>
-    <filter id="shadow-bubble">
-      <feDropShadow dx="0" dy="1" stdDeviation="2" flood-color="#1E40AF" flood-opacity="0.3"/>
-    </filter>
     <radialGradient id="bub-blue" cx="35%" cy="30%" r="70%">
       <stop offset="0%" stop-color="#60A5FA"/>
       <stop offset="100%" stop-color="#1D4ED8"/>
@@ -9196,115 +9071,129 @@ function renderMapaMG() {
     </radialGradient>`;
   svg.appendChild(defs);
 
-  // Grid de paralelos e meridianos
-  const gridG=document.createElementNS(ns,'g');
-  gridG.setAttribute('stroke','#E2E8F0'); gridG.setAttribute('stroke-width','0.6');
-  gridG.setAttribute('stroke-dasharray','4,6');
-  [-51,-49,-47,-45,-43,-41].forEach(lon=>{
-    const x=toX(lon); if(x<PAD||x>W-PAD) return;
-    const l=document.createElementNS(ns,'line');
-    l.setAttribute('x1',x);l.setAttribute('y1',PAD);l.setAttribute('x2',x);l.setAttribute('y2',mH+PAD);
-    gridG.appendChild(l);
-  });
-  [-15,-17,-19,-21].forEach(lat=>{
-    const y=toY(lat); if(y<PAD||y>mH+PAD) return;
-    const l=document.createElementNS(ns,'line');
-    l.setAttribute('x1',PAD);l.setAttribute('y1',y);l.setAttribute('x2',mW+PAD);l.setAttribute('y2',y);
-    gridG.appendChild(l);
-  });
-  svg.appendChild(gridG);
+  // Fundo
+  const bg=document.createElementNS(ns,'rect');
+  bg.setAttribute('width',W); bg.setAttribute('height',H);
+  bg.setAttribute('fill','#F0F7FF'); bg.setAttribute('rx','10');
+  svg.appendChild(bg);
 
-  // Polígono do estado — path REAL do IBGE
+  // Estado
   const d = MG_BORDER.map(([lon,lat],i)=>{
     const x=Math.round(toX(lon)*10)/10, y=Math.round(toY(lat)*10)/10;
     return (i===0?'M':'L')+x+','+y;
   }).join(' ')+' Z';
   const stateP=document.createElementNS(ns,'path');
   stateP.setAttribute('d',d);
-  stateP.setAttribute('fill','url(#mg-state-fill)');
+  stateP.setAttribute('fill','url(#mg-state-grad)');
   stateP.setAttribute('stroke','#3B82F6');
-  stateP.setAttribute('stroke-width','1.8');
+  stateP.setAttribute('stroke-width','1.5');
   stateP.setAttribute('stroke-linejoin','round');
+  stateP.setAttribute('filter','url(#mg-shadow)');
   svg.appendChild(stateP);
 
-  // Cidades com coordenadas reais (centroides IBGE)
+  // Watermark
+  const wm=document.createElementNS(ns,'text');
+  wm.setAttribute('x',W/2); wm.setAttribute('y',H/2+5);
+  wm.setAttribute('text-anchor','middle'); wm.setAttribute('font-size','72');
+  wm.setAttribute('font-weight','bold'); wm.setAttribute('fill','#BFDBFE');
+  wm.setAttribute('opacity','0.4'); wm.textContent='MG'; svg.appendChild(wm);
+
+  // Cidades
   const CIDADES=[
-    {nome:'Belo Horizonte',aliases:['belo horizonte','contagem','betim','nova lima','sabará','sabara','ribeirao das neves'],lon:-43.9599,lat:-19.9023,pri:true},
-    {nome:'Uberlândia',    aliases:['uberlandia','uberlândia'],      lon:-48.3313,lat:-19.0279},
-    {nome:'Contagem',      aliases:['contagem'],                     lon:-44.084, lat:-19.8868},
-    {nome:'Juiz de Fora',  aliases:['juiz de fora'],                 lon:-43.4649,lat:-21.7455},
-    {nome:'Betim',         aliases:['betim'],                        lon:-44.1991,lat:-19.947},
-    {nome:'Montes Claros', aliases:['montes claros'],                lon:-43.9304,lat:-16.6204},
-    {nome:'Uberaba',       aliases:['uberaba'],                      lon:-47.9764,lat:-19.5805},
-    {nome:'Gov. Valadares',aliases:['governador valadares','gov. valadares'],lon:-41.9634,lat:-18.7831},
-    {nome:'Ipatinga',      aliases:['ipatinga','coronel fabriciano'],lon:-42.6001,lat:-19.4386},
-    {nome:'Sete Lagoas',   aliases:['sete lagoas'],                  lon:-44.2537,lat:-19.4368},
-    {nome:'Varginha',      aliases:['varginha'],                     lon:-45.4093,lat:-21.5577},
-    {nome:'Divinópolis',   aliases:['divinopolis','divinópolis'],    lon:-44.9307,lat:-20.1238},
-    {nome:'Patos de Minas',aliases:['patos de minas'],               lon:-46.5081,lat:-18.5972},
+    {nome:'Belo Horizonte', aliases:['belo horizonte','contagem','betim','nova lima','sabará','sabara','ribeirao das neves','ribeirão das neves'],lon:-43.9599,lat:-19.9023,pri:true},
+    {nome:'Uberlândia',     aliases:['uberlandia','uberlândia'],      lon:-48.3313,lat:-19.0279},
+    {nome:'Juiz de Fora',   aliases:['juiz de fora'],                 lon:-43.4649,lat:-21.7455},
+    {nome:'Montes Claros',  aliases:['montes claros'],                lon:-43.9304,lat:-16.6204},
+    {nome:'Uberaba',        aliases:['uberaba'],                      lon:-47.9764,lat:-19.5805},
+    {nome:'Gov. Valadares', aliases:['governador valadares','gov. valadares'],lon:-41.9634,lat:-18.7831},
+    {nome:'Ipatinga',       aliases:['ipatinga'],                     lon:-42.6001,lat:-19.4386},
+    {nome:'Sete Lagoas',    aliases:['sete lagoas'],                  lon:-44.2537,lat:-19.4368},
+    {nome:'Varginha',       aliases:['varginha'],                     lon:-45.4093,lat:-21.5577},
+    {nome:'Divinópolis',    aliases:['divinopolis','divinópolis'],    lon:-44.9307,lat:-20.1238},
+    {nome:'Patos de Minas', aliases:['patos de minas'],               lon:-46.5081,lat:-18.5972},
     {nome:'Poços de Caldas',aliases:['pocos de caldas','poços de caldas'],lon:-46.5631,lat:-21.8077},
-    {nome:'Teófilo Otoni', aliases:['teofilo otoni','teófilo otoni'],lon:-41.383, lat:-17.7148},
-    {nome:'Itabira',       aliases:['itabira'],                      lon:-43.3004,lat:-19.6006},
-    {nome:'Araxá',         aliases:['araxa','araxá'],                lon:-46.9722,lat:-19.636},
-    {nome:'Ituiutaba',     aliases:['ituiutaba'],                    lon:-49.5435,lat:-18.9921},
-    {nome:'Barbacena',     aliases:['barbacena'],                    lon:-43.8002,lat:-21.2511},
-    {nome:'Pouso Alegre',  aliases:['pouso alegre'],                 lon:-45.94,  lat:-22.2651},
-    {nome:'Lavras',        aliases:['lavras'],                       lon:-45.0389,lat:-21.265},
-    {nome:'Passos',        aliases:['passos'],                       lon:-46.6216,lat:-20.7193},
-    {nome:'Curvelo',       aliases:['curvelo'],                      lon:-44.448, lat:-18.8202},
-    {nome:'Muriaé',        aliases:['muriae','muriaé'],              lon:-42.4217,lat:-21.091},
-    {nome:'Viçosa',        aliases:['vicosa','viçosa'],              lon:-42.8859,lat:-20.7399},
-    {nome:'Caratinga',     aliases:['caratinga'],                    lon:-42.1021,lat:-19.7117},
-    {nome:'Diamantina',    aliases:['diamantina'],                   lon:-43.6101,lat:-17.9933},
-    {nome:'Ouro Preto',    aliases:['ouro preto'],                   lon:-43.6104,lat:-20.3909},
-    {nome:'Paracatu',      aliases:['paracatu'],                     lon:-46.8838,lat:-17.1737},
-    {nome:'Januária',      aliases:['januaria','januária'],          lon:-44.8484,lat:-15.32},
-    {nome:'Pará de Minas', aliases:['para de minas','pará de minas'],lon:-44.6078,lat:-19.8342},
-    {nome:'Formiga',       aliases:['formiga'],                      lon:-45.5169,lat:-20.5541},
-    {nome:'Itajubá',       aliases:['itajuba','itajubá'],            lon:-45.4147,lat:-22.4208},
-    {nome:'Três Corações', aliases:['tres coracoes','três corações'],lon:-45.205, lat:-21.6862},
-    {nome:'Alfenas',       aliases:['alfenas'],                      lon:-45.9662,lat:-21.3892},
-    {nome:'Manhuaçu',      aliases:['manhuacu','manhuaçu'],         lon:-42.107, lat:-20.1948},
-    {nome:'Bocaiúva',      aliases:['bocaiuva','bocaiúva'],          lon:-43.6873,lat:-17.2877},
-    {nome:'Ubá',           aliases:['uba','ubá'],                    lon:-42.9655,lat:-21.1056},
-    {nome:'Conselheiro Lafaiete',aliases:['conselheiro lafaiete'],   lon:-43.789, lat:-20.666},
-    {nome:'Nova Lima',     aliases:['nova lima'],                    lon:-43.904, lat:-20.074},
-    {nome:'Sabará',        aliases:['sabara','sabará'],              lon:-43.7791,lat:-19.8511},
+    {nome:'Teófilo Otoni',  aliases:['teofilo otoni','teófilo otoni'],lon:-41.383, lat:-17.7148},
+    {nome:'Itabira',        aliases:['itabira'],                      lon:-43.3004,lat:-19.6006},
+    {nome:'Araxá',          aliases:['araxa','araxá'],                lon:-46.9722,lat:-19.636},
+    {nome:'Ituiutaba',      aliases:['ituiutaba'],                    lon:-49.5435,lat:-18.9921},
+    {nome:'Barbacena',      aliases:['barbacena'],                    lon:-43.8002,lat:-21.2511},
+    {nome:'Pouso Alegre',   aliases:['pouso alegre'],                 lon:-45.94,  lat:-22.2651},
+    {nome:'Lavras',         aliases:['lavras'],                       lon:-45.0389,lat:-21.265},
+    {nome:'Passos',         aliases:['passos'],                       lon:-46.6216,lat:-20.7193},
+    {nome:'Curvelo',        aliases:['curvelo'],                      lon:-44.448, lat:-18.8202},
+    {nome:'Muriaé',         aliases:['muriae','muriaé'],              lon:-42.4217,lat:-21.091},
+    {nome:'Diamantina',     aliases:['diamantina'],                   lon:-43.6101,lat:-17.9933},
+    {nome:'Ouro Preto',     aliases:['ouro preto'],                   lon:-43.6104,lat:-20.3909},
+    {nome:'Paracatu',       aliases:['paracatu'],                     lon:-46.8838,lat:-17.1737},
+    {nome:'Januária',       aliases:['januaria','januária'],          lon:-44.8484,lat:-15.32},
+    {nome:'Formiga',        aliases:['formiga'],                      lon:-45.5169,lat:-20.5541},
+    {nome:'Itajubá',        aliases:['itajuba','itajubá'],            lon:-45.4147,lat:-22.4208},
+    {nome:'Alfenas',        aliases:['alfenas'],                      lon:-45.9662,lat:-21.3892},
+    {nome:'Contagem',       aliases:['contagem'],                     lon:-44.084, lat:-19.8868},
+    {nome:'Betim',          aliases:['betim'],                        lon:-44.1991,lat:-19.947},
+    {nome:'Nova Lima',      aliases:['nova lima'],                    lon:-43.904, lat:-20.074},
+    {nome:'Pará de Minas',  aliases:['para de minas','pará de minas'],lon:-44.6078,lat:-19.8342},
+    {nome:'Três Corações',  aliases:['tres coracoes','três corações'],lon:-45.205, lat:-21.6862},
+    {nome:'Manhuaçu',       aliases:['manhuacu','manhuaçu'],          lon:-42.107, lat:-20.1948},
+    {nome:'Viçosa',         aliases:['vicosa','viçosa'],              lon:-42.8859,lat:-20.7399},
+    {nome:'Caratinga',      aliases:['caratinga'],                    lon:-42.1021,lat:-19.7117},
+    {nome:'Ubá',            aliases:['uba','ubá'],                    lon:-42.9655,lat:-21.1056},
   ];
 
-  // Calcular contagens reais
   CIDADES.forEach(c => {
     c.count = c.aliases.reduce((s,a) =>
-      s + Object.keys(regioes).filter(k=>k.includes(a)).reduce((ss,k)=>ss+regioes[k],0), 0);
+      s + Object.keys(regioes).filter(k=>k.includes(a)||a.includes(k)).reduce((ss,k)=>ss+regioes[k],0), 0);
+  });
+
+  // Contagens por região para legenda
+  const REGIOES_LEGENDA = [
+    { nome:'Norte',        cor:'#F59E0B', aliases:['montes claros','januária','januaria','paracatu','bocaiuva','bocaiúva','pirapora','salinas','curvelo'] },
+    { nome:'Triângulo',    cor:'#3B82F6', aliases:['uberlândia','uberlandia','uberaba','ituiutaba','araxá','araxa','patos de minas','paracatu'] },
+    { nome:'Centro-Oeste', cor:'#10B981', aliases:['divinópolis','divinopolis','sete lagoas','para de minas','pará de minas','formiga','curvelo'] },
+    { nome:'Sul',          cor:'#8B5CF6', aliases:['varginha','poços de caldas','pocos de caldas','pouso alegre','lavras','alfenas','itajuba','itajubá','três corações','tres coracoes','passos'] },
+    { nome:'Sudeste',      cor:'#EC4899', aliases:['juiz de fora','muriaé','muriae','ubá','uba','viçosa','vicosa','caratinga','manhuacu','manhuaçu','ouro preto','barbacena'] },
+    { nome:'Central/Met.', cor:'#EF4444', aliases:['belo horizonte','contagem','betim','nova lima','sabará','sabara','sete lagoas','itabira','governador valadares'] },
+  ];
+  REGIOES_LEGENDA.forEach(r => {
+    r.count = r.aliases.reduce((s,a) =>
+      s + Object.keys(regioes).filter(k=>k.includes(a)||a.includes(k)).reduce((ss,k)=>ss+regioes[k],0), 0);
   });
 
   const maxCount = Math.max(...CIDADES.map(c=>c.count), 1);
-  const MAX_R = Math.min(W*0.075, 26), MIN_R = 3;
+  const MAX_R = Math.min(W*0.07, 22), MIN_R = 3;
 
-  // Pontos cinza de todas as cidades (fundo)
+  // Tooltip
+  let tooltip = document.getElementById('mg-tooltip');
+  if (!tooltip) {
+    tooltip = document.createElement('div');
+    tooltip.id = 'mg-tooltip';
+    tooltip.style.cssText = 'position:fixed;background:#1e293b;color:#fff;padding:6px 10px;border-radius:8px;font-size:11px;font-family:Sora,sans-serif;pointer-events:none;display:none;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.3);white-space:nowrap';
+    document.body.appendChild(tooltip);
+  }
+
+  // Pontos cinza de referência
   CIDADES.forEach(c => {
     const cx=toX(c.lon), cy=toY(c.lat);
     const dot=document.createElementNS(ns,'circle');
-    dot.setAttribute('cx',cx); dot.setAttribute('cy',cy); dot.setAttribute('r','2.5');
-    dot.setAttribute('fill', c.pri ? '#1E3A8A' : '#64748B');
-    dot.setAttribute('opacity','0.5');
+    dot.setAttribute('cx',cx); dot.setAttribute('cy',cy); dot.setAttribute('r','2');
+    dot.setAttribute('fill', c.pri ? '#1E3A8A' : '#94A3B8');
+    dot.setAttribute('opacity','0.4');
     svg.appendChild(dot);
   });
 
-  // Bolhas proporcionais — cidades com equipamentos
-  const comEq = CIDADES.filter(c=>c.count>0).sort((a,b)=>a.count-b.count);
-  comEq.forEach(c => {
+  // Bolhas com tooltip
+  CIDADES.filter(c=>c.count>0).sort((a,b)=>a.count-b.count).forEach(c => {
     const cx=toX(c.lon), cy=toY(c.lat);
     const r = MIN_R + Math.sqrt(c.count/maxCount)*(MAX_R-MIN_R);
 
-    // Anel externo transparente
+    // Pulso (anel externo)
     const ring=document.createElementNS(ns,'circle');
     ring.setAttribute('cx',cx); ring.setAttribute('cy',cy);
-    ring.setAttribute('r',r+4);
+    ring.setAttribute('r',r+5);
     ring.setAttribute('fill','none');
     ring.setAttribute('stroke', c.pri?'#EF4444':'#3B82F6');
-    ring.setAttribute('stroke-width','1');
-    ring.setAttribute('opacity','0.3');
+    ring.setAttribute('stroke-width','1.5');
+    ring.setAttribute('opacity','0.25');
     svg.appendChild(ring);
 
     // Bolha
@@ -9312,60 +9201,63 @@ function renderMapaMG() {
     bubble.setAttribute('cx',cx); bubble.setAttribute('cy',cy);
     bubble.setAttribute('r',r);
     bubble.setAttribute('fill', c.pri?'url(#bub-red)':'url(#bub-blue)');
-    bubble.setAttribute('opacity','0.82');
-    bubble.setAttribute('filter','url(#shadow-bubble)');
+    bubble.setAttribute('opacity','0.85');
+    bubble.setAttribute('filter','url(#bub-shadow)');
+    bubble.style.cursor='pointer';
+    bubble.addEventListener('mousemove', ev => {
+      tooltip.style.display='block';
+      tooltip.style.left=(ev.clientX+12)+'px';
+      tooltip.style.top=(ev.clientY-28)+'px';
+      tooltip.innerHTML=`<b>${c.nome}</b><br>🖨 ${c.count} equipamento${c.count>1?'s':''}`;
+    });
+    bubble.addEventListener('mouseleave', () => { tooltip.style.display='none'; });
     svg.appendChild(bubble);
 
-    // Número
-    if (r >= 9) {
+    // Número dentro
+    if (r >= 8) {
       const t=document.createElementNS(ns,'text');
-      t.setAttribute('x',cx); t.setAttribute('y',cy+1);
+      t.setAttribute('x',cx); t.setAttribute('y',cy+0.5);
       t.setAttribute('text-anchor','middle'); t.setAttribute('dominant-baseline','middle');
-      t.setAttribute('font-size', r>=14?'9':'7.5');
+      t.setAttribute('font-size', r>=14?'9':'7');
       t.setAttribute('font-weight','bold'); t.setAttribute('fill','#fff');
+      t.setAttribute('pointer-events','none');
       t.textContent=c.count; svg.appendChild(t);
     }
   });
 
-  // Labels das cidades com equipamentos e BH
-  comEq.concat(CIDADES.filter(c=>c.pri&&c.count===0)).forEach(c=>{
+  // Labels das cidades com equipamentos
+  CIDADES.filter(c=>c.count>0||c.pri).forEach(c=>{
     const cx=toX(c.lon), cy=toY(c.lat);
-    const r = c.count>0 ? MIN_R+Math.sqrt(c.count/maxCount)*(MAX_R-MIN_R) : 4;
-    const lbl=c.pri?'BH':c.nome.split(' ')[0];
+    const r = c.count>0 ? MIN_R+Math.sqrt(c.count/maxCount)*(MAX_R-MIN_R) : 3;
+    const lbl = c.pri?'BH':c.nome.split(' ')[0];
     const t=document.createElementNS(ns,'text');
-    t.setAttribute('x',cx+r+4); t.setAttribute('y',cy+3.5);
-    t.setAttribute('font-size','7.5'); t.setAttribute('font-weight',c.pri?'bold':'500');
+    t.setAttribute('x',cx+r+3); t.setAttribute('y',cy+3);
+    t.setAttribute('font-size','7'); t.setAttribute('font-weight',c.pri?'bold':'500');
     t.setAttribute('fill',c.pri?'#7F1D1D':'#1E40AF');
     t.setAttribute('paint-order','stroke');
-    t.setAttribute('stroke','rgba(240,247,255,0.9)'); t.setAttribute('stroke-width','2.5');
-    t.textContent=lbl+(c.count>0&&!c.pri?' ('+c.count+')':'');
+    t.setAttribute('stroke','rgba(240,247,255,0.85)'); t.setAttribute('stroke-width','2');
+    t.setAttribute('pointer-events','none');
+    t.textContent=lbl;
     svg.appendChild(t);
   });
 
-  // Watermark MG
-  const wm=document.createElementNS(ns,'text');
-  wm.setAttribute('x',W/2); wm.setAttribute('y',H/2+10);
-  wm.setAttribute('text-anchor','middle'); wm.setAttribute('font-size','64');
-  wm.setAttribute('font-weight','bold'); wm.setAttribute('fill','#DBEAFE');
-  wm.setAttribute('opacity','0.5'); wm.textContent='MG'; svg.appendChild(wm);
-
-  // Legenda
-  const legY=H-8;
-  [{col:'url(#bub-blue)',tipo:'c',lbl:'Equip. instalados'},
-   {col:'url(#bub-red)', tipo:'c',lbl:'Sede (BH/região)'},
-   {col:'#64748B',       tipo:'d',lbl:'Demais cidades'}].forEach(({col,tipo,lbl},i)=>{
-    const lx=8+i*120;
-    const c2=document.createElementNS(ns,'circle');
-    c2.setAttribute('cx',lx+6); c2.setAttribute('cy',legY-3);
-    c2.setAttribute('r',tipo==='c'?5:2.5); c2.setAttribute('fill',col); c2.setAttribute('opacity','0.85');
-    svg.appendChild(c2);
-    const lt=document.createElementNS(ns,'text');
-    lt.setAttribute('x',lx+14); lt.setAttribute('y',legY);
-    lt.setAttribute('font-size','7.5'); lt.setAttribute('fill','#475569');
-    lt.textContent=lbl; svg.appendChild(lt);
-  });
-
   wrap.appendChild(svg);
+
+  // Legenda de regiões (abaixo do SVG, em HTML)
+  let legEl = wrap.querySelector('.mg-legenda');
+  if (legEl) legEl.remove();
+  legEl = document.createElement('div');
+  legEl.className = 'mg-legenda';
+  legEl.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px 10px;padding:8px 4px 2px;justify-content:center';
+  REGIOES_LEGENDA.forEach(r => {
+    const item = document.createElement('div');
+    item.style.cssText = 'display:flex;align-items:center;gap:4px;font-size:9.5px;color:#334155;font-family:Sora,sans-serif';
+    item.innerHTML = `<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${r.cor};flex-shrink:0"></span>
+      <span style="font-weight:600">${r.nome}</span>
+      <span style="color:#64748b">(${r.count})</span>`;
+    legEl.appendChild(item);
+  });
+  wrap.appendChild(legEl);
 }
 
 // ─── PERFIS DE ACESSO ─────────────────────────────────────────
