@@ -540,18 +540,18 @@ tr:hover td{background:var(--sf2)}
   #print-window{display:block!important;position:fixed;inset:0;background:#fff;z-index:99999;padding:16px}
 }
 .os-doc{font-family:'Sora',sans-serif;color:#111;font-size:11px;background:#fff}
-.os-hd{display:flex;border-bottom:2.5px solid #1e4080;padding-bottom:10px;margin-bottom:2px}
+.os-hd{display:none}
 .os-logo-col{display:none}
 .os-logo-txt{color:#e07818;font-size:14px;font-weight:800;letter-spacing:1px}
 .os-logo-sub{color:#64748b;font-size:8px;text-align:center;margin-top:2px}
 .os-mid{display:none}
-.os-co-name{font-size:13px;font-weight:800;color:#0d1f3c;margin-bottom:1px}
+
 .os-co-tag{font-size:8px;color:#667;margin-bottom:3px}
-.os-co-addr{font-size:8px;color:#445;line-height:1.5}
-.os-right-col{padding:9px 12px;text-align:center;min-width:120px;display:flex;flex-direction:column;justify-content:center;align-items:center}
-.os-right-lbl{font-size:8px;font-weight:700;color:#1e4080;text-transform:uppercase;letter-spacing:.8px}
-.os-right-num{font-size:16px;font-weight:800;color:#e07818;margin:2px 0}
-.os-right-date{font-size:9px;color:#445}
+
+
+
+
+
 .os-sec{border:1px solid #c0cbdf;border-top:none;padding:7px 10px}
 .os-sec:last-of-type{border-radius:0 0 6px 6px}
 .os-sec-title{font-size:7px;font-weight:800;color:#fff;background:#1e4080;padding:2px 7px;border-radius:3px;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;display:inline-block}
@@ -3739,7 +3739,7 @@ Outros</textarea>
       <div class="fgrid fg3"><div class="fg"><label>Nº OS</label><input type="text" id="o-num" readonly></div><div class="fg"><label>Data Abertura</label><input type="date" id="o-dab"></div><div class="fg"><label>Técnico</label><select id="o-tec"></select></div></div>
     </div>
     <div style="margin-bottom:13px"><div class="fsec">Cliente</div>
-      <div class="fgrid fg2"><div class="fg"><label>Cliente *</label><select id="o-cli" onchange="loadEqs('o');fillCliOS()"></select></div><div class="fg"><label>Contato</label><input type="text" id="o-contato"></div><div class="fg"><label>Telefone</label><input type="text" id="o-tel"></div><div class="fg"><label>Endereço</label><input type="text" id="o-end"></div></div>
+      <div class="fgrid fg2"><div class="fg"><label>Cliente *</label><select id="o-cli" onchange="loadEqs('o');fillCliOS()"></select></div><div class="fg"><label>Contato</label><input type="text" id="o-contato"></div><div class="fg"><label>Telefone</label><input type="text" id="o-tel"></div><div class="fg"><label>Endereço</label><input type="text" id="o-end"></div><div class="fg"><label>CEP</label><input type="text" id="o-cep" maxlength="9" oninput="fmtCEP(this)"></div><div class="fg"><label>Cidade</label><input type="text" id="o-cidade"></div><div class="fg"><label>UF</label><input type="text" id="o-uf" maxlength="2" style="text-transform:uppercase"></div></div>
     </div>
     <div style="margin-bottom:13px"><div class="fsec">Equipamento</div>
       <div class="fgrid fg2"><div class="fg"><label>Equipamento</label><select id="o-eq" onchange="fillEq('o')"></select></div><div class="fg"><label>Modelo</label><input type="text" id="o-modelo"></div><div class="fg"><label>Nº Série</label><input type="text" id="o-nserie"></div><div class="fg"><label>Contador</label><input type="text" id="o-cont"></div></div>
@@ -4768,7 +4768,10 @@ function fillCliOS() {
   const c = G.clientes.find(x=>x.id===cid); if(!c) return;
   document.getElementById('o-contato').value=c.contato||'';
   document.getElementById('o-tel').value=c.tel||'';
-  document.getElementById('o-end').value=c.end_logradouro||'';
+  document.getElementById('o-end').value=c.end_logradouro||c.end||'';
+  document.getElementById('o-cep').value=c.cep||'';
+  document.getElementById('o-cidade').value=c.cidade||'';
+  document.getElementById('o-uf').value=c.uf||c.estado||'';
 }
 
 // ─── CALCS ────────────────────────────────────────────────
@@ -4822,7 +4825,7 @@ function openOS(id) {
     document.getElementById('o-id').value=os.id; document.getElementById('o-num-val').value=os.num; document.getElementById('o-num').value=os.num;
     document.getElementById('o-dab').value=os.data_ab||''; document.getElementById('o-tec').value=os.tecnico_id||'';
     document.getElementById('o-cli').value=os.cliente_id||''; fillCliOS(); loadEqs('o'); document.getElementById('o-eq').value=os.equip_id||'';
-    document.getElementById('o-contato').value=os.contato||''; document.getElementById('o-tel').value=os.tel||''; document.getElementById('o-end').value=os.end_logradouro||'';
+    document.getElementById('o-contato').value=os.contato||''; document.getElementById('o-tel').value=os.tel||''; document.getElementById('o-end').value=os.end_logradouro||os.end||''; document.getElementById('o-cep').value=os.cep||''; document.getElementById('o-cidade').value=os.cidade||''; document.getElementById('o-uf').value=os.uf||'';
     document.getElementById('o-modelo').value=os.modelo||''; document.getElementById('o-nserie').value=os.nserie||''; document.getElementById('o-cont').value=os.contador||'';
     document.getElementById('o-defeito').value=os.defeito||''; document.getElementById('o-proc').value=os.procedimento||''; document.getElementById('o-pecas').value=os.pecas||''; document.getElementById('o-obs').value=os.obs||'';
     document.getElementById('o-dcham').value=os.data_chamado||''; document.getElementById('o-datend').value=os.data_atend||''; document.getElementById('o-hcheg').value=os.hora_chegada||''; document.getElementById('o-hsai').value=os.hora_saida||'';
@@ -4848,7 +4851,7 @@ function openOS(id) {
     document.getElementById('o-id').value=''; document.getElementById('o-num-val').value=''; document.getElementById('o-num').value='(gerado ao salvar)';
     document.getElementById('o-dab').value=today(); document.getElementById('o-dcham').value=today();
     ['o-tec','o-cli','o-eq'].forEach(f=>document.getElementById(f).value='');
-    ['o-contato','o-tel','o-end','o-modelo','o-nserie','o-cont','o-defeito','o-proc','o-pecas','o-obs','o-datend','o-hcheg','o-hsai'].forEach(f=>document.getElementById(f).value='');
+    ['o-contato','o-tel','o-end','o-cep','o-cidade','o-uf','o-modelo','o-nserie','o-cont','o-defeito','o-proc','o-pecas','o-obs','o-datend','o-hcheg','o-hsai'].forEach(f=>document.getElementById(f).value='');
     ['o-viag','o-alim','o-hosp','o-comb','o-ped','o-out'].forEach(f=>document.getElementById(f).value=0);
     document.getElementById('o-status').value='Aberta'; document.getElementById('o-tot').textContent='R$ 0,00';
     _osFormPendingFiles=[]; osFormSetOsId(null); const g=document.getElementById('os-form-anx-grid'); if(g) g.innerHTML='';
@@ -4896,7 +4899,7 @@ async function saveOS() {
     const base = document.getElementById('o-dab').value || new Date().toISOString().slice(0,10);
     return new Date(new Date(base).getTime() + parseInt(prazo)*3600000).toISOString();
   })();
-  const body={dataAb:document.getElementById('o-dab').value,tecnicoId:document.getElementById('o-tec').value,clienteId:cid,contato:document.getElementById('o-contato').value,tel:document.getElementById('o-tel').value,end:document.getElementById('o-end').value,equipId:document.getElementById('o-eq').value,modelo:document.getElementById('o-modelo').value,nserie,contador:document.getElementById('o-cont').value,defeito:document.getElementById('o-defeito').value,procedimento:document.getElementById('o-proc').value,pecas:document.getElementById('o-pecas').value,obs:document.getElementById('o-obs').value,dataChamado:document.getElementById('o-dcham').value,dataAtend:document.getElementById('o-datend').value,horaChegada:document.getElementById('o-hcheg').value,horaSaida:document.getElementById('o-hsai').value,viag:+document.getElementById('o-viag').value||0,alim:+document.getElementById('o-alim').value||0,hosp:+document.getElementById('o-hosp').value||0,comb:+document.getElementById('o-comb').value||0,ped:+document.getElementById('o-ped').value||0,outros:+document.getElementById('o-out').value||0,status:document.getElementById('o-status').value,sig_tec:sigOSGet('tec'),sig_cli:sigOSGet('cli'),tipo:document.getElementById('o-tipo').value,sla_prazo:document.getElementById('o-sla-prazo').value,sla_deadline:slaDeadline,origem:document.getElementById('o-origem').value||'sistema'};
+  const body={dataAb:document.getElementById('o-dab').value,tecnicoId:document.getElementById('o-tec').value,clienteId:cid,contato:document.getElementById('o-contato').value,tel:document.getElementById('o-tel').value,end:document.getElementById('o-end').value,cep:document.getElementById('o-cep').value,cidade:document.getElementById('o-cidade').value,uf:document.getElementById('o-uf').value,equipId:document.getElementById('o-eq').value,modelo:document.getElementById('o-modelo').value,nserie,contador:document.getElementById('o-cont').value,defeito:document.getElementById('o-defeito').value,procedimento:document.getElementById('o-proc').value,pecas:document.getElementById('o-pecas').value,obs:document.getElementById('o-obs').value,dataChamado:document.getElementById('o-dcham').value,dataAtend:document.getElementById('o-datend').value,horaChegada:document.getElementById('o-hcheg').value,horaSaida:document.getElementById('o-hsai').value,viag:+document.getElementById('o-viag').value||0,alim:+document.getElementById('o-alim').value||0,hosp:+document.getElementById('o-hosp').value||0,comb:+document.getElementById('o-comb').value||0,ped:+document.getElementById('o-ped').value||0,outros:+document.getElementById('o-out').value||0,status:document.getElementById('o-status').value,sig_tec:sigOSGet('tec'),sig_cli:sigOSGet('cli'),tipo:document.getElementById('o-tipo').value,sla_prazo:document.getElementById('o-sla-prazo').value,sla_deadline:slaDeadline,origem:document.getElementById('o-origem').value||'sistema'};
   try {
     if(eid){ await api('PUT',`/api/ordens/${eid}`,body); } else { const res=await api('POST','/api/ordens',body); document.getElementById('o-id').value=res.id; document.getElementById('o-num-val').value=res.num; document.getElementById('o-num').value=res.num; document.getElementById('btn-prev').style.display='inline-flex'; await osFormFlushPending(res.id); }
     await loadAll(); renderOS(); loadDash(); closeM('m-os');
@@ -5260,7 +5263,7 @@ function buildOSDoc(os) {
         <div class="os-co-addr">Rua Adriana Bernardo Cesário, 49 — Vale do Jatobá, Belo Horizonte/MG | CEP: 30.666-000 · Tel: (31) 97255-1262</div>
       </div>
     </div>
-    <div class="os-hd-right">
+    <div class="os-right-col">
       <div class="os-right-lbl">Ordem de Serviço</div>
       <div class="os-right-num">${os.num}</div>
       <div class="os-right-date">Abertura: ${fd(os.data_ab)}</div>
@@ -5272,7 +5275,11 @@ function buildOSDoc(os) {
     <div class="os-sec os-sec-first">
       <span class="os-sec-title">Dados do Cliente</span>
       <div class="os-field"><label>Cliente</label><p>${c?.nome||''}</p></div>
-      <div class="os-field"><label>Endereço</label><p>${c?.end_logradouro||os.end_logradouro||''}</p></div>
+      <div class="os-field"><label>Endereço</label><p>${c?.end_logradouro||os.end_logradouro||os.end||''}</p></div>
+      <div class="os-fg2">
+        <div class="os-field"><label>Cidade / UF</label><p>${(os.cidade||c?.cidade||'')}${(os.uf||c?.uf||c?.estado)?' / '+(os.uf||c?.uf||c?.estado):''}</p></div>
+        <div class="os-field"><label>CEP</label><p>${os.cep||c?.cep||''}</p></div>
+      </div>
       <div class="os-fg2">
         <div class="os-field"><label>Contato</label><p>${os.contato||''}</p></div>
         <div class="os-field"><label>Telefone</label><p>${c?.tel||os.tel||''}</p></div>
@@ -5391,25 +5398,29 @@ body {
 .os-hd {
   display: flex;
   align-items: center;
-  padding-bottom: 8px;
-  margin-bottom: 6px;
+  justify-content: space-between;
+  padding-bottom: 10px;
+  margin-bottom: 10px;
   border-bottom: 2px solid #1e4080;
   flex-shrink: 0;
+  gap: 12px;
 }
-.os-hd-left { display: flex; align-items: center; gap: 10px; flex: 1; }
-.os-hd-logo { width: 52px; height: 52px; object-fit: contain; flex-shrink: 0; }
-.os-co-name { font-size: 13px; font-weight: 800; color: #1e4080; margin-bottom: 1px; }
-.os-co-tag  { font-size: 7.5px; color: #64748b; margin-bottom: 2px; }
-.os-co-addr { font-size: 7.5px; color: #445; line-height: 1.4; }
-.os-hd-right {
-  padding: 4px 0 4px 14px;
+.os-hd-left  { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
+.os-hd-info  { display: flex; flex-direction: column; justify-content: center; min-width: 0; }
+.os-hd-logo  { width: 68px; height: 68px; object-fit: contain; flex-shrink: 0; }
+.os-co-name  { font-size: 13px; font-weight: 800; color: #1e4080; margin-bottom: 2px; white-space: nowrap; }
+.os-co-tag   { font-size: 8px; color: #64748b; margin-bottom: 3px; }
+.os-co-addr  { font-size: 7.5px; color: #445; line-height: 1.5; }
+.os-right-col {
+  padding: 6px 0 6px 14px;
   text-align: right;
-  min-width: 120px;
+  min-width: 110px;
+  flex-shrink: 0;
   border-left: 1.5px solid #e2e8f0;
   display: flex; flex-direction: column; align-items: flex-end; justify-content: center;
 }
 .os-right-lbl  { font-size: 7px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: .8px; }
-.os-right-num  { font-size: 17px; font-weight: 800; color: #1e4080; margin: 2px 0; letter-spacing: .5px; }
+.os-right-num  { font-size: 18px; font-weight: 800; color: #e07818; margin: 3px 0; letter-spacing: .5px; }
 .os-right-date { font-size: 8px; color: #64748b; }
 
 /* ── Seções genéricas ── */
@@ -8733,8 +8744,21 @@ function renderGraficoLinhaAtend(d, osF) {
   const mesesSet = new Set();
   ordens.forEach(o => { if (o.data_ab) mesesSet.add(o.data_ab.slice(0,7)); });
   const meses = Array.from(mesesSet).sort().slice(-8);
-  if (!meses.length) return;
-  const labels = meses.map(m => { const [y,mo]=m.split('-'); return mo+'/'+y.slice(2); });
+  const labels = meses.length
+    ? meses.map(m => { const [y,mo]=m.split('-'); return mo+'/'+y.slice(2); })
+    : ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago'].map(m=>m+'/'+new Date().getFullYear().toString().slice(2));
+  if (!meses.length) {
+    const el2 = document.getElementById('chart-fin-linha');
+    if (!el2) return;
+    _charts['chart-fin-linha'] = new Chart(el2, {
+      type:'bar', data:{ labels, datasets:[
+        {label:'Receitas',data:[0,0,0,0,0,0,0,0],backgroundColor:PBI.green+'CC',borderRadius:5,borderSkipped:false},
+        {label:'Despesas',data:[0,0,0,0,0,0,0,0],backgroundColor:PBI.red+'CC',borderRadius:5,borderSkipped:false}
+      ]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',align:'end',labels:{font:PBI_FONT}},tooltip:{enabled:false}},scales:{x:{grid:{display:false},ticks:{font:PBI_FONT}},y:{grid:PBI_GRID,ticks:{font:PBI_FONT,callback:v=>'R$'+v},beginAtZero:true,max:1000}}}
+    });
+    return;
+  }
   const tecs = [...new Map(ordens.filter(o=>o.tecnico_id).map(o=>{
     const t=G.tecnicos.find(x=>x.id===o.tecnico_id); return t?[t.id,t]:null;
   }).filter(Boolean)).values()].slice(0,5);
