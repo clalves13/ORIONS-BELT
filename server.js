@@ -1774,76 +1774,121 @@ app.get('/api/monitor/status-integracao', requireAuth, async (req,res) => {
 // ─── SIMULADOR DE IMPRESSORAS ────────────────────────────────────────────────
 app.post('/api/monitor/simular', async (req,res) => {
   try {
-    const simuladas = [
-      { ip:'192.168.1.10', fabricante:'HP',      descricao:'HP LaserJet Pro M404dn',          nome_rede:'HP-LASER-01',  serial:'VNB3Q12345', status:'idle',     online:true,  paginas_total:42850, paginas_pb:42100, paginas_color:750,   toner:{ preto:72, ciano:null, magenta:null, amarelo:null }, drum_pct:65, papel_nivel:80, erros:[] },
-      { ip:'192.168.1.11', fabricante:'KYOCERA',  descricao:'Kyocera ECOSYS M2135dn',          nome_rede:'KYOCERA-02',   serial:'VCB9234567', status:'idle',     online:true,  paginas_total:98340, paginas_pb:97800, paginas_color:540,   toner:{ preto:8,  ciano:null, magenta:null, amarelo:null }, drum_pct:22, papel_nivel:40, erros:['toner-baixo'] },
-      { ip:'192.168.1.12', fabricante:'MINOLTA',  descricao:'Konica Minolta bizhub C258',      nome_rede:'BIZHUB-03',    serial:'A6WM012345', status:'printing', online:true,  paginas_total:187650,paginas_pb:120000,paginas_color:67650, toner:{ preto:45, ciano:31,   magenta:28,  amarelo:55 },  drum_pct:58, papel_nivel:60, erros:[] },
-      { ip:'192.168.1.13', fabricante:'RICOH',    descricao:'Ricoh MP 2014AD',                 nome_rede:'RICOH-04',     serial:'E194AB1234', status:'idle',     online:true,  paginas_total:23400, paginas_pb:23400, paginas_color:0,     toner:{ preto:91, ciano:null, magenta:null, amarelo:null }, drum_pct:88, papel_nivel:90, erros:[] },
-      { ip:'192.168.1.14', fabricante:'XEROX',    descricao:'Xerox WorkCentre 3335',           nome_rede:'XEROX-05',     serial:'XRX3335001', status:'idle',     online:false, paginas_total:61200, paginas_pb:61200, paginas_color:0,     toner:{ preto:5,  ciano:null, magenta:null, amarelo:null }, drum_pct:12, papel_nivel:0,  erros:['offline','sem-papel','toner-baixo'] },
-      { ip:'192.168.1.15', fabricante:'CANON',    descricao:'Canon imageRUNNER ADVANCE C3520', nome_rede:'CANON-06',     serial:'JPT0012345', status:'idle',     online:true,  paginas_total:54320, paginas_pb:38000, paginas_color:16320, toner:{ preto:62, ciano:47,   magenta:53,  amarelo:41 },  drum_pct:71, papel_nivel:55, erros:[] },
-      { ip:'192.168.1.16', fabricante:'HP',       descricao:'HP Color LaserJet Pro M479fdw',   nome_rede:'HP-COLOR-07',  serial:'VNB9X54321', status:'idle',     online:true,  paginas_total:18750, paginas_pb:12000, paginas_color:6750,  toner:{ preto:33, ciano:19,   magenta:22,  amarelo:67 },  drum_pct:44, papel_nivel:70, erros:['toner-baixo'] },
-      { ip:'192.168.1.17', fabricante:'KYOCERA',  descricao:'Kyocera TASKalfa 2553ci',         nome_rede:'KYOCERA-08',   serial:'VCA1234567', status:'warmup',   online:true,  paginas_total:231800,paginas_pb:198000,paginas_color:33800, toner:{ preto:58, ciano:44,   magenta:39,  amarelo:61 },  drum_pct:35, papel_nivel:85, erros:[] },
-    ];
+    // Busca clientes reais com equipamentos cadastrados
+    const clientesReais = await col('clientes').find({}, {
+      projection:{ _id:1, nome:1, monitor_key:1 }
+    }).toArray();
 
-    // ── Integração: usa clientes REAIS do cadastro para o simulador ──────────
-    // Busca clientes cadastrados; se não houver, cai no fallback fictício
-    const clientesReais = await col('clientes').find({}, { projection:{ _id:1, nome:1, monitor_key:1 } }).limit(8).toArray();
-    const usarReais = clientesReais.length > 0;
-    const clientesFic = [
-      { id:'sim-0', nome:'Empresa Alpha Ltda',  key:'sim-key-0' },
-      { id:'sim-1', nome:'Comércio Beta SA',     key:'sim-key-1' },
-      { id:'sim-2', nome:'Escritório Gamma',     key:'sim-key-2' },
-      { id:'sim-3', nome:'Indústria Delta',      key:'sim-key-3' },
-    ];
-    const pool = usarReais
-      ? clientesReais.map(c => ({ id: c._id.toString(), nome: c.nome, key: c.monitor_key || `sim-key-${c._id}` }))
-      : clientesFic;
-    // ─────────────────────────────────────────────────────────────────────────
+    if (!clientesReais.length)
+      return res.status(400).json({ error: 'Nenhum cliente cadastrado. Cadastre clientes e equipamentos primeiro.' });
 
-    for (let i=0; i < simuladas.length; i++) {
-      const imp = simuladas[i];
-      const cli = pool[i % pool.length];
-      // ID de rastreamento para limpeza: prefixo "sim-" quando fictício,
-      // ou ID real do cliente quando usando cadastro real
-      const cliId   = usarReais ? cli.id   : cli.id;
+    // Busca todos equipamentos vinculados a clientes
+    const equipamentos = await col('equipamentos').find({}, {
+      projection:{ _id:1, cliente_id:1, modelo:1, nserie:1, fabricante:1, contador:1 }
+    }).toArray();
+
+    // Mapeamento de fabricante → dados SNMP simulados realistas
+    const FAB_DATA = {
+      'HP':      { toner:{ preto:72, ciano:null,  magenta:null,  amarelo:null }, drum_pct:65, cor:false },
+      'KYOCERA': { toner:{ preto:48, ciano:null,  magenta:null,  amarelo:null }, drum_pct:38, cor:false },
+      'RICOH':   { toner:{ preto:85, ciano:null,  magenta:null,  amarelo:null }, drum_pct:72, cor:false },
+      'XEROX':   { toner:{ preto:31, ciano:null,  magenta:null,  amarelo:null }, drum_pct:55, cor:false },
+      'CANON':   { toner:{ preto:62, ciano:47,    magenta:53,    amarelo:41  }, drum_pct:71, cor:true  },
+      'MINOLTA': { toner:{ preto:45, ciano:31,    magenta:28,    amarelo:55  }, drum_pct:58, cor:true  },
+      'BROTHER': { toner:{ preto:88, ciano:null,  magenta:null,  amarelo:null }, drum_pct:80, cor:false },
+      'EPSON':   { toner:{ preto:55, ciano:60,    magenta:58,    amarelo:62  }, drum_pct:66, cor:true  },
+    };
+
+    const detectFab = (modelo) => {
+      const m = (modelo||'').toUpperCase();
+      for (const fab of Object.keys(FAB_DATA)) { if (m.includes(fab)) return fab; }
+      return 'HP';
+    };
+
+    const statusOpts = ['idle','idle','idle','printing','warmup'];
+    let inseridos = 0;
+    let ipBase = 10;
+
+    for (const cli of clientesReais) {
+      const cliId   = cli._id.toString();
       const cliNome = cli.nome;
-      const cliKey  = cli.key;
-      // Marca impressoras simuladas com flag para permitir limpeza seletiva
-      const filtro = { ip: imp.ip, _sim: true };
-      await col('monitor_impressoras').updateOne(
-        filtro,
-        { $set:{ ...imp, cliente_id:cliId, cliente_nome:cliNome, monitor_key:cliKey, ultimo_contato:now(), _sim:true }},
-        { upsert:true }
+      const cliKey  = cli.monitor_key || `sim-key-${cliId}`;
+
+      // Equipamentos deste cliente
+      const eqsCli = equipamentos.filter(e =>
+        e.cliente_id === cliId ||
+        e.cliente_id === cli._id?.toString()
       );
-      for (let h=0; h<8; h++) {
-        const ts = new Date(Date.now() - h*15*60*1000).toISOString();
-        await col('monitor_telemetria').insertOne({
-          cliente_id:cliId, cliente_nome:cliNome, monitor_key:cliKey,
-          timestamp:ts, created_at:ts, _sim:true,
-          impressoras:[{ ...imp, paginas_total: imp.paginas_total - h*15 }]
-        });
+
+      if (!eqsCli.length) continue; // pula clientes sem equipamentos
+
+      for (const eq of eqsCli) {
+        const fab     = detectFab(eq.fabricante || eq.modelo);
+        const fabData = FAB_DATA[fab] || FAB_DATA['HP'];
+        const serial  = eq.nserie || `SIM-${cliId.slice(-4)}-${ipBase}`;
+        const modelo  = eq.modelo || `Impressora ${fab}`;
+        const pgTotal = eq.contador || Math.floor(Math.random()*200000 + 5000);
+        const pgCor   = fabData.cor ? Math.floor(pgTotal * 0.35) : 0;
+        const pgPb    = pgTotal - pgCor;
+        const ip      = `192.168.${Math.floor(ipBase/254)+1}.${(ipBase%254)+1}`;
+        const status  = statusOpts[ipBase % statusOpts.length];
+        const erros   = [];
+        if (fabData.toner.preto < 10) erros.push('toner-baixo');
+        if (fabData.drum_pct < 15)    erros.push('drum-baixo');
+
+        const imp = {
+          ip, fabricante:fab, descricao:modelo,
+          nome_rede:`${fab}-${serial.slice(-4).toUpperCase()}`,
+          serial, status, online: status !== 'offline',
+          paginas_total:pgTotal, paginas_pb:pgPb, paginas_color:pgCor,
+          toner: fabData.toner, drum_pct:fabData.drum_pct,
+          papel_nivel:Math.floor(Math.random()*60)+30,
+          erros, _sim:true
+        };
+
+        const filtro = { serial, _sim:true };
+        await col('monitor_impressoras').updateOne(
+          filtro,
+          { $set:{ ...imp, cliente_id:cliId, cliente_nome:cliNome, monitor_key:cliKey, ultimo_contato:now() }},
+          { upsert:true }
+        );
+
+        // Histórico simulado (8 leituras de 15 em 15 min)
+        for (let h=0; h<8; h++) {
+          const ts = new Date(Date.now() - h*15*60*1000).toISOString();
+          await col('monitor_telemetria').insertOne({
+            cliente_id:cliId, cliente_nome:cliNome, monitor_key:cliKey,
+            timestamp:ts, created_at:ts, _sim:true,
+            impressoras:[{ ...imp, paginas_total: Math.max(0, pgTotal - h*15) }]
+          });
+        }
+
+        inseridos++;
+        ipBase++;
       }
     }
-    _monClienteCache = null; // invalida cache de integração
-    const msg = usarReais
-      ? `${simuladas.length} impressoras simuladas vinculadas a ${Math.min(pool.length, simuladas.length)} clientes reais do cadastro!`
-      : `${simuladas.length} impressoras simuladas inseridas com clientes fictícios (cadastre clientes para usar dados reais).`;
-    res.json({ ok:true, msg });
+
+    _monClienteCache = null;
+
+    if (inseridos === 0)
+      return res.json({ ok:false, msg:'Clientes encontrados mas nenhum possui equipamentos cadastrados. Cadastre equipamentos vinculados aos clientes.' });
+
+    res.json({ ok:true, msg:`${inseridos} impressora(s) simulada(s) a partir dos equipamentos reais cadastrados.` });
   } catch(e) { res.status(500).json({ error:e.message }); }
 });
 
 app.delete('/api/monitor/simular', async (req,res) => {
   try {
-    // Remove apenas registros marcados como simulados (flag _sim:true)
     await col('monitor_impressoras').deleteMany({ _sim: true });
     await col('monitor_telemetria').deleteMany({ _sim: true });
-    // Compatibilidade com registros antigos gravados com cliente_id "sim-*"
+    // Compatibilidade com registros antigos
     await col('monitor_impressoras').deleteMany({ cliente_id:{ $regex:'^sim-' } });
     await col('monitor_telemetria').deleteMany({ cliente_id:{ $regex:'^sim-' } });
-    _monClienteCache = null; // invalida cache de integração
+    _monClienteCache = null;
     res.json({ ok:true, msg:'Dados simulados removidos.' });
   } catch(e) { res.status(500).json({ error:e.message }); }
 });
+
 
 app.get('/monitor', (req,res) => res.sendFile(path.join(__dirname,'public','monitor.html')));
 app.get('/monitor/*', (req,res) => res.sendFile(path.join(__dirname,'public','monitor.html')));
