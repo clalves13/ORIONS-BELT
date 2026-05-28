@@ -13,24 +13,6 @@ const https = require('https');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-
-// Rate limiting simples para rotas públicas (sem dependência externa)
-const _rlMap = new Map();
-function rateLimit(maxReqs, windowMs) {
-  return (req, res, next) => {
-    const key = req.ip || req.headers['x-forwarded-for'] || 'unknown';
-    const now = Date.now();
-    const entry = _rlMap.get(key) || { count:0, start:now };
-    if (now - entry.start > windowMs) { entry.count=1; entry.start=now; }
-    else entry.count++;
-    _rlMap.set(key, entry);
-    if (entry.count > maxReqs) return res.status(429).json({ error:'Muitas requisições. Tente novamente em instantes.' });
-    next();
-  };
-}
-const rlPortal  = rateLimit(60,  60*1000);  // 60 req/min por IP (portal)
-const rlAgente  = rateLimit(10,  60*1000);  // 10 req/min por IP (agente/telemetria)
-const rlLogin   = rateLimit(10,  5*60*1000); // 10 tentativas de login a cada 5 min
 // ── Cloudinary ──
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'diz3fpmrk',
@@ -104,7 +86,7 @@ app.get('/api/perfis', requireAuth, (req,res) => {
 });
 
 // AUTH
-app.post('/api/login', rlLogin, async (req,res) => {
+app.post('/api/login', async (req,res) => {
   try {
     const {login,senha} = req.body;
     if (login==='master' && bcrypt.compareSync(senha||'', MASTER_HASH)) {
@@ -462,15 +444,6 @@ app.get('/api/dashboard', requireAuth, async (req,res) => {
       if(m.item==='toner_amarelo')tonerMap[nome].amarelo+=m.quantidade||1;
       if(m.item==='grampos')tonerMap[nome].grampos+=m.quantidade||1;
     });
-    // Fallback: sem movimentacoes de saida, usa totais acumulados do supr_cli
-    if(!Object.keys(tonerMap).length){
-      suprCli.forEach(s=>{
-        const c=clientes.find(x=>x._id.toString()===s.cliente_id);
-        const nome=c?.nome||'Desconhecido';
-        const tot=(s.toner_preto||0)+(s.toner_magenta||0)+(s.toner_ciano||0)+(s.toner_amarelo||0)+(s.grampos||0);
-        if(tot>0) tonerMap[nome]={preto:s.toner_preto||0,magenta:s.toner_magenta||0,ciano:s.toner_ciano||0,amarelo:s.toner_amarelo||0,grampos:s.grampos||0};
-      });
-    }
     const consumo_toner=Object.entries(tonerMap).map(([cliente,v])=>({cliente,...v}));
     // Retrabalho
     const nsmap={};
@@ -923,7 +896,7 @@ app.get('/portal', (req,res) => res.sendFile(path.join(__dirname,'public','porta
 app.get('/portal/*', (req,res) => res.sendFile(path.join(__dirname,'public','portal.html')));
 
 // Login do portal (cliente)
-app.post('/api/portal/login', rlPortal, async (req,res) => {
+app.post('/api/portal/login', async (req,res) => {
   try {
     const { login, senha } = req.body;
     if (!login || !senha) return res.status(400).json({error:'Informe login e senha.'});
@@ -1664,7 +1637,7 @@ app.get('/download/agente/:clienteId?', requireAuth, async (req, res) => {
 
 // ─── MONITORAMENTO DE IMPRESSORAS ───────────────────────────────────────────
 
-app.post('/api/monitor/registrar-agente', rlAgente, async (req,res) => {
+app.post('/api/monitor/registrar-agente', async (req,res) => {
   try {
     const { clientKey, hostname, agente_ver } = req.body;
     if (!clientKey) return res.status(400).json({ error: 'Chave obrigatória' });
@@ -1680,7 +1653,7 @@ app.get('/api/monitor/ping', (req,res) => {
   res.json({ status: 'ok', timestamp: now(), key_recebida: !!key });
 });
 
-app.post('/api/monitor/telemetria', rlAgente, async (req,res) => {
+app.post('/api/monitor/telemetria', async (req,res) => {
   try {
     const { clientKey, clientId, hostname, platform, agente_ver, timestamp, impressoras } = req.body;
     if (!clientKey) return res.status(401).json({ error: 'Chave ausente.' });
@@ -1691,46 +1664,11 @@ app.post('/api/monitor/telemetria', rlAgente, async (req,res) => {
     for (const imp of (impressoras||[])) {
       const filtro = { cliente_id:cid, ip: imp.ip||imp.nome||'' };
       await col('monitor_impressoras').updateOne(filtro, { $set:{ ...imp, cliente_id:cid, cliente_nome:cliente.nome, ultimo_contato:now(), online:true }}, { upsert:true });
-
-      // Atualiza contador do equipamento cadastrado pelo número de série
-      if (imp.serial && imp.paginas_total) {
-        await col('equipamentos').updateOne(
-          { cliente_id: cid, nserie: imp.serial },
-          { $set: { contador: imp.paginas_total, ultimo_contador_em: now() } }
-        );
-      }
-
-      // Notificação interna
       if (imp.toner?.preto !== null && imp.toner?.preto < 10) {
         await col('notificacoes').insertOne({ tipo:'critico', modulo:'monitor', titulo:`Toner crítico — ${cliente.nome}`, msg:`Impressora ${imp.ip||imp.nome} com toner preto em ${imp.toner.preto}%`, cliente_id:cid, lida:false, created_at:now() });
       }
       if (imp.erros?.length > 0) {
         await col('notificacoes').insertOne({ tipo:'aviso', modulo:'monitor', titulo:`Erro na impressora — ${cliente.nome}`, msg:`${imp.ip||imp.nome}: ${imp.erros.join(', ')}`, cliente_id:cid, lida:false, created_at:now() });
-      }
-
-      // Alertas por e-mail (anti-spam: 1 alerta por impressora a cada 4h)
-      const _emailDest = cliente.email;
-      const _impId = `${cid}:${imp.ip||imp.serial||''}`;
-      if (imp.toner?.preto !== null && imp.toner?.preto < 10 && _podeAlertar(`toner:${_impId}`)) {
-        enviarAlertaMonitor(_emailDest, cliente.nome,
-          `⚠ Toner crítico — ${imp.descricao||imp.ip}`,
-          `<p style="color:#c00;font-size:14px">🖨 <b>${imp.descricao||imp.ip}</b> (${imp.ip})</p>
-           <p>Toner preto em <b style="color:#c00">${imp.toner.preto}%</b> — necessita reposição urgente.</p>`
-        ).catch(()=>{});
-      }
-      if (!imp.online && _podeAlertar(`offline:${_impId}`)) {
-        enviarAlertaMonitor(_emailDest, cliente.nome,
-          `🔴 Impressora offline — ${imp.descricao||imp.ip}`,
-          `<p style="color:#c00;font-size:14px">🖨 <b>${imp.descricao||imp.ip}</b> (${imp.ip})</p>
-           <p>A impressora está <b>offline</b> e não está respondendo na rede.</p>`
-        ).catch(()=>{});
-      }
-      if (imp.erros?.includes('sem-papel') && _podeAlertar(`papel:${_impId}`)) {
-        enviarAlertaMonitor(_emailDest, cliente.nome,
-          `📄 Sem papel — ${imp.descricao||imp.ip}`,
-          `<p style="color:#c06000;font-size:14px">🖨 <b>${imp.descricao||imp.ip}</b> (${imp.ip})</p>
-           <p>A impressora está <b>sem papel</b>.</p>`
-        ).catch(()=>{});
       }
     }
     const limite = new Date(Date.now() - 30*60*1000).toISOString();
@@ -1832,46 +1770,6 @@ app.get('/api/monitor/status-integracao', requireAuth, async (req,res) => {
   } catch(e) { res.status(500).json({ error:e.message }); }
 });
 
-
-// ─── ALERTAS DE MONITOR ──────────────────────────────────────────────────────
-// Controle anti-spam: só envia 1 alerta por impressora a cada 4 horas
-const _alertCache = new Map();
-function _podeAlertar(key) {
-  const last = _alertCache.get(key)||0;
-  if (Date.now()-last < 4*60*60*1000) return false;
-  _alertCache.set(key, Date.now());
-  return true;
-}
-
-async function enviarAlertaMonitor(destinatario, nomeCliente, assunto, corpo) {
-  if (!destinatario) return;
-  const nodemailer = require('nodemailer');
-  const smtpUser = process.env.SMTP_USER || 'clairtonalves@yahoo.com.br';
-  const smtpPass = process.env.SMTP_PASS;
-  if (!smtpPass) return; // silencioso se não configurado
-  const transporter = nodemailer.createTransport({
-    host:'smtp.mail.yahoo.com', port:587, secure:false,
-    auth:{ user:smtpUser, pass:smtpPass },
-    tls:{ rejectUnauthorized:false }
-  });
-  await transporter.sendMail({
-    from:`"Orion Monitor" <${smtpUser}>`,
-    to: destinatario,
-    subject: assunto,
-    html:`
-      <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;padding:24px;border:1px solid #ddd;border-radius:10px">
-        <div style="background:#0d1f3c;padding:12px 20px;border-radius:8px 8px 0 0;margin:-24px -24px 20px">
-          <span style="color:#e07818;font-size:18px;font-weight:800;letter-spacing:2px">ORION</span>
-          <span style="color:#fff;font-size:18px;font-weight:400;margin-left:6px">Monitor</span>
-        </div>
-        <p style="color:#333;font-size:14px">Cliente: <b>${nomeCliente}</b></p>
-        ${corpo}
-        <hr style="border:none;border-top:1px solid #eee;margin:20px 0">
-        <p style="color:#aaa;font-size:11px;text-align:center">Orion Soluções — Monitoramento de Impressoras</p>
-      </div>`
-  });
-}
-// ─────────────────────────────────────────────────────────────────────────────
 
 // ─── SIMULADOR DE IMPRESSORAS ────────────────────────────────────────────────
 app.post('/api/monitor/simular', async (req,res) => {

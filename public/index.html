@@ -4922,7 +4922,6 @@ function renderOS() {
   // Atualiza filtro de técnico
   populateFiltroTec();
 
-  if (arguments[0]==='reset') window._osPagAtual=1;
   const q      = (document.getElementById('s-os')?.value||'').toLowerCase();
   const fStat  = document.getElementById('f-os-status')?.value||'';
   const fTec   = document.getElementById('f-os-tec')?.value||'';
@@ -4936,7 +4935,6 @@ function renderOS() {
   document.getElementById('os-kpi-ok').textContent    = G.ordens.filter(o=>o.status==='Concluída').length;
   document.getElementById('os-kpi-can').textContent   = G.ordens.filter(o=>o.status==='Cancelada').length;
 
-  window._osPagAtual = window._osPagAtual || 1;
   const rows = G.ordens.filter(os => {
     const c = G.clientes.find(x=>x.id===os.cliente_id);
     if (q && ![os.num,c?.nome,os.defeito,os.modelo,os.nserie].join(' ').toLowerCase().includes(q)) return false;
@@ -4953,24 +4951,9 @@ function renderOS() {
   const tb = document.getElementById('tb-os'); if (!tb) return;
   if (!rows.length) {
     tb.innerHTML=`<tr><td colspan="11"><div class="empty"><div class="empty-ico">📝</div><div class="empty-t">Nenhuma OS encontrada</div><div class="empty-s">Tente ajustar os filtros</div></div></td></tr>`;
-    document.getElementById('os-paginacao')?.remove(); return;
+    return;
   }
-  // Paginação
-  const OS_POR_PAG = 25;
-  const _osPag = window._osPagAtual || 1;
-  const _osTotal = Math.ceil(rows.length / OS_POR_PAG);
-  const _osStart = (_osPag-1)*OS_POR_PAG;
-  const rowsPag = rows.slice(_osStart, _osStart+OS_POR_PAG);
-  // Render paginação
-  let pgEl = document.getElementById('os-paginacao');
-  if (!pgEl) { pgEl=document.createElement('div'); pgEl.id='os-paginacao'; tb.closest('table')?.after(pgEl); }
-  if (_osTotal > 1) {
-    const pages = Array.from({length:_osTotal},(_,i)=>i+1);
-    pgEl.style.cssText='display:flex;gap:4px;padding:10px 0;justify-content:center;align-items:center;flex-wrap:wrap';
-    pgEl.innerHTML = pages.map(p=>`<button onclick="window._osPagAtual=${p};renderOS()" style="min-width:30px;padding:4px 8px;border-radius:6px;border:1.5px solid ${p===_osPag?'var(--nv)':'var(--bd)'};background:${p===_osPag?'var(--nv)':'var(--bg)'};color:${p===_osPag?'#fff':'var(--tx)'};font-size:11px;font-weight:${p===_osPag?700:400};cursor:pointer">${p}</button>`).join('')
-    + `<span style="font-size:10px;color:var(--tx3);margin-left:6px">${_osStart+1}–${Math.min(_osStart+OS_POR_PAG,rows.length)} de ${rows.length}</span>`;
-  } else { pgEl.innerHTML=''; }
-  tb.innerHTML = rowsPag.map(os => {
+  tb.innerHTML = rows.map(os => {
     const c  = G.clientes.find(x=>x.id===os.cliente_id);
     const t  = G.tecnicos.find(x=>x.id===os.tecnico_id);
     const sb = os.status==='Concluída'?'bg':os.status==='Cancelada'?'br':os.status==='Em andamento'?'bb':'bo';
@@ -6030,21 +6013,8 @@ function renderHistOS() {
   }
 
   const tb=document.getElementById('tb-hist-os');
-  if(!rows.length){tb.innerHTML=`<tr><td colspan="8"><div class="empty"><div class="empty-ico">📂</div><div class="empty-t">Nenhum atendimento encontrado</div></div></td></tr>`; document.getElementById('hist-paginacao')?.remove(); return;}
-  // Paginação histórico
-  const HIST_POR_PAG=30;
-  const _hPag=window._histPagAtual||1;
-  const _hTotal=Math.ceil(rows.length/HIST_POR_PAG);
-  const _hStart=(_hPag-1)*HIST_POR_PAG;
-  const rowsPag=rows.slice(_hStart,_hStart+HIST_POR_PAG);
-  let hPgEl=document.getElementById('hist-paginacao');
-  if(!hPgEl){hPgEl=document.createElement('div');hPgEl.id='hist-paginacao';tb.closest('table')?.after(hPgEl);}
-  if(_hTotal>1){
-    hPgEl.style.cssText='display:flex;gap:4px;padding:10px 0;justify-content:center;align-items:center;flex-wrap:wrap';
-    hPgEl.innerHTML=Array.from({length:_hTotal},(_,i)=>i+1).map(p=>`<button onclick="window._histPagAtual=${p};renderHistOS()" style="min-width:30px;padding:4px 8px;border-radius:6px;border:1.5px solid ${p===_hPag?'var(--nv)':'var(--bd)'};background:${p===_hPag?'var(--nv)':'var(--bg)'};color:${p===_hPag?'#fff':'var(--tx)'};font-size:11px;font-weight:${p===_hPag?700:400};cursor:pointer">${p}</button>`).join('')
-    +`<span style="font-size:10px;color:var(--tx3);margin-left:6px">${_hStart+1}–${Math.min(_hStart+HIST_POR_PAG,rows.length)} de ${rows.length}</span>`;
-  } else { hPgEl.innerHTML=''; }
-  tb.innerHTML=rowsPag.map(o=>{
+  if(!rows.length){tb.innerHTML=`<tr><td colspan="8"><div class="empty"><div class="empty-ico">📂</div><div class="empty-t">Nenhum atendimento encontrado</div></div></td></tr>`;return;}
+  tb.innerHTML=rows.map(o=>{
     const tObj=G.tecnicos.find(x=>x.id===o.tecnico_id);
     const cli=G.clientes.find(x=>x.id===o.cliente_id);
     const custo=o.total_os||o.total||0;
