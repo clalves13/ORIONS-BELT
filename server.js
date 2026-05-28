@@ -1784,25 +1784,60 @@ app.post('/api/monitor/simular', async (req,res) => {
       { ip:'192.168.1.16', fabricante:'HP',       descricao:'HP Color LaserJet Pro M479fdw',   nome_rede:'HP-COLOR-07',  serial:'VNB9X54321', status:'idle',     online:true,  paginas_total:18750, paginas_pb:12000, paginas_color:6750,  toner:{ preto:33, ciano:19,   magenta:22,  amarelo:67 },  drum_pct:44, papel_nivel:70, erros:['toner-baixo'] },
       { ip:'192.168.1.17', fabricante:'KYOCERA',  descricao:'Kyocera TASKalfa 2553ci',         nome_rede:'KYOCERA-08',   serial:'VCA1234567', status:'warmup',   online:true,  paginas_total:231800,paginas_pb:198000,paginas_color:33800, toner:{ preto:58, ciano:44,   magenta:39,  amarelo:61 },  drum_pct:35, papel_nivel:85, erros:[] },
     ];
-    const clientesFic = ['Empresa Alpha Ltda','Comércio Beta SA','Escritório Gamma','Indústria Delta'];
+
+    // ── Integração: usa clientes REAIS do cadastro para o simulador ──────────
+    // Busca clientes cadastrados; se não houver, cai no fallback fictício
+    const clientesReais = await col('clientes').find({}, { projection:{ _id:1, nome:1, monitor_key:1 } }).limit(8).toArray();
+    const usarReais = clientesReais.length > 0;
+    const clientesFic = [
+      { id:'sim-0', nome:'Empresa Alpha Ltda',  key:'sim-key-0' },
+      { id:'sim-1', nome:'Comércio Beta SA',     key:'sim-key-1' },
+      { id:'sim-2', nome:'Escritório Gamma',     key:'sim-key-2' },
+      { id:'sim-3', nome:'Indústria Delta',      key:'sim-key-3' },
+    ];
+    const pool = usarReais
+      ? clientesReais.map(c => ({ id: c._id.toString(), nome: c.nome, key: c.monitor_key || `sim-key-${c._id}` }))
+      : clientesFic;
+    // ─────────────────────────────────────────────────────────────────────────
+
     for (let i=0; i < simuladas.length; i++) {
       const imp = simuladas[i];
-      const cliNome = clientesFic[i % clientesFic.length];
-      const cliId = `sim-${i % clientesFic.length}`;
-      const filtro = { ip: imp.ip, cliente_id: cliId };
-      await col('monitor_impressoras').updateOne(filtro, { $set:{ ...imp, cliente_id:cliId, cliente_nome:cliNome, ultimo_contato:now() }}, { upsert:true });
+      const cli = pool[i % pool.length];
+      // ID de rastreamento para limpeza: prefixo "sim-" quando fictício,
+      // ou ID real do cliente quando usando cadastro real
+      const cliId   = usarReais ? cli.id   : cli.id;
+      const cliNome = cli.nome;
+      const cliKey  = cli.key;
+      // Marca impressoras simuladas com flag para permitir limpeza seletiva
+      const filtro = { ip: imp.ip, _sim: true };
+      await col('monitor_impressoras').updateOne(
+        filtro,
+        { $set:{ ...imp, cliente_id:cliId, cliente_nome:cliNome, monitor_key:cliKey, ultimo_contato:now(), _sim:true }},
+        { upsert:true }
+      );
       for (let h=0; h<8; h++) {
         const ts = new Date(Date.now() - h*15*60*1000).toISOString();
-        await col('monitor_telemetria').insertOne({ cliente_id:cliId, cliente_nome:cliNome, timestamp:ts, created_at:ts, impressoras:[{ ...imp, paginas_total: imp.paginas_total - h*15 }] });
+        await col('monitor_telemetria').insertOne({
+          cliente_id:cliId, cliente_nome:cliNome, monitor_key:cliKey,
+          timestamp:ts, created_at:ts, _sim:true,
+          impressoras:[{ ...imp, paginas_total: imp.paginas_total - h*15 }]
+        });
       }
     }
     _monClienteCache = null; // invalida cache de integração
-    res.json({ ok:true, msg:`${simuladas.length} impressoras simuladas inseridas!` });
+    const msg = usarReais
+      ? `${simuladas.length} impressoras simuladas vinculadas a ${Math.min(pool.length, simuladas.length)} clientes reais do cadastro!`
+      : `${simuladas.length} impressoras simuladas inseridas com clientes fictícios (cadastre clientes para usar dados reais).`;
+    res.json({ ok:true, msg });
   } catch(e) { res.status(500).json({ error:e.message }); }
 });
 
 app.delete('/api/monitor/simular', async (req,res) => {
   try {
+    // Remove apenas registros marcados como simulados (flag _sim:true)
+    await col('monitor_impressoras').deleteMany({ _sim: true });
+    await col('monitor_telemetria').deleteMany({ _sim: true });
+    // Compatibilidade com registros antigos gravados com cliente_id "sim-*"
     await col('monitor_impressoras').deleteMany({ cliente_id:{ $regex:'^sim-' } });
     await col('monitor_telemetria').deleteMany({ cliente_id:{ $regex:'^sim-' } });
     _monClienteCache = null; // invalida cache de integração
