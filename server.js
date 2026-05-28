@@ -244,7 +244,7 @@ app.put('/api/ordens/:id', requireAuth, async (req,res) => {
       const os=await col('ordens').findOne({_id:new ObjectId(req.params.id)});
       const cli=await col('clientes').findOne({_id:new ObjectId(os.cliente_id)});
       const tec=os.tecnico_id?await col('tecnicos').findOne({_id:new ObjectId(os.tecnico_id)}):null;
-      await col('historico').insertOne({tipo:'atendimento',os_id:os._id.toString(),os_num:os.num,data:b.dataAtend||b.dataAb,cliente:cli?.nome||'',tecnico:tec?.nome||'',modelo:os.modelo||'',nserie:os.nserie||'',contador:os.contador||'',defeito:os.defeito||'',procedimento:b.procedimento||'',pecas:b.pecas||'',status:'Concluída',created_at:now()});
+      await col('historico').insertOne({tipo:'atendimento',os_id:os._id.toString(),num:os.num,os_num:os.num,cliente_id:os.cliente_id||'',tecnico_id:os.tecnico_id||'',equip_id:os.equip_id||'',data:b.dataAtend||b.dataAb||os.data_ab||'',data_atend:b.dataAtend||os.data_atend||'',data_ab:os.data_ab||'',cliente:cli?.nome||'',tecnico:tec?.nome||'',modelo:os.modelo||'',nserie:os.nserie||'',contador:os.contador||'',defeito:os.defeito||'',procedimento:b.procedimento||os.procedimento||'',pecas:b.pecas||os.pecas||'',status:'Concluída',total_os:total,total:total,retrabalho:false,created_at:now()});
     }
     res.json({ok:true});
   }catch(e){res.status(500).json({error:e.message});}
@@ -538,7 +538,7 @@ app.delete('/api/veiculos/:id', requireAuth, async (req,res) => { try{await col(
 
 // ATENDIMENTOS alias (compatibilidade com ordens)
 app.get('/api/atendimentos', requireAuth, async (req,res) => { const d=await col('ordens').find().sort({created_at:-1}).toArray(); res.json(d.map(x=>({...x,id:x._id.toString()}))); });
-app.post('/api/atendimentos', requireAuth, async (req,res) => { try{ const b=req.body; const num=(await col('counter').findOneAndUpdate({_id:'os'},{$inc:{valor:1}},{upsert:true,returnDocument:'after'})).valor||1; const cliente=b.clienteId?await col('clientes').findOne({_id:new ObjectId(b.clienteId)}):null; const tecnico=b.tecnicoId?await col('tecnicos').findOne({_id:new ObjectId(b.tecnicoId)}):null; const total=(b.viag||0)+(b.alim||0)+(b.hosp||0)+(b.comb||0)+(b.ped||0)+(b.outros||0); await col('ordens').insertOne({num,data_ab:b.data||b.data_ab||'',tecnico_id:b.tecnicoId||'',cliente_id:b.clienteId||'',equip_id:b.equipId||'',contato:b.contato||'',tel:b.tel||'',end_logradouro:b.end||'',modelo:b.modelo||'',nserie:b.nserie||'',contador:b.contador||'',defeito:b.descricao||b.defeito||'',procedimento:b.procedimento||'',pecas:b.pecas||'',obs:b.obs||'',viag:b.viag||0,alim:b.alim||0,hosp:b.hosp||0,comb:b.comb||0,ped:b.ped||0,outros:b.outros||0,total,data_chamado:b.data_chamado||'',data_atend:b.data_atend||'',hora_chegada:b.hora_chegada||'',hora_saida:b.hora_saida||'',status:b.status||'Aberta',checklist:b.checklist||[],sig_tec:b.sig_tec||'',sig_cli:b.sig_cli||'',tipo:b.tipo||'',sla_prazo:b.sla_prazo||'',sla_deadline:b.sla_deadline||null,created_at:new Date().toISOString()}); if(b.status==='Concluída'||b.status==='Concluído'){await col('historico').insertOne({os_num:num,tipo:'os',data:b.data||b.data_ab||'',cliente:cliente?.nome||'',tecnico:tecnico?.nome||'',modelo:b.modelo||'',nserie:b.nserie||'',defeito:b.descricao||b.defeito||'',procedimento:b.procedimento||'',pecas:b.pecas||'',total,created_at:new Date().toISOString()});} res.json({ok:true,num});}catch(e){res.status(500).json({error:e.message});} });
+app.post('/api/atendimentos', requireAuth, async (req,res) => { try{ const b=req.body; const num=(await col('counter').findOneAndUpdate({_id:'os'},{$inc:{valor:1}},{upsert:true,returnDocument:'after'})).valor||1; const cliente=b.clienteId?await col('clientes').findOne({_id:new ObjectId(b.clienteId)}):null; const tecnico=b.tecnicoId?await col('tecnicos').findOne({_id:new ObjectId(b.tecnicoId)}):null; const total=(b.viag||0)+(b.alim||0)+(b.hosp||0)+(b.comb||0)+(b.ped||0)+(b.outros||0); await col('ordens').insertOne({num,data_ab:b.data||b.data_ab||'',tecnico_id:b.tecnicoId||'',cliente_id:b.clienteId||'',equip_id:b.equipId||'',contato:b.contato||'',tel:b.tel||'',end_logradouro:b.end||'',modelo:b.modelo||'',nserie:b.nserie||'',contador:b.contador||'',defeito:b.descricao||b.defeito||'',procedimento:b.procedimento||'',pecas:b.pecas||'',obs:b.obs||'',viag:b.viag||0,alim:b.alim||0,hosp:b.hosp||0,comb:b.comb||0,ped:b.ped||0,outros:b.outros||0,total,data_chamado:b.data_chamado||'',data_atend:b.data_atend||'',hora_chegada:b.hora_chegada||'',hora_saida:b.hora_saida||'',status:b.status||'Aberta',checklist:b.checklist||[],sig_tec:b.sig_tec||'',sig_cli:b.sig_cli||'',tipo:b.tipo||'',sla_prazo:b.sla_prazo||'',sla_deadline:b.sla_deadline||null,created_at:new Date().toISOString()}); if(b.status==='Concluída'||b.status==='Concluído'){await col('historico').insertOne({tipo:'atendimento',os_num:num,num,cliente_id:b.clienteId||'',tecnico_id:b.tecnicoId||'',equip_id:b.equipId||'',data:b.data_atend||b.data||b.data_ab||'',data_atend:b.data_atend||'',data_ab:b.data||b.data_ab||'',cliente:cliente?.nome||'',tecnico:tecnico?.nome||'',modelo:b.modelo||'',nserie:b.nserie||'',contador:b.contador||'',defeito:b.descricao||b.defeito||'',procedimento:b.procedimento||'',pecas:b.pecas||'',status:'Concluída',total_os:total,total,retrabalho:false,created_at:new Date().toISOString()});} res.json({ok:true,num});}catch(e){res.status(500).json({error:e.message});} });
 app.put('/api/atendimentos/:id', requireAuth, async (req,res) => { try{ const b=req.body; const total=(b.viag||0)+(b.alim||0)+(b.hosp||0)+(b.comb||0)+(b.ped||0)+(b.outros||0); await col('ordens').updateOne({_id:new ObjectId(req.params.id)},{$set:{data_ab:b.data||b.data_ab||'',tecnico_id:b.tecnicoId||'',cliente_id:b.clienteId||'',equip_id:b.equipId||'',modelo:b.modelo||'',nserie:b.nserie||'',contador:b.contador||'',defeito:b.descricao||b.defeito||'',procedimento:b.procedimento||'',pecas:b.pecas||'',obs:b.obs||'',viag:b.viag||0,alim:b.alim||0,hosp:b.hosp||0,comb:b.comb||0,ped:b.ped||0,outros:b.outros||0,total,status:b.status||'Aberta',checklist:b.checklist||[],sig_tec:b.sig_tec||'',sig_cli:b.sig_cli||'',tipo:b.tipo||'',sla_prazo:b.sla_prazo||'',sla_deadline:b.sla_deadline||null}}); res.json({ok:true});}catch(e){res.status(500).json({error:e.message});} });
 app.delete('/api/atendimentos/:id', requireAuth, async (req,res) => { try{await col('ordens').deleteOne({_id:new ObjectId(req.params.id)});res.json({ok:true});}catch(e){res.status(500).json({error:e.message});} });
 
@@ -1991,6 +1991,43 @@ app.delete('/api/monitor/simular', async (req,res) => {
   } catch(e) { res.status(500).json({ error:e.message }); }
 });
 
+
+// ── MIGRAÇÃO: enriquece registros antigos do histórico sem cliente_id ─────────
+app.post('/api/admin/migrar-historico', requireAuth, requireAdmin, async (req,res) => {
+  try {
+    const semCliId = await col('historico').find({ cliente_id:{ $exists:false } }).toArray();
+    let atualizados = 0;
+    for (const h of semCliId) {
+      // Tenta achar pela OS
+      const osId = h.os_id;
+      const num  = h.os_num || h.num;
+      let os = null;
+      if (osId) { try { os = await col('ordens').findOne({ _id: new ObjectId(osId) }); } catch(_){} }
+      if (!os && num) os = await col('ordens').findOne({ num });
+      if (!os && h.cliente) {
+        const cli = await col('clientes').findOne({ nome: h.cliente });
+        if (cli) {
+          await col('historico').updateOne({ _id: h._id }, { $set: { cliente_id: cli._id.toString() } });
+          atualizados++;
+          continue;
+        }
+      }
+      if (os) {
+        const upd = {};
+        if (!h.cliente_id && os.cliente_id) upd.cliente_id = os.cliente_id;
+        if (!h.tecnico_id && os.tecnico_id) upd.tecnico_id = os.tecnico_id;
+        if (!h.equip_id  && os.equip_id)   upd.equip_id   = os.equip_id;
+        if (!h.num       && os.num)         upd.num        = os.num;
+        if (!h.total_os  && (os.total_os||os.total)) upd.total_os = os.total_os||os.total;
+        if (Object.keys(upd).length) {
+          await col('historico').updateOne({ _id: h._id }, { $set: upd });
+          atualizados++;
+        }
+      }
+    }
+    res.json({ ok:true, total: semCliId.length, atualizados, msg:`${atualizados} registros enriquecidos de ${semCliId.length} sem cliente_id.` });
+  } catch(e) { res.status(500).json({ error:e.message }); }
+});
 
 app.get('/monitor', (req,res) => res.sendFile(path.join(__dirname,'public','monitor.html')));
 app.get('/monitor/*', (req,res) => res.sendFile(path.join(__dirname,'public','monitor.html')));
