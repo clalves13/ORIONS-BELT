@@ -4922,6 +4922,7 @@ function renderOS() {
   // Atualiza filtro de técnico
   populateFiltroTec();
 
+  if (arguments[0]==='reset') window._osPagAtual=1;
   const q      = (document.getElementById('s-os')?.value||'').toLowerCase();
   const fStat  = document.getElementById('f-os-status')?.value||'';
   const fTec   = document.getElementById('f-os-tec')?.value||'';
@@ -4935,6 +4936,7 @@ function renderOS() {
   document.getElementById('os-kpi-ok').textContent    = G.ordens.filter(o=>o.status==='Concluída').length;
   document.getElementById('os-kpi-can').textContent   = G.ordens.filter(o=>o.status==='Cancelada').length;
 
+  window._osPagAtual = window._osPagAtual || 1;
   const rows = G.ordens.filter(os => {
     const c = G.clientes.find(x=>x.id===os.cliente_id);
     if (q && ![os.num,c?.nome,os.defeito,os.modelo,os.nserie].join(' ').toLowerCase().includes(q)) return false;
@@ -4951,9 +4953,24 @@ function renderOS() {
   const tb = document.getElementById('tb-os'); if (!tb) return;
   if (!rows.length) {
     tb.innerHTML=`<tr><td colspan="11"><div class="empty"><div class="empty-ico">📝</div><div class="empty-t">Nenhuma OS encontrada</div><div class="empty-s">Tente ajustar os filtros</div></div></td></tr>`;
-    return;
+    document.getElementById('os-paginacao')?.remove(); return;
   }
-  tb.innerHTML = rows.map(os => {
+  // Paginação
+  const OS_POR_PAG = 25;
+  const _osPag = window._osPagAtual || 1;
+  const _osTotal = Math.ceil(rows.length / OS_POR_PAG);
+  const _osStart = (_osPag-1)*OS_POR_PAG;
+  const rowsPag = rows.slice(_osStart, _osStart+OS_POR_PAG);
+  // Render paginação
+  let pgEl = document.getElementById('os-paginacao');
+  if (!pgEl) { pgEl=document.createElement('div'); pgEl.id='os-paginacao'; tb.closest('table')?.after(pgEl); }
+  if (_osTotal > 1) {
+    const pages = Array.from({length:_osTotal},(_,i)=>i+1);
+    pgEl.style.cssText='display:flex;gap:4px;padding:10px 0;justify-content:center;align-items:center;flex-wrap:wrap';
+    pgEl.innerHTML = pages.map(p=>`<button onclick="window._osPagAtual=${p};renderOS()" style="min-width:30px;padding:4px 8px;border-radius:6px;border:1.5px solid ${p===_osPag?'var(--nv)':'var(--bd)'};background:${p===_osPag?'var(--nv)':'var(--bg)'};color:${p===_osPag?'#fff':'var(--tx)'};font-size:11px;font-weight:${p===_osPag?700:400};cursor:pointer">${p}</button>`).join('')
+    + `<span style="font-size:10px;color:var(--tx3);margin-left:6px">${_osStart+1}–${Math.min(_osStart+OS_POR_PAG,rows.length)} de ${rows.length}</span>`;
+  } else { pgEl.innerHTML=''; }
+  tb.innerHTML = rowsPag.map(os => {
     const c  = G.clientes.find(x=>x.id===os.cliente_id);
     const t  = G.tecnicos.find(x=>x.id===os.tecnico_id);
     const sb = os.status==='Concluída'?'bg':os.status==='Cancelada'?'br':os.status==='Em andamento'?'bb':'bo';
@@ -6013,8 +6030,21 @@ function renderHistOS() {
   }
 
   const tb=document.getElementById('tb-hist-os');
-  if(!rows.length){tb.innerHTML=`<tr><td colspan="8"><div class="empty"><div class="empty-ico">📂</div><div class="empty-t">Nenhum atendimento encontrado</div></div></td></tr>`;return;}
-  tb.innerHTML=rows.map(o=>{
+  if(!rows.length){tb.innerHTML=`<tr><td colspan="8"><div class="empty"><div class="empty-ico">📂</div><div class="empty-t">Nenhum atendimento encontrado</div></div></td></tr>`; document.getElementById('hist-paginacao')?.remove(); return;}
+  // Paginação histórico
+  const HIST_POR_PAG=30;
+  const _hPag=window._histPagAtual||1;
+  const _hTotal=Math.ceil(rows.length/HIST_POR_PAG);
+  const _hStart=(_hPag-1)*HIST_POR_PAG;
+  const rowsPag=rows.slice(_hStart,_hStart+HIST_POR_PAG);
+  let hPgEl=document.getElementById('hist-paginacao');
+  if(!hPgEl){hPgEl=document.createElement('div');hPgEl.id='hist-paginacao';tb.closest('table')?.after(hPgEl);}
+  if(_hTotal>1){
+    hPgEl.style.cssText='display:flex;gap:4px;padding:10px 0;justify-content:center;align-items:center;flex-wrap:wrap';
+    hPgEl.innerHTML=Array.from({length:_hTotal},(_,i)=>i+1).map(p=>`<button onclick="window._histPagAtual=${p};renderHistOS()" style="min-width:30px;padding:4px 8px;border-radius:6px;border:1.5px solid ${p===_hPag?'var(--nv)':'var(--bd)'};background:${p===_hPag?'var(--nv)':'var(--bg)'};color:${p===_hPag?'#fff':'var(--tx)'};font-size:11px;font-weight:${p===_hPag?700:400};cursor:pointer">${p}</button>`).join('')
+    +`<span style="font-size:10px;color:var(--tx3);margin-left:6px">${_hStart+1}–${Math.min(_hStart+HIST_POR_PAG,rows.length)} de ${rows.length}</span>`;
+  } else { hPgEl.innerHTML=''; }
+  tb.innerHTML=rowsPag.map(o=>{
     const tObj=G.tecnicos.find(x=>x.id===o.tecnico_id);
     const cli=G.clientes.find(x=>x.id===o.cliente_id);
     const custo=o.total_os||o.total||0;
@@ -8338,20 +8368,8 @@ function renderRelHistCli() {
   if (!table) return;
   if (!cliId) { table.innerHTML = '<div style="text-align:center;padding:16px;color:var(--tx3);font-size:11px">Selecione um cliente para ver o histórico</div>'; if(total) total.textContent=''; return; }
   const f = getRelFiltros();
-  const cliObj = G.clientes.find(x=>x.id===cliId);
-  const cliNome = (cliObj?.nome||'').toLowerCase();
-  // Mescla G.historico + G.ordens (OS do Portal ficam só em ordens)
-  const numHistorico = new Set((G.historico||[]).map(h=>h.num).filter(Boolean));
-  const ordensExtra = (G.ordens||[]).filter(o => !numHistorico.has(o.num));
-  const srcHist = [...(G.historico||[]), ...ordensExtra];
-  const hist = srcHist.filter(h => {
-    // aceita cliente_id direto OU nome do cliente (OS do Portal gravam por nome)
-    const matchId   = h.cliente_id === cliId;
-    const matchNome = cliNome && (
-      (h.cliente||'').toLowerCase() === cliNome ||
-      (h.cliente_nome||'').toLowerCase() === cliNome
-    );
-    if (!matchId && !matchNome) return false;
+  const hist = (G.historico||[]).filter(h => {
+    if (h.cliente_id !== cliId) return false;
     const d = h.data_atend||h.data_ab||'';
     if (f.de && d < f.de) return false;
     if (f.ate && d > f.ate) return false;
@@ -8403,16 +8421,9 @@ function renderRelHistNserie() {
     table.innerHTML='<div style="text-align:center;padding:16px;color:var(--tx3);font-size:11px">Digite o número de série ou selecione um equipamento</div>';
     if(total) total.textContent=''; return;
   }
-  const equipObj = equipId ? G.equipamentos?.find(e=>e.id===equipId) : null;
-  const equipNserie = (equipObj?.nserie||'').toLowerCase();
-  // Busca em G.historico E G.ordens (OS do Portal ficam só em ordens)
-  const srcAll = [...(G.historico||[]), ...(G.ordens||[]).filter(o => {
-    return !(G.historico||[]).find(h=>h.num===o.num);
-  })];
-  const hist = srcAll.filter(h => {
-    const ns = (h.nserie||h.n_serie||h.serial||'').toLowerCase();
-    if (nserie && !ns.includes(nserie)) return false;
-    if (equipId && h.equip_id !== equipId && (!equipNserie || !ns.includes(equipNserie))) return false;
+  const hist = (G.historico||[]).filter(h => {
+    if (nserie && !(h.nserie||'').toLowerCase().includes(nserie)) return false;
+    if (equipId && h.equip_id !== equipId) return false;
     return true;
   }).sort((a,b)=>(b.data_atend||b.data_ab||'').localeCompare(a.data_atend||a.data_ab||''));
   if (total) total.textContent = `${hist.length} atendimento(s) encontrado(s)`;
@@ -8461,13 +8472,8 @@ function printRelHistCli() {
   if (!cliId) { alert('Selecione um cliente primeiro'); return; }
   const cli = G.clientes.find(x=>x.id===cliId);
   const f = getRelFiltros();
-  const _cliNomePr = (G.clientes.find(x=>x.id===cliId)?.nome||'').toLowerCase();
-  const _numHist2 = new Set((G.historico||[]).map(h=>h.num).filter(Boolean));
-  const _srcPr = [...(G.historico||[]), ...(G.ordens||[]).filter(o=>!_numHist2.has(o.num))];
-  const hist = _srcPr.filter(h=>{
-    const matchId = h.cliente_id===cliId;
-    const matchNm = _cliNomePr && ((h.cliente||'').toLowerCase()===_cliNomePr||(h.cliente_nome||'').toLowerCase()===_cliNomePr);
-    if(!matchId&&!matchNm)return false;
+  const hist = (G.historico||[]).filter(h=>{
+    if(h.cliente_id!==cliId)return false;
     const d=h.data_atend||h.data_ab||'';
     return(!f.de||d>=f.de)&&(!f.ate||d<=f.ate);
   }).sort((a,b)=>(b.data_atend||b.data_ab||'').localeCompare(a.data_atend||a.data_ab||''));
