@@ -1673,6 +1673,7 @@ app.post('/api/monitor/telemetria', async (req,res) => {
     }
     const limite = new Date(Date.now() - 30*60*1000).toISOString();
     await col('monitor_impressoras').updateMany({ cliente_id:cid, ultimo_contato:{ $lt:limite } }, { $set:{ online:false } });
+    _monClienteCache = null; // invalida cache de integração
     res.json({ ok:true, recebido:(impressoras||[]).length });
   } catch(e) { res.status(500).json({ error:e.message }); }
 });
@@ -1685,12 +1686,36 @@ app.post('/api/clientes/:id/monitor-key', requireAuth, requireAdmin, async (req,
   } catch(e) { res.status(500).json({ error:e.message }); }
 });
 
+// ── INTEGRAÇÃO ORION VIEW ↔ ORION PRINT ──────────────────────────────────────
+// Cache leve de clientes (monitor_key → { id, nome }) para evitar N+1 queries
+let _monClienteCache = null;
+let _monClienteCacheAt = 0;
+async function getMonClienteMap() {
+  if (_monClienteCache && Date.now() - _monClienteCacheAt < 30000) return _monClienteCache;
+  const rows = await col('clientes').find({ monitor_key: { $exists:true, $ne:'' } }).toArray();
+  _monClienteCache = new Map(rows.map(c => [c.monitor_key, { id: c._id.toString(), nome: c.nome }]));
+  _monClienteCacheAt = Date.now();
+  return _monClienteCache;
+}
+// Enriquece lista de impressoras: substitui cliente_id/cliente_nome pelos dados reais do cadastro
+async function enrichImps(imps) {
+  const map = await getMonClienteMap();
+  return imps.map(i => {
+    const cli = i.monitor_key ? map.get(i.monitor_key) : null;
+    if (cli) return { ...i, cliente_id: cli.id, cliente_nome: cli.nome };
+    return { ...i, cliente_nome: i.cliente_nome || '(cliente não cadastrado)' };
+  });
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 app.get('/api/monitor/impressoras', async (req,res) => {
   try {
     const { cliente_id } = req.query;
     const filtro = cliente_id ? { cliente_id } : {};
     const imps = await col('monitor_impressoras').find(filtro).sort({ ultimo_contato:-1 }).toArray();
-    res.json(imps.map(i => ({ ...i, id:i._id.toString() })));
+    // ── Integração: resolve nomes reais do cadastro de clientes ──
+    const enriched = await enrichImps(imps);
+    res.json(enriched.map(i => ({ ...i, id:i._id.toString() })));
   } catch(e) { res.status(500).json({ error:e.message }); }
 });
 
@@ -1711,8 +1736,37 @@ app.get('/api/monitor/dashboard', async (req,res) => {
     const offline   = await col('monitor_impressoras').countDocuments({ online:false });
     const tonerCrit = await col('monitor_impressoras').countDocuments({ 'toner.preto':{ $lt:10, $ne:null } });
     const comErro   = await col('monitor_impressoras').countDocuments({ erros:{ $exists:true, $not:{ $size:0 } } });
-    const clientes  = await col('monitor_impressoras').distinct('cliente_id');
-    res.json({ total, online, offline, toner_critico:tonerCrit, com_erro:comErro, clientes_monitorados:clientes.length });
+    // ── Integração: conta clientes REAIS cadastrados com pelo menos 1 impressora ──
+    const keysAtivas = await col('monitor_impressoras').distinct('monitor_key');
+    const clientesReais = await col('clientes').countDocuments({
+      monitor_key: { $in: keysAtivas.filter(Boolean) }
+    });
+    res.json({ total, online, offline, toner_critico:tonerCrit, com_erro:comErro, clientes_monitorados:clientesReais });
+  } catch(e) { res.status(500).json({ error:e.message }); }
+});
+
+// ── NOVO: diagnóstico da integração ──────────────────────────────────────────
+app.get('/api/monitor/status-integracao', requireAuth, async (req,res) => {
+  try {
+    const imps = await col('monitor_impressoras').find({}, { projection:{ monitor_key:1, cliente_nome:1, ip:1 } }).toArray();
+    const keysAgentes = [...new Set(imps.map(i => i.monitor_key).filter(Boolean))];
+    const clientesCadastrados = await col('clientes').find({ monitor_key:{ $in:keysAgentes } }).toArray();
+    const keysCadastradas = new Set(clientesCadastrados.map(c => c.monitor_key));
+    const semCadastro = keysAgentes.filter(k => !keysCadastradas.has(k)).map(k => ({
+      monitor_key: k,
+      cliente_nome: imps.find(i => i.monitor_key === k)?.cliente_nome || '—',
+      impressoras: imps.filter(i => i.monitor_key === k).map(i => i.ip)
+    }));
+    const totalComChave = await col('clientes').countDocuments({ monitor_key:{ $exists:true, $ne:'' } });
+    res.json({
+      ok: semCadastro.length === 0,
+      clientes_com_chave: totalComChave,
+      agentes_integrados: clientesCadastrados.length,
+      agentes_sem_cadastro: semCadastro,
+      mensagem: semCadastro.length === 0
+        ? '✅ Todos os agentes estão vinculados a clientes cadastrados.'
+        : `⚠ ${semCadastro.length} agente(s) com chave não encontrada no cadastro.`
+    });
   } catch(e) { res.status(500).json({ error:e.message }); }
 });
 
@@ -1742,6 +1796,7 @@ app.post('/api/monitor/simular', async (req,res) => {
         await col('monitor_telemetria').insertOne({ cliente_id:cliId, cliente_nome:cliNome, timestamp:ts, created_at:ts, impressoras:[{ ...imp, paginas_total: imp.paginas_total - h*15 }] });
       }
     }
+    _monClienteCache = null; // invalida cache de integração
     res.json({ ok:true, msg:`${simuladas.length} impressoras simuladas inseridas!` });
   } catch(e) { res.status(500).json({ error:e.message }); }
 });
@@ -1750,6 +1805,7 @@ app.delete('/api/monitor/simular', async (req,res) => {
   try {
     await col('monitor_impressoras').deleteMany({ cliente_id:{ $regex:'^sim-' } });
     await col('monitor_telemetria').deleteMany({ cliente_id:{ $regex:'^sim-' } });
+    _monClienteCache = null; // invalida cache de integração
     res.json({ ok:true, msg:'Dados simulados removidos.' });
   } catch(e) { res.status(500).json({ error:e.message }); }
 });
