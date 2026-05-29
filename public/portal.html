@@ -380,12 +380,15 @@ async function doPortalLogin() {
     document.getElementById('p-av').textContent = res.nome[0].toUpperCase();
     document.getElementById('p-nome-hd').textContent = res.nome;
     await carregarPortal();
+    iniciarSSEPortal();
+    iniciarSSEPortal();
   } catch(e) {
     err.textContent = e.message; err.style.display = 'block';
   } finally { btn.textContent = 'Entrar no Orion Client'; btn.disabled = false; }
 }
 
 async function doPortalLogout() {
+  if (_sseConn) { _sseConn.close(); _sseConn = null; }
   await api('POST','/api/portal/logout');
   document.getElementById('portal-login').style.display = 'flex';
   document.getElementById('portal-app').style.display = 'none';
@@ -636,6 +639,65 @@ window.pNav = function(pg, el) {
   }
   if(pg==='abrir') document.getElementById('p-ok-msg').style.display='none';
 };
+
+// ── ACOMPANHAMENTO EM TEMPO REAL (SSE) ──────────────────────────────────────
+let _sseConn = null;
+
+function iniciarSSEPortal() {
+  if (_sseConn) { _sseConn.close(); _sseConn = null; }
+
+  _sseConn = new EventSource('/api/portal/ordens/stream');
+
+  _sseConn.addEventListener('os_atualizada', async (e) => {
+    try {
+      const dados = JSON.parse(e.data);
+
+      // Atualiza o array local de OS
+      const idx = PG.ordens.findIndex(o => o.id === dados.id || o.num === dados.num);
+      if (idx > -1) {
+        PG.ordens[idx] = { ...PG.ordens[idx], ...dados };
+      } else {
+        // OS nova — recarrega tudo
+        const ordens = await api('GET', '/api/portal/ordens');
+        PG.ordens = ordens;
+      }
+
+      // Re-renderiza a lista
+      renderPortalOS();
+      renderPortalKpis();
+
+      // Notificação visual
+      mostrarNotifPortal(`OS #${dados.num} atualizada → ${dados.status}`);
+    } catch(_) {}
+  });
+
+  _sseConn.onerror = () => {
+    // Reconecta após 10s se perder conexão
+    if (_sseConn) { _sseConn.close(); _sseConn = null; }
+    setTimeout(iniciarSSEPortal, 10000);
+  };
+}
+
+function mostrarNotifPortal(msg) {
+  let n = document.getElementById('portal-notif');
+  if (!n) {
+    n = document.createElement('div');
+    n.id = 'portal-notif';
+    n.style.cssText = [
+      'position:fixed','bottom:20px','right:20px','z-index:9999',
+      'background:#0d1f3c','color:#fff','padding:10px 16px','border-radius:10px',
+      'font-size:12px','font-family:Sora,sans-serif','box-shadow:0 4px 16px rgba(0,0,0,.3)',
+      'display:flex','align-items:center','gap:8px','max-width:280px',
+      'border-left:3px solid #e07818','transition:opacity .3s'
+    ].join(';');
+    document.body.appendChild(n);
+  }
+  n.innerHTML = `<span style="font-size:16px">🔔</span><span>${msg}</span>`;
+  n.style.opacity = '1';
+  clearTimeout(n._t);
+  n._t = setTimeout(() => { n.style.opacity = '0'; }, 4000);
+}
+
 </script>
 </body>
 </html>

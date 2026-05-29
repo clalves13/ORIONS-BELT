@@ -246,6 +246,8 @@ app.put('/api/ordens/:id', requireAuth, async (req,res) => {
       const tec=os.tecnico_id?await col('tecnicos').findOne({_id:new ObjectId(os.tecnico_id)}):null;
       await col('historico').insertOne({tipo:'atendimento',os_id:os._id.toString(),num:os.num,os_num:os.num,cliente_id:os.cliente_id||'',tecnico_id:os.tecnico_id||'',equip_id:os.equip_id||'',data:b.dataAtend||b.dataAb||os.data_ab||'',data_atend:b.dataAtend||os.data_atend||'',data_ab:os.data_ab||'',cliente:cli?.nome||'',tecnico:tec?.nome||'',modelo:os.modelo||'',nserie:os.nserie||'',contador:os.contador||'',defeito:os.defeito||'',procedimento:b.procedimento||os.procedimento||'',pecas:b.pecas||os.pecas||'',status:'Concluída',total_os:total,total:total,retrabalho:false,created_at:now()});
     }
+    // Notifica portal do cliente em tempo real
+    try { const _osUpd=await col('ordens').findOne({_id:new ObjectId(req.params.id)}); if(_osUpd?.cliente_id) notificarPortalCliente(_osUpd.cliente_id,'os_atualizada',{id:req.params.id,status:_osUpd.status,num:_osUpd.num,procedimento:_osUpd.procedimento||''}); } catch(_){}
     res.json({ok:true});
   }catch(e){res.status(500).json({error:e.message});}
 });
@@ -1034,6 +1036,41 @@ app.get('/api/portal/ordens/:id/pdf', requirePortal, async (req,res) => {
     });
   } catch(e) { res.status(500).json({error:e.message}); }
 });
+
+// ─── PORTAL: Acompanhamento em tempo real das OS (SSE) ──────────────────────
+// Mapa de clientes conectados via SSE: clienteId → [res, ...]
+const _sseClientes = new Map();
+
+app.get('/api/portal/ordens/stream', requirePortal, (req, res) => {
+  const cid = req.session.portal_cliente.id;
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
+  res.flushHeaders();
+
+  // Registra o cliente
+  if (!_sseClientes.has(cid)) _sseClientes.set(cid, []);
+  _sseClientes.get(cid).push(res);
+
+  // Heartbeat a cada 25s para manter conexão viva
+  const hb = setInterval(() => { try { res.write(':heartbeat\n\n'); } catch(_){} }, 25000);
+
+  req.on('close', () => {
+    clearInterval(hb);
+    const arr = _sseClientes.get(cid)||[];
+    const idx = arr.indexOf(res);
+    if (idx > -1) arr.splice(idx, 1);
+  });
+});
+
+// Função auxiliar: notifica cliente via SSE quando uma OS muda
+function notificarPortalCliente(clienteId, evento, dados) {
+  const arr = _sseClientes.get(clienteId);
+  if (!arr || !arr.length) return;
+  const msg = `event: ${evento}\ndata: ${JSON.stringify(dados)}\n\n`;
+  arr.forEach(res => { try { res.write(msg); } catch(_){} });
+}
 
 // ─── ADMIN: Gerenciar acesso portal dos clientes ────────────────────────────
 // Criar/atualizar credenciais do portal para um cliente
