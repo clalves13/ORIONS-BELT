@@ -3255,6 +3255,7 @@ Outros</textarea>
     <div><div class="tb-title">Relatórios</div><div class="tb-sub">Análises e exportações do sistema</div></div>
     <div class="tb-right">
       <button class="btn btn-ghost btn-sm" onclick="renderRelatorios()">🔄 Atualizar</button>
+      <button class="btn btn-ghost btn-sm" id="btn-migrar-hist" onclick="migrarHistorico()" title="Enriquece registros antigos do histórico sem cliente_id">🔧 Migrar Histórico</button>
     </div>
   </div>
   <div class="content">
@@ -8360,6 +8361,53 @@ function printRelLogistica() { printRelatorio('logistica'); }
 function printRelEstoque() { printRelatorio('estoque'); }
 
 // ─── HISTÓRICO POR CLIENTE ────────────────────────────────────────────────────
+// ── Fonte unificada: G.historico + OS concluídas de G.ordens não no histórico ──
+function _srcHistorico() {
+  const numNoHist = new Set((G.historico||[]).map(h=>h.num).filter(Boolean));
+  const ordensConc = (G.ordens||[]).filter(o =>
+    !numNoHist.has(o.num) &&
+    (o.status==='Concluída'||o.status==='Concluído')
+  ).map(o => ({
+    ...o,
+    // normaliza campos para o mesmo schema do historico
+    num:       o.num,
+    cliente_id: o.cliente_id||'',
+    tecnico_id: o.tecnico_id||'',
+    equip_id:   o.equip_id||'',
+    data_atend: o.data_atend||o.data_ab||'',
+    data_ab:    o.data_ab||'',
+    cliente:    (G.clientes.find(x=>x.id===o.cliente_id)?.nome)||o.cliente||'',
+    tecnico:    (G.tecnicos.find(x=>x.id===o.tecnico_id)?.nome)||o.tecnico||'',
+    status:     o.status||'Concluída',
+    total_os:   o.total_os||o.total||0,
+  }));
+  return [...(G.historico||[]), ...ordensConc];
+}
+
+// Resolve cliente_id mesmo que OS tenha só o nome do cliente
+function _matchCli(h, cliId, cliNome) {
+  if (h.cliente_id === cliId) return true;
+  if (cliNome && (h.cliente||'').toLowerCase() === cliNome) return true;
+  if (cliNome && (h.cliente_nome||'').toLowerCase() === cliNome) return true;
+  return false;
+}
+
+
+async function migrarHistorico() {
+  const btn = document.getElementById('btn-migrar-hist');
+  if (btn) { btn.disabled=true; btn.textContent='⏳ Migrando...'; }
+  try {
+    const r = await api('POST','/api/admin/migrar-historico');
+    alert(r.msg || 'Migração concluída!');
+    await loadAll();
+    renderRelatorios();
+  } catch(e) {
+    alert('Erro: ' + e.message);
+  } finally {
+    if (btn) { btn.disabled=false; btn.textContent='🔧 Migrar Histórico'; }
+  }
+}
+
 function renderRelHistCli() {
   const selCli = document.getElementById('rel-hist-cli');
   const cliId = selCli?.value || '';
@@ -8368,8 +8416,10 @@ function renderRelHistCli() {
   if (!table) return;
   if (!cliId) { table.innerHTML = '<div style="text-align:center;padding:16px;color:var(--tx3);font-size:11px">Selecione um cliente para ver o histórico</div>'; if(total) total.textContent=''; return; }
   const f = getRelFiltros();
-  const hist = (G.historico||[]).filter(h => {
-    if (h.cliente_id !== cliId) return false;
+  const cliObj = G.clientes.find(x=>x.id===cliId);
+  const cliNome = (cliObj?.nome||'').toLowerCase();
+  const hist = _srcHistorico().filter(h => {
+    if (!_matchCli(h, cliId, cliNome)) return false;
     const d = h.data_atend||h.data_ab||'';
     if (f.de && d < f.de) return false;
     if (f.ate && d > f.ate) return false;
@@ -8421,9 +8471,15 @@ function renderRelHistNserie() {
     table.innerHTML='<div style="text-align:center;padding:16px;color:var(--tx3);font-size:11px">Digite o número de série ou selecione um equipamento</div>';
     if(total) total.textContent=''; return;
   }
-  const hist = (G.historico||[]).filter(h => {
-    if (nserie && !(h.nserie||'').toLowerCase().includes(nserie)) return false;
-    if (equipId && h.equip_id !== equipId) return false;
+  const equipObj = equipId ? G.equipamentos?.find(e=>e.id===equipId) : null;
+  const equipNs  = (equipObj?.nserie||'').toLowerCase();
+  const hist = _srcHistorico().filter(h => {
+    const ns = (h.nserie||h.n_serie||h.serial||'').toLowerCase();
+    if (nserie && !ns.includes(nserie)) return false;
+    if (equipId && h.equip_id !== equipId && h.equip_id !== equipId) {
+      // fallback: compara pelo nserie do equipamento selecionado
+      if (equipNs && !ns.includes(equipNs)) return false;
+    }
     return true;
   }).sort((a,b)=>(b.data_atend||b.data_ab||'').localeCompare(a.data_atend||a.data_ab||''));
   if (total) total.textContent = `${hist.length} atendimento(s) encontrado(s)`;
@@ -8472,8 +8528,9 @@ function printRelHistCli() {
   if (!cliId) { alert('Selecione um cliente primeiro'); return; }
   const cli = G.clientes.find(x=>x.id===cliId);
   const f = getRelFiltros();
-  const hist = (G.historico||[]).filter(h=>{
-    if(h.cliente_id!==cliId)return false;
+  const _cliNomePr = (G.clientes.find(x=>x.id===cliId)?.nome||'').toLowerCase();
+  const hist = _srcHistorico().filter(h=>{
+    if(!_matchCli(h,cliId,_cliNomePr))return false;
     const d=h.data_atend||h.data_ab||'';
     return(!f.de||d>=f.de)&&(!f.ate||d<=f.ate);
   }).sort((a,b)=>(b.data_atend||b.data_ab||'').localeCompare(a.data_atend||a.data_ab||''));
