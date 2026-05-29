@@ -3293,7 +3293,7 @@ Outros</textarea>
     </div>
 
     <!-- KPIs do período -->
-    <div class="sgrid" style="grid-template-columns:repeat(6,1fr);margin-bottom:14px" id="rel-kpis"></div>
+    <div class="sgrid" style="grid-template-columns:repeat(auto-fit,minmax(130px,1fr));margin-bottom:14px" id="rel-kpis"></div>
 
     <!-- Grid de relatórios -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
@@ -3610,12 +3610,19 @@ Outros</textarea>
     <div style="margin-bottom:13px"><div class="fsec">Veículo e Motorista</div>
       <div class="fgrid fg4">
         <div class="fg" style="grid-column:span 2"><label>Motorista *</label><input type="text" id="log-mot" list="log-mot-list"><datalist id="log-mot-list"></datalist></div>
-        <div class="fg"><label>Veículo</label><input type="text" id="log-vei"></div>
-        <div class="fg"><label>Placa</label><input type="text" id="log-placa" style="text-transform:uppercase"></div>
+        <div class="fg" style="grid-column:span 2"><label>Veículo Cadastrado *</label>
+          <select id="log-veic-sel" onchange="preencherVeiculoLog()">
+            <option value="">Selecione um veículo...</option>
+          </select>
+        </div>
       </div>
       <div class="fgrid fg4" style="margin-top:8px">
+        <div class="fg"><label>Veículo (modelo)</label><input type="text" id="log-vei" readonly style="background:var(--sf2);color:var(--nv)"></div>
+        <div class="fg"><label>Placa</label><input type="text" id="log-placa" readonly style="text-transform:uppercase;background:var(--sf2);color:var(--nv)"></div>
         <div class="fg"><label>Km Inicial</label><input type="number" id="log-kmi" value="0" oninput="calcLog()"></div>
         <div class="fg"><label>Km Final</label><input type="number" id="log-kmf" value="0" oninput="calcLog()"></div>
+      </div>
+      <div class="fgrid fg4" style="margin-top:8px">
         <div class="fg"><label>Km Percorrido</label><input type="text" id="log-kmt" readonly style="background:var(--sf2);font-weight:700;color:var(--nv)"></div>
       </div>
     </div>
@@ -4370,7 +4377,12 @@ async function loadAgenda() {
 function getEventosPorDia(dataStr) {
   const filtTec = document.getElementById('ag-f-tec')?.value || '';
   const filtTipo = document.getElementById('ag-f-tipo')?.value || '';
-  let evs = AG.eventos.filter(e => e.data_inicio === dataStr || e.data_fim === dataStr || (e.data_inicio <= dataStr && e.data_fim >= dataStr));
+  // Helper: normaliza data para YYYY-MM-DD independente de formato ISO
+  const normDate = d => d ? d.slice(0,10) : '';
+  let evs = AG.eventos.filter(e => {
+    const di = normDate(e.data_inicio), df = normDate(e.data_fim || e.data_inicio);
+    return di === dataStr || df === dataStr || (di <= dataStr && df >= dataStr);
+  });
   // OS abertas/andamento como eventos (somente se sem filtro tipo ou tipo=OS)
   if (!filtTipo || filtTipo === 'OS') {
     const osEvs = (G.ordens||[]).filter(o => {
@@ -4508,7 +4520,7 @@ function stClass(st) {
 function renderCalKpis() {
   const mes = String(AG.mesSel+1).padStart(2,'0');
   const prefixo = `${AG.anoSel}-${mes}`;
-  const evMes = AG.eventos.filter(e => (e.data_inicio||'').startsWith(prefixo));
+  const evMes = AG.eventos.filter(e => (e.data_inicio||'').slice(0,7) === prefixo);
   const kpis = [
     { lbl:'Total de eventos', val: evMes.length, ico:'📅' },
     { lbl:'Visitas', val: evMes.filter(e=>e.tipo==='Visita').length, ico:'🚗' },
@@ -7552,9 +7564,16 @@ async function saveContrato() {
       // Gera receita automática no financeiro se fixo mensal
       if(body.tipo==='Fixo Mensal'&&body.valor_mensal>0){
         const cli=G.clientes.find(x=>x.id===cid);
+        const per=body.periodicidade||'Mensal';
+        // Valor mensal normalizado pela periodicidade
+        let mrr=body.valor_mensal;
+        if(per==='Anual') mrr=body.valor_mensal/12;
+        else if(per==='Semestral') mrr=body.valor_mensal/6;
+        else if(per==='Trimestral') mrr=body.valor_mensal/3;
+        const perLabel=per!=='Mensal'?` (${per}/${body.valor_mensal.toFixed(2)})`:'';
         await api('POST','/api/financeiro',{tipo:'receita',data:today(),categoria:'Contrato',
-          descricao:`Contrato Fixo — ${cli?.nome||''}`,valor:body.valor_mensal,
-          cliente_id:cid,ref:`Contrato #${r?.id||''}`,forma:'Transferência',obs:'Gerado automaticamente'});
+          descricao:`Contrato Fixo — ${cli?.nome||''}${perLabel}`,valor:+mrr.toFixed(2),
+          cliente_id:cid,ref:`Contrato #${r?.id||''}`,forma:'Transferência',obs:`Gerado automaticamente. Periodicidade: ${per}. Valor contratado: R$ ${body.valor_mensal.toFixed(2)}`});
       }
     }
     await loadContratos();closeM('m-cont');renderContratos();
@@ -7570,9 +7589,15 @@ async function renovarContrato(id) {
     // Lança receita de renovação se fixo
     if(c.tipo==='Fixo Mensal'&&c.valor_mensal>0){
       const cli=G.clientes.find(x=>x.id===c.cliente_id);
+      const per=c.periodicidade||'Mensal';
+      let mrr=c.valor_mensal;
+      if(per==='Anual') mrr=c.valor_mensal/12;
+      else if(per==='Semestral') mrr=c.valor_mensal/6;
+      else if(per==='Trimestral') mrr=c.valor_mensal/3;
+      const perLabel=per!=='Mensal'?` (${per})`:'';
       await api('POST','/api/financeiro',{tipo:'receita',data:today(),categoria:'Contrato',
-        descricao:`Renovação — ${cli?.nome||''}`,valor:c.valor_mensal,cliente_id:c.cliente_id,
-        ref:`Contrato renovado`,forma:'Transferência',obs:'Gerado automaticamente na renovação'});
+        descricao:`Renovação — ${cli?.nome||''}${perLabel}`,valor:+mrr.toFixed(2),cliente_id:c.cliente_id,
+        ref:`Contrato renovado`,forma:'Transferência',obs:`Gerado automaticamente na renovação. Periodicidade: ${per}. Valor contratado: R$ ${c.valor_mensal.toFixed(2)}`});
     }
     await loadContratos();renderContratos();await loadFinanceiro();
   }catch(e){alert(e.message);}
@@ -9674,6 +9699,12 @@ function renderLogistica() {
 function openLogistica(id) {
   sigPad.ctx=null; setTimeout(sigInit,50);
   document.getElementById('m-log-title').textContent = id ? 'Editar Rota' : 'Nova Rota';
+  // Popular select de veículos cadastrados
+  const veicSel = document.getElementById('log-veic-sel');
+  if (veicSel) {
+    veicSel.innerHTML = '<option value="">Selecione um veículo...</option>' +
+      (G.veiculos||[]).map(v=>`<option value="${v.id}" data-modelo="${v.modelo||''}" data-marca="${v.marca||''}" data-placa="${v.placa||''}">${v.placa} — ${v.marca||''} ${v.modelo||''}</option>`).join('');
+  }
   // Preenche lista de OS para vincular
   const osList = document.getElementById('log-os-list');
   if (osList) {
@@ -9688,10 +9719,14 @@ function openLogistica(id) {
   if (id) {
     const l = G.logistica.find(x=>x.id===id); if (!l) return;
     document.getElementById('log-id').value=l.id;
-    document.getElementById('log-dsai').value=l.data_saida||''; document.getElementById('log-hsai').value=l.hora_saida||'';
-    document.getElementById('log-dret').value=l.data_retorno||''; document.getElementById('log-hret').value=l.hora_retorno||'';
+    document.getElementById('log-dsai').value=l.data_saida||''; document.getElementById('log-hsai').value=l.hora_saida||'';\n    document.getElementById('log-dret').value=l.data_retorno||''; document.getElementById('log-hret').value=l.hora_retorno||'';
     document.getElementById('log-mot').value=l.motorista||''; document.getElementById('log-vei').value=l.veiculo||'';
     document.getElementById('log-placa').value=l.placa||'';
+    // Tentar selecionar veículo pelo placa
+    if (veicSel && l.placa) {
+      const opt = [...veicSel.options].find(o=>o.dataset.placa===l.placa);
+      if (opt) veicSel.value = opt.value; else veicSel.value='';
+    }
     document.getElementById('log-kmi').value=l.km_inicial||0; document.getElementById('log-kmf').value=l.km_final||0;
     document.getElementById('log-rota').value=l.rota||'';
     document.getElementById('log-ped').value=l.pedagio||0; document.getElementById('log-comb').value=l.combustivel||0;
@@ -9707,11 +9742,26 @@ function openLogistica(id) {
     document.getElementById('log-id').value='';
     document.getElementById('log-dsai').value=today(); document.getElementById('log-hsai').value=nowT();
     ['log-dret','log-hret','log-mot','log-vei','log-placa','log-rota','log-obs'].forEach(f=>document.getElementById(f).value='');
+    if (veicSel) veicSel.value='';
     ['log-kmi','log-kmf','log-ped','log-comb','log-alim','log-hosp','log-outros','log-lit'].forEach(f=>document.getElementById(f).value=0);
     document.getElementById('log-tcomb').value='Gasolina'; document.getElementById('log-kmt').value='';
     document.getElementById('log-tot').textContent='R$ 0,00';
   }
   openM('m-log');
+}
+
+function preencherVeiculoLog() {
+  const sel = document.getElementById('log-veic-sel');
+  if (!sel) return;
+  const opt = sel.options[sel.selectedIndex];
+  if (!opt.value) {
+    document.getElementById('log-vei').value='';
+    document.getElementById('log-placa').value='';
+    return;
+  }
+  const modelo = (opt.dataset.marca||'')+' '+(opt.dataset.modelo||'');
+  document.getElementById('log-vei').value = modelo.trim();
+  document.getElementById('log-placa').value = opt.dataset.placa||'';
 }
 
 function calcLog() {
@@ -9723,6 +9773,8 @@ function calcLog() {
 
 async function saveLogistica() {
   const mot=document.getElementById('log-mot').value.trim(); if(!mot){alert('Informe o motorista.');return}
+  const placa=document.getElementById('log-placa').value.trim();
+  if(!placa){alert('Selecione um veículo cadastrado.');return}
   const eid=document.getElementById('log-id').value;
   const osIds=[...document.querySelectorAll('.log-os-cb:checked')].map(cb=>cb.value);
   const tot=(+document.getElementById('log-ped').value||0)+(+document.getElementById('log-comb').value||0)+(+document.getElementById('log-alim').value||0)+(+document.getElementById('log-hosp').value||0)+(+document.getElementById('log-outros').value||0);

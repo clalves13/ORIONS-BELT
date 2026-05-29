@@ -215,7 +215,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--bl);box-
       <div class="card" style="padding:0;overflow:hidden">
         <div style="padding:14px 18px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between">
           <div style="font-size:12px;font-weight:700;color:var(--tx)">Atendimentos Recentes</div>
-          <select id="p-f-status" onchange="renderPortalOS()" style="width:auto;min-width:130px;height:28px;font-size:11px">
+          <select id="p-f-status" onchange="renderPortalOS()" style="width:auto;min-width:160px;height:32px;font-size:11px;padding:0 8px;border-radius:8px;border:1.5px solid var(--bd);background:#fff;color:var(--tx);font-family:inherit">
             <option value="">Todos os status</option>
             <option value="Aberta">Abertas</option>
             <option value="Em andamento">Em andamento</option>
@@ -488,9 +488,21 @@ function preencherEq() {
 async function abrirChamado() {
   const defeito = document.getElementById('p-defeito').value.trim();
   if (!defeito) { alert('Descreva o defeito / problema.'); return; }
+  const nserieVal = document.getElementById('p-nserie').value.trim();
+  // Bloquear se já existe OS aberta ou em andamento para o mesmo equipamento
+  if (nserieVal) {
+    const osAberta = PG.ordens.find(o =>
+      o.nserie && o.nserie.trim().toLowerCase() === nserieVal.toLowerCase() &&
+      ['Aberta', 'Em andamento'].includes(o.status)
+    );
+    if (osAberta) {
+      alert(`⚠️ Já existe a OS #${osAberta.num} (${osAberta.status}) aberta para este equipamento (Nº Série: ${nserieVal}).\n\nAguarde a conclusão do atendimento antes de abrir um novo chamado.`);
+      return;
+    }
+  }
   const body = {
     modelo: document.getElementById('p-modelo').value,
-    nserie: document.getElementById('p-nserie').value,
+    nserie: nserieVal,
     contador: document.getElementById('p-contador').value,
     tipo: document.getElementById('p-tipo').value,
     sla_prazo: document.getElementById('p-sla').value,
