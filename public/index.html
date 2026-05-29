@@ -278,6 +278,7 @@ button:not(.btn):not(.btnx):not(.lbtn):not(.btn-logout):not(.chk):not(.os-tab):n
 .scard:hover{transform:translateY(-3px) scale(1.025);box-shadow:0 6px 22px rgba(30,64,128,.13);border-color:#c7d7f5}
 .scard:hover::after{opacity:1}
 @keyframes scard-enter{from{opacity:0;transform:translateY(14px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 @keyframes scard-flash{0%{box-shadow:0 1px 6px rgba(30,64,128,.06)}40%{box-shadow:0 0 0 3px rgba(99,102,241,.25),0 6px 22px rgba(30,64,128,.14)}100%{box-shadow:0 1px 6px rgba(30,64,128,.06)}}
 .sgrid .scard:nth-child(1){animation-delay:.04s}
 .sgrid .scard:nth-child(2){animation-delay:.10s}
@@ -786,6 +787,8 @@ tr:hover td { background: var(--sf2) !important; }
   .supr-grid{grid-template-columns:repeat(3,1fr)!important}
   /* KPI dashboard 4→2 */
   #dash-inner > div[style*="repeat(4,1fr)"]{grid-template-columns:repeat(2,1fr)!important}
+  /* KPI relatórios 6→3 */
+  #rel-kpis{grid-template-columns:repeat(3,1fr)!important}
   /* Calendário empilha */
   .cal-wrap{grid-template-columns:1fr!important}
   /* Grids de formulário */
@@ -854,6 +857,8 @@ tr:hover td { background: var(--sf2) !important; }
   .os-g2,.os-g4{grid-template-columns:1fr!important}
   .os-sigs{grid-template-columns:1fr!important;gap:16px!important}
   .cal-wrap{grid-template-columns:1fr!important}
+  /* KPI relatórios → 2 por linha no celular */
+  #rel-kpis{grid-template-columns:repeat(2,1fr)!important}
   /* KPI dashboard → 2 por linha */
   #dash-inner > div[style*="repeat(4,1fr)"]{grid-template-columns:repeat(2,1fr)!important}
   /* Resumo financeiro lado a lado → empilhado */
@@ -1912,6 +1917,11 @@ label { font-size: 11px !important; font-weight: 600 !important; color: #475569 
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.3)" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         <input type="text" placeholder="Buscar OS, cliente, série..." id="s-os" oninput="renderOS()" style="color:#0f172a">
       </div>
+      <button class="btn btn-ghost btn-sm" id="btn-os-refresh" onclick="refreshOS()" title="Atualizar lista de OS" style="background:#f1f5f9;border-color:#d1d5db;color:#475569;position:relative">
+        <svg id="os-refresh-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+        Atualizar
+        <span id="os-refresh-timer" style="position:absolute;top:-4px;right:-4px;background:#3b82f6;color:#fff;border-radius:50%;width:16px;height:16px;font-size:8px;font-weight:700;display:flex;align-items:center;justify-content:center;display:none">60</span>
+      </button>
       <button class="btn btn-ghost btn-sm" onclick="printRelatorio('os')" style="background:#f1f5f9;border-color:#d1d5db;color:#475569">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
         PDF
@@ -3293,10 +3303,10 @@ Outros</textarea>
     </div>
 
     <!-- KPIs do período -->
-    <div class="sgrid" style="grid-template-columns:repeat(auto-fit,minmax(130px,1fr));margin-bottom:14px" id="rel-kpis"></div>
+    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:14px;min-width:0" id="rel-kpis"></div>
 
     <!-- Grid de relatórios -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:14px">
 
       <!-- OS por Status -->
       <div class="card">
@@ -3393,7 +3403,7 @@ Outros</textarea>
       </div>
 
       <!-- ══ RENTABILIDADE POR CLIENTE ══ -->
-      <div class="card" style="padding:16px 20px">
+      <div class="card" style="padding:16px 20px;grid-column:1/-1">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
           <div>
             <div style="font-size:12px;font-weight:800;color:var(--tx)">💰 Rentabilidade por Cliente</div>
@@ -4726,6 +4736,8 @@ function nav(p, el) {
   if(el) el.classList.add('active');
   const renders = { os:renderOS, logistica:renderLogistica, lab:renderLab, clientes:renderClientes, tecnicos:renderTec, usuarios:renderUsers, historico:renderHist, estoque:async()=>{await loadEstMovs();renderEstoque();renderEstKpis();}, 'supr-cli':renderSuprCli, dashboard:loadDash, contratos:async()=>{await loadContratos();renderContratos();}, financeiro:async()=>{await loadFinanceiro();renderFinLanc();renderFinKpis();}, notificacoes:async()=>{await gerarNotificacoes();}, relatorios:()=>{ setRelPeriodo('mes'); renderRelatorios(); }, configuracoes:()=>{loadCfg();}, agenda:async()=>{await loadAgenda();renderAgenda();} };
   if(renders[p]) renders[p]();
+  // Auto-refresh: inicia ao entrar na OS, para ao sair
+  if (p === 'os') { iniciarAutoRefreshOS(); } else { pararAutoRefreshOS(); }
   // Atualiza título mobile e fecha sidebar no celular
   const titleEl = document.getElementById('mobile-page-title');
   if (titleEl) {
@@ -4944,6 +4956,69 @@ function origemBadge(origem) {
   };
   const o = map[(origem||'').toLowerCase()] || { label: origem||'Sistema', bg:'#f1f5f9', color:'#475569', border:'#cbd5e1' };
   return `<span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;background:${o.bg};color:${o.color};border:1px solid ${o.border};white-space:nowrap">${o.label}</span>`;
+}
+
+// ── AUTO-REFRESH OS ─────────────────────────────────────────
+let _osAutoRefreshTimer = null;
+let _osAutoRefreshCount = 60;
+let _osAutoRefreshEnabled = false;
+
+async function refreshOS() {
+  const btn = document.getElementById('btn-os-refresh');
+  const ico = document.getElementById('os-refresh-icon');
+  if (btn) { btn.disabled = true; }
+  if (ico) { ico.style.animation = 'spin 0.7s linear infinite'; }
+  try {
+    await loadAll();
+    renderOS(); // renderOS já chama renderOSKpis internamente
+  } catch(e) { console.error('refreshOS', e); }
+  finally {
+    if (btn) { btn.disabled = false; }
+    if (ico) { ico.style.animation = ''; }
+  }
+  // Reinicia contagem
+  _osAutoRefreshCount = 60;
+  atualizarTimerBadge();
+}
+
+function iniciarAutoRefreshOS() {
+  if (_osAutoRefreshTimer) clearInterval(_osAutoRefreshTimer);
+  _osAutoRefreshEnabled = true;
+  _osAutoRefreshCount = 60;
+  atualizarTimerBadge();
+  _osAutoRefreshTimer = setInterval(async () => {
+    _osAutoRefreshCount--;
+    atualizarTimerBadge();
+    if (_osAutoRefreshCount <= 0) {
+      _osAutoRefreshCount = 60;
+      // Só atualiza se a página OS estiver visível
+      const pg = document.getElementById('page-os');
+      if (pg && pg.classList.contains('active')) {
+        await refreshOS();
+      }
+    }
+  }, 1000);
+}
+
+function pararAutoRefreshOS() {
+  if (_osAutoRefreshTimer) { clearInterval(_osAutoRefreshTimer); _osAutoRefreshTimer = null; }
+  _osAutoRefreshEnabled = false;
+  const badge = document.getElementById('os-refresh-timer');
+  if (badge) badge.style.display = 'none';
+}
+
+function atualizarTimerBadge() {
+  const badge = document.getElementById('os-refresh-timer');
+  if (!badge) return;
+  // Só mostra badge quando a página OS está ativa
+  const pg = document.getElementById('page-os');
+  if (pg && pg.classList.contains('active')) {
+    badge.style.display = 'flex';
+    badge.textContent = _osAutoRefreshCount;
+    badge.style.background = _osAutoRefreshCount <= 10 ? '#ea580c' : '#3b82f6';
+  } else {
+    badge.style.display = 'none';
+  }
 }
 
 function renderOS() {
@@ -8203,13 +8278,20 @@ function renderRelatorios() {
   const retrabalho= os.filter(o=>o.retrabalho).length;
   const kpiEl = document.getElementById('rel-kpis');
   if (kpiEl) kpiEl.innerHTML = [
-    {ico:'📋',lbl:'Total OS',val:os.length,cor:'var(--bl2)'},
-    {ico:'✅',lbl:'Concluídas',val:concluidas,cor:'var(--gn)'},
-    {ico:'🔄',lbl:'Em andamento',val:andamento,cor:'var(--or)'},
-    {ico:'📂',lbl:'Abertas',val:abertas,cor:'var(--bl2)'},
-    {ico:'🔴',lbl:'Atrasadas',val:atrasadas,cor:'var(--rd)'},
-    {ico:'💰',lbl:'Receita',val:'R$'+Math.round(receita).toLocaleString('pt-BR'),cor:'var(--gn)'}
-  ].map(k=>`<div class="scard"><div class="sico" style="background:${k.cor}22;color:${k.cor}">${k.ico}</div><div class="slabel">${k.lbl}</div><div class="sval" style="color:${k.cor};font-size:${typeof k.val==='string'?'13px':'18px'}">${k.val}</div></div>`).join('');
+    {ico:'📋',lbl:'Total OS',val:os.length,cor:'#2563eb',bg:'#eff6ff'},
+    {ico:'✅',lbl:'Concluídas',val:concluidas,cor:'#16a34a',bg:'#dcfce7'},
+    {ico:'🔄',lbl:'Em andamento',val:andamento,cor:'#ea580c',bg:'#ffedd5'},
+    {ico:'📂',lbl:'Abertas',val:abertas,cor:'#2563eb',bg:'#eff6ff'},
+    {ico:'🔴',lbl:'Atrasadas',val:atrasadas,cor:'#dc2626',bg:'#fee2e2'},
+    {ico:'💰',lbl:'Receita',val:'R$\u00a0'+Math.round(receita).toLocaleString('pt-BR'),cor:'#16a34a',bg:'#dcfce7'}
+  ].map(k=>`
+    <div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:12px 14px;min-width:0;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06);border-top:3px solid ${k.cor}">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+        <span style="font-size:16px">${k.ico}</span>
+        <span style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${k.lbl}</span>
+      </div>
+      <div style="font-size:22px;font-weight:800;color:${k.cor};line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${k.val}</div>
+    </div>`).join('');
 
   // OS por Status
   const statusEl = document.getElementById('rel-os-status');
