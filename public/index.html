@@ -3162,6 +3162,30 @@ Outros</textarea>
           </div>
         </div>
 
+        <!-- Deploy de arquivos HTML -->
+        <div style="background:var(--sf2);border:1px solid var(--bd);border-radius:10px;padding:16px;margin-bottom:16px">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+            <div>
+              <div style="font-size:11px;font-weight:700;color:var(--nv)">🚀 Deploy de Arquivos</div>
+              <div style="font-size:10px;color:var(--tx3);margin-top:2px">Suba monitor.html, portal.html ou index.html direto para o servidor</div>
+            </div>
+            <span id="html-upload-badge" style="display:none"></span>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <select id="html-upload-tipo" style="height:32px;border-radius:8px;border:1.5px solid var(--bd2);padding:0 10px;font-size:11px;background:#fff">
+              <option value="monitor.html">monitor.html</option>
+              <option value="portal.html">portal.html</option>
+              <option value="index.html">index.html</option>
+            </select>
+            <label class="btn btn-primary btn-sm" style="cursor:pointer;margin:0" for="html-upload-input">
+              📤 Selecionar arquivo
+            </label>
+            <input type="file" id="html-upload-input" accept=".html" style="display:none" onchange="uploadHtmlArquivo(this)">
+            <span id="html-upload-status" style="font-size:11px;color:var(--tx3)"></span>
+          </div>
+          <div id="html-upload-preview" style="display:none;margin-top:10px;padding:10px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:11px;color:#15803d"></div>
+        </div>
+
         <!-- Seletor de cliente -->
         <div style="background:var(--sf2);border:1px solid var(--bd);border-radius:10px;padding:16px;margin-bottom:16px">
           <div style="font-size:11px;font-weight:700;color:var(--nv);margin-bottom:10px">1️⃣ Selecione o cliente para gerar o pacote</div>
@@ -6911,6 +6935,49 @@ function agenteBaixarPacote() {
   if (!c) { alert('Selecione um cliente primeiro.'); return; }
   if (!c.monitor_key) { alert('Gere a chave de monitoramento primeiro.'); return; }
   window.location.href = `/download/pacote-agente/${c.id}`;
+}
+
+// ── Upload de arquivos HTML (deploy) ─────────────────────────────────────────
+async function uploadHtmlArquivo(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const tipo = document.getElementById('html-upload-tipo').value;
+  const status = document.getElementById('html-upload-status');
+  const badge  = document.getElementById('html-upload-badge');
+  const preview = document.getElementById('html-upload-preview');
+
+  // Confirma antes de sobrescrever index.html
+  if (tipo === 'index.html') {
+    if (!confirm(`⚠️ Você está prestes a substituir o INDEX.HTML principal do sistema.\n\nIsso afeta TODOS os usuários.\n\nTem certeza?`)) {
+      input.value = ''; return;
+    }
+  }
+
+  status.textContent = '⏳ Enviando...';
+  status.style.color = 'var(--or)';
+  badge.style.display = 'none';
+  preview.style.display = 'none';
+
+  try {
+    const fd = new FormData();
+    fd.append('arquivo', file, tipo); // força o nome correto
+    const r = await fetch('/api/admin/upload-html', { method:'POST', body:fd, credentials:'include' });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error||'Erro no servidor');
+
+    status.textContent = `✅ ${data.arquivo} enviado (${data.tamanho_kb} KB)`;
+    status.style.color = 'var(--gn)';
+    badge.style.display = 'inline-block';
+    badge.innerHTML = `<span style="background:#dcfce7;color:#15803d;border-radius:20px;padding:2px 10px;font-size:10px;font-weight:700">✅ Deploy OK</span>`;
+    preview.style.display = 'block';
+    preview.innerHTML = `✅ <strong>${data.arquivo}</strong> atualizado com sucesso no servidor às ${new Date().toLocaleTimeString('pt-BR')}.<br>
+      Tamanho: ${data.tamanho_kb} KB · <a href="/${tipo === 'index.html' ? '' : tipo.replace('.html','')}" target="_blank" style="color:#15803d;font-weight:700">Abrir agora →</a>`;
+    showToast(`${data.arquivo} enviado com sucesso!`);
+  } catch(e) {
+    status.textContent = `❌ ${e.message}`;
+    status.style.color = 'var(--rd)';
+  }
+  input.value = '';
 }
 
 // ── Upload e status do OrionAgente.exe ──────────────────────────────────────

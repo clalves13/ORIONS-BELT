@@ -1383,6 +1383,32 @@ async function ciclo(){
 // ─── UPLOAD DO OrionAgente.exe (admin faz uma vez após compilar) ──────────────
 // POST /api/monitor/upload-exe  (multipart, campo "exe")
 // Sobe o .exe para o Cloudinary e salva a URL nas configurações do sistema.
+// ─── UPLOAD DO OrionAgente.exe (admin faz uma vez após compilar) ──────────────
+// POST /api/monitor/upload-exe  (multipart, campo "exe")
+// Sobe o .exe para o Cloudinary e salva a URL nas configurações do sistema.
+
+// ─── UPLOAD DE ARQUIVOS HTML PÚBLICOS (monitor.html, etc.) ───────────────────
+// POST /api/admin/upload-html — substitui arquivo em public/ (admin only)
+app.post('/api/admin/upload-html', requireAuth, requireAdmin, (req, res, next) => {
+  upload.single('arquivo')(req, res, (err) => {
+    if (err) return res.status(400).json({ error: `Erro no upload: ${err.message}` });
+    next();
+  });
+}, async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'Nenhum arquivo enviado.' });
+    const nome = req.file.originalname.replace(/[^a-zA-Z0-9._-]/g, '');
+    const permitidos = ['monitor.html', 'portal.html', 'index.html'];
+    if (!permitidos.includes(nome)) {
+      return res.status(400).json({ error: `Arquivo não permitido. Permitidos: ${permitidos.join(', ')}` });
+    }
+    const destino = path.join(__dirname, 'public', nome);
+    require('fs').writeFileSync(destino, req.file.buffer);
+    console.log(`[admin] upload-html: ${nome} (${(req.file.size/1024).toFixed(1)} KB) por ${req.session.user?.nome}`);
+    res.json({ ok: true, arquivo: nome, tamanho_kb: (req.file.size / 1024).toFixed(1), atualizado_em: now() });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 app.post('/api/monitor/upload-exe', requireAuth, requireAdmin, (req, res, next) => {
   uploadExe.single('exe')(req, res, (err) => {
     if (err) return res.status(400).json({ error: `Erro no upload: ${err.message}` });
