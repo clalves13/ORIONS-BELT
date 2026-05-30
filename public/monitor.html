@@ -207,7 +207,7 @@ tbody tr{cursor:pointer;transition:background .12s}
     <div class="info-grid" id="m-imp-info"></div>
     <div class="sec-title">Suprimentos</div>
     <div id="m-imp-toner" style="margin-bottom:14px"></div>
-    <div class="sec-title">Histórico de Páginas</div>
+    <div class="sec-title">Consumo Diário de Toner</div>
     <div class="chart-wrap"><canvas id="chart-paginas"></canvas></div>
     <div id="m-imp-erros-wrap">
       <div class="sec-title">Alertas / Erros</div>
@@ -221,9 +221,20 @@ tbody tr{cursor:pointer;transition:background .12s}
 const MON = { impressoras:[], view:'cards', chart:null };
 let _authOk = false;
 async function api(method,url,body) {
+  // Se aberto como arquivo local (file://), usa URL absoluta do servidor
+  const base = window.location.protocol === 'file:' ? 'http://localhost:3000' : '';
   const opts={method,headers:{'Content-Type':'application/json'},credentials:'include'};
   if(body) opts.body=JSON.stringify(body);
-  const r=await fetch(url,opts);
+  const r=await fetch(base+url,opts);
+  const ct = r.headers.get('content-type')||'';
+  if(!ct.includes('application/json')) {
+    console.warn(`api ${method} ${url} → resposta não-JSON (${r.status})`);
+    return null;
+  }
+  if(!r.ok) {
+    const err = await r.json().catch(()=>({message:`HTTP ${r.status}`}));
+    throw new Error(err?.message||`HTTP ${r.status}`);
+  }
   return r.json();
 }
 function mostrarLogin() { /* sem login */ }
@@ -435,41 +446,86 @@ async function verDetalhes(id) {
 }
 
 async function carregarGrafico(imp) {
+  const ctx = document.getElementById('chart-paginas').getContext('2d');
+  if (MON.chart) { MON.chart.destroy(); MON.chart = null; }
   try {
-    const hist = await api('GET', `/api/monitor/historico?cliente_id=${imp.cliente_id}&limit=20`);
-    if (!hist) return;
-    const pontos = hist.reverse().map(h => {
+    const hist = await api('GET', `/api/monitor/historico?cliente_id=${imp.cliente_id}&limit=720`);
+    if (!hist || !hist.length) {
+      ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height);
+      ctx.fillStyle = '#94a3b8'; ctx.font = '11px Sora,sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText('Sem histórico disponível', ctx.canvas.width/2, ctx.canvas.height/2);
+      return;
+    }
+    // Agrupa por dia — pega a última leitura de cada dia
+    const porDia = {};
+    for (const h of hist) {
+      const dia = (h.timestamp||'').slice(0,10);
+      if (!dia) continue;
       const impH = (h.impressoras||[]).find(i => i.ip === imp.ip);
-      return { t: h.timestamp?.slice(11,16)||'', v: impH?.paginas_total||0 };
-    }).filter(p => p.v > 0);
-
-    const ctx = document.getElementById('chart-paginas').getContext('2d');
-    if (MON.chart) { MON.chart.destroy(); MON.chart = null; }
-    if (!pontos.length) { ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height); return; }
+      if (!impH) continue;
+      porDia[dia] = impH;
+    }
+    const dias = Object.keys(porDia).sort();
+    if (dias.length < 2) {
+      ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height);
+      ctx.fillStyle = '#94a3b8'; ctx.font = '11px Sora,sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText('Dados insuficientes (mín. 2 dias)', ctx.canvas.width/2, ctx.canvas.height/2);
+      return;
+    }
+    // Calcula consumo diário (diferença entre dias consecutivos)
+    const labels = [], consumoPB = [], consumoCor = [];
+    for (let i = 1; i < dias.length; i++) {
+      const prev = porDia[dias[i-1]], cur = porDia[dias[i]];
+      const diffTotal = Math.max(0, (cur.paginas_total||0) - (prev.paginas_total||0));
+      let diffPB = 0, diffCor = 0;
+      if (cur.paginas_mono != null && prev.paginas_mono != null) {
+        diffPB  = Math.max(0, (cur.paginas_mono||0)  - (prev.paginas_mono||0));
+        diffCor = Math.max(0, (cur.paginas_color||0) - (prev.paginas_color||0));
+      } else {
+        const tonerCorCur  = [cur.toner?.ciano,  cur.toner?.magenta,  cur.toner?.amarelo].filter(v=>v!=null);
+        const tonerCorPrev = [prev.toner?.ciano, prev.toner?.magenta, prev.toner?.amarelo].filter(v=>v!=null);
+        if (tonerCorCur.length && tonerCorPrev.length) {
+          const mediaCur  = tonerCorCur.reduce((a,b)=>a+b,0)  / tonerCorCur.length;
+          const mediaPrev = tonerCorPrev.reduce((a,b)=>a+b,0) / tonerCorPrev.length;
+          const ratio = mediaPrev > 0 ? Math.max(0, mediaPrev - mediaCur) / 100 : 0;
+          diffCor = Math.round(diffTotal * ratio * 5);
+          diffPB  = Math.max(0, diffTotal - diffCor);
+        } else { diffPB = diffTotal; }
+      }
+      const [,mes,d] = dias[i].split('-');
+      labels.push(`${d}/${mes}`);
+      consumoPB.push(diffPB);
+      consumoCor.push(diffCor);
+    }
+    const temColor = consumoCor.some(v => v > 0);
     MON.chart = new Chart(ctx, {
       type: 'line',
       data: {
-        labels: pontos.map(p => p.t),
-        datasets: [{
-          label: 'Páginas totais',
-          data: pontos.map(p => p.v),
-          borderColor: '#22d3ee',
-          backgroundColor: 'rgba(34,211,238,.08)',
-          tension: 0.4, fill: true,
-          pointRadius: 3, pointBackgroundColor: '#22d3ee',
-          borderWidth: 2
-        }]
+        labels,
+        datasets: [
+          { label:'Toner Preto (pág/dia)', data:consumoPB,
+            borderColor:'#e4ecf7', backgroundColor:'rgba(228,236,247,.12)',
+            tension:0.4, fill:true, pointRadius:3, pointBackgroundColor:'#e4ecf7', borderWidth:2 },
+          ...(temColor ? [{ label:'Toner Colorido (pág/dia)', data:consumoCor,
+            borderColor:'#f472b6', backgroundColor:'rgba(244,114,182,.10)',
+            tension:0.4, fill:false, pointRadius:3, pointBackgroundColor:'#f472b6', borderWidth:2 }] : [])
+        ]
       },
       options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
+        responsive:true, maintainAspectRatio:false,
+        plugins: {
+          legend: { display:temColor, labels:{ font:{size:9}, color:'#5a7ba8', boxWidth:12, padding:10 } },
+          tooltip: { callbacks:{ label: c => ` ${c.dataset.label}: ${c.parsed.y} páginas` } }
+        },
         scales: {
-          x: { ticks: { font: { size: 9 }, color: '#5a7ba8' }, grid: { color: 'rgba(100,140,220,.08)' } },
-          y: { ticks: { font: { size: 9 }, color: '#5a7ba8' }, grid: { color: 'rgba(100,140,220,.08)' } }
+          x: { ticks:{font:{size:9},color:'#5a7ba8',maxTicksLimit:14}, grid:{color:'rgba(100,140,220,.08)'} },
+          y: { beginAtZero:true, ticks:{font:{size:9},color:'#5a7ba8',precision:0},
+               grid:{color:'rgba(100,140,220,.08)'},
+               title:{display:true,text:'pág/dia',font:{size:8},color:'#94a3b8'} }
         }
       }
     });
-  } catch(e) { console.error(e); }
+  } catch(e) { console.error('carregarGrafico', e); }
 }
 
 function fecharModal() {
