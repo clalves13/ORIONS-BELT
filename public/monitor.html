@@ -453,81 +453,88 @@ async function carregarGrafico(imp) {
     if (!hist || !hist.length) {
       ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height);
       ctx.fillStyle = '#94a3b8'; ctx.font = '11px Sora,sans-serif'; ctx.textAlign = 'center';
-      ctx.fillText('Sem histórico disponível', ctx.canvas.width/2, ctx.canvas.height/2);
+      ctx.fillText('Sem historico disponivel', ctx.canvas.width/2, ctx.canvas.height/2);
       return;
     }
-    // Agrupa por dia — pega a última leitura de cada dia
-    const porDia = {};
-    for (const h of hist) {
-      const dia = (h.timestamp||'').slice(0,10);
-      if (!dia) continue;
+    const pontos = hist.slice().reverse().map(h => {
       const impH = (h.impressoras||[]).find(i => i.ip === imp.ip);
-      if (!impH) continue;
-      porDia[dia] = impH;
-    }
-    const dias = Object.keys(porDia).sort();
-    if (dias.length < 2) {
+      if (!impH) return null;
+      return { ts: h.timestamp||'', impH };
+    }).filter(Boolean);
+    if (!pontos.length) {
       ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height);
       ctx.fillStyle = '#94a3b8'; ctx.font = '11px Sora,sans-serif'; ctx.textAlign = 'center';
-      ctx.fillText('Dados insuficientes (mín. 2 dias)', ctx.canvas.width/2, ctx.canvas.height/2);
+      ctx.fillText('Sem dados para esta impressora', ctx.canvas.width/2, ctx.canvas.height/2);
       return;
     }
-    // Calcula consumo diário (diferença entre dias consecutivos)
-    const labels = [], consumoPB = [], consumoCor = [];
-    for (let i = 1; i < dias.length; i++) {
-      const prev = porDia[dias[i-1]], cur = porDia[dias[i]];
-      const diffTotal = Math.max(0, (cur.paginas_total||0) - (prev.paginas_total||0));
-      let diffPB = 0, diffCor = 0;
-      if (cur.paginas_mono != null && prev.paginas_mono != null) {
-        diffPB  = Math.max(0, (cur.paginas_mono||0)  - (prev.paginas_mono||0));
-        diffCor = Math.max(0, (cur.paginas_color||0) - (prev.paginas_color||0));
-      } else {
-        const tonerCorCur  = [cur.toner?.ciano,  cur.toner?.magenta,  cur.toner?.amarelo].filter(v=>v!=null);
-        const tonerCorPrev = [prev.toner?.ciano, prev.toner?.magenta, prev.toner?.amarelo].filter(v=>v!=null);
-        if (tonerCorCur.length && tonerCorPrev.length) {
-          const mediaCur  = tonerCorCur.reduce((a,b)=>a+b,0)  / tonerCorCur.length;
-          const mediaPrev = tonerCorPrev.reduce((a,b)=>a+b,0) / tonerCorPrev.length;
-          const ratio = mediaPrev > 0 ? Math.max(0, mediaPrev - mediaCur) / 100 : 0;
-          diffCor = Math.round(diffTotal * ratio * 5);
-          diffPB  = Math.max(0, diffTotal - diffCor);
-        } else { diffPB = diffTotal; }
+    const diasDistintos = [...new Set(pontos.map(p => p.ts.slice(0,10)).filter(Boolean))];
+    const modoDiario = diasDistintos.length >= 2;
+    let labels = [], consumoPB = [], consumoCor = [];
+    if (modoDiario) {
+      const porDia = {};
+      for (const { ts, impH } of pontos) { const dia = ts.slice(0,10); if (dia) porDia[dia] = impH; }
+      const dias = Object.keys(porDia).sort();
+      for (let i = 1; i < dias.length; i++) {
+        const prev = porDia[dias[i-1]], cur = porDia[dias[i]];
+        const diffTotal = Math.max(0, (cur.paginas_total||0) - (prev.paginas_total||0));
+        let diffPB = 0, diffCor = 0;
+        if (cur.paginas_mono != null && prev.paginas_mono != null) {
+          diffPB  = Math.max(0, (cur.paginas_mono||0)  - (prev.paginas_mono||0));
+          diffCor = Math.max(0, (cur.paginas_color||0) - (prev.paginas_color||0));
+        } else {
+          const tcCur  = [cur.toner?.ciano,  cur.toner?.magenta,  cur.toner?.amarelo].filter(v=>v!=null);
+          const tcPrev = [prev.toner?.ciano, prev.toner?.magenta, prev.toner?.amarelo].filter(v=>v!=null);
+          if (tcCur.length && tcPrev.length) {
+            const mCur  = tcCur.reduce((a,b)=>a+b,0)/tcCur.length;
+            const mPrev = tcPrev.reduce((a,b)=>a+b,0)/tcPrev.length;
+            const ratio = mPrev > 0 ? Math.max(0, mPrev - mCur)/100 : 0;
+            diffCor = Math.round(diffTotal * ratio * 5);
+            diffPB  = Math.max(0, diffTotal - diffCor);
+          } else { diffPB = diffTotal; }
+        }
+        const [,mes,d] = dias[i].split('-');
+        labels.push(d+'/'+mes);
+        consumoPB.push(diffPB); consumoCor.push(diffCor);
       }
-      const [,mes,d] = dias[i].split('-');
-      labels.push(`${d}/${mes}`);
-      consumoPB.push(diffPB);
-      consumoCor.push(diffCor);
+    } else {
+      for (const { ts, impH } of pontos) {
+        labels.push(ts.slice(11,16)||'');
+        consumoPB.push(impH.paginas_mono ?? impH.paginas_total ?? 0);
+        consumoCor.push(impH.paginas_color ?? 0);
+      }
     }
+    if (!labels.length) { return; }
     const temColor = consumoCor.some(v => v > 0);
     MON.chart = new Chart(ctx, {
       type: 'line',
       data: {
         labels,
         datasets: [
-          { label:'Toner Preto (pág/dia)', data:consumoPB,
-            borderColor:'#e4ecf7', backgroundColor:'rgba(228,236,247,.12)',
-            tension:0.4, fill:true, pointRadius:3, pointBackgroundColor:'#e4ecf7', borderWidth:2 },
-          ...(temColor ? [{ label:'Toner Colorido (pág/dia)', data:consumoCor,
-            borderColor:'#f472b6', backgroundColor:'rgba(244,114,182,.10)',
+          { label: modoDiario ? 'Toner Preto (pag/dia)' : 'Paginas P&B',
+            data: consumoPB, borderColor:'#94a3b8', backgroundColor:'rgba(148,163,184,.12)',
+            tension:0.4, fill:true, pointRadius:3, pointBackgroundColor:'#94a3b8', borderWidth:2 },
+          ...(temColor ? [{ label: modoDiario ? 'Toner Colorido (pag/dia)' : 'Paginas Cor',
+            data: consumoCor, borderColor:'#f472b6', backgroundColor:'rgba(244,114,182,.10)',
             tension:0.4, fill:false, pointRadius:3, pointBackgroundColor:'#f472b6', borderWidth:2 }] : [])
         ]
       },
       options: {
         responsive:true, maintainAspectRatio:false,
         plugins: {
-          legend: { display:temColor, labels:{ font:{size:9}, color:'#5a7ba8', boxWidth:12, padding:10 } },
-          tooltip: { callbacks:{ label: c => ` ${c.dataset.label}: ${c.parsed.y} páginas` } }
+          legend: { display: temColor, labels:{ font:{size:9}, color:'#5a7ba8', boxWidth:12, padding:10 } },
+          tooltip: { callbacks:{ label: c => ' '+c.dataset.label+': '+c.parsed.y } }
         },
         scales: {
           x: { ticks:{font:{size:9},color:'#5a7ba8',maxTicksLimit:14}, grid:{color:'rgba(100,140,220,.08)'} },
-          y: { beginAtZero:true, ticks:{font:{size:9},color:'#5a7ba8',precision:0},
+          y: { beginAtZero: !modoDiario,
+               ticks:{font:{size:9},color:'#5a7ba8',precision:0},
                grid:{color:'rgba(100,140,220,.08)'},
-               title:{display:true,text:'pág/dia',font:{size:8},color:'#94a3b8'} }
+               title:{display:true, text: modoDiario ? 'pag/dia' : 'paginas', font:{size:8}, color:'#94a3b8'} }
         }
       }
     });
   } catch(e) { console.error('carregarGrafico', e); }
 }
-
 function fecharModal() {
   document.getElementById('m-imp').classList.remove('open');
   if (MON.chart) { MON.chart.destroy(); MON.chart = null; }
