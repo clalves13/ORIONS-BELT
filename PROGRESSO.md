@@ -3,7 +3,7 @@
 **Repositório:** https://github.com/clalves13/orion-at  
 **Branch:** main  
 **Arquivo principal:** `index.html`  
-**Última atualização:** 25/05/2026
+**Última atualização:** 30/05/2026
 
 ---
 
@@ -354,3 +354,46 @@ git add index.html
 git commit -m "fix: sessoes 3 e 4 — UI, impressao OS A4, equipamentos lab/campo"
 git push https://${TOKEN}@github.com/clalves13/orion-at.git main
 ```
+
+---
+
+## Sessão 8 — 30/05/2026 — Validação, Busca Global, Alertas
+
+### feat: Validação visual de formulários
+- Função `_validField(id, msg)` — borda vermelha + foco + toast no campo inválido
+- `saveOS`: valida cliente, defeito, técnico obrigatórios
+- `saveCli`: valida nome do cliente
+- `saveEq`: valida cliente e nome/modelo do equipamento
+- `showToast` atualizado com suporte a tipo `warn` (laranja) e `error` (vermelho)
+
+### feat: Busca global Ctrl+K
+- Overlay modal com `EventSource` de teclado (↑↓ navegar, Enter selecionar, Esc fechar)
+- Busca em OS (num, cliente, modelo, série, defeito), Clientes, Equipamentos, Técnicos
+- Agrupado por seção, badge de status nas OS, ação de navegação direta
+- Botão 🔍 na mobile topbar; atalho Ctrl+K funciona em qualquer página
+
+### feat: Alerta de OS paradas sem atualização
+- `verificarOSParadas()` chamada após cada `loadAll()`
+- Card laranja no topo do dashboard listando OS abertas há >3 dias sem atualização
+- Chips clicáveis que abrem a OS diretamente
+- Botão × para dispensar o aviso
+
+### feat: Portal em tempo real (SSE) — portal.html
+- `iniciarSSEPortal()` conecta ao `GET /api/portal/ordens/stream`
+- Evento `os_atualizada` atualiza card da OS sem recarregar
+- `mostrarNotifPortal()` — notificação visual no canto inferior direito
+- SSE iniciada no login e no auto-login; fechada no logout
+- Reconexão automática após 10s se conexão cair
+
+### Pontos de atenção adicionais (Sessão 8)
+19. **`_validField(id, msg)`** — usar em todos os formulários novos; remove estilo no primeiro `input`
+20. **Busca global** — depende de `G.ordens`, `G.clientes`, `G.equipamentos`, `G.tecnicos` carregados
+21. **`verificarOSParadas()`** — limite em `DIAS_LIMITE = 3`; ajustar conforme política de SLA
+22. **Portal SSE** — `notificarPortalCliente(clienteId, evento, dados)` deve ser chamada em qualquer rota que altere status de OS
+
+### Pendências em aberto (atualizado 30/05/2026)
+- [ ] Compilar `OrionAgente.exe` e fazer upload via painel
+- [ ] Rodar botão 🔧 Migrar Histórico uma vez após deploy
+- [ ] Testar alertas e-mail do monitor com agente real
+- [ ] Conectar botão de busca também na sidebar desktop (Ctrl+K já funciona)
+- [ ] Testar busca global com volume real de dados

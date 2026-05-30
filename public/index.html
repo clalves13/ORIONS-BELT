@@ -1363,6 +1363,9 @@ label { font-size: 11px !important; font-weight: 600 !important; color: #475569 
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
   </button>
   <span class="mb-title" id="mobile-page-title">Dashboard</span>
+  <button onclick="openGlobalSearch()" title="Busca (Ctrl+K)" style="background:none;border:none;cursor:pointer;padding:4px;display:flex;align-items:center;color:var(--nv)">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+  </button>
 </div>
 
 <!-- MAIN -->
@@ -3162,30 +3165,6 @@ Outros</textarea>
           </div>
         </div>
 
-        <!-- Deploy de arquivos HTML -->
-        <div style="background:var(--sf2);border:1px solid var(--bd);border-radius:10px;padding:16px;margin-bottom:16px">
-          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px">
-            <div>
-              <div style="font-size:11px;font-weight:700;color:var(--nv)">🚀 Deploy de Arquivos</div>
-              <div style="font-size:10px;color:var(--tx3);margin-top:2px">Suba monitor.html, portal.html ou index.html direto para o servidor</div>
-            </div>
-            <span id="html-upload-badge" style="display:none"></span>
-          </div>
-          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-            <select id="html-upload-tipo" style="height:32px;border-radius:8px;border:1.5px solid var(--bd2);padding:0 10px;font-size:11px;background:#fff">
-              <option value="monitor.html">monitor.html</option>
-              <option value="portal.html">portal.html</option>
-              <option value="index.html">index.html</option>
-            </select>
-            <label class="btn btn-primary btn-sm" style="cursor:pointer;margin:0" for="html-upload-input">
-              📤 Selecionar arquivo
-            </label>
-            <input type="file" id="html-upload-input" accept=".html" style="display:none" onchange="uploadHtmlArquivo(this)">
-            <span id="html-upload-status" style="font-size:11px;color:var(--tx3)"></span>
-          </div>
-          <div id="html-upload-preview" style="display:none;margin-top:10px;padding:10px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:11px;color:#15803d"></div>
-        </div>
-
         <!-- Seletor de cliente -->
         <div style="background:var(--sf2);border:1px solid var(--bd);border-radius:10px;padding:16px;margin-bottom:16px">
           <div style="font-size:11px;font-weight:700;color:var(--nv);margin-bottom:10px">1️⃣ Selecione o cliente para gerar o pacote</div>
@@ -4384,6 +4363,7 @@ async function loadAll() {
   G.logistica=log||[]; G.abastecimento=abast||[]; G.checklist=ck||[]; G.manutencao=manut||[];
   G.veiculos=veic||[]; G.pedidosPecas=ped||[]; G.eqBaixados=baix||[];
   updateBadges();
+  verificarOSParadas();
 }
 
 function updateBadges() {
@@ -4928,8 +4908,30 @@ function openOS(id) {
   openM('m-os');
 }
 
+// Validação visual de campo obrigatório
+function _validField(id, msg) {
+  const el = document.getElementById(id);
+  if (!el) return true;
+  const val = el.value?.trim();
+  if (!val) {
+    el.style.borderColor = 'var(--rd)';
+    el.style.boxShadow   = '0 0 0 2px rgba(220,38,38,.15)';
+    el.focus();
+    el.addEventListener('input', () => {
+      el.style.borderColor = '';
+      el.style.boxShadow   = '';
+    }, { once: true });
+    showToast('⚠ ' + msg, 'warn');
+    return false;
+  }
+  return true;
+}
+
 async function saveOS() {
-  const cid=document.getElementById('o-cli').value; if(!cid){alert('Selecione o cliente.');return}
+  if (!_validField('o-cli',     'Selecione o cliente'))     return;
+  if (!_validField('o-defeito', 'Descreva o defeito'))      return;
+  if (!_validField('o-tec',     'Selecione o técnico'))     return;
+  const cid=document.getElementById('o-cli').value;
   const nserie = document.getElementById('o-nserie').value.trim();
   // FIX: Bloquear OS se equipamento está em laboratório ativo
   if (nserie) {
@@ -6779,7 +6781,7 @@ function openCliente(id){
   else{['c-id','c-nome','c-end','c-cidade','c-uf','c-cep','c-contato','c-tel','c-email','c-obs'].forEach(f=>document.getElementById(f).value='')}
   openM('m-cli');
 }
-async function saveCli(){const nome=document.getElementById('c-nome').value.trim();if(!nome){alert('Informe o nome.');return}const eid=document.getElementById('c-id').value;const body={nome,end:document.getElementById('c-end').value,cidade:document.getElementById('c-cidade').value,uf:document.getElementById('c-uf').value,cep:document.getElementById('c-cep').value,contato:document.getElementById('c-contato').value,tel:document.getElementById('c-tel').value,email:document.getElementById('c-email').value,obs:document.getElementById('c-obs').value};try{if(eid)await api('PUT',`/api/clientes/${eid}`,body);else await api('POST','/api/clientes',body);await loadAll();closeM('m-cli');renderClientes();}catch(e){alert(e.message)}}
+async function saveCli(){const nome=document.getElementById('c-nome').value.trim();if(!_validField('c-nome','Informe o nome do cliente'))return;const eid=document.getElementById('c-id').value;const body={nome,end:document.getElementById('c-end').value,cidade:document.getElementById('c-cidade').value,uf:document.getElementById('c-uf').value,cep:document.getElementById('c-cep').value,contato:document.getElementById('c-contato').value,tel:document.getElementById('c-tel').value,email:document.getElementById('c-email').value,obs:document.getElementById('c-obs').value};try{if(eid)await api('PUT',`/api/clientes/${eid}`,body);else await api('POST','/api/clientes',body);await loadAll();closeM('m-cli');renderClientes();}catch(e){alert(e.message)}}
 async function delCli(id){if(confirm('Excluir cliente e equipamentos?')){await api('DELETE',`/api/clientes/${id}`);await loadAll();renderClientes()}}
 function renderClientes(){
   const q=(document.getElementById('s-cli')?.value||'').toLowerCase();
@@ -6937,49 +6939,6 @@ function agenteBaixarPacote() {
   window.location.href = `/download/pacote-agente/${c.id}`;
 }
 
-// ── Upload de arquivos HTML (deploy) ─────────────────────────────────────────
-async function uploadHtmlArquivo(input) {
-  const file = input.files[0];
-  if (!file) return;
-  const tipo = document.getElementById('html-upload-tipo').value;
-  const status = document.getElementById('html-upload-status');
-  const badge  = document.getElementById('html-upload-badge');
-  const preview = document.getElementById('html-upload-preview');
-
-  // Confirma antes de sobrescrever index.html
-  if (tipo === 'index.html') {
-    if (!confirm(`⚠️ Você está prestes a substituir o INDEX.HTML principal do sistema.\n\nIsso afeta TODOS os usuários.\n\nTem certeza?`)) {
-      input.value = ''; return;
-    }
-  }
-
-  status.textContent = '⏳ Enviando...';
-  status.style.color = 'var(--or)';
-  badge.style.display = 'none';
-  preview.style.display = 'none';
-
-  try {
-    const fd = new FormData();
-    fd.append('arquivo', file, tipo); // força o nome correto
-    const r = await fetch('/api/admin/upload-html', { method:'POST', body:fd, credentials:'include' });
-    const data = await r.json();
-    if (!r.ok) throw new Error(data.error||'Erro no servidor');
-
-    status.textContent = `✅ ${data.arquivo} enviado (${data.tamanho_kb} KB)`;
-    status.style.color = 'var(--gn)';
-    badge.style.display = 'inline-block';
-    badge.innerHTML = `<span style="background:#dcfce7;color:#15803d;border-radius:20px;padding:2px 10px;font-size:10px;font-weight:700">✅ Deploy OK</span>`;
-    preview.style.display = 'block';
-    preview.innerHTML = `✅ <strong>${data.arquivo}</strong> atualizado com sucesso no servidor às ${new Date().toLocaleTimeString('pt-BR')}.<br>
-      Tamanho: ${data.tamanho_kb} KB · <a href="/${tipo === 'index.html' ? '' : tipo.replace('.html','')}" target="_blank" style="color:#15803d;font-weight:700">Abrir agora →</a>`;
-    showToast(`${data.arquivo} enviado com sucesso!`);
-  } catch(e) {
-    status.textContent = `❌ ${e.message}`;
-    status.style.color = 'var(--rd)';
-  }
-  input.value = '';
-}
-
 // ── Upload e status do OrionAgente.exe ──────────────────────────────────────
 async function agenteCarregarExeInfo() {
   const info   = document.getElementById('agente-exe-info');
@@ -7068,7 +7027,7 @@ function openEquip(id,preCli){
   else{['e-id','e-nome','e-marca','e-modelo','e-nserie','e-inst','e-contrato','e-local','e-obs'].forEach(f=>document.getElementById(f).value='');document.getElementById('e-cont').value=0;document.getElementById('e-status').value='Ativo';document.getElementById('e-cli').value=preCli||'';}
   openM('m-eq');
 }
-async function saveEq(){const cid=document.getElementById('e-cli').value;const nome=document.getElementById('e-nome').value.trim();if(!cid||!nome){alert('Selecione cliente e nome.');return}const eid=document.getElementById('e-id').value;const body={clienteId:cid,nome,marca:document.getElementById('e-marca').value,modelo:document.getElementById('e-modelo').value,nserie:document.getElementById('e-nserie').value,contador:+document.getElementById('e-cont').value||0,dataInst:document.getElementById('e-inst').value,contrato:document.getElementById('e-contrato').value,local:document.getElementById('e-local').value,status:document.getElementById('e-status').value,obs:document.getElementById('e-obs').value};try{if(eid)await api('PUT',`/api/equipamentos/${eid}`,body);else await api('POST','/api/equipamentos',body);await loadAll();closeM('m-eq');renderClientes();}catch(e){alert(e.message)}}
+async function saveEq(){if(!_validField('e-cli','Selecione o cliente do equipamento'))return;if(!_validField('e-nome','Informe o nome/modelo do equipamento'))return;const cid=document.getElementById('e-cli').value;const eid=document.getElementById('e-id').value;const body={clienteId:cid,nome,marca:document.getElementById('e-marca').value,modelo:document.getElementById('e-modelo').value,nserie:document.getElementById('e-nserie').value,contador:+document.getElementById('e-cont').value||0,dataInst:document.getElementById('e-inst').value,contrato:document.getElementById('e-contrato').value,local:document.getElementById('e-local').value,status:document.getElementById('e-status').value,obs:document.getElementById('e-obs').value};try{if(eid)await api('PUT',`/api/equipamentos/${eid}`,body);else await api('POST','/api/equipamentos',body);await loadAll();closeM('m-eq');renderClientes();}catch(e){alert(e.message)}}
 async function delEq(id){if(confirm('Excluir equipamento?')){await api('DELETE',`/api/equipamentos/${id}`);await loadAll();renderClientes()}}
 
 // ─── TÉCNICOS ─────────────────────────────────────────────
@@ -9612,6 +9571,203 @@ function hideTooltipMG(){
 function buildMapaSVG(){}
 
 
+
+// ══ BUSCA GLOBAL (Ctrl+K) ═══════════════════════════════════════════════════
+let _gsIdx = -1;
+
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey||e.metaKey) && e.key==='k') { e.preventDefault(); openGlobalSearch(); }
+  if (e.key==='Escape') closeGlobalSearch();
+});
+
+function openGlobalSearch() {
+  const ov = document.getElementById('global-search-overlay');
+  if (!ov) return;
+  ov.style.display = 'flex';
+  const inp = document.getElementById('global-search-input');
+  inp.value = '';
+  _gsIdx = -1;
+  globalSearch('');
+  setTimeout(()=>inp.focus(), 50);
+}
+
+function closeGlobalSearch() {
+  const ov = document.getElementById('global-search-overlay');
+  if (ov) ov.style.display = 'none';
+}
+
+function globalSearch(q) {
+  const res = document.getElementById('global-search-results');
+  if (!res) return;
+  _gsIdx = -1;
+  const sq = q.trim().toLowerCase();
+  const items = [];
+
+  // OS
+  (G.ordens||[]).filter(o => {
+    if (!sq) return true;
+    return (o.num||'').toLowerCase().includes(sq) ||
+           (G.clientes.find(c=>c.id===o.cliente_id)?.nome||'').toLowerCase().includes(sq) ||
+           (o.modelo||'').toLowerCase().includes(sq) ||
+           (o.nserie||'').toLowerCase().includes(sq) ||
+           (o.defeito||'').toLowerCase().includes(sq);
+  }).slice(0,5).forEach(o => {
+    const cli = G.clientes.find(c=>c.id===o.cliente_id);
+    const stCor = {Aberta:'#3b82f6','Em andamento':'#d97706',Concluída:'#059669',Cancelada:'#dc2626'}[o.status]||'#94a3b8';
+    items.push({
+      ico:'📋', bg:'#eff6ff', section:'Ordens de Serviço',
+      title: o.num||'OS', sub: `${cli?.nome||'—'} · ${o.modelo||'—'} · ${o.nserie||'—'}`,
+      badge: o.status, badgeBg: stCor+'22', badgeColor: stCor,
+      action: () => { closeGlobalSearch(); openOS(o); }
+    });
+  });
+
+  // Clientes
+  (G.clientes||[]).filter(c => {
+    if (!sq) return true;
+    return (c.nome||'').toLowerCase().includes(sq) ||
+           (c.cidade||'').toLowerCase().includes(sq) ||
+           (c.tel||'').toLowerCase().includes(sq);
+  }).slice(0,4).forEach(c => {
+    items.push({
+      ico:'🏢', bg:'#f0fdf4', section:'Clientes',
+      title: c.nome, sub: `${c.cidade||''}${c.uf?' / '+c.uf:''} · ${c.tel||''}`,
+      action: () => { closeGlobalSearch(); nav('clientes'); setTimeout(()=>{ document.getElementById('s-cli').value=c.nome; renderClientes(); }, 200); }
+    });
+  });
+
+  // Equipamentos
+  (G.equipamentos||[]).filter(e => {
+    if (!sq) return true;
+    const cli = G.clientes.find(c=>c.id===e.cliente_id);
+    return (e.nome||e.modelo||'').toLowerCase().includes(sq) ||
+           (e.nserie||'').toLowerCase().includes(sq) ||
+           (cli?.nome||'').toLowerCase().includes(sq);
+  }).slice(0,4).forEach(e => {
+    const cli = G.clientes.find(c=>c.id===e.cliente_id);
+    items.push({
+      ico:'🖨', bg:'#fef3c7', section:'Equipamentos',
+      title: e.nome||e.modelo||'Equipamento',
+      sub: `${cli?.nome||'—'} · NS: ${e.nserie||'—'}`,
+      action: () => { closeGlobalSearch(); nav('clientes'); setTimeout(()=>{ document.getElementById('s-cli').value=cli?.nome||''; renderClientes(); }, 200); }
+    });
+  });
+
+  // Técnicos
+  (G.tecnicos||[]).filter(t => {
+    if (!sq) return t;
+    return (t.nome||'').toLowerCase().includes(sq) ||
+           (t.email||'').toLowerCase().includes(sq);
+  }).slice(0,3).forEach(t => {
+    items.push({
+      ico:'👤', bg:'#fdf4ff', section:'Técnicos',
+      title: t.nome, sub: t.email||t.tel||'',
+      action: () => { closeGlobalSearch(); nav('tecnicos'); }
+    });
+  });
+
+  if (!items.length) {
+    res.innerHTML = `<div class="gs-empty">${sq ? '🔍 Nenhum resultado para "'+sq+'"' : 'Digite para buscar...'}</div>`;
+    return;
+  }
+
+  // Agrupa por seção
+  const sections = {};
+  items.forEach(it => {
+    if (!sections[it.section]) sections[it.section] = [];
+    sections[it.section].push(it);
+  });
+
+  let html = '', idx = 0;
+  for (const [sec, its] of Object.entries(sections)) {
+    html += `<div class="gs-section">${sec}</div>`;
+    its.forEach(it => {
+      html += `<div class="gs-item" data-idx="${idx}" onclick="gsExecute(${idx})">
+        <div class="gs-item-ico" style="background:${it.bg}">${it.ico}</div>
+        <div class="gs-item-main">
+          <div class="gs-item-title">${it.title}</div>
+          ${it.sub?`<div class="gs-item-sub">${it.sub}</div>`:''}
+        </div>
+        ${it.badge?`<span class="gs-item-badge" style="background:${it.badgeBg||'#f1f5f9'};color:${it.badgeColor||'#475569'}">${it.badge}</span>`:''}
+      </div>`;
+      idx++;
+    });
+  }
+  res.innerHTML = html;
+  res._items = items;
+}
+
+function gsExecute(idx) {
+  const res = document.getElementById('global-search-results');
+  if (res._items && res._items[idx]) res._items[idx].action();
+}
+
+function globalSearchKey(e) {
+  const res = document.getElementById('global-search-results');
+  const items = res.querySelectorAll('.gs-item');
+  if (!items.length) return;
+  if (e.key==='ArrowDown') { e.preventDefault(); _gsIdx=Math.min(_gsIdx+1,items.length-1); }
+  else if (e.key==='ArrowUp') { e.preventDefault(); _gsIdx=Math.max(_gsIdx-1,0); }
+  else if (e.key==='Enter') { e.preventDefault(); if(_gsIdx>=0) gsExecute(_gsIdx); return; }
+  else return;
+  items.forEach((el,i) => el.classList.toggle('gs-active', i===_gsIdx));
+  items[_gsIdx]?.scrollIntoView({block:'nearest'});
+}
+
+
+// ══ ALERTA DE OS PARADA SEM ATUALIZAÇÃO ═════════════════════════════════════
+function verificarOSParadas() {
+  const DIAS_LIMITE = 3; // alerta se OS aberta sem atualização > 3 dias
+  const hoje = new Date();
+  const abertas = (G.ordens||[]).filter(o =>
+    o.status === 'Aberta' || o.status === 'Em andamento'
+  );
+  const paradas = abertas.filter(o => {
+    const ultima = new Date(o.updated_at || o.data_ab || o.created_at || 0);
+    const dias = (hoje - ultima) / (1000*60*60*24);
+    return dias >= DIAS_LIMITE;
+  });
+  if (!paradas.length) return;
+
+  // Adiciona badge no item de menu OS
+  const niOs = document.querySelector('[data-modulo="os"] .ni-badge, #ni-os .ni-badge');
+  if (niOs) {
+    niOs.textContent = paradas.length;
+    niOs.style.display = 'inline-flex';
+  }
+
+  // Insere card de aviso no topo do dashboard se não existir
+  const dash = document.getElementById('page-dashboard');
+  if (!dash) return;
+  let aviso = document.getElementById('dash-os-paradas');
+  if (!aviso) {
+    aviso = document.createElement('div');
+    aviso.id = 'dash-os-paradas';
+    aviso.style.cssText = 'margin:0 0 12px;background:#fff7ed;border:1.5px solid #fed7aa;border-radius:12px;padding:12px 16px;display:flex;align-items:flex-start;gap:10px';
+    const inner = dash.querySelector('.dash-grid, .page-inner, #dash-inner');
+    if (inner) inner.parentNode.insertBefore(aviso, inner);
+    else dash.insertBefore(aviso, dash.firstChild);
+  }
+  aviso.innerHTML = `
+    <div style="font-size:20px;flex-shrink:0">⏰</div>
+    <div style="flex:1">
+      <div style="font-size:12px;font-weight:800;color:#c2410c;margin-bottom:4px">${paradas.length} OS parada${paradas.length>1?'s':''} sem atualização há mais de ${DIAS_LIMITE} dias</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px">
+        ${paradas.slice(0,5).map(o => {
+          const cli = G.clientes.find(c=>c.id===o.cliente_id);
+          const ultima = new Date(o.updated_at||o.data_ab||o.created_at||0);
+          const dias = Math.floor((new Date()-ultima)/(1000*60*60*24));
+          return `<span onclick="openOS(G.ordens.find(x=>x.id==='${o.id}'))" style="cursor:pointer;font-size:10px;background:#fff;border:1px solid #fed7aa;border-radius:8px;padding:3px 8px;color:#92400e">
+            <b>${o.num}</b> · ${cli?.nome||'—'} · ${dias}d
+          </span>`;
+        }).join('')}
+        ${paradas.length>5?`<span style="font-size:10px;color:#92400e">+${paradas.length-5} mais</span>`:''}
+      </div>
+    </div>
+    <button onclick="document.getElementById('dash-os-paradas').style.display='none'" 
+            style="background:none;border:none;cursor:pointer;color:#c2410c;font-size:16px;padding:0;flex-shrink:0">×</button>`;
+}
+
 // ─── PERFIS DE ACESSO ─────────────────────────────────────────
 const PERFIS_MODULOS = {
   admin:          ['dashboard','os','agenda','lab','historico','estoque','supr-cli','clientes','tecnicos','usuarios','logistica','contratos','financeiro','notificacoes','relatorios'],
@@ -10273,6 +10429,38 @@ function printLogRel(id) {
   .sig-img { max-height: 70px; display: block; margin: 0 auto 8px; }
   .sig-line { border-top: 1.5px solid #444; padding-top: 5px; font-size: 9px; color: #555; margin-top: 30px; }
   @media print { body { padding: 10px; } }
+
+/* ── BUSCA GLOBAL ─────────────────────────────────────────────────── */
+#global-search-overlay {
+  position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10000;
+  display:flex;align-items:flex-start;justify-content:center;padding-top:80px;
+  animation:gs-fade .15s ease;
+}
+@keyframes gs-fade { from{opacity:0} to{opacity:1} }
+#global-search-box {
+  background:#fff;border-radius:14px;width:100%;max-width:580px;
+  box-shadow:0 20px 60px rgba(0,0,0,.25);overflow:hidden;
+}
+#global-search-input {
+  width:100%;padding:14px 18px;font-size:15px;font-family:Sora,sans-serif;
+  border:none;outline:none;color:#1e293b;background:transparent;
+  border-bottom:1px solid #e2e8f0;
+}
+#global-search-input::placeholder { color:#94a3b8; }
+#global-search-results { max-height:420px;overflow-y:auto; }
+.gs-section { padding:6px 14px 2px;font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.8px; }
+.gs-item {
+  display:flex;align-items:center;gap:10px;padding:9px 16px;cursor:pointer;
+  transition:background .1s;border-bottom:1px solid #f1f5f9;
+}
+.gs-item:hover,.gs-item.gs-active { background:#f0f7ff; }
+.gs-item-ico { width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0; }
+.gs-item-main { flex:1;min-width:0; }
+.gs-item-title { font-size:12px;font-weight:700;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+.gs-item-sub   { font-size:10px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+.gs-item-badge { font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;flex-shrink:0; }
+.gs-empty { padding:24px;text-align:center;color:#94a3b8;font-size:12px; }
+.gs-shortcut { padding:8px 16px;font-size:10px;color:#94a3b8;text-align:right;border-top:1px solid #f1f5f9; }
 </style>
 </head>
 <body>
