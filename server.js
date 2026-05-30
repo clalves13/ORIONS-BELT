@@ -49,13 +49,17 @@ async function connectDB() {
   await client.connect();
   db = client.db('orion_at');
   console.log('MongoDB conectado!');
-  // Seed admin
-  const adminPass = process.env.ADMIN_PASSWORD || 'admin123';
-  await db.collection('users').updateOne(
-    { login: 'admin' },
-    { $set: { login:'admin', nome:'Administrador', senha_hash: bcrypt.hashSync(adminPass,10), role:'admin', ativo:1 } },
-    { upsert: true }
-  );
+  // Seed admin apenas se não existir nenhum usuário no sistema
+  const totalUsers = await db.collection('users').countDocuments();
+  if (totalUsers === 0) {
+    const adminPass = process.env.ADMIN_PASSWORD || 'admin123';
+    await db.collection('users').insertOne({
+      login:'admin', nome:'Administrador',
+      senha_hash: bcrypt.hashSync(adminPass,10),
+      role:'admin', isMaster:true, ativo:1, created_at: new Date().toISOString()
+    });
+    console.log('Usuário admin criado (primeiro acesso).');
+  }
   // OS counter
   await db.collection('counter').updateOne({ _id:'os' }, { $setOnInsert:{ valor:0 } }, { upsert:true });
 }
@@ -907,6 +911,18 @@ app.post('/api/reset-system', requireAuth, async (req, res) => {
         resultados[nome] = r.deletedCount;
       } catch(e) { resultados[nome] = `erro: ${e.message}`; }
     }
+
+    // Recriar apenas o usuário master (coringa) e o counter de OS
+    const masterPass = process.env.MASTER_PASSWORD || process.env.ADMIN_PASSWORD || 'admin123';
+    await db.collection('users').insertOne({
+      login: u.login, nome: u.nome || 'Master',
+      senha_hash: u.senha_hash,
+      role: 'admin', isMaster: true, ativo: 1,
+      created_at: now()
+    });
+    await db.collection('counter').insertOne({ _id: 'os', valor: 0 });
+
+    // Destruir sessão atual (todas as outras já foram apagadas da collection)
     req.session.destroy(() => {});
     res.json({ ok: true, msg: 'Sistema zerado. Todos os dados foram apagados. Faça login novamente.', resultados });
   } catch(e) { res.status(500).json({ error: e.message }); }
