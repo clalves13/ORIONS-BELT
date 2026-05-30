@@ -8329,7 +8329,7 @@ async function loadDash(){
     const elTaxa = document.getElementById('d-taxa-conclusao');
     if (elTaxa) { elTaxa.textContent = taxa + '%'; elTaxa.style.color = taxa >= 70 ? '#2e7d32' : taxa >= 40 ? '#e65100' : '#c62828'; }
     const hoje = new Date().toISOString().slice(0,10);
-    const osAtras = osF.filter(o => o.status !== 'Concluída' && o.status !== 'Cancelada' && o.prazo && o.prazo < hoje).length;
+    const osAtras = osF.filter(o => o.status !== 'Concluída' && o.status !== 'Cancelada' && o.sla_deadline && o.sla_deadline < hoje).length;
     const elAtras = document.getElementById('d-osatras');
     if (elAtras) countUp(elAtras, osAtras);
     const receita = osF.filter(o => o.status === 'Concluída').reduce((s,o) => s+(o.valor_cobrado||o.valor||0), 0);
@@ -9564,6 +9564,9 @@ function renderMapaMG() {
 
   const cidadeCount = {};
   eqs.forEach(e => {
+    // Só conta equipamentos que estão fisicamente no cliente
+    const st = e.localizacao_status || e.status || 'No cliente';
+    if (st === 'Em estoque' || st === 'Baixado') return;
     let cidade = norm(e.cidade || e.end_cidade || '');
     if (!cidade) {
       const cli = clis.find(c => c.id === e.cliente_id || c._id === e.cliente_id);
