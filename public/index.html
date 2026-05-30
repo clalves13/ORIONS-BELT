@@ -1304,6 +1304,7 @@ label { font-size: 11px !important; font-weight: 600 !important; color: #475569 
     <div class="ni" data-modulo="estoque" data-tip="Peças e Suprimentos" onclick="nav('estoque',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg><span>Peças e Suprimentos</span></div>
     <div class="ni" data-modulo="supr-cli" data-tip="Suprimentos Cliente" onclick="nav('supr-cli',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16,8 20,8 23,11 23,16 16,16 16,8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg><span>Suprimentos Cliente</span></div>
     <div class="nav-sec">Cadastros</div>
+    <div class="ni" data-modulo="equipamentos" data-tip="Equipamentos" onclick="nav('equipamentos',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg><span>Equipamentos</span></div>
     <div class="ni" data-modulo="clientes" data-tip="Clientes / Equip." onclick="nav('clientes',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg><span>Clientes / Equip.</span></div>
     <div class="ni" data-modulo="tecnicos" data-tip="Técnicos" onclick="nav('tecnicos',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Técnicos</span></div>
     <div class="ni" id="ni-usr" data-modulo="usuarios" data-tip="Usuários" onclick="nav('usuarios',this)" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg><span>Usuários</span></div>
@@ -1363,9 +1364,6 @@ label { font-size: 11px !important; font-weight: 600 !important; color: #475569 
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
   </button>
   <span class="mb-title" id="mobile-page-title">Dashboard</span>
-  <button onclick="openGlobalSearch()" title="Busca (Ctrl+K)" style="background:none;border:none;cursor:pointer;padding:4px;display:flex;align-items:center;color:var(--nv)">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-  </button>
 </div>
 
 <!-- MAIN -->
@@ -2713,6 +2711,46 @@ label { font-size: 11px !important; font-weight: 600 !important; color: #475569 
   </div>
 </div>
 
+<!-- EQUIPAMENTOS -->
+<div id="page-equipamentos" class="page">
+  <div class="topbar">
+    <div><div class="tb-title">🖨 Equipamentos</div><div class="tb-sub">Controle de localização · Estoque · Clientes</div></div>
+    <div class="tb-right">
+      <input type="text" id="eq-busca" placeholder="Buscar modelo, série, cliente..." oninput="renderEquipamentos()" style="width:220px">
+      <select id="eq-f-status" onchange="renderEquipamentos()" style="height:32px;border-radius:8px;border:1.5px solid var(--bd2);padding:0 10px;font-size:11px">
+        <option value="">Todos os status</option>
+        <option value="No cliente">No cliente</option>
+        <option value="Em estoque">Em estoque</option>
+        <option value="Em manutenção">Em manutenção</option>
+        <option value="Baixado">Baixado</option>
+      </select>
+      <button class="btn btn-primary" onclick="openEquipPage(null)">+ Equipamento</button>
+    </div>
+  </div>
+  <div class="content">
+    <!-- KPIs -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:16px" id="eq-kpis"></div>
+    <!-- Tabela -->
+    <div class="card" style="padding:0;overflow:hidden">
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead>
+          <tr style="background:var(--sf2);border-bottom:2px solid var(--bd)">
+            <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--tx3)">Equipamento</th>
+            <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--tx3)">Nº Série</th>
+            <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--tx3)">Cliente</th>
+            <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--tx3)">Localização</th>
+            <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--tx3)">Status</th>
+            <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--tx3)">OS</th>
+            <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--tx3)">Ações</th>
+          </tr>
+        </thead>
+        <tbody id="eq-tbody"></tbody>
+      </table>
+      <div id="eq-empty" style="display:none;padding:40px;text-align:center;color:var(--tx3);font-size:13px">Nenhum equipamento encontrado.</div>
+    </div>
+  </div>
+</div>
+
 <!-- CLIENTES -->
 <div id="page-clientes" class="page">
   <div class="topbar"><div><div class="tb-title">Clientes e Equipamentos</div><div class="tb-sub">1 cliente → vários equipamentos</div></div>
@@ -3163,6 +3201,30 @@ Outros</textarea>
             <input type="file" id="agente-exe-input" accept=".exe" style="display:none" onchange="agenteUploadExe(this)">
             <span id="agente-exe-upload-status" style="font-size:11px;color:var(--tx3)"></span>
           </div>
+        </div>
+
+        <!-- Deploy de arquivos HTML -->
+        <div style="background:var(--sf2);border:1px solid var(--bd);border-radius:10px;padding:16px;margin-bottom:16px">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+            <div>
+              <div style="font-size:11px;font-weight:700;color:var(--nv)">🚀 Deploy de Arquivos</div>
+              <div style="font-size:10px;color:var(--tx3);margin-top:2px">Suba monitor.html, portal.html ou index.html direto para o servidor</div>
+            </div>
+            <span id="html-upload-badge" style="display:none"></span>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <select id="html-upload-tipo" style="height:32px;border-radius:8px;border:1.5px solid var(--bd2);padding:0 10px;font-size:11px;background:#fff">
+              <option value="monitor.html">monitor.html</option>
+              <option value="portal.html">portal.html</option>
+              <option value="index.html">index.html</option>
+            </select>
+            <label class="btn btn-primary btn-sm" style="cursor:pointer;margin:0" for="html-upload-input">
+              📤 Selecionar arquivo
+            </label>
+            <input type="file" id="html-upload-input" accept=".html" style="display:none" onchange="uploadHtmlArquivo(this)">
+            <span id="html-upload-status" style="font-size:11px;color:var(--tx3)"></span>
+          </div>
+          <div id="html-upload-preview" style="display:none;margin-top:10px;padding:10px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:11px;color:#15803d"></div>
         </div>
 
         <!-- Seletor de cliente -->
@@ -3950,8 +4012,13 @@ Outros</textarea>
       <div class="fg"><label>Contador</label><input type="number" id="e-cont" value="0"></div>
       <div class="fg"><label>Data Instalação</label><input type="date" id="e-inst"></div>
       <div class="fg"><label>Contrato até</label><input type="date" id="e-contrato"></div>
-      <div class="fg"><label>Localização</label><input type="text" id="e-local"></div>
-      <div class="fg"><label>Status</label><select id="e-status"><option>Ativo</option><option>Em manutenção</option><option>Inativo</option></select></div>
+      <div class="fg"><label>Localização (endereço/sala)</label><input type="text" id="e-local"></div>
+      <div class="fg"><label>Status / Onde está</label><select id="e-status">
+        <option value="No cliente">No cliente</option>
+        <option value="Em estoque">Em estoque</option>
+        <option value="Em manutenção">Em manutenção</option>
+        <option value="Baixado">Baixado</option>
+      </select></div>
       <div class="fg" style="grid-column:1/-1"><label>Obs</label><textarea id="e-obs" rows="2"></textarea></div>
     </div>
   </div>
@@ -4363,12 +4430,86 @@ async function loadAll() {
   G.logistica=log||[]; G.abastecimento=abast||[]; G.checklist=ck||[]; G.manutencao=manut||[];
   G.veiculos=veic||[]; G.pedidosPecas=ped||[]; G.eqBaixados=baix||[];
   updateBadges();
-  verificarOSParadas();
 }
 
 function updateBadges() {
   const bos=document.getElementById('b-os');
   if(bos) bos.textContent = G.ordens.filter(o=>o.status==='Aberta'||o.status==='Em andamento').length;
+}
+
+// ═══════════════════════════════════════════════════════════
+// PÁGINA DE EQUIPAMENTOS
+// ═══════════════════════════════════════════════════════════
+function renderEquipamentos() {
+  const busca = (document.getElementById('eq-busca')?.value||'').toLowerCase();
+  const filtStatus = document.getElementById('eq-f-status')?.value||'';
+  const eqs = G.equipamentos.filter(e => {
+    const cli = G.clientes.find(c=>c.id===(e.cliente_id||e.clienteId));
+    const txt = [e.nome,e.modelo,e.marca,e.nserie,cli?.nome,e.localizacao].join(' ').toLowerCase();
+    return (!busca||txt.includes(busca)) && (!filtStatus||(e.localizacao_status||'No cliente')===filtStatus);
+  });
+  const kpiEl = document.getElementById('eq-kpis');
+  if (kpiEl) {
+    const noCli = G.equipamentos.filter(e=>(e.localizacao_status||'No cliente')==='No cliente').length;
+    const emEst = G.equipamentos.filter(e=>e.localizacao_status==='Em estoque').length;
+    const emMan = G.equipamentos.filter(e=>e.localizacao_status==='Em manutenção').length;
+    kpiEl.innerHTML = [
+      {ico:'🖨',lbl:'Total',val:G.equipamentos.length,cor:'#2563eb'},
+      {ico:'🏢',lbl:'No cliente',val:noCli,cor:'#16a34a'},
+      {ico:'📦',lbl:'Em estoque',val:emEst,cor:'#ea580c'},
+      {ico:'🔧',lbl:'Em manutenção',val:emMan,cor:'#dc2626'},
+    ].map(k=>`<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:12px 14px;border-top:3px solid ${k.cor}"><div style="display:flex;align-items:center;gap:6px;margin-bottom:6px"><span style="font-size:16px">${k.ico}</span><span style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:#64748b">${k.lbl}</span></div><div style="font-size:22px;font-weight:800;color:${k.cor}">${k.val}</div></div>`).join('');
+  }
+  const tbody = document.getElementById('eq-tbody');
+  const empty = document.getElementById('eq-empty');
+  if (!eqs.length) { if(tbody) tbody.innerHTML=''; if(empty) empty.style.display='block'; return; }
+  if(empty) empty.style.display='none';
+  const osCount = {};
+  G.ordens.forEach(o=>{ if(o.equip_id) osCount[o.equip_id]=(osCount[o.equip_id]||0)+1; });
+  const STATUS_COR = {'No cliente':'#16a34a','Em estoque':'#ea580c','Em manutenção':'#dc2626','Baixado':'#94a3b8'};
+  if(tbody) tbody.innerHTML = eqs.map(e => {
+    const cli = G.clientes.find(c=>c.id===(e.cliente_id||e.clienteId));
+    const st = e.localizacao_status||'No cliente';
+    const cor = STATUS_COR[st]||'#64748b';
+    const osN = osCount[e.id]||0;
+    return `<tr style="border-bottom:1px solid var(--bd)" onmouseover="this.style.background='var(--sf2)'" onmouseout="this.style.background=''">
+      <td style="padding:10px 14px"><div style="font-weight:700;font-size:12px">${e.nome||e.modelo||'—'}</div><div style="font-size:10px;color:var(--tx3)">${e.marca||''} ${e.modelo||''}</div></td>
+      <td style="padding:10px 14px;font-family:'JetBrains Mono',monospace;font-size:11px">${e.nserie||'—'}</td>
+      <td style="padding:10px 14px;font-size:12px">${cli?.nome||'—'}</td>
+      <td style="padding:10px 14px;font-size:12px">${e.localizacao||'—'}</td>
+      <td style="padding:10px 14px"><span style="background:${cor}18;color:${cor};border:1px solid ${cor}40;border-radius:20px;padding:2px 10px;font-size:10px;font-weight:700">${st}</span></td>
+      <td style="padding:10px 14px;font-size:12px;font-weight:700;color:var(--bl2)">${osN>0?osN:'—'}</td>
+      <td style="padding:10px 14px"><div style="display:flex;gap:4px"><button class="btn btn-ghost btn-xs" onclick="openEquipPage('${e.id}')">Editar</button><button class="btn btn-danger btn-xs" onclick="delEquipPage('${e.id}')">×</button></div></td>
+    </tr>`;
+  }).join('');
+}
+
+function openEquipPage(id, cliId) {
+  const e = id ? G.equipamentos.find(x=>x.id===id) : null;
+  const cliOpts = G.clientes.map(c=>`<option value="${c.id}" ${(e?.cliente_id||e?.clienteId||cliId)===c.id?'selected':''}>${c.nome}</option>`).join('');
+  document.getElementById('e-id').value = e?.id||'';
+  document.getElementById('e-cli').innerHTML = `<option value="">Sem cliente (em estoque)</option>${cliOpts}`;
+  document.getElementById('e-cli').value = e?.cliente_id||e?.clienteId||cliId||'';
+  document.getElementById('e-nome').value = e?.nome||'';
+  document.getElementById('e-marca').value = e?.marca||'';
+  document.getElementById('e-modelo').value = e?.modelo||'';
+  document.getElementById('e-nserie').value = e?.nserie||'';
+  document.getElementById('e-cont').value = e?.contador||0;
+  document.getElementById('e-inst').value = e?.dataInst||e?.data_inst||'';
+  document.getElementById('e-contrato').value = e?.contrato||'';
+  document.getElementById('e-local').value = e?.localizacao||'';
+  // Adiciona campo localizacao_status se não existir no form
+  const stEl = document.getElementById('e-loc-status');
+  if(stEl) stEl.value = e?.localizacao_status||'No cliente';
+  document.getElementById('e-status').value = e?.localizacao_status||e?.status||'No cliente';
+  document.getElementById('e-obs').value = e?.obs||'';
+  openM('m-eq');
+}
+
+async function delEquipPage(id) {
+  if (!confirm('Excluir equipamento?')) return;
+  await api('DELETE',`/api/equipamentos/${id}`);
+  await loadAll(); renderEquipamentos();
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -4738,7 +4879,7 @@ function nav(p, el) {
   }
   const pg = document.getElementById('page-'+p); if(pg) pg.classList.add('active');
   if(el) el.classList.add('active');
-  const renders = { os:renderOS, logistica:renderLogistica, lab:renderLab, clientes:renderClientes, tecnicos:renderTec, usuarios:renderUsers, historico:renderHist, estoque:async()=>{await loadEstMovs();renderEstoque();renderEstKpis();}, 'supr-cli':renderSuprCli, dashboard:loadDash, contratos:async()=>{await loadContratos();renderContratos();}, financeiro:async()=>{await loadFinanceiro();renderFinLanc();renderFinKpis();}, notificacoes:async()=>{await gerarNotificacoes();}, relatorios:()=>{ setRelPeriodo('mes'); renderRelatorios(); }, configuracoes:()=>{loadCfg();}, agenda:async()=>{await loadAgenda();renderAgenda();} };
+  const renders = { os:renderOS, logistica:renderLogistica, lab:renderLab, clientes:renderClientes, tecnicos:renderTec, usuarios:renderUsers, historico:renderHist, equipamentos:renderEquipamentos, estoque:async()=>{await loadEstMovs();renderEstoque();renderEstKpis();}, 'supr-cli':renderSuprCli, dashboard:loadDash, contratos:async()=>{await loadContratos();renderContratos();}, financeiro:async()=>{await loadFinanceiro();renderFinLanc();renderFinKpis();}, notificacoes:async()=>{await gerarNotificacoes();}, relatorios:()=>{ setRelPeriodo('mes'); renderRelatorios(); }, configuracoes:()=>{loadCfg();}, agenda:async()=>{await loadAgenda();renderAgenda();} };
   if(renders[p]) renders[p]();
   // Auto-refresh: inicia ao entrar na OS, para ao sair
   if (p === 'os') { iniciarAutoRefreshOS(); } else { pararAutoRefreshOS(); }
@@ -4908,30 +5049,8 @@ function openOS(id) {
   openM('m-os');
 }
 
-// Validação visual de campo obrigatório
-function _validField(id, msg) {
-  const el = document.getElementById(id);
-  if (!el) return true;
-  const val = el.value?.trim();
-  if (!val) {
-    el.style.borderColor = 'var(--rd)';
-    el.style.boxShadow   = '0 0 0 2px rgba(220,38,38,.15)';
-    el.focus();
-    el.addEventListener('input', () => {
-      el.style.borderColor = '';
-      el.style.boxShadow   = '';
-    }, { once: true });
-    showToast('⚠ ' + msg, 'warn');
-    return false;
-  }
-  return true;
-}
-
 async function saveOS() {
-  if (!_validField('o-cli',     'Selecione o cliente'))     return;
-  if (!_validField('o-defeito', 'Descreva o defeito'))      return;
-  if (!_validField('o-tec',     'Selecione o técnico'))     return;
-  const cid=document.getElementById('o-cli').value;
+  const cid=document.getElementById('o-cli').value; if(!cid){alert('Selecione o cliente.');return}
   const nserie = document.getElementById('o-nserie').value.trim();
   // FIX: Bloquear OS se equipamento está em laboratório ativo
   if (nserie) {
@@ -6781,7 +6900,7 @@ function openCliente(id){
   else{['c-id','c-nome','c-end','c-cidade','c-uf','c-cep','c-contato','c-tel','c-email','c-obs'].forEach(f=>document.getElementById(f).value='')}
   openM('m-cli');
 }
-async function saveCli(){const nome=document.getElementById('c-nome').value.trim();if(!_validField('c-nome','Informe o nome do cliente'))return;const eid=document.getElementById('c-id').value;const body={nome,end:document.getElementById('c-end').value,cidade:document.getElementById('c-cidade').value,uf:document.getElementById('c-uf').value,cep:document.getElementById('c-cep').value,contato:document.getElementById('c-contato').value,tel:document.getElementById('c-tel').value,email:document.getElementById('c-email').value,obs:document.getElementById('c-obs').value};try{if(eid)await api('PUT',`/api/clientes/${eid}`,body);else await api('POST','/api/clientes',body);await loadAll();closeM('m-cli');renderClientes();}catch(e){alert(e.message)}}
+async function saveCli(){const nome=document.getElementById('c-nome').value.trim();if(!nome){alert('Informe o nome.');return}const eid=document.getElementById('c-id').value;const body={nome,end:document.getElementById('c-end').value,cidade:document.getElementById('c-cidade').value,uf:document.getElementById('c-uf').value,cep:document.getElementById('c-cep').value,contato:document.getElementById('c-contato').value,tel:document.getElementById('c-tel').value,email:document.getElementById('c-email').value,obs:document.getElementById('c-obs').value};try{if(eid)await api('PUT',`/api/clientes/${eid}`,body);else await api('POST','/api/clientes',body);await loadAll();closeM('m-cli');renderClientes();}catch(e){alert(e.message)}}
 async function delCli(id){if(confirm('Excluir cliente e equipamentos?')){await api('DELETE',`/api/clientes/${id}`);await loadAll();renderClientes()}}
 function renderClientes(){
   const q=(document.getElementById('s-cli')?.value||'').toLowerCase();
@@ -6939,6 +7058,49 @@ function agenteBaixarPacote() {
   window.location.href = `/download/pacote-agente/${c.id}`;
 }
 
+// ── Upload de arquivos HTML (deploy) ─────────────────────────────────────────
+async function uploadHtmlArquivo(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const tipo = document.getElementById('html-upload-tipo').value;
+  const status = document.getElementById('html-upload-status');
+  const badge  = document.getElementById('html-upload-badge');
+  const preview = document.getElementById('html-upload-preview');
+
+  // Confirma antes de sobrescrever index.html
+  if (tipo === 'index.html') {
+    if (!confirm(`⚠️ Você está prestes a substituir o INDEX.HTML principal do sistema.\n\nIsso afeta TODOS os usuários.\n\nTem certeza?`)) {
+      input.value = ''; return;
+    }
+  }
+
+  status.textContent = '⏳ Enviando...';
+  status.style.color = 'var(--or)';
+  badge.style.display = 'none';
+  preview.style.display = 'none';
+
+  try {
+    const fd = new FormData();
+    fd.append('arquivo', file, tipo); // força o nome correto
+    const r = await fetch('/api/admin/upload-html', { method:'POST', body:fd, credentials:'include' });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error||'Erro no servidor');
+
+    status.textContent = `✅ ${data.arquivo} enviado (${data.tamanho_kb} KB)`;
+    status.style.color = 'var(--gn)';
+    badge.style.display = 'inline-block';
+    badge.innerHTML = `<span style="background:#dcfce7;color:#15803d;border-radius:20px;padding:2px 10px;font-size:10px;font-weight:700">✅ Deploy OK</span>`;
+    preview.style.display = 'block';
+    preview.innerHTML = `✅ <strong>${data.arquivo}</strong> atualizado com sucesso no servidor às ${new Date().toLocaleTimeString('pt-BR')}.<br>
+      Tamanho: ${data.tamanho_kb} KB · <a href="/${tipo === 'index.html' ? '' : tipo.replace('.html','')}" target="_blank" style="color:#15803d;font-weight:700">Abrir agora →</a>`;
+    showToast(`${data.arquivo} enviado com sucesso!`);
+  } catch(e) {
+    status.textContent = `❌ ${e.message}`;
+    status.style.color = 'var(--rd)';
+  }
+  input.value = '';
+}
+
 // ── Upload e status do OrionAgente.exe ──────────────────────────────────────
 async function agenteCarregarExeInfo() {
   const info   = document.getElementById('agente-exe-info');
@@ -7027,7 +7189,7 @@ function openEquip(id,preCli){
   else{['e-id','e-nome','e-marca','e-modelo','e-nserie','e-inst','e-contrato','e-local','e-obs'].forEach(f=>document.getElementById(f).value='');document.getElementById('e-cont').value=0;document.getElementById('e-status').value='Ativo';document.getElementById('e-cli').value=preCli||'';}
   openM('m-eq');
 }
-async function saveEq(){if(!_validField('e-cli','Selecione o cliente do equipamento'))return;if(!_validField('e-nome','Informe o nome/modelo do equipamento'))return;const cid=document.getElementById('e-cli').value;const eid=document.getElementById('e-id').value;const body={clienteId:cid,nome,marca:document.getElementById('e-marca').value,modelo:document.getElementById('e-modelo').value,nserie:document.getElementById('e-nserie').value,contador:+document.getElementById('e-cont').value||0,dataInst:document.getElementById('e-inst').value,contrato:document.getElementById('e-contrato').value,local:document.getElementById('e-local').value,status:document.getElementById('e-status').value,obs:document.getElementById('e-obs').value};try{if(eid)await api('PUT',`/api/equipamentos/${eid}`,body);else await api('POST','/api/equipamentos',body);await loadAll();closeM('m-eq');renderClientes();}catch(e){alert(e.message)}}
+async function saveEq(){const cid=document.getElementById('e-cli').value;const nome=document.getElementById('e-nome').value.trim();if(!nome){alert('Informe o nome/modelo do equipamento.');return}const eid=document.getElementById('e-id').value;const locStatus=document.getElementById('e-status').value;const body={clienteId:cid,nome,marca:document.getElementById('e-marca').value,modelo:document.getElementById('e-modelo').value,nserie:document.getElementById('e-nserie').value,contador:+document.getElementById('e-cont').value||0,dataInst:document.getElementById('e-inst').value,contrato:document.getElementById('e-contrato').value,local:document.getElementById('e-local').value,localizacao:document.getElementById('e-local').value,localizacao_status:locStatus,status:locStatus,obs:document.getElementById('e-obs').value};try{if(eid)await api('PUT',`/api/equipamentos/${eid}`,body);else await api('POST','/api/equipamentos',body);await loadAll();closeM('m-eq');renderClientes();renderEquipamentos();}catch(e){alert(e.message)}}
 async function delEq(id){if(confirm('Excluir equipamento?')){await api('DELETE',`/api/equipamentos/${id}`);await loadAll();renderClientes()}}
 
 // ─── TÉCNICOS ─────────────────────────────────────────────
@@ -8175,11 +8337,11 @@ async function loadDash(){
     if (elRec) elRec.textContent = 'R$' + receita.toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:0});
     countUp(document.getElementById('d-estbaixo'), estBaixo.length);
 
-    // ── Barra por técnico (filtrado) ──
+    // ── Barra por técnico — usa nome snapshot se ID não resolver ──
     const porTec = {};
     osF.forEach(o => {
       const t = G.tecnicos.find(x=>x.id===o.tecnico_id);
-      const n = t?.nome || 'Sem técnico';
+      const n = t?.nome || o.tecnico_nome || o.tecnico || 'Sem técnico';
       porTec[n] = (porTec[n]||0)+1;
     });
     const tecArr = Object.entries(porTec).sort((a,b)=>b[1]-a[1]);
@@ -8202,11 +8364,11 @@ async function loadDash(){
       ? d.retrabalho.map(r=>{const c=G.clientes.find(x=>x.id===r.cliente_id);return`<div class="ret-item"><div class="ret-title">Nº Série: ${r.nserie} — ${r.modelo||''}</div><div class="ret-sub">Cliente: ${c?.nome||'—'} · ${r.qtd} ocorrências · Último: ${fd(r.ultimo)}</div></div>`}).join('')
       : `<div class="empty" style="padding:20px"><div class="empty-ico">✓</div><div class="empty-t">Nenhum retrabalho</div></div>`;
 
-    // ── Top clientes ──
+    // ── Top clientes — usa nome snapshot se ID não resolver ──
     const porCli = {};
     osF.forEach(o => {
       const c = G.clientes.find(x=>x.id===o.cliente_id);
-      const n = c?.nome || 'Desconhecido';
+      const n = c?.nome || o.cliente_nome || o.cliente || 'Desconhecido';
       porCli[n] = (porCli[n]||0)+1;
     });
     const cliArr = Object.entries(porCli).sort((a,b)=>b[1]-a[1]).slice(0,6);
@@ -9571,209 +9733,12 @@ function hideTooltipMG(){
 function buildMapaSVG(){}
 
 
-
-// ══ BUSCA GLOBAL (Ctrl+K) ═══════════════════════════════════════════════════
-let _gsIdx = -1;
-
-document.addEventListener('keydown', e => {
-  if ((e.ctrlKey||e.metaKey) && e.key==='k') { e.preventDefault(); openGlobalSearch(); }
-  if (e.key==='Escape') closeGlobalSearch();
-});
-
-function openGlobalSearch() {
-  const ov = document.getElementById('global-search-overlay');
-  if (!ov) return;
-  ov.style.display = 'flex';
-  const inp = document.getElementById('global-search-input');
-  inp.value = '';
-  _gsIdx = -1;
-  globalSearch('');
-  setTimeout(()=>inp.focus(), 50);
-}
-
-function closeGlobalSearch() {
-  const ov = document.getElementById('global-search-overlay');
-  if (ov) ov.style.display = 'none';
-}
-
-function globalSearch(q) {
-  const res = document.getElementById('global-search-results');
-  if (!res) return;
-  _gsIdx = -1;
-  const sq = q.trim().toLowerCase();
-  const items = [];
-
-  // OS
-  (G.ordens||[]).filter(o => {
-    if (!sq) return true;
-    return (o.num||'').toLowerCase().includes(sq) ||
-           (G.clientes.find(c=>c.id===o.cliente_id)?.nome||'').toLowerCase().includes(sq) ||
-           (o.modelo||'').toLowerCase().includes(sq) ||
-           (o.nserie||'').toLowerCase().includes(sq) ||
-           (o.defeito||'').toLowerCase().includes(sq);
-  }).slice(0,5).forEach(o => {
-    const cli = G.clientes.find(c=>c.id===o.cliente_id);
-    const stCor = {Aberta:'#3b82f6','Em andamento':'#d97706',Concluída:'#059669',Cancelada:'#dc2626'}[o.status]||'#94a3b8';
-    items.push({
-      ico:'📋', bg:'#eff6ff', section:'Ordens de Serviço',
-      title: o.num||'OS', sub: `${cli?.nome||'—'} · ${o.modelo||'—'} · ${o.nserie||'—'}`,
-      badge: o.status, badgeBg: stCor+'22', badgeColor: stCor,
-      action: () => { closeGlobalSearch(); openOS(o); }
-    });
-  });
-
-  // Clientes
-  (G.clientes||[]).filter(c => {
-    if (!sq) return true;
-    return (c.nome||'').toLowerCase().includes(sq) ||
-           (c.cidade||'').toLowerCase().includes(sq) ||
-           (c.tel||'').toLowerCase().includes(sq);
-  }).slice(0,4).forEach(c => {
-    items.push({
-      ico:'🏢', bg:'#f0fdf4', section:'Clientes',
-      title: c.nome, sub: `${c.cidade||''}${c.uf?' / '+c.uf:''} · ${c.tel||''}`,
-      action: () => { closeGlobalSearch(); nav('clientes'); setTimeout(()=>{ document.getElementById('s-cli').value=c.nome; renderClientes(); }, 200); }
-    });
-  });
-
-  // Equipamentos
-  (G.equipamentos||[]).filter(e => {
-    if (!sq) return true;
-    const cli = G.clientes.find(c=>c.id===e.cliente_id);
-    return (e.nome||e.modelo||'').toLowerCase().includes(sq) ||
-           (e.nserie||'').toLowerCase().includes(sq) ||
-           (cli?.nome||'').toLowerCase().includes(sq);
-  }).slice(0,4).forEach(e => {
-    const cli = G.clientes.find(c=>c.id===e.cliente_id);
-    items.push({
-      ico:'🖨', bg:'#fef3c7', section:'Equipamentos',
-      title: e.nome||e.modelo||'Equipamento',
-      sub: `${cli?.nome||'—'} · NS: ${e.nserie||'—'}`,
-      action: () => { closeGlobalSearch(); nav('clientes'); setTimeout(()=>{ document.getElementById('s-cli').value=cli?.nome||''; renderClientes(); }, 200); }
-    });
-  });
-
-  // Técnicos
-  (G.tecnicos||[]).filter(t => {
-    if (!sq) return t;
-    return (t.nome||'').toLowerCase().includes(sq) ||
-           (t.email||'').toLowerCase().includes(sq);
-  }).slice(0,3).forEach(t => {
-    items.push({
-      ico:'👤', bg:'#fdf4ff', section:'Técnicos',
-      title: t.nome, sub: t.email||t.tel||'',
-      action: () => { closeGlobalSearch(); nav('tecnicos'); }
-    });
-  });
-
-  if (!items.length) {
-    res.innerHTML = `<div class="gs-empty">${sq ? '🔍 Nenhum resultado para "'+sq+'"' : 'Digite para buscar...'}</div>`;
-    return;
-  }
-
-  // Agrupa por seção
-  const sections = {};
-  items.forEach(it => {
-    if (!sections[it.section]) sections[it.section] = [];
-    sections[it.section].push(it);
-  });
-
-  let html = '', idx = 0;
-  for (const [sec, its] of Object.entries(sections)) {
-    html += `<div class="gs-section">${sec}</div>`;
-    its.forEach(it => {
-      html += `<div class="gs-item" data-idx="${idx}" onclick="gsExecute(${idx})">
-        <div class="gs-item-ico" style="background:${it.bg}">${it.ico}</div>
-        <div class="gs-item-main">
-          <div class="gs-item-title">${it.title}</div>
-          ${it.sub?`<div class="gs-item-sub">${it.sub}</div>`:''}
-        </div>
-        ${it.badge?`<span class="gs-item-badge" style="background:${it.badgeBg||'#f1f5f9'};color:${it.badgeColor||'#475569'}">${it.badge}</span>`:''}
-      </div>`;
-      idx++;
-    });
-  }
-  res.innerHTML = html;
-  res._items = items;
-}
-
-function gsExecute(idx) {
-  const res = document.getElementById('global-search-results');
-  if (res._items && res._items[idx]) res._items[idx].action();
-}
-
-function globalSearchKey(e) {
-  const res = document.getElementById('global-search-results');
-  const items = res.querySelectorAll('.gs-item');
-  if (!items.length) return;
-  if (e.key==='ArrowDown') { e.preventDefault(); _gsIdx=Math.min(_gsIdx+1,items.length-1); }
-  else if (e.key==='ArrowUp') { e.preventDefault(); _gsIdx=Math.max(_gsIdx-1,0); }
-  else if (e.key==='Enter') { e.preventDefault(); if(_gsIdx>=0) gsExecute(_gsIdx); return; }
-  else return;
-  items.forEach((el,i) => el.classList.toggle('gs-active', i===_gsIdx));
-  items[_gsIdx]?.scrollIntoView({block:'nearest'});
-}
-
-
-// ══ ALERTA DE OS PARADA SEM ATUALIZAÇÃO ═════════════════════════════════════
-function verificarOSParadas() {
-  const DIAS_LIMITE = 3; // alerta se OS aberta sem atualização > 3 dias
-  const hoje = new Date();
-  const abertas = (G.ordens||[]).filter(o =>
-    o.status === 'Aberta' || o.status === 'Em andamento'
-  );
-  const paradas = abertas.filter(o => {
-    const ultima = new Date(o.updated_at || o.data_ab || o.created_at || 0);
-    const dias = (hoje - ultima) / (1000*60*60*24);
-    return dias >= DIAS_LIMITE;
-  });
-  if (!paradas.length) return;
-
-  // Adiciona badge no item de menu OS
-  const niOs = document.querySelector('[data-modulo="os"] .ni-badge, #ni-os .ni-badge');
-  if (niOs) {
-    niOs.textContent = paradas.length;
-    niOs.style.display = 'inline-flex';
-  }
-
-  // Insere card de aviso no topo do dashboard se não existir
-  const dash = document.getElementById('page-dashboard');
-  if (!dash) return;
-  let aviso = document.getElementById('dash-os-paradas');
-  if (!aviso) {
-    aviso = document.createElement('div');
-    aviso.id = 'dash-os-paradas';
-    aviso.style.cssText = 'margin:0 0 12px;background:#fff7ed;border:1.5px solid #fed7aa;border-radius:12px;padding:12px 16px;display:flex;align-items:flex-start;gap:10px';
-    const inner = dash.querySelector('.dash-grid, .page-inner, #dash-inner');
-    if (inner) inner.parentNode.insertBefore(aviso, inner);
-    else dash.insertBefore(aviso, dash.firstChild);
-  }
-  aviso.innerHTML = `
-    <div style="font-size:20px;flex-shrink:0">⏰</div>
-    <div style="flex:1">
-      <div style="font-size:12px;font-weight:800;color:#c2410c;margin-bottom:4px">${paradas.length} OS parada${paradas.length>1?'s':''} sem atualização há mais de ${DIAS_LIMITE} dias</div>
-      <div style="display:flex;flex-wrap:wrap;gap:5px">
-        ${paradas.slice(0,5).map(o => {
-          const cli = G.clientes.find(c=>c.id===o.cliente_id);
-          const ultima = new Date(o.updated_at||o.data_ab||o.created_at||0);
-          const dias = Math.floor((new Date()-ultima)/(1000*60*60*24));
-          return `<span onclick="openOS(G.ordens.find(x=>x.id==='${o.id}'))" style="cursor:pointer;font-size:10px;background:#fff;border:1px solid #fed7aa;border-radius:8px;padding:3px 8px;color:#92400e">
-            <b>${o.num}</b> · ${cli?.nome||'—'} · ${dias}d
-          </span>`;
-        }).join('')}
-        ${paradas.length>5?`<span style="font-size:10px;color:#92400e">+${paradas.length-5} mais</span>`:''}
-      </div>
-    </div>
-    <button onclick="document.getElementById('dash-os-paradas').style.display='none'" 
-            style="background:none;border:none;cursor:pointer;color:#c2410c;font-size:16px;padding:0;flex-shrink:0">×</button>`;
-}
-
 // ─── PERFIS DE ACESSO ─────────────────────────────────────────
 const PERFIS_MODULOS = {
-  admin:          ['dashboard','os','agenda','lab','historico','estoque','supr-cli','clientes','tecnicos','usuarios','logistica','contratos','financeiro','notificacoes','relatorios'],
-  supervisor:     ['dashboard','os','agenda','lab','historico','estoque','supr-cli','clientes','tecnicos','usuarios','logistica','contratos','financeiro','notificacoes','relatorios'],
-  tecnico:        ['dashboard','os','agenda','lab','historico','estoque','supr-cli','clientes','notificacoes'],
-  logistica:      ['dashboard','logistica','os','agenda','clientes','estoque','notificacoes'],
+  admin:          ['dashboard','os','agenda','lab','historico','estoque','supr-cli','clientes','equipamentos','tecnicos','usuarios','logistica','contratos','financeiro','notificacoes','relatorios'],
+  supervisor:     ['dashboard','os','agenda','lab','historico','estoque','supr-cli','clientes','equipamentos','tecnicos','usuarios','logistica','contratos','financeiro','notificacoes','relatorios'],
+  tecnico:        ['dashboard','os','agenda','lab','historico','estoque','supr-cli','clientes','equipamentos','notificacoes'],
+  logistica:      ['dashboard','logistica','os','agenda','clientes','equipamentos','estoque','notificacoes'],
   rh:             ['dashboard','tecnicos','usuarios'],
   financeiro:     ['dashboard','os','historico','logistica','contratos','financeiro','notificacoes','relatorios'],
   comercial:      ['dashboard','os','agenda','historico','clientes','contratos','notificacoes'],
@@ -10429,38 +10394,6 @@ function printLogRel(id) {
   .sig-img { max-height: 70px; display: block; margin: 0 auto 8px; }
   .sig-line { border-top: 1.5px solid #444; padding-top: 5px; font-size: 9px; color: #555; margin-top: 30px; }
   @media print { body { padding: 10px; } }
-
-/* ── BUSCA GLOBAL ─────────────────────────────────────────────────── */
-#global-search-overlay {
-  position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10000;
-  display:flex;align-items:flex-start;justify-content:center;padding-top:80px;
-  animation:gs-fade .15s ease;
-}
-@keyframes gs-fade { from{opacity:0} to{opacity:1} }
-#global-search-box {
-  background:#fff;border-radius:14px;width:100%;max-width:580px;
-  box-shadow:0 20px 60px rgba(0,0,0,.25);overflow:hidden;
-}
-#global-search-input {
-  width:100%;padding:14px 18px;font-size:15px;font-family:Sora,sans-serif;
-  border:none;outline:none;color:#1e293b;background:transparent;
-  border-bottom:1px solid #e2e8f0;
-}
-#global-search-input::placeholder { color:#94a3b8; }
-#global-search-results { max-height:420px;overflow-y:auto; }
-.gs-section { padding:6px 14px 2px;font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.8px; }
-.gs-item {
-  display:flex;align-items:center;gap:10px;padding:9px 16px;cursor:pointer;
-  transition:background .1s;border-bottom:1px solid #f1f5f9;
-}
-.gs-item:hover,.gs-item.gs-active { background:#f0f7ff; }
-.gs-item-ico { width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0; }
-.gs-item-main { flex:1;min-width:0; }
-.gs-item-title { font-size:12px;font-weight:700;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
-.gs-item-sub   { font-size:10px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
-.gs-item-badge { font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;flex-shrink:0; }
-.gs-empty { padding:24px;text-align:center;color:#94a3b8;font-size:12px; }
-.gs-shortcut { padding:8px 16px;font-size:10px;color:#94a3b8;text-align:right;border-top:1px solid #f1f5f9; }
 </style>
 </head>
 <body>

@@ -237,7 +237,9 @@ app.put('/api/ordens/:id', requireAuth, async (req,res) => {
     const b=req.body;
     const old=await col('ordens').findOne({_id:new ObjectId(req.params.id)});
     const total=(b.viag||0)+(b.alim||0)+(b.hosp||0)+(b.comb||0)+(b.ped||0)+(b.outros||0);
-    await col('ordens').updateOne({_id:new ObjectId(req.params.id)},{$set:{data_ab:b.dataAb,tecnico_id:b.tecnicoId||'',cliente_id:b.clienteId,contato:b.contato||'',tel:b.tel||'',end_logradouro:b.end||'',cep:b.cep||'',cidade:b.cidade||'',uf:b.uf||'',equip_id:b.equipId||'',modelo:b.modelo||'',nserie:b.nserie||'',contador:b.contador||'',defeito:b.defeito||'',procedimento:b.procedimento||'',pecas:b.pecas||'',obs:b.obs||'',data_chamado:b.dataChamado||'',data_atend:b.dataAtend||'',hora_chegada:b.horaChegada||'',hora_saida:b.horaSaida||'',viag:b.viag||0,alim:b.alim||0,hosp:b.hosp||0,comb:b.comb||0,ped:b.ped||0,outros:b.outros||0,total_os:total,status:b.status||'Aberta',checklist:Array.isArray(b.checklist)?b.checklist:[],sig_tec:b.sig_tec||'',sig_cli:b.sig_cli||'',tipo:b.tipo||'',sla_prazo:b.sla_prazo||'',sla_deadline:b.sla_deadline||null,origem:b.origem||'sistema'}});
+    const cliSnap = b.clienteId ? await col('clientes').findOne({_id:new ObjectId(b.clienteId)}) : null;
+    const tecSnap = b.tecnicoId ? await col('tecnicos').findOne({_id:new ObjectId(b.tecnicoId)}) : null;
+    await col('ordens').updateOne({_id:new ObjectId(req.params.id)},{$set:{data_ab:b.dataAb,tecnico_id:b.tecnicoId||'',tecnico_nome:tecSnap?.nome||'',cliente_id:b.clienteId,cliente_nome:cliSnap?.nome||'',contato:b.contato||'',tel:b.tel||'',end_logradouro:b.end||'',cep:b.cep||'',cidade:b.cidade||'',uf:b.uf||'',equip_id:b.equipId||'',modelo:b.modelo||'',nserie:b.nserie||'',contador:b.contador||'',defeito:b.defeito||'',procedimento:b.procedimento||'',pecas:b.pecas||'',obs:b.obs||'',data_chamado:b.dataChamado||'',data_atend:b.dataAtend||'',hora_chegada:b.horaChegada||'',hora_saida:b.horaSaida||'',viag:b.viag||0,alim:b.alim||0,hosp:b.hosp||0,comb:b.comb||0,ped:b.ped||0,outros:b.outros||0,total_os:total,status:b.status||'Aberta',checklist:Array.isArray(b.checklist)?b.checklist:[],sig_tec:b.sig_tec||'',sig_cli:b.sig_cli||'',tipo:b.tipo||'',sla_prazo:b.sla_prazo||'',sla_deadline:b.sla_deadline||null,origem:b.origem||'sistema'}});
     if(old&&old.status!=='Concluída'&&b.status==='Concluída'){
       const os=await col('ordens').findOne({_id:new ObjectId(req.params.id)});
       const cli=await col('clientes').findOne({_id:new ObjectId(os.cliente_id)});
@@ -492,14 +494,47 @@ app.get('/api/dashboard', requireAuth, async (req,res) => {
 // BACKUP
 app.get('/api/backup', requireAuth, requireAdmin, async (req,res) => {
   try {
-    const [users,tecnicos,clientes,equipamentos,ordens,laboratorio,historico,estoque,suprCli,suprMovs,estMovs,lancamentos,contratos,financeiro]=await Promise.all([
-      col('users').find().toArray(),col('tecnicos').find().toArray(),col('clientes').find().toArray(),
-      col('equipamentos').find().toArray(),col('ordens').find().toArray(),col('laboratorio').find().toArray(),col('logistica').find().toArray(),
-      col('historico').find().toArray(),col('estoque').find().toArray(),col('supr_cli').find().toArray(),col('supr_movs').find().toArray(),
-      col('estoque_movs').find().toArray(),col('lancamentos').find().toArray(),
-      col('contratos').find().toArray(),col('financeiro').find().toArray()
+    const [users,tecnicos,clientes,equipamentos,ordens,laboratorio,logistica,historico,estoque,suprCli,suprMovs,estMovs,lancamentos,contratos,financeiro,agenda,veiculos]=await Promise.all([
+      col('users').find().toArray(),
+      col('tecnicos').find().toArray(),
+      col('clientes').find().toArray(),
+      col('equipamentos').find().toArray(),
+      col('ordens').find().toArray(),
+      col('laboratorio').find().toArray(),
+      col('logistica').find().toArray(),
+      col('historico').find().toArray(),
+      col('estoque').find().toArray(),
+      col('supr_cli').find().toArray(),
+      col('supr_movs').find().toArray(),
+      col('estoque_movs').find().toArray(),
+      col('lancamentos').find().toArray(),
+      col('contratos').find().toArray(),
+      col('financeiro').find().toArray(),
+      col('agenda').find().toArray(),
+      col('veiculos').find().toArray(),
     ]);
-    const backup={version:'5.1',gerado_em:now(),usuarios:users.map(u=>({...u,senha_hash:undefined})),tecnicos,clientes,equipamentos,ordens,laboratorio,historico,estoque,estoque_movs:estMovs,estoque_supr:suprCli,estoque_movs_supr:suprMovs,lancamentos_manuais:lancamentos,contratos,financeiro};
+    // Converte _id ObjectId para string para preservar referências no restore
+    const toStr = arr => arr.map(d => ({...d, _id: d._id?.toString(), id: d._id?.toString()}));
+    const backup = {
+      version:'5.2', gerado_em:now(),
+      usuarios:      users.map(u=>({...toStr([u])[0], senha_hash:undefined})),
+      tecnicos:      toStr(tecnicos),
+      clientes:      toStr(clientes),
+      equipamentos:  toStr(equipamentos),
+      ordens:        toStr(ordens),
+      laboratorio:   toStr(laboratorio),
+      logistica:     toStr(logistica),
+      historico:     toStr(historico),
+      estoque:       toStr(estoque),
+      estoque_movs:  toStr(estMovs),
+      estoque_supr:  toStr(suprCli),
+      estoque_movs_supr: toStr(suprMovs),
+      lancamentos_manuais: toStr(lancamentos),
+      contratos:     toStr(contratos),
+      financeiro:    toStr(financeiro),
+      agenda:        toStr(agenda),
+      veiculos:      toStr(veiculos),
+    };
     res.setHeader('Content-Disposition',`attachment; filename="orion_backup_${new Date().toISOString().slice(0,10)}.json"`);
     res.json(backup);
   }catch(e){res.status(500).json({error:e.message});}
@@ -511,52 +546,60 @@ app.post('/api/restore', requireAuth, requireAdmin, async (req, res) => {
     const d = req.body;
     if (!d || !d.version) return res.status(400).json({ error: 'Arquivo de backup inválido.' });
 
-    // Mapeamento: chave do backup → coleção no MongoDB
+    // Converte _id string de volta para ObjectId quando possível
+    const toDoc = obj => {
+      const { _id, id, ...rest } = obj;
+      const rawId = _id || id;
+      try {
+        return rawId && rawId.length === 24
+          ? { _id: new ObjectId(rawId), ...rest }
+          : { ...rest };
+      } catch { return { ...rest }; }
+    };
+
     const mapa = [
-      { key: 'tecnicos',           col: 'tecnicos' },
-      { key: 'clientes',           col: 'clientes' },
-      { key: 'equipamentos',       col: 'equipamentos' },
-      { key: 'ordens',             col: 'ordens' },
-      { key: 'laboratorio',        col: 'laboratorio' },
-      { key: 'historico',          col: 'historico' },
-      { key: 'estoque',            col: 'estoque' },
-      { key: 'estoque_movs',       col: 'estoque_movs' },
-      { key: 'estoque_supr',       col: 'supr_cli' },
-      { key: 'estoque_movs_supr',  col: 'supr_movs' },
-      { key: 'lancamentos_manuais',col: 'lancamentos' },
-      { key: 'contratos',          col: 'contratos' },
-      { key: 'financeiro',         col: 'financeiro' },
-      { key: 'logistica',          col: 'logistica' },
-      { key: 'agenda',             col: 'agenda' },
+      { key: 'tecnicos',            col: 'tecnicos' },
+      { key: 'clientes',            col: 'clientes' },
+      { key: 'equipamentos',        col: 'equipamentos' },
+      { key: 'ordens',              col: 'ordens' },
+      { key: 'laboratorio',         col: 'laboratorio' },
+      { key: 'logistica',           col: 'logistica' },
+      { key: 'historico',           col: 'historico' },
+      { key: 'estoque',             col: 'estoque' },
+      { key: 'estoque_movs',        col: 'estoque_movs' },
+      { key: 'estoque_supr',        col: 'supr_cli' },
+      { key: 'estoque_movs_supr',   col: 'supr_movs' },
+      { key: 'lancamentos_manuais', col: 'lancamentos' },
+      { key: 'contratos',           col: 'contratos' },
+      { key: 'financeiro',          col: 'financeiro' },
+      { key: 'agenda',              col: 'agenda' },
+      { key: 'veiculos',            col: 'veiculos' },
     ];
 
     const resultados = {};
     for (const { key, col: colName } of mapa) {
       const dados = d[key];
       if (!Array.isArray(dados) || dados.length === 0) { resultados[colName] = 0; continue; }
-      // Remove _id string para evitar conflito, MongoDB vai gerar novos
-      const docs = dados.map(({ _id, id, ...rest }) => rest);
+      const docs = dados.map(toDoc);
       await col(colName).deleteMany({});
       const r = await col(colName).insertMany(docs);
       resultados[colName] = r.insertedCount;
     }
 
-    // Restaurar usuários (sem sobrescrever o master atual)
+    // Restaurar usuários — preserva master, reimporta os demais com _id original
     if (Array.isArray(d.usuarios) && d.usuarios.length > 0) {
       await col('users').deleteMany({ isMaster: { $ne: true } });
-      const usuariosParaImportar = d.usuarios
-        .filter(u => u.login !== 'master')
-        .map(({ _id, id, senha_hash, ...rest }) => ({
-          ...rest,
-          senha_hash: senha_hash || bcrypt.hashSync('mudar123', 10),
+      const paraImportar = d.usuarios
+        .filter(u => u.login !== 'master' && !u.isMaster)
+        .map(u => ({
+          ...toDoc(u),
+          senha_hash: u.senha_hash || bcrypt.hashSync('mudar123', 10),
         }));
-      if (usuariosParaImportar.length > 0) {
-        await col('users').insertMany(usuariosParaImportar);
-      }
-      resultados['users'] = usuariosParaImportar.length;
+      if (paraImportar.length > 0) await col('users').insertMany(paraImportar);
+      resultados['users'] = paraImportar.length;
     }
 
-    // Garantir counter de OS no valor máximo do backup
+    // Ajusta counter de OS para máximo encontrado
     const maxNum = (d.ordens||[]).reduce((m, o) => Math.max(m, o.num||0), 0);
     await col('counter').updateOne({ _id: 'os' }, { $set: { valor: maxNum } }, { upsert: true });
 
