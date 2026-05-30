@@ -505,6 +505,65 @@ app.get('/api/backup', requireAuth, requireAdmin, async (req,res) => {
   }catch(e){res.status(500).json({error:e.message});}
 });
 
+// ─── RESTAURAR BACKUP ─────────────────────────────────────────────────────────
+app.post('/api/restore', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const d = req.body;
+    if (!d || !d.version) return res.status(400).json({ error: 'Arquivo de backup inválido.' });
+
+    // Mapeamento: chave do backup → coleção no MongoDB
+    const mapa = [
+      { key: 'tecnicos',           col: 'tecnicos' },
+      { key: 'clientes',           col: 'clientes' },
+      { key: 'equipamentos',       col: 'equipamentos' },
+      { key: 'ordens',             col: 'ordens' },
+      { key: 'laboratorio',        col: 'laboratorio' },
+      { key: 'historico',          col: 'historico' },
+      { key: 'estoque',            col: 'estoque' },
+      { key: 'estoque_movs',       col: 'estoque_movs' },
+      { key: 'estoque_supr',       col: 'supr_cli' },
+      { key: 'estoque_movs_supr',  col: 'supr_movs' },
+      { key: 'lancamentos_manuais',col: 'lancamentos' },
+      { key: 'contratos',          col: 'contratos' },
+      { key: 'financeiro',         col: 'financeiro' },
+      { key: 'logistica',          col: 'logistica' },
+      { key: 'agenda',             col: 'agenda' },
+    ];
+
+    const resultados = {};
+    for (const { key, col: colName } of mapa) {
+      const dados = d[key];
+      if (!Array.isArray(dados) || dados.length === 0) { resultados[colName] = 0; continue; }
+      // Remove _id string para evitar conflito, MongoDB vai gerar novos
+      const docs = dados.map(({ _id, id, ...rest }) => rest);
+      await col(colName).deleteMany({});
+      const r = await col(colName).insertMany(docs);
+      resultados[colName] = r.insertedCount;
+    }
+
+    // Restaurar usuários (sem sobrescrever o master atual)
+    if (Array.isArray(d.usuarios) && d.usuarios.length > 0) {
+      await col('users').deleteMany({ isMaster: { $ne: true } });
+      const usuariosParaImportar = d.usuarios
+        .filter(u => u.login !== 'master')
+        .map(({ _id, id, senha_hash, ...rest }) => ({
+          ...rest,
+          senha_hash: senha_hash || bcrypt.hashSync('mudar123', 10),
+        }));
+      if (usuariosParaImportar.length > 0) {
+        await col('users').insertMany(usuariosParaImportar);
+      }
+      resultados['users'] = usuariosParaImportar.length;
+    }
+
+    // Garantir counter de OS no valor máximo do backup
+    const maxNum = (d.ordens||[]).reduce((m, o) => Math.max(m, o.num||0), 0);
+    await col('counter').updateOne({ _id: 'os' }, { $set: { valor: maxNum } }, { upsert: true });
+
+    res.json({ ok: true, msg: 'Backup restaurado com sucesso!', resultados });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 
 // LOGISTICA — ROTAS
 app.get('/api/logistica', requireAuth, async (req,res) => { const d=await col('logistica').find().sort({data_saida:-1}).toArray(); res.json(d.map(x=>({...x,id:x._id.toString()}))); });
