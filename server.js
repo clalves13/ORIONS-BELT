@@ -111,25 +111,18 @@ app.get('/api/perfis', requireAuth, (req,res) => {
 app.post('/api/login', rlLogin, async (req,res) => {
   try {
     const {login,senha} = req.body;
+    // Master (coringa) — sempre funciona via variável de ambiente, nunca é apagado
     if (login==='master' && bcrypt.compareSync(senha||'', MASTER_HASH)) {
       req.session.user = {id:'master',login:'master',nome:'Master Admin',role:'admin',perfil:'admin',isMaster:true};
       return res.json({ok:true,user:req.session.user});
     }
-    if (login==='admin') {
-      const adminPass = process.env.ADMIN_PASSWORD||'admin123';
-      if (senha===adminPass) {
-        req.session.user = {id:'admin',login:'admin',nome:'Administrador',role:'admin',perfil:'admin'};
-        return res.json({ok:true,user:req.session.user});
-      }
-      return res.status(401).json({error:'Usuário ou senha incorretos'});
-    }
+    // Todos os outros usuários (incluindo admin) — consulta o banco
     const user = await col('users').findOne({login, ativo:1});
     if (!user||!bcrypt.compareSync(senha||'',user.senha_hash)) return res.status(401).json({error:'Usuário ou senha incorretos'});
     await col('users').updateOne({_id:user._id},{$set:{ultimo_acesso:now()}});
-    req.session.user = {id:user._id.toString(),login:user.login,nome:user.nome,role:user.role,perfil:user.perfil||user.role};
+    req.session.user = {id:user._id.toString(),login:user.login,nome:user.nome,role:user.role,perfil:user.perfil||user.role,isMaster:!!user.isMaster};
     res.json({ok:true,user:req.session.user});
-  } catch(e){res.status(500).json({error:e.message});}
-});
+  } catch(e){res.status(500).json({error:e.message});}\r\n});
 app.post('/api/logout',(req,res)=>{req.session.destroy();res.json({ok:true});});
 app.get('/api/me',(req,res)=>{ if(!req.session.user)return res.status(401).json({error:'Não autenticado'}); res.json(req.session.user); });
 
