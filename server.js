@@ -900,7 +900,6 @@ app.post('/api/reset-system', requireAuth, async (req, res) => {
       'lancamentos','contratos','financeiro',
       'counter','sessions','notificacoes','configuracoes','agenda'
     ];
-    const db = client.db();
     const resultados = {};
     for (const nome of colecoes) {
       try {
