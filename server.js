@@ -122,7 +122,8 @@ app.post('/api/login', rlLogin, async (req,res) => {
     await col('users').updateOne({_id:user._id},{$set:{ultimo_acesso:now()}});
     req.session.user = {id:user._id.toString(),login:user.login,nome:user.nome,role:user.role,perfil:user.perfil||user.role,isMaster:!!user.isMaster};
     res.json({ok:true,user:req.session.user});
-  } catch(e){res.status(500).json({error:e.message});}\r\n});
+  } catch(e){res.status(500).json({error:e.message});}
+});
 app.post('/api/logout',(req,res)=>{req.session.destroy();res.json({ok:true});});
 app.get('/api/me',(req,res)=>{ if(!req.session.user)return res.status(401).json({error:'Não autenticado'}); res.json(req.session.user); });
 
