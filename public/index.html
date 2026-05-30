@@ -9801,7 +9801,8 @@ function openLogistica(id) {
   if (id) {
     const l = G.logistica.find(x=>x.id===id); if (!l) return;
     document.getElementById('log-id').value=l.id;
-    document.getElementById('log-dsai').value=l.data_saida||''; document.getElementById('log-hsai').value=l.hora_saida||'';\n    document.getElementById('log-dret').value=l.data_retorno||''; document.getElementById('log-hret').value=l.hora_retorno||'';
+    document.getElementById('log-dsai').value=l.data_saida||''; document.getElementById('log-hsai').value=l.hora_saida||'';
+    document.getElementById('log-dret').value=l.data_retorno||''; document.getElementById('log-hret').value=l.hora_retorno||'';
     document.getElementById('log-mot').value=l.motorista||''; document.getElementById('log-vei').value=l.veiculo||'';
     document.getElementById('log-placa').value=l.placa||'';
     // Tentar selecionar veículo pelo placa
