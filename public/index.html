@@ -4679,13 +4679,29 @@ function stClass(st) {
 function renderCalKpis() {
   const mes = String(AG.mesSel+1).padStart(2,'0');
   const prefixo = `${AG.anoSel}-${mes}`;
+
+  // Eventos da agenda (criados manualmente)
   const evMes = AG.eventos.filter(e => (e.data_inicio||'').slice(0,7) === prefixo);
+
+  // OS do mês que aparecem no calendário (abertas/em andamento com sla_deadline ou data_chamado no mês)
+  const osMes = (G.ordens||[]).filter(o => {
+    if (o.status === 'Cancelada') return false;
+    const d = (o.sla_deadline||o.data_chamado||o.data_ab||'').slice(0,7);
+    return d === prefixo;
+  });
+
+  const totalEventos = evMes.length + osMes.length;
+  const visitas   = evMes.filter(e=>e.tipo==='Visita').length;
+  const prevent   = evMes.filter(e=>e.tipo==='Preventiva').length;
+  const confirm   = evMes.filter(e=>e.status==='Confirmado').length;
+  const pendentes = evMes.filter(e=>e.status==='Agendado').length + osMes.filter(o=>o.status==='Aberta'||o.status==='Em andamento').length;
+
   const kpis = [
-    { lbl:'Total de eventos', val: evMes.length, ico:'📅' },
-    { lbl:'Visitas', val: evMes.filter(e=>e.tipo==='Visita').length, ico:'🚗' },
-    { lbl:'Preventivas', val: evMes.filter(e=>e.tipo==='Preventiva').length, ico:'🔧' },
-    { lbl:'Confirmados', val: evMes.filter(e=>e.status==='Confirmado').length, ico:'✅' },
-    { lbl:'Pendentes', val: evMes.filter(e=>e.status==='Agendado').length, ico:'⏳' },
+    { lbl:'Total de eventos', val: totalEventos, ico:'📅' },
+    { lbl:'Visitas',          val: visitas,       ico:'🚗' },
+    { lbl:'Preventivas',      val: prevent,       ico:'🔧' },
+    { lbl:'Confirmados',      val: confirm,       ico:'✅' },
+    { lbl:'Pendentes',        val: pendentes,     ico:'⏳' },
   ];
   document.getElementById('cal-kpis').innerHTML = kpis.map(k=>
     `<div style="display:flex;align-items:center;justify-content:space-between;font-size:12px">
