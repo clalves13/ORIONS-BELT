@@ -210,19 +210,26 @@ app.put('/api/clientes/:id', requireAuth, async (req,res) => { try{const b=req.b
 app.delete('/api/clientes/:id', requireAuth, async (req,res) => { try{await col('clientes').deleteOne({_id:new ObjectId(req.params.id)}); await col('equipamentos').deleteMany({cliente_id:req.params.id}); res.json({ok:true});}catch(e){res.status(500).json({error:e.message});} });
 
 // EQUIPAMENTOS
-// Migração única: converte status 'Ativo'/'Inativo' para novo padrão
-app.post('/api/admin/migrar-eq-status', requireAuth, requireAdmin, async (req,res) => {
+// Migração: converte OS com num numérico para formato OS-YYYY-NNNN
+app.post('/api/admin/migrar-os-num', requireAuth, requireAdmin, async (req,res) => {
   try {
-    const r1 = await col('equipamentos').updateMany(
-      { status: { $in: ['Ativo', 'ativo', ''] }, localizacao_status: { $exists: false } },
-      { $set: { localizacao_status: 'No cliente', status: 'No cliente' } }
-    );
-    const r2 = await col('equipamentos').updateMany(
-      { status: 'Inativo', localizacao_status: { $exists: false } },
-      { $set: { localizacao_status: 'Em estoque', status: 'Em estoque' } }
-    );
-    res.json({ ok: true, corrigidos_ativo: r1.modifiedCount, corrigidos_inativo: r2.modifiedCount });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+    const ordens = await col('ordens').find().toArray();
+    let corrigidas = 0;
+    for (const o of ordens) {
+      // Só corrige se o num for número puro (ex: 4) ou string numérica
+      if (typeof o.num === 'number' || (typeof o.num === 'string' && /^\d+$/.test(o.num.trim()))) {
+        const n = parseInt(o.num);
+        // Pega o ano da data de abertura ou ano atual
+        const ano = o.data_ab ? o.data_ab.slice(0,4) : new Date().getFullYear();
+        const novoNum = `OS-${ano}-${String(n).padStart(4,'0')}`;
+        await col('ordens').updateOne({_id:o._id}, {$set:{num: novoNum}});
+        // Atualiza também no histórico
+        await col('historico').updateMany({os_num: o.num}, {$set:{num: novoNum, os_num: novoNum}});
+        corrigidas++;
+      }
+    }
+    res.json({ok:true, total: ordens.length, corrigidas});
+  } catch(e) { res.status(500).json({error:e.message}); }
 });
 
 app.get('/api/equipamentos', requireAuth, async (req,res) => { const d=await col('equipamentos').find().toArray(); res.json(d.map(x=>({...x,id:x._id.toString()}))); });
