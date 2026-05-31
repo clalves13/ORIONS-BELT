@@ -4691,16 +4691,17 @@ function renderCalKpis() {
   });
   const osMes = [...osMesMap.values()];
   const totalEventos = evMes.length + osMes.length;
-  const visitas  = evMes.filter(e=>e.tipo==='Visita').length;
-  const prevent  = evMes.filter(e=>e.tipo==='Preventiva').length;
-  const confirm  = evMes.filter(e=>e.status==='Confirmado').length;
+  const visitas   = evMes.filter(e=>e.tipo==='Visita').length;
+  const prevent   = evMes.filter(e=>e.tipo==='Preventiva').length;
+  const confirm   = evMes.filter(e=>e.status==='Confirmado').length;
   const pendentes = evMes.filter(e=>e.status==='Agendado').length + osMes.filter(o=>o.status==='Aberta'||o.status==='Em andamento').length;
+  const concluidos = evMes.filter(e=>e.status==='Concluído').length + osMes.filter(o=>o.status==='Concluída').length;
   const kpis = [
-    { lbl:'Total de eventos', val: totalEventos, ico:'📅' },
-    { lbl:'Visitas',          val: visitas,       ico:'🚗' },
-    { lbl:'Preventivas',      val: prevent,       ico:'🔧' },
-    { lbl:'Confirmados',      val: confirm,       ico:'✅' },
-    { lbl:'Pendentes',        val: pendentes,     ico:'⏳' },
+    { lbl:'Total de eventos', val: totalEventos,  ico:'📅' },
+    { lbl:'Visitas',          val: visitas,        ico:'🚗' },
+    { lbl:'Preventivas',      val: prevent,        ico:'🔧' },
+    { lbl:'Concluídos',       val: concluidos,     ico:'✅' },
+    { lbl:'Pendentes',        val: pendentes,      ico:'⏳' },
   ];
   document.getElementById('cal-kpis').innerHTML = kpis.map(k=>
     `<div style="display:flex;align-items:center;justify-content:space-between;font-size:12px">
