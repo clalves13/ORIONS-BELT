@@ -4683,12 +4683,14 @@ function renderCalKpis() {
   // Eventos da agenda (criados manualmente)
   const evMes = AG.eventos.filter(e => (e.data_inicio||'').slice(0,7) === prefixo);
 
-  // OS do mês que aparecem no calendário (abertas/em andamento com sla_deadline ou data_chamado no mês)
-  const osMes = (G.ordens||[]).filter(o => {
-    if (o.status === 'Cancelada') return false;
+  // OS do mês — deduplica por id, usa a primeira data disponível
+  const osMesMap = new Map();
+  (G.ordens||[]).forEach(o => {
+    if (o.status === 'Cancelada') return;
     const d = (o.sla_deadline||o.data_chamado||o.data_ab||'').slice(0,7);
-    return d === prefixo;
+    if (d === prefixo) osMesMap.set(o.id||o._id, o);
   });
+  const osMes = [...osMesMap.values()];
 
   const totalEventos = evMes.length + osMes.length;
   const visitas   = evMes.filter(e=>e.tipo==='Visita').length;
