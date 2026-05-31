@@ -9634,11 +9634,16 @@ function renderMapaMG() {
   ];
 
   CIDADES.forEach(c => {
-    c.count = c.aliases.reduce((s,a) => {
-      return s + Object.entries(cidadeCount)
-        .filter(([k]) => k.includes(norm(a)) || norm(a).includes(k))
-        .reduce((ss,[,v]) => ss+v, 0);
-    }, 0);
+    // Usa Set para não contar a mesma chave de cidadeCount mais de uma vez
+    const matched = new Set();
+    c.aliases.forEach(a => {
+      Object.entries(cidadeCount).forEach(([k, v]) => {
+        if (!matched.has(k) && (k.includes(norm(a)) || norm(a).includes(k))) {
+          matched.add(k);
+        }
+      });
+    });
+    c.count = [...matched].reduce((s, k) => s + cidadeCount[k], 0);
   });
   REGIOES.forEach(r => {
     r.count = CIDADES.filter(c=>c.id===r.id).reduce((s,c)=>s+c.count,0);
