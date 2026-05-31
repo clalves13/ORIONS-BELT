@@ -210,6 +210,21 @@ app.put('/api/clientes/:id', requireAuth, async (req,res) => { try{const b=req.b
 app.delete('/api/clientes/:id', requireAuth, async (req,res) => { try{await col('clientes').deleteOne({_id:new ObjectId(req.params.id)}); await col('equipamentos').deleteMany({cliente_id:req.params.id}); res.json({ok:true});}catch(e){res.status(500).json({error:e.message});} });
 
 // EQUIPAMENTOS
+// Migração única: converte status 'Ativo'/'Inativo' para novo padrão
+app.post('/api/admin/migrar-eq-status', requireAuth, requireAdmin, async (req,res) => {
+  try {
+    const r1 = await col('equipamentos').updateMany(
+      { status: { $in: ['Ativo', 'ativo', ''] }, localizacao_status: { $exists: false } },
+      { $set: { localizacao_status: 'No cliente', status: 'No cliente' } }
+    );
+    const r2 = await col('equipamentos').updateMany(
+      { status: 'Inativo', localizacao_status: { $exists: false } },
+      { $set: { localizacao_status: 'Em estoque', status: 'Em estoque' } }
+    );
+    res.json({ ok: true, corrigidos_ativo: r1.modifiedCount, corrigidos_inativo: r2.modifiedCount });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 app.get('/api/equipamentos', requireAuth, async (req,res) => { const d=await col('equipamentos').find().toArray(); res.json(d.map(x=>({...x,id:x._id.toString()}))); });
 app.get('/api/equipamentos/cliente/:cid', requireAuth, async (req,res) => { const d=await col('equipamentos').find({cliente_id:req.params.cid}).toArray(); res.json(d.map(x=>({...x,id:x._id.toString()}))); });
 app.post('/api/equipamentos', requireAuth, async (req,res) => { const b=req.body; const r=await col('equipamentos').insertOne({cliente_id:b.clienteId,nome:b.nome,marca:b.marca||'',modelo:b.modelo||'',nserie:b.nserie||'',contador:b.contador||0,data_inst:b.dataInst||'',contrato_ate:b.contrato||'',localizacao:b.local||b.localizacao||'',localizacao_status:b.localizacao_status||b.status||'No cliente',status:b.localizacao_status||b.status||'No cliente',obs:b.obs||'',created_at:now()}); res.json({ok:true,id:r.insertedId.toString()}); });
