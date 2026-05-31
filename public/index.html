@@ -4425,7 +4425,11 @@ async function loadAll() {
     api('GET','/api/checklist'), api('GET','/api/manutencao'),
     api('GET','/api/veiculos'), api('GET','/api/pedidos-pecas'), api('GET','/api/eq-baixados')
   ]);
-  G.tecnicos=tec; G.clientes=cli; G.equipamentos=eq;
+  // Deduplica equipamentos por _id para evitar contagem dupla
+  const eqMap = new Map();
+  (eq||[]).forEach(e => { const k = e._id?.toString()||e.id; if(k) eqMap.set(k, e); });
+  G.equipamentos = [...eqMap.values()];
+  G.tecnicos=tec; G.clientes=cli;
   G.atendimentos=os; G.ordens=os; G.laboratorio=lab; G.historico=hist; G.estoque=est; G.suprCli=supr;
   G.logistica=log||[]; G.abastecimento=abast||[]; G.checklist=ck||[]; G.manutencao=manut||[];
   G.veiculos=veic||[]; G.pedidosPecas=ped||[]; G.eqBaixados=baix||[];
