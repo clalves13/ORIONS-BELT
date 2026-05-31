@@ -4679,11 +4679,7 @@ function stClass(st) {
 function renderCalKpis() {
   const mes = String(AG.mesSel+1).padStart(2,'0');
   const prefixo = `${AG.anoSel}-${mes}`;
-
-  // Eventos da agenda (criados manualmente)
   const evMes = AG.eventos.filter(e => (e.data_inicio||'').slice(0,7) === prefixo);
-
-  // OS do mês — deduplica por id, usa a primeira data disponível
   const osMesMap = new Map();
   (G.ordens||[]).forEach(o => {
     if (o.status === 'Cancelada') return;
@@ -4691,13 +4687,11 @@ function renderCalKpis() {
     if (d === prefixo) osMesMap.set(o.id||o._id, o);
   });
   const osMes = [...osMesMap.values()];
-
   const totalEventos = evMes.length + osMes.length;
-  const visitas   = evMes.filter(e=>e.tipo==='Visita').length;
-  const prevent   = evMes.filter(e=>e.tipo==='Preventiva').length;
-  const confirm   = evMes.filter(e=>e.status==='Confirmado').length;
+  const visitas  = evMes.filter(e=>e.tipo==='Visita').length;
+  const prevent  = evMes.filter(e=>e.tipo==='Preventiva').length;
+  const confirm  = evMes.filter(e=>e.status==='Confirmado').length;
   const pendentes = evMes.filter(e=>e.status==='Agendado').length + osMes.filter(o=>o.status==='Aberta'||o.status==='Em andamento').length;
-
   const kpis = [
     { lbl:'Total de eventos', val: totalEventos, ico:'📅' },
     { lbl:'Visitas',          val: visitas,       ico:'🚗' },
