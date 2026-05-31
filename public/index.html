@@ -4683,8 +4683,11 @@ function renderCalKpis() {
   const osMesMap = new Map();
   (G.ordens||[]).forEach(o => {
     if (o.status === 'Cancelada') return;
-    const d = (o.sla_deadline||o.data_chamado||o.data_ab||'').slice(0,7);
-    if (d === prefixo) osMesMap.set(o.id||o._id, o);
+    const key = String(o.id || o._id || '');
+    if (!key) return;
+    // Usa sla_deadline como referência principal (igual ao calendário)
+    const d = (o.sla_deadline || o.data_ab || '').slice(0,7);
+    if (d === prefixo) osMesMap.set(key, o);
   });
   const osMes = [...osMesMap.values()];
   const totalEventos = evMes.length + osMes.length;
