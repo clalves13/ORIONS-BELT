@@ -488,16 +488,14 @@ app.get('/api/dashboard', requireAuth, async (req,res) => {
     const gastos={viag:0,alim:0,hosp:0,comb:0,ped:0,outros:0};
     ordens.forEach(o=>{gastos.viag+=o.viag||0;gastos.alim+=o.alim||0;gastos.hosp+=o.hosp||0;gastos.comb+=o.comb||0;gastos.ped+=o.ped||0;gastos.outros+=o.outros||0;});
     // Consumo toner — apenas mês atual
-    const mesAtual = new Date().toISOString().slice(0,7); // 2026-06
-    const anoMes = mesAtual; // YYYY-MM
-    const [anoA, mesA] = anoMes.split('-');
-    // Normaliza data do movimento para YYYY-MM independente do formato
+    const mesAtual = new Date().toISOString().slice(0,7);
     const normMes = d => {
       if (!d) return '';
-      if (d.includes('-') && d.slice(0,4).length===4) return d.slice(0,7); // ISO: 2026-06-01
-      if (d.includes('/')) { const p=d.split('/'); return p[2]+'-'+p[1]; } // BR: 01/06/2026
+      if (d.includes('-') && d.length>=7) return d.slice(0,7);
+      if (d.includes('/')) { const p=d.split('/'); return p[2]+'-'+p[1]; }
       return '';
     };
+    const tonerMap={};
     suprMovs.filter(m=>m.tipo==='saida' && normMes(m.data)===mesAtual).forEach(m=>{
       const c=clientes.find(x=>x._id.toString()===m.cliente_id);
       const nome=c?.nome||'Desconhecido';
