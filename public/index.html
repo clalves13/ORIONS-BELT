@@ -4640,8 +4640,11 @@ function renderCalMes() {
 
 function selectDia(dataStr, rerender=true) {
   AG.diaSel = dataStr;
+  _sideEvIdx = 0;
   if (rerender) renderCalMes(); else renderSideDia(dataStr);
 }
+
+let _sideEvIdx = 0;
 
 function renderSideDia(dataStr) {
   const partes = dataStr.split('-');
@@ -4653,18 +4656,32 @@ function renderSideDia(dataStr) {
   const el = document.getElementById('cal-side-events');
   if (evs.length === 0) {
     el.innerHTML = `<div class="cal-side-empty">Nenhum evento neste dia<br><small style="color:var(--tx3)">Clique em "+ Novo" para agendar</small></div>`;
-  } else {
-    el.innerHTML = evs.map(ev => `
-      <div class="cal-side-ev" style="border-left-color:${evCorHex(ev.tipo)}" onclick="verAgendaEv('${ev.id}')">
-        <div style="display:flex;align-items:center;justify-content:space-between">
-          <div class="cal-side-ev-title">${ev.titulo}</div>
-          <span class="status-badge ${stClass(ev.status)}">${ev.status}</span>
-        </div>
-        <div class="cal-side-ev-sub">${ev.hora_inicio||''}${ev.hora_fim?' — '+ev.hora_fim:''} · ${ev.tipo}</div>
-        ${ev.tecnico_nome?`<div class="cal-side-ev-tec">👤 ${ev.tecnico_nome}</div>`:''}
-        ${ev.cliente_nome?`<div class="cal-side-ev-sub" style="margin-top:2px">🏢 ${ev.cliente_nome}</div>`:''}
-      </div>`).join('');
+    return;
   }
+  // Garante índice válido
+  if (_sideEvIdx >= evs.length) _sideEvIdx = 0;
+  const ev = evs[_sideEvIdx];
+  const total = evs.length;
+  const nav = total > 1 ? `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <button onclick="_sideEvIdx=Math.max(0,_sideEvIdx-1);renderSideDia('${dataStr}')"
+        style="background:var(--sf2);border:1px solid var(--bd);border-radius:8px;width:28px;height:28px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center"
+        ${_sideEvIdx===0?'disabled style="opacity:.4;cursor:default;background:var(--sf2);border:1px solid var(--bd);border-radius:8px;width:28px;height:28px;font-size:14px"':''}>‹</button>
+      <span style="font-size:11px;color:var(--tx3);font-weight:600">${_sideEvIdx+1} de ${total}</span>
+      <button onclick="_sideEvIdx=Math.min(${total-1},_sideEvIdx+1);renderSideDia('${dataStr}')"
+        style="background:var(--sf2);border:1px solid var(--bd);border-radius:8px;width:28px;height:28px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center"
+        ${_sideEvIdx===total-1?'disabled style="opacity:.4;cursor:default;background:var(--sf2);border:1px solid var(--bd);border-radius:8px;width:28px;height:28px;font-size:14px"':''}>›</button>
+    </div>` : '';
+  el.innerHTML = nav + `
+    <div class="cal-side-ev" style="border-left-color:${evCorHex(ev.tipo)}" onclick="verAgendaEv('${ev.id}')">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div class="cal-side-ev-title">${ev.titulo}</div>
+        <span class="status-badge ${stClass(ev.status)}">${ev.status}</span>
+      </div>
+      <div class="cal-side-ev-sub">${ev.hora_inicio||''}${ev.hora_fim?' — '+ev.hora_fim:''} · ${ev.tipo}</div>
+      ${ev.tecnico_nome?`<div class="cal-side-ev-tec">👤 ${ev.tecnico_nome}</div>`:''}
+      ${ev.cliente_nome?`<div class="cal-side-ev-sub" style="margin-top:2px">🏢 ${ev.cliente_nome}</div>`:''}
+    </div>`;
 }
 
 function evCorHex(tipo) {
