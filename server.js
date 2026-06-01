@@ -422,7 +422,20 @@ app.post('/api/estoque-movs', requireAuth, async (req,res) => {
 app.get('/api/estoque-supr', requireAuth, async (req,res) => {
   const all=await col('supr_cli').find().toArray();
   const clientes=await col('clientes').find().toArray();
-  res.json(all.map(s=>({...s,id:s._id.toString(),cliente_nome:clientes.find(c=>c._id.toString()===s.cliente_id)?.nome||''})));
+  const movs=await col('supr_movs').find().toArray();
+  const ITEMS=['toner_preto','toner_magenta','toner_ciano','toner_amarelo','grampos'];
+  // Recalcula saldo real pelas movimentações
+  const saldos={};
+  movs.forEach(m=>{
+    if(!saldos[m.cliente_id])saldos[m.cliente_id]={toner_preto:0,toner_magenta:0,toner_ciano:0,toner_amarelo:0,grampos:0};
+    const delta=m.tipo==='entrada'?+(m.quantidade||1):-(m.quantidade||1);
+    if(ITEMS.includes(m.item))saldos[m.cliente_id][m.item]=(saldos[m.cliente_id][m.item]||0)+delta;
+  });
+  Object.values(saldos).forEach(s=>ITEMS.forEach(k=>{if(s[k]<0)s[k]=0;}));
+  res.json(all.map(s=>{
+    const sal=saldos[s.cliente_id]||{toner_preto:0,toner_magenta:0,toner_ciano:0,toner_amarelo:0,grampos:0};
+    return{...s,...sal,id:s._id.toString(),cliente_nome:clientes.find(c=>c._id.toString()===s.cliente_id)?.nome||''};
+  }));
 });
 app.get('/api/estoque-supr/:clienteId', requireAuth, async (req,res) => {
   let row=await col('supr_cli').findOne({cliente_id:req.params.clienteId});
@@ -474,9 +487,10 @@ app.get('/api/dashboard', requireAuth, async (req,res) => {
     // Gastos categorias
     const gastos={viag:0,alim:0,hosp:0,comb:0,ped:0,outros:0};
     ordens.forEach(o=>{gastos.viag+=o.viag||0;gastos.alim+=o.alim||0;gastos.hosp+=o.hosp||0;gastos.comb+=o.comb||0;gastos.ped+=o.ped||0;gastos.outros+=o.outros||0;});
-    // Consumo toner por cliente
+    // Consumo toner — apenas mês atual
+    const mesAtual = new Date().toISOString().slice(0,7);
     const tonerMap={};
-    suprMovs.filter(m=>m.tipo==='saida').forEach(m=>{
+    suprMovs.filter(m=>m.tipo==='saida' && (m.data||'').slice(0,7)===mesAtual).forEach(m=>{
       const c=clientes.find(x=>x._id.toString()===m.cliente_id);
       const nome=c?.nome||'Desconhecido';
       if(!tonerMap[nome])tonerMap[nome]={preto:0,magenta:0,ciano:0,amarelo:0,grampos:0};
@@ -486,15 +500,6 @@ app.get('/api/dashboard', requireAuth, async (req,res) => {
       if(m.item==='toner_amarelo')tonerMap[nome].amarelo+=m.quantidade||1;
       if(m.item==='grampos')tonerMap[nome].grampos+=m.quantidade||1;
     });
-    // Fallback: sem movimentacoes de saida, usa totais acumulados do supr_cli
-    if(!Object.keys(tonerMap).length){
-      suprCli.forEach(s=>{
-        const c=clientes.find(x=>x._id.toString()===s.cliente_id);
-        const nome=c?.nome||'Desconhecido';
-        const tot=(s.toner_preto||0)+(s.toner_magenta||0)+(s.toner_ciano||0)+(s.toner_amarelo||0)+(s.grampos||0);
-        if(tot>0) tonerMap[nome]={preto:s.toner_preto||0,magenta:s.toner_magenta||0,ciano:s.toner_ciano||0,amarelo:s.toner_amarelo||0,grampos:s.grampos||0};
-      });
-    }
     const consumo_toner=Object.entries(tonerMap).map(([cliente,v])=>({cliente,...v}));
     // Retrabalho
     const nsmap={};
