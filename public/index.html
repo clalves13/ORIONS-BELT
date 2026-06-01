@@ -4656,32 +4656,18 @@ function renderSideDia(dataStr) {
   const el = document.getElementById('cal-side-events');
   if (evs.length === 0) {
     el.innerHTML = `<div class="cal-side-empty">Nenhum evento neste dia<br><small style="color:var(--tx3)">Clique em "+ Novo" para agendar</small></div>`;
-    return;
+  } else {
+    el.innerHTML = evs.map(ev => `
+      <div class="cal-side-ev" style="border-left-color:${evCorHex(ev.tipo)}" onclick="verAgendaEv('${ev.id}')">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div class="cal-side-ev-title">${ev.titulo}</div>
+          <span class="status-badge ${stClass(ev.status)}">${ev.status}</span>
+        </div>
+        <div class="cal-side-ev-sub">${ev.hora_inicio||''}${ev.hora_fim?' — '+ev.hora_fim:''} · ${ev.tipo}</div>
+        ${ev.tecnico_nome?`<div class="cal-side-ev-tec">👤 ${ev.tecnico_nome}</div>`:''}
+        ${ev.cliente_nome?`<div class="cal-side-ev-sub" style="margin-top:2px">🏢 ${ev.cliente_nome}</div>`:''}
+      </div>`).join('');
   }
-  // Garante índice válido
-  if (_sideEvIdx >= evs.length) _sideEvIdx = 0;
-  const ev = evs[_sideEvIdx];
-  const total = evs.length;
-  const nav = total > 1 ? `
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-      <button onclick="_sideEvIdx=Math.max(0,_sideEvIdx-1);renderSideDia('${dataStr}')"
-        style="background:var(--sf2);border:1px solid var(--bd);border-radius:8px;width:28px;height:28px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center"
-        ${_sideEvIdx===0?'disabled style="opacity:.4;cursor:default;background:var(--sf2);border:1px solid var(--bd);border-radius:8px;width:28px;height:28px;font-size:14px"':''}>‹</button>
-      <span style="font-size:11px;color:var(--tx3);font-weight:600">${_sideEvIdx+1} de ${total}</span>
-      <button onclick="_sideEvIdx=Math.min(${total-1},_sideEvIdx+1);renderSideDia('${dataStr}')"
-        style="background:var(--sf2);border:1px solid var(--bd);border-radius:8px;width:28px;height:28px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center"
-        ${_sideEvIdx===total-1?'disabled style="opacity:.4;cursor:default;background:var(--sf2);border:1px solid var(--bd);border-radius:8px;width:28px;height:28px;font-size:14px"':''}>›</button>
-    </div>` : '';
-  el.innerHTML = nav + `
-    <div class="cal-side-ev" style="border-left-color:${evCorHex(ev.tipo)}" onclick="verAgendaEv('${ev.id}')">
-      <div style="display:flex;align-items:center;justify-content:space-between">
-        <div class="cal-side-ev-title">${ev.titulo}</div>
-        <span class="status-badge ${stClass(ev.status)}">${ev.status}</span>
-      </div>
-      <div class="cal-side-ev-sub">${ev.hora_inicio||''}${ev.hora_fim?' — '+ev.hora_fim:''} · ${ev.tipo}</div>
-      ${ev.tecnico_nome?`<div class="cal-side-ev-tec">👤 ${ev.tecnico_nome}</div>`:''}
-      ${ev.cliente_nome?`<div class="cal-side-ev-sub" style="margin-top:2px">🏢 ${ev.cliente_nome}</div>`:''}
-    </div>`;
 }
 
 function evCorHex(tipo) {
@@ -8366,9 +8352,41 @@ async function loadDash(){
     const elTaxa = document.getElementById('d-taxa-conclusao');
     if (elTaxa) { elTaxa.textContent = taxa + '%'; elTaxa.style.color = taxa >= 70 ? '#2e7d32' : taxa >= 40 ? '#e65100' : '#c62828'; }
     const hoje = new Date().toISOString().slice(0,10);
-    const osAtras = osF.filter(o => o.status !== 'Concluída' && o.status !== 'Cancelada' && o.sla_deadline && o.sla_deadline < hoje).length;
+    const osAtrasLista = osF.filter(o => o.status !== 'Concluída' && o.status !== 'Cancelada' && o.sla_deadline && o.sla_deadline.slice(0,10) < hoje);
+    const osAtras = osAtrasLista.length;
     const elAtras = document.getElementById('d-osatras');
     if (elAtras) countUp(elAtras, osAtras);
+
+    // ── Banner de destaque OS atrasadas ──
+    let bannerEl = document.getElementById('d-banner-atras');
+    if (!bannerEl) {
+      bannerEl = document.createElement('div');
+      bannerEl.id = 'd-banner-atras';
+      // Insere antes do primeiro dash-card
+      const dashInner = document.getElementById('dash-inner');
+      if (dashInner) dashInner.insertBefore(bannerEl, dashInner.firstChild);
+    }
+    if (osAtras > 0) {
+      bannerEl.style.display = 'block';
+      bannerEl.innerHTML = `
+        <div style="background:linear-gradient(135deg,#b71c1c,#e53935);border-radius:14px;padding:14px 20px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;box-shadow:0 4px 20px rgba(183,28,28,.35)">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div style="width:40px;height:40px;background:rgba(255,255,255,.2);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🚨</div>
+            <div>
+              <div style="color:#fff;font-weight:800;font-size:14px">${osAtras} OS em ATRASO</div>
+              <div style="color:rgba(255,255,255,.85);font-size:11px;margin-top:2px">
+                ${osAtrasLista.map(o=>`#${o.num} — ${o.cliente_nome||o.cliente||'Cliente'} (${o.sla_deadline.slice(0,10)})`).join(' · ')}
+              </div>
+            </div>
+          </div>
+          <button onclick="nav('os',document.querySelector('[data-modulo=os]'));document.getElementById('f-status').value='Aberta';renderOS()" 
+            style="background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:8px;padding:7px 14px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">
+            Ver OS →
+          </button>
+        </div>`;
+    } else {
+      bannerEl.style.display = 'none';
+    }
     const receita = osF.filter(o => o.status === 'Concluída').reduce((s,o) => s+(o.valor_cobrado||o.valor||0), 0);
     const elRec = document.getElementById('d-receita');
     if (elRec) elRec.textContent = 'R$' + receita.toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:0});
