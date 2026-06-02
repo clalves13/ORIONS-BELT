@@ -419,40 +419,34 @@ app.post('/api/estoque-movs', requireAuth, async (req,res) => {
 });
 
 // SUPRIMENTOS CLIENTE
-// ─── ARQUIVO MENSAL DE SUPRIMENTOS ──────────────────────────────────────────
-// Retorna histórico mensal arquivado
+// ─── HISTÓRICO MENSAL SUPRIMENTOS ────────────────────────────────────────────
 app.get('/api/estoque-supr/historico-mensal', requireAuth, async (req,res) => {
   try {
-    const hist = await col('supr_hist_mensal').find().sort({ano:-1,mes:-1}).toArray();
+    const hist=await col('supr_hist_mensal').find().sort({ano:-1,mes:-1}).toArray();
     res.json(hist.map(x=>({...x,id:x._id.toString()})));
-  } catch(e) { res.status(500).json({error:e.message}); }
+  } catch(e){res.status(500).json({error:e.message});}
 });
 
-// Arquiva manualmente o mês informado (admin)
 app.post('/api/admin/arquivar-mes-supr', requireAuth, requireAdmin, async (req,res) => {
   try {
-    const {ano, mes} = req.body;
-    if (!ano || !mes) return res.status(400).json({error:'Informe ano e mes'});
-    const prefixo = `${ano}-${String(mes).padStart(2,'0')}`;
-    const movs = await col('supr_movs').find({}).toArray();
-    const clientes = await col('clientes').find().toArray();
-    const tonerMap = {};
-    movs.filter(m => m.tipo==='saida' && (m.data||'').slice(0,7)===prefixo).forEach(m => {
-      if (!tonerMap[m.cliente_id]) tonerMap[m.cliente_id] = {toner_preto:0,toner_magenta:0,toner_ciano:0,toner_amarelo:0,grampos:0};
-      const ITEMS = {toner_preto:'toner_preto',toner_magenta:'toner_magenta',toner_ciano:'toner_ciano',toner_amarelo:'toner_amarelo',grampos:'grampos'};
-      if (ITEMS[m.item]) tonerMap[m.cliente_id][m.item] += (m.quantidade||1);
+    const {ano,mes}=req.body;
+    if(!ano||!mes) return res.status(400).json({error:'Informe ano e mes'});
+    const prefixo=`${ano}-${String(mes).padStart(2,'0')}`;
+    const movs=await col('supr_movs').find().toArray();
+    const clientes=await col('clientes').find().toArray();
+    const ITEMS=['toner_preto','toner_magenta','toner_ciano','toner_amarelo','grampos'];
+    const normData=d=>{if(!d)return '';const s=String(d).trim();if(/^\d{4}-\d{2}/.test(s))return s.slice(0,7);if(/^\d{2}\/\d{2}\/\d{4}/.test(s)){const[dd,mm,yyyy]=s.split('/');return `${yyyy}-${mm}`;}return s.slice(0,7);};
+    const tonerMap={};
+    movs.filter(m=>m.tipo==='saida'&&normData(m.data)===prefixo).forEach(m=>{
+      if(!tonerMap[m.cliente_id])tonerMap[m.cliente_id]={toner_preto:0,toner_magenta:0,toner_ciano:0,toner_amarelo:0,grampos:0};
+      if(ITEMS.includes(m.item))tonerMap[m.cliente_id][m.item]+=(m.quantidade||1);
     });
-    // Salva ou atualiza o arquivo do mês
-    for (const [cid, dados] of Object.entries(tonerMap)) {
-      const cli = clientes.find(c=>c._id.toString()===cid);
-      await col('supr_hist_mensal').updateOne(
-        {cliente_id:cid, ano:+ano, mes:+mes},
-        {$set:{cliente_id:cid, cliente_nome:cli?.nome||'', ano:+ano, mes:+mes, prefixo, ...dados, arquivado_em:now()}},
-        {upsert:true}
-      );
+    for(const[cid,dados]of Object.entries(tonerMap)){
+      const cli=clientes.find(c=>c._id.toString()===cid);
+      await col('supr_hist_mensal').updateOne({cliente_id:cid,ano:+ano,mes:+mes},{$set:{cliente_id:cid,cliente_nome:cli?.nome||'',ano:+ano,mes:+mes,prefixo,...dados,arquivado_em:now()}},{upsert:true});
     }
-    res.json({ok:true, clientes_arquivados:Object.keys(tonerMap).length});
-  } catch(e) { res.status(500).json({error:e.message}); }
+    res.json({ok:true,clientes_arquivados:Object.keys(tonerMap).length});
+  } catch(e){res.status(500).json({error:e.message});}
 });
 
 app.get('/api/estoque-supr', requireAuth, async (req,res) => {
@@ -523,17 +517,20 @@ app.get('/api/dashboard', requireAuth, async (req,res) => {
     // Gastos categorias
     const gastos={viag:0,alim:0,hosp:0,comb:0,ped:0,outros:0};
     ordens.forEach(o=>{gastos.viag+=o.viag||0;gastos.alim+=o.alim||0;gastos.hosp+=o.hosp||0;gastos.comb+=o.comb||0;gastos.ped+=o.ped||0;gastos.outros+=o.outros||0;});
-    // Consumo toner — apenas mês atual (UTC)
+    // Consumo toner — apenas mês atual
     const agora = new Date();
-    const mesAtual = `${agora.getUTCFullYear()}-${String(agora.getUTCMonth()+1).padStart(2,'0')}`;
-    const normMes = d => {
+    const mesAtual = `${agora.getFullYear()}-${String(agora.getMonth()+1).padStart(2,'0')}`;
+    const normData = d => {
       if (!d) return '';
-      if (d.includes('-') && d.length>=7) return d.slice(0,7);
-      if (d.includes('/')) { const p=d.split('/'); return `${p[2]}-${p[1].padStart(2,'0')}`; }
-      return '';
+      if (typeof d === 'object') return d.toISOString ? d.toISOString().slice(0,7) : '';
+      const s = String(d).trim();
+      if (/^\d{4}-\d{2}/.test(s)) return s.slice(0,7);
+      if (/^\d{2}\/\d{2}\/\d{4}/.test(s)) { const [dd,mm,yyyy]=s.split('/'); return `${yyyy}-${mm}`; }
+      if (/^\d{2}\/\d{2}\/\d{2}$/.test(s)) { const [dd,mm,yy]=s.split('/'); return `20${yy}-${mm}`; }
+      return s.slice(0,7);
     };
     const tonerMap={};
-    suprMovs.filter(m=>m.tipo==='saida' && normMes(m.data)===mesAtual).forEach(m=>{
+    suprMovs.filter(m=>m.tipo==='saida' && normData(m.data)===mesAtual).forEach(m=>{
       const c=clientes.find(x=>x._id.toString()===m.cliente_id);
       const nome=c?.nome||'Desconhecido';
       if(!tonerMap[nome])tonerMap[nome]={preto:0,magenta:0,ciano:0,amarelo:0,grampos:0};
