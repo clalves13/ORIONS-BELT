@@ -490,6 +490,13 @@ app.post('/api/estoque-supr/:clienteId/movimento', requireAuth, async (req,res) 
   }catch(e){res.status(500).json({error:e.message});}
 });
 
+app.delete('/api/estoque-supr/movimento/:id', requireAuth, async (req,res) => {
+  try {
+    await col('supr_movs').deleteOne({_id:new ObjectId(req.params.id)});
+    res.json({ok:true});
+  } catch(e){res.status(500).json({error:e.message});}
+});
+
 // DASHBOARD
 app.get('/api/dashboard', requireAuth, async (req,res) => {
   try {
