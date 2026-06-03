@@ -1386,7 +1386,7 @@ label { font-size: 11px !important; font-weight: 600 !important; color: #475569 
       <button class="btn btn-ghost btn-sm" onclick="dashFiltroRapido(7)">7d</button>
       <button class="btn btn-ghost btn-sm" onclick="dashFiltroRapido(30)">30d</button>
       <button class="btn btn-ghost btn-sm" onclick="dashFiltroRapido(90)">90d</button>
-      <button class="btn btn-primary btn-sm" onclick="loadDash()">↻ Atualizar</button>
+      <button class="btn btn-primary btn-sm" onclick="loadDash()">↻ Atualizar <span id="dash-refresh-badge" style="background:rgba(255,255,255,.3);border-radius:20px;padding:1px 6px;font-size:9px;font-weight:700;margin-left:4px">120s</span></button>
       <button class="btn btn-ghost btn-sm" onclick="printRelatorio('dashboard')">🖨 Exportar</button>
       <!-- Sino SLA -->
       <div class="tb-right-group">
@@ -2692,6 +2692,7 @@ label { font-size: 11px !important; font-weight: 600 !important; color: #475569 
     <div style="border-bottom:1px solid #e2e8f0;margin-bottom:12px;display:flex;gap:0">
       <button class="log-tab active" id="stab-estoque" onclick="switchSuprTab('estoque')">📦 Estoque por Cliente</button>
       <button class="log-tab" id="stab-hist" onclick="switchSuprTab('hist')">🔄 Histórico Global</button>
+      <button class="log-tab" id="stab-mensal" onclick="switchSuprTab('mensal')">📅 Histórico Mensal</button>
     </div>
     <div id="supr-tab-estoque"><div id="scli-list"></div></div>
     <div id="supr-tab-hist" style="display:none">
@@ -2707,6 +2708,13 @@ label { font-size: 11px !important; font-weight: 600 !important; color: #475569 
         <thead><tr><th>Data</th><th>Tipo</th><th>Cliente</th><th>Item</th><th>Qtd</th><th>Técnico</th><th>Obs</th><th></th></tr></thead>
         <tbody id="tb-supr-hist"></tbody>
       </table></div></div>
+      <div id="supr-tab-mensal" style="display:none">
+      <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;flex-wrap:wrap">
+        <div style="font-size:12px;color:var(--tx3);flex:1">Consumo arquivado mês a mês — registro permanente</div>
+        <button class="btn btn-ghost btn-sm" onclick="arquivarMesAtual()">📦 Arquivar mês atual</button>
+      </div>
+      <div id="supr-mensal-list"></div>
+    </div>
     </div>
   </div>
 </div>
@@ -4906,6 +4914,7 @@ function nav(p, el) {
   if(renders[p]) renders[p]();
   // Auto-refresh: inicia ao entrar na OS, para ao sair
   if (p === 'os') { iniciarAutoRefreshOS(); } else { pararAutoRefreshOS(); }
+  if (p === 'dashboard') { iniciarAutoRefreshDash(); } else { pararAutoRefreshDash(); }
   // Atualiza título mobile e fecha sidebar no celular
   const titleEl = document.getElementById('mobile-page-title');
   if (titleEl) {
@@ -6764,11 +6773,44 @@ async function loadSuprMovsAll() {
 }
 
 function switchSuprTab(tab) {
-  ['estoque','hist'].forEach(t=>{
-    document.getElementById(`supr-tab-${t}`).style.display=t===tab?'':'none';
-    document.getElementById(`stab-${t}`).classList.toggle('active',t===tab);
+  ['estoque','hist','mensal'].forEach(t=>{
+    const el=document.getElementById('supr-tab-'+t);
+    const btn=document.getElementById('stab-'+t);
+    if(el) el.style.display=t===tab?'':'none';
+    if(btn) btn.classList.toggle('active',t===tab);
   });
   if(tab==='hist') { loadSuprMovsAll().then(renderSuprHistGlobal); }
+  if(tab==='mensal') { renderSuprMensal(); }
+}
+
+async function arquivarMesAtual() {
+  const agora=new Date();
+  const ano=agora.getFullYear(), mes=agora.getMonth()+1;
+  if(!confirm('Arquivar consumo de '+String(mes).padStart(2,'0')+'/'+ano+' como histórico permanente?')) return;
+  try {
+    const r=await api('POST','/api/admin/arquivar-mes-supr',{ano,mes});
+    showToast('✅ '+r.clientes_arquivados+' cliente(s) arquivados');
+    renderSuprMensal();
+  } catch(e){alert('Erro: '+e.message);}
+}
+
+async function renderSuprMensal() {
+  const el=document.getElementById('supr-mensal-list'); if(!el) return;
+  el.innerHTML='<div style="color:var(--tx3);font-size:12px;padding:20px">Carregando...</div>';
+  try {
+    const hist=await api('GET','/api/estoque-supr/historico-mensal');
+    if(!hist||!hist.length){el.innerHTML='<div style="color:var(--tx3);font-size:12px;padding:20px;text-align:center">Nenhum mês arquivado.<br>Clique em "📦 Arquivar mês atual".</div>';return;}
+    const MESES=['','Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+    const porMes={};
+    hist.forEach(h=>{const k=h.ano+'-'+String(h.mes).padStart(2,'0');if(!porMes[k])porMes[k]={ano:h.ano,mes:h.mes,clientes:[]};porMes[k].clientes.push(h);});
+    const KEYS=['toner_preto','toner_magenta','toner_ciano','toner_amarelo','grampos'];
+    const LBLS={'toner_preto':'Preto','toner_magenta':'Magenta','toner_ciano':'Ciano','toner_amarelo':'Amarelo','grampos':'Grampos'};
+    el.innerHTML=Object.keys(porMes).sort().reverse().map(k=>{
+      const {ano,mes,clientes}=porMes[k];
+      const total=clientes.reduce((s,c)=>s+KEYS.reduce((ss,k)=>ss+(c[k]||0),0),0);
+      return '<div class="card" style="padding:14px 18px;margin-bottom:10px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><div style="font-weight:700;font-size:13px">📅 '+MESES[mes]+' '+ano+'</div><span style="background:var(--bl2);color:#fff;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700">'+total+' un. total</span></div><table style="width:100%;border-collapse:collapse;font-size:11px"><thead><tr style="background:var(--sf2)"><th style="padding:6px 10px;text-align:left">Cliente</th>'+KEYS.map(k=>'<th style="padding:6px 8px;text-align:center">'+LBLS[k]+'</th>').join('')+'<th style="padding:6px 8px;text-align:center">Total</th></tr></thead><tbody>'+clientes.map(c=>{const tot=KEYS.reduce((s,k)=>s+(c[k]||0),0);return '<tr style="border-bottom:1px solid var(--bd)"><td style="padding:6px 10px;font-weight:600">'+c.cliente_nome+'</td>'+KEYS.map(k=>'<td style="padding:6px 8px;text-align:center">'+(c[k]||0)+'</td>').join('')+'<td style="padding:6px 8px;text-align:center;font-weight:700;color:var(--bl2)">'+tot+'</td></tr>';}).join('')+'</tbody></table></div>';
+    }).join('');
+  } catch(e){el.innerHTML='<div style="color:var(--rd);padding:20px">Erro: '+e.message+'</div>';}
 }
 
 function renderSuprKpis() {
@@ -6869,7 +6911,7 @@ function renderSuprHistGlobal() {
     return true;
   });
   const tb=document.getElementById('tb-supr-hist');
-  if(!rows.length){tb.innerHTML=`<tr><td colspan="7"><div class="empty"><div class="empty-ico">🔄</div><div class="empty-t">Nenhum movimento encontrado</div></div></td></tr>`;return;}
+  if(!rows.length){tb.innerHTML=`<tr><td colspan="8"><div class="empty"><div class="empty-ico">🔄</div><div class="empty-t">Nenhum movimento encontrado</div></div></td></tr>`;return;}
   tb.innerHTML=rows.map(m=>{
     const tec=G.tecnicos.find(x=>x.id===m.tecnico_id);
     return`<tr>
@@ -8310,6 +8352,39 @@ function dashFiltroRapido(dias) {
   document.getElementById('d-de').value = fmt(de);
   document.getElementById('d-ate').value = fmt(ate);
   loadDash();
+}
+
+// ── AUTO-REFRESH DASHBOARD ──────────────────────────────────
+let _dashRefreshTimer = null;
+let _dashRefreshCount = 120; // atualiza a cada 2 minutos
+
+function iniciarAutoRefreshDash() {
+  if (_dashRefreshTimer) clearInterval(_dashRefreshTimer);
+  _dashRefreshCount = 120;
+  atualizarTimerDash();
+  _dashRefreshTimer = setInterval(async () => {
+    _dashRefreshCount--;
+    atualizarTimerDash();
+    if (_dashRefreshCount <= 0) {
+      _dashRefreshCount = 120;
+      const pg = document.getElementById('page-dashboard');
+      if (pg && pg.classList.contains('active')) await loadDash();
+    }
+  }, 1000);
+}
+
+function pararAutoRefreshDash() {
+  if (_dashRefreshTimer) { clearInterval(_dashRefreshTimer); _dashRefreshTimer = null; }
+}
+
+function atualizarTimerDash() {
+  const badge = document.getElementById('dash-refresh-badge');
+  if (!badge) return;
+  const pg = document.getElementById('page-dashboard');
+  if (pg && pg.classList.contains('active')) {
+    badge.textContent = _dashRefreshCount + 's';
+    badge.style.background = _dashRefreshCount <= 15 ? '#ea580c' : '#3b82f6';
+  }
 }
 
 async function loadDash(){
