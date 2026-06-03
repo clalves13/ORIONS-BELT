@@ -530,6 +530,7 @@ app.get('/api/dashboard', requireAuth, async (req,res) => {
       return s.slice(0,7);
     };
     const tonerMap={};
+    const debugMovs = suprMovs.filter(m=>m.tipo==='saida').slice(0,5).map(m=>({data:m.data, normada:normData(m.data), item:m.item}));
     suprMovs.filter(m=>m.tipo==='saida' && normData(m.data)===mesAtual).forEach(m=>{
       const c=clientes.find(x=>x._id.toString()===m.cliente_id);
       const nome=c?.nome||'Desconhecido';
@@ -541,6 +542,7 @@ app.get('/api/dashboard', requireAuth, async (req,res) => {
       if(m.item==='grampos')tonerMap[nome].grampos+=m.quantidade||1;
     });
     const consumo_toner=Object.entries(tonerMap).map(([cliente,v])=>({cliente,...v}));
+    const debug_toner={mesAtual, total_movs_saida:suprMovs.filter(m=>m.tipo==='saida').length, amostras:debugMovs};
     // Retrabalho
     const nsmap={};
     ordens.forEach(os=>{if(!os.nserie)return;if(!nsmap[os.nserie])nsmap[os.nserie]={nserie:os.nserie,modelo:os.modelo,qtd:0,ultimo:os.data_ab,cliente_id:os.cliente_id};nsmap[os.nserie].qtd++;if(os.data_ab>nsmap[os.nserie].ultimo)nsmap[os.nserie].ultimo=os.data_ab;});
@@ -554,7 +556,7 @@ app.get('/api/dashboard', requireAuth, async (req,res) => {
       meses[mes]+=(o.viag||0)+(o.alim||0)+(o.hosp||0)+(o.comb||0)+(o.ped||0)+(o.outros||0);
     });
     const gastos_mensais=Object.entries(meses).sort((a,b)=>a[0].localeCompare(b[0])).slice(-6).map(([mes,total])=>({mes,total}));
-    res.json({total_os,total_atend:total_os,os_abertas,os_concluidas,total_lab,por_tecnico,gastos_tecnico,gastos,consumo_toner,retrabalho,gastos_mensais});
+    res.json({total_os,total_atend:total_os,os_abertas,os_concluidas,total_lab,por_tecnico,gastos_tecnico,gastos,consumo_toner,debug_toner,retrabalho,gastos_mensais});
   }catch(e){res.status(500).json({error:e.message});}
 });
 
