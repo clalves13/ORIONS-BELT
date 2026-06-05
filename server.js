@@ -1412,9 +1412,78 @@ function gerarZip(arquivos) {
 }
 
 
+
 // Lê o agente diretamente do arquivo — garante sempre a versão mais atual
 const AGENTE_JS = fs.readFileSync(path.join(__dirname, 'orion-agente.js'), 'utf8');
 
+app.get('/download/pacote-agente/:clienteId', requireAuth, async (req, res) => {
+  try {
+    const cliente = await col('clientes').findOne({ _id: new ObjectId(req.params.clienteId) });
+    if (!cliente) return res.status(404).json({ error: 'Cliente não encontrado' });
+    if (!cliente.monitor_key) return res.status(400).json({ error: 'Este cliente não possui chave de monitoramento. Gere a chave primeiro.' });
+
+    // Busca URL do .exe no Cloudinary
+    const exeCfg = await col('configuracoes').findOne({ chave: 'agente_exe_url' });
+    if (!exeCfg?.valor) {
+      return res.status(400).json({
+        error: 'O executável OrionAgente.exe ainda não foi enviado ao servidor. ' +
+               'Compile o agente e faça o upload em: Configurações → Monitor → Enviar Executável.'
+      });
+    }
+
+    const nomeSeguro = (cliente.nome || 'cliente').toLowerCase().replace(/[^a-z0-9]/g, '_');
+
+    const config = {
+      serverUrl:   'https://orion-at-production.up.railway.app',
+      clientKey:   cliente.monitor_key,
+      clientId:    cliente._id.toString(),
+      clientNome:  cliente.nome,
+      intervalMin: 15,
+      subnet:      '',
+      snmpTimeout: 3000,
+      snmpRetries: 1,
+    };
+
+    // Baixa o .exe do Cloudinary (em memória)
+    const exeBuffer = await new Promise((resolve, reject) => {
+      https.get(exeCfg.valor, (r) => {
+        const chunks = [];
+        r.on('data', c => chunks.push(c));
+        r.on('end', () => resolve(Buffer.concat(chunks)));
+        r.on('error', reject);
+      }).on('error', reject);
+    });
+
+    const LEIA_ME =
+`Orion Agente — Pacote de Instalação
+Cliente: ${cliente.nome}
+Gerado em: ${new Date().toLocaleString('pt-BR')}
+
+INSTALAÇÃO (apenas 2 passos):
+  1. Extraia esta pasta para qualquer lugar do PC
+  2. Clique com o botão direito em "OrionAgente.exe"
+     → Executar como administrador → clique em "Mais informações" → "Executar assim mesmo"
+
+  O instalador fará automaticamente:
+    • Copia os arquivos para C:\\OrionAgente
+    • Registra o agente como Serviço do Windows (sc.exe nativo)
+    • Inicia o agente imediatamente
+    • Configura inicialização automática com o Windows
+
+COMANDOS ÚTEIS (após instalação):
+  sc query OrionAgente          — verifica se o serviço está rodando
+  sc stop  OrionAgente          — para o serviço
+  sc start OrionAgente          — inicia o serviço
+
+DESINSTALAÇÃO:
+  OrionAgente.exe --uninstall   (como Administrador)
+
+SUBNET (opcional):
+  Edite C:\\OrionAgente\\config.json e preencha "subnet",
+  ex: "192.168.5". Deixe vazio para descoberta automática.
+
+Suporte: Orion Soluções — https://orion-at-production.up.railway.app
+`;
 
     const arquivos = [
       { nome: 'OrionAgente.exe', conteudo: exeBuffer },
@@ -1431,6 +1500,7 @@ const AGENTE_JS = fs.readFileSync(path.join(__dirname, 'orion-agente.js'), 'utf8
 
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
+
 
 // ──────────────────────────────────────────────────────────────────────────────
 // ROTA LEGADA — mantida apenas para não quebrar links antigos
