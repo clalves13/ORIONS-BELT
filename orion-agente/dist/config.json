@@ -1,9 +1,0 @@
-{
-  "serverUrl": "https://theikos-at-production.up.railway.app",
-  "clientKey": "CHAVE_GERADA_NO_SISTEMA",
-  "clientId": "ID_DO_CLIENTE_NO_MONGODB",
-  "intervalMin": 15,
-  "subnet": "",
-  "snmpTimeout": 3000,
-  "snmpRetries": 1
-}
