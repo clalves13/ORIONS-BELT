@@ -502,6 +502,7 @@ app.delete('/api/estoque-supr/movimento/:id', requireAuth, async (req,res) => {
 // DASHBOARD
 app.get('/api/dashboard', requireAuth, async (req,res) => {
   try {
+    const { de, ate } = req.query; // período opcional (YYYY-MM-DD), vindo do filtro do dashboard
     const [atends,ordens,labs,tecnicos,clientes,suprCli,suprMovs]=await Promise.all([
       col('ordens').find().toArray(),
       col('ordens').find().toArray(),
@@ -526,21 +527,36 @@ app.get('/api/dashboard', requireAuth, async (req,res) => {
     // Gastos categorias
     const gastos={viag:0,alim:0,hosp:0,comb:0,ped:0,outros:0};
     ordens.forEach(o=>{gastos.viag+=o.viag||0;gastos.alim+=o.alim||0;gastos.hosp+=o.hosp||0;gastos.comb+=o.comb||0;gastos.ped+=o.ped||0;gastos.outros+=o.outros||0;});
-    // Consumo toner — apenas mês atual
+    // Consumo toner — respeita o período selecionado no dashboard (de/ate).
+    // Se nenhum período for informado, cai de volta para "mês atual" (comportamento antigo).
     const agora = new Date();
     const mesAtual = `${agora.getFullYear()}-${String(agora.getMonth()+1).padStart(2,'0')}`;
-    const normData = d => {
+    // Retorna data completa normalizada (YYYY-MM-DD) sempre que possível, para permitir comparação por período.
+    const normDataFull = d => {
       if (!d) return '';
-      if (typeof d === 'object') return d.toISOString ? d.toISOString().slice(0,7) : '';
+      if (typeof d === 'object') return d.toISOString ? d.toISOString().slice(0,10) : '';
       const s = String(d).trim();
-      if (/^\d{4}-\d{2}/.test(s)) return s.slice(0,7);
-      if (/^\d{2}\/\d{2}\/\d{4}/.test(s)) { const [dd,mm,yyyy]=s.split('/'); return `${yyyy}-${mm}`; }
-      if (/^\d{2}\/\d{2}\/\d{2}$/.test(s)) { const [dd,mm,yy]=s.split('/'); return `20${yy}-${mm}`; }
-      return s.slice(0,7);
+      if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0,10);
+      if (/^\d{4}-\d{2}$/.test(s)) return `${s}-01`;
+      if (/^\d{2}\/\d{2}\/\d{4}/.test(s)) { const [dd,mm,yyyy]=s.split('/'); return `${yyyy}-${mm}-${dd}`; }
+      if (/^\d{2}\/\d{2}\/\d{2}$/.test(s)) { const [dd,mm,yy]=s.split('/'); return `20${yy}-${mm}-${dd}`; }
+      return '';
+    };
+    const normData = d => normDataFull(d).slice(0,7); // YYYY-MM, usado no debug abaixo
+    // Se de/ate vieram do front, filtra pelo período real. Senão, mantém o antigo default (mês atual).
+    const dentroDoPeriodo = m => {
+      const full = normDataFull(m.data);
+      if (de || ate) {
+        if (!full) return false;
+        if (de  && full < de)  return false;
+        if (ate && full > ate) return false;
+        return true;
+      }
+      return normData(m.data) === mesAtual;
     };
     const tonerMap={};
     const debugMovs = suprMovs.filter(m=>m.tipo==='saida').slice(0,5).map(m=>({data:m.data, normada:normData(m.data), item:m.item}));
-    suprMovs.filter(m=>m.tipo==='saida' && normData(m.data)===mesAtual).forEach(m=>{
+    suprMovs.filter(m=>m.tipo==='saida' && dentroDoPeriodo(m)).forEach(m=>{
       const c=clientes.find(x=>x._id.toString()===m.cliente_id);
       const nome=c?.nome||'Desconhecido';
       if(!tonerMap[nome])tonerMap[nome]={preto:0,magenta:0,ciano:0,amarelo:0,grampos:0};
@@ -551,7 +567,7 @@ app.get('/api/dashboard', requireAuth, async (req,res) => {
       if(m.item==='grampos')tonerMap[nome].grampos+=m.quantidade||1;
     });
     const consumo_toner=Object.entries(tonerMap).map(([cliente,v])=>({cliente,...v}));
-    const debug_toner={mesAtual, total_movs_saida:suprMovs.filter(m=>m.tipo==='saida').length, amostras:debugMovs};
+    const debug_toner={mesAtual, periodo: (de||ate) ? { de: de||null, ate: ate||null } : null, total_movs_saida:suprMovs.filter(m=>m.tipo==='saida').length, amostras:debugMovs};
     // Retrabalho
     const nsmap={};
     ordens.forEach(os=>{if(!os.nserie)return;if(!nsmap[os.nserie])nsmap[os.nserie]={nserie:os.nserie,modelo:os.modelo,qtd:0,ultimo:os.data_ab,cliente_id:os.cliente_id};nsmap[os.nserie].qtd++;if(os.data_ab>nsmap[os.nserie].ultimo)nsmap[os.nserie].ultimo=os.data_ab;});

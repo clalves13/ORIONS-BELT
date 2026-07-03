@@ -1386,7 +1386,7 @@ label { font-size: 11px !important; font-weight: 600 !important; color: #475569 
       <button class="btn btn-ghost btn-sm" onclick="dashFiltroRapido(7)">7d</button>
       <button class="btn btn-ghost btn-sm" onclick="dashFiltroRapido(30)">30d</button>
       <button class="btn btn-ghost btn-sm" onclick="dashFiltroRapido(90)">90d</button>
-      <button class="btn btn-primary btn-sm" onclick="loadDash()">↻ Atualizar <span id="dash-refresh-badge" style="background:rgba(255,255,255,.3);border-radius:20px;padding:1px 6px;font-size:9px;font-weight:700;margin-left:4px">120s</span></button>
+      <button class="btn btn-primary btn-sm" onclick="loadDash(); iniciarAutoRefreshDash();">↻ Atualizar <span id="dash-refresh-badge" style="background:rgba(255,255,255,.3);border-radius:20px;padding:1px 6px;font-size:9px;font-weight:700;margin-left:4px">120s</span></button>
       <button class="btn btn-ghost btn-sm" onclick="printRelatorio('dashboard')">🖨 Exportar</button>
       <!-- Sino SLA -->
       <div class="tb-right-group">
@@ -8390,13 +8390,14 @@ function atualizarTimerDash() {
 async function loadDash(){
   try {
     if (!G_financeiro || !G_financeiro.length) { try { G_financeiro = await api('GET','/api/financeiro'); } catch(e){} }
-    const d = await api('GET','/api/dashboard');
+    // ── Filtro de período (lido antes, para mandar pro backend também) ──
+    const de  = document.getElementById('d-de')?.value  || '';
+    const ate = document.getElementById('d-ate')?.value || '';
+    const qs = (de || ate) ? `?${de?`de=${de}`:''}${de&&ate?'&':''}${ate?`ate=${ate}`:''}` : '';
+    const d = await api('GET','/api/dashboard'+qs);
     const now = new Date();
     document.getElementById('d-lastupdate').textContent = 'Atualizado às ' + now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
 
-    // ── Filtro de período ──
-    const de  = document.getElementById('d-de')?.value  || '';
-    const ate = document.getElementById('d-ate')?.value || '';
     const inPeriod = (dateStr) => {
       if (!dateStr) return true;
       if (de  && dateStr < de)  return false;
