@@ -1,9 +1,9 @@
 # Orion AT — Registro de Progresso Unificado
 
-**Repositório:** https://github.com/clalves13/orion-at  
+**Repositório:** https://github.com/clalves13/orion-at (redirecionando para `ORIONS-BELT` — renomeação em andamento, ver Sessão 9)
 **Branch:** main  
 **Arquivo principal:** `index.html`  
-**Última atualização:** 30/05/2026
+**Última atualização:** 02/07/2026
 
 ---
 
@@ -397,3 +397,89 @@ git push https://${TOKEN}@github.com/clalves13/orion-at.git main
 - [ ] Testar alertas e-mail do monitor com agente real
 - [ ] Conectar botão de busca também na sidebar desktop (Ctrl+K já funciona)
 - [ ] Testar busca global com volume real de dados
+
+---
+
+## Sessão 9 — 02/07/2026 — Migração de infraestrutura, correções do dashboard e detecção automática de consumo
+
+### Contexto e decisões estratégicas (não mudam código, mas orientam tudo que vem a seguir)
+
+**Renomeação:** o sistema está virando **Orion Belt** (repositório GitHub já renomeado para `ORIONS-BELT`). Nomes internos (banco `orion_at`, textos na interface, `package.json`) continuam com o nome antigo — pendência marcada para quando o código for mexido de forma mais ampla, não uma tarefa isolada.
+
+**Migração de hospedagem — Railway → Render:** o Railway deixou de oferecer tier gratuito permanente (só 30 dias de trial + US$5 de crédito). Migrado para o Render, que tem free tier real, sem cartão, e sem restrição de uso comercial. **Vercel foi descartado para o backend** (mantido só para frontends estáticos, se necessário) — motivos técnicos: função serverless tem limite de 10s no plano gratuito (mata o SSE do portal, que usa heartbeat de 25s) e o Hobby plan da Vercel proíbe uso comercial nos termos de serviço, mesmo em fase de teste sem cobrança.
+
+**Divisão em dois produtos complementares (planejada, ainda não implementada fisicamente):**
+- **Orion Gestão** — OS, laboratório, logística, estoque, financeiro, contratos, agenda, portal do cliente.
+- **Orion Monitor** — agente SNMP + dashboard de frota + alertas, vendável separadamente como produto de entrada mais barato.
+
+**Correção de arquitetura de autenticação (decidida, ainda não implementada no código):** hoje quem cria login/senha do portal do cliente é o admin do Gestão (rota `/api/clientes/:id/portal-acesso`, gravando em `clientes.portal_login`). Ficou definido que **deve ser o Agente/Monitor a controlar esse acesso**, não o Gestão — pendência arquitetural registrada, requer mudança de modelo de dados, não só mover arquivo.
+
+**Transparência de faturamento (princípio validado):** quando o faturamento automático por contador for implementado, o cliente final deve ver os mesmos dados que fundamentam a cobrança dele (contador, franquia, excedente, histórico do próprio equipamento) — mas não custo/margem interna, dados de outros clientes, ou observações internas de técnico.
+
+**Multi-tenant, LGPD, PWA, certificado de code signing, Printer-MIB padrão, faturamento via Focus NFe/PlugNotas:** todos ficaram definidos como próximos itens do roadmap, com prioridade em usar sempre a opção gratuita/de menor custo primeiro (ex.: certificado OV em vez de EV — desde 2026 a Microsoft removeu o bypass automático de SmartScreen até para EV, então o mais caro perdeu a vantagem prática).
+
+---
+
+### Fix 1 — Card "Suprimentos" do dashboard preso ao mês do servidor, ignorando o filtro de período
+
+**Sintoma:** o card mostrava "Sem dados" mesmo havendo saídas de toner registradas dentro do período selecionado (De/Até) no topo do dashboard.
+
+**Causa raiz:** `/api/dashboard` calculava consumo de toner comparando com `mesAtual` (mês corrente do servidor), sem nenhuma relação com os campos De/Até da tela — o filtro de período nunca era realmente aplicado a essa métrica.
+
+**Decisão final (depois de iteração):** não seguir o filtro de período — foi identificado que, se o card acumulasse por qualquer período longo escolhido no filtro, o número cresceria sem limite conforme a base de dados aumenta (ex.: "1.000.000 de toners consumidos"), virando inútil em produção. Decisão: o card fica **sempre fixo no mês atual**, independente do filtro De/Até do resto do dashboard.
+
+**Arquivo:** `server.js`, rota `GET /api/dashboard`
+
+---
+
+### Fix 2 — Card de Suprimentos virou ranking (não soma mais por cor de todos os clientes juntos)
+
+**Antes:** somava toner consumido de TODOS os clientes juntos, agrupado só por cor (Preto/Magenta/Ciano/Amarelo/Grampos) — não dava para saber quem consumia mais.
+
+**Depois:** `consumo_toner` retorna os **4 clientes que mais consumiram no mês atual**, ordenados do maior para o menor, cada um com o total e o detalhamento por cor. O gráfico (`renderGraficoPizzaToner` em `index.html`) virou um doughnut por cliente, com tooltip mostrando o detalhamento de cores daquele cliente ao passar o mouse.
+
+**Arquivos:** `server.js` (rota `/api/dashboard`) e `public/index.html` (`renderGraficoPizzaToner`)
+
+---
+
+### Fix 3 — Botão "↻ Atualizar" do dashboard não reiniciava o cronômetro de auto-refresh
+
+**Sintoma:** clicar no botão recarregava os dados, mas o badge de contagem regressiva (`120s → 0s`) continuava de onde estava, sem resetar.
+
+**Causa:** o `onclick` chamava só `loadDash()`, que nunca toca em `_dashRefreshCount` nem reinicia o `setInterval` — são duas funções independentes.
+
+**Correção:** `onclick="loadDash(); iniciarAutoRefreshDash();"` — o clique manual agora também reinicia o cronômetro para 120s.
+
+**Arquivo:** `public/index.html`, botão do dashboard
+
+---
+
+### Feature — Detecção automática de troca de toner via SNMP (consumo real, sem lançamento manual)
+
+**Motivação:** foi identificado que o motivo real de existir o Orion Monitor é justamente eliminar a dependência de alguém lembrar de lançar manualmente a saída de suprimento no sistema quando troca um toner num cliente. Consumo lançado manualmente é o mesmo ponto fraco dos concorrentes que fazem isso "no braço".
+
+**Como funciona:** o agente (`orion-agente.js`) já coletava o nível de cada toner (Printer-MIB padrão) a cada ciclo (15 min por padrão) e envia para `POST /api/monitor/telemetria`. Não foi necessário alterar o agente — a inteligência nova ficou no backend, que já tinha o histórico por impressora (`monitor_impressoras`).
+
+**Lógica implementada:** antes de sobrescrever a leitura de uma impressora, o backend compara com a leitura anterior. Se um toner estava em **≤15%** e a nova leitura mostra um salto de **+40 pontos ou mais**, o sistema entende que houve troca física do cartucho (esse salto só acontece nesse cenário real) e:
+1. Registra automaticamente uma **saída** em `supr_movs` (mesmo efeito de um lançamento manual, mas automático).
+2. Dá baixa no estoque do cliente em `supr_cli`.
+3. Gera uma notificação interna avisando da detecção.
+
+**Limiares (`<=15%` e `>=40 pontos`) são um ponto de partida, não calibrados ainda** — só é possível validar de verdade com impressora física respondendo SNMP e uma troca real de toner acontecendo entre dois ciclos de coleta. Ajustar depois de teste em produção real (mesma pendência já registrada na Sessão 8: "testar agente real").
+
+**Arquivo:** `server.js`, rota `POST /api/monitor/telemetria`
+
+---
+
+### Pendências em aberto (atualizado 02/07/2026)
+- [ ] Renomear `orion_at` → `Orion Belt` no banco, `package.json` e textos da interface
+- [ ] Implementar multi-tenant (`tenant_id`) antes de qualquer venda a terceiros
+- [ ] Mover controle de acesso do Orion Client do Gestão para o Agente/Monitor (mudança de modelo de dados)
+- [ ] Migrar Cloudinary → Cloudflare R2 (custo)
+- [ ] PWA (manifest + service worker) em `index.html` e `portal.html`
+- [ ] Certificado OV de code signing para o `.exe` do agente + submissão de reputação ao SmartScreen
+- [ ] Suporte multi-fabricante via Printer-MIB padrão (RFC 3805) no agente
+- [ ] Faturamento automático contador→NF via Focus NFe ou PlugNotas (deixar por último — depende de fatores externos: habilitação NFS-e municipal, certificado digital do cliente)
+- [ ] LGPD/auditoria — coleção `audit_log` + política de retenção
+- [ ] **Calibrar os limiares de detecção automática de troca de toner com impressora real** (item novo desta sessão)
+- [ ] Separação física em monorepo (`/apps/orion-gestao`, `/apps/orion-monitor`, `/apps/orion-client`) — só depois do multi-tenant estar pronto

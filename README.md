@@ -1,70 +1,55 @@
-# Orion Belt — SaaS de Monitormanto de equipamentos
+# Orion AT — Sistema de Assistência Técnica
 
-## Como subir no Railway (acesso de qualquer lugar)
+> ⚠️ **Nome em transição:** o sistema está sendo renomeado para **Orion Belt** (repositório já é `ORIONS-BELT` no GitHub). Nomes internos no código (banco `orion_at`, textos na interface) ainda não foram atualizados — isso é uma pendência conhecida, não um erro. Ver `PROGRESSO.md` para o plano completo.
 
-### Passo 1 — Criar conta no GitHub
-1. Acesse https://github.com e crie uma conta gratuita
-2. Clique em **New repository**
-3. Nome: `orion-at`
-4. Deixe **Private** marcado
-5. Clique **Create repository**
+## Como subir no Render (acesso de qualquer lugar, 100% gratuito)
 
-### Passo 2 — Enviar os arquivos
-No seu computador, abra o terminal (Prompt de Comando) e execute:
+> Migrado do Railway para o Render em julho/2026 — o Railway não oferece mais tier gratuito permanente (só 30 dias de trial). O Render tem free tier real, sem cartão, e permite uso comercial (o Railway free/Vercel Hobby não permitem).
 
+### Passo 1 — Repositório no GitHub
+Já existe: `https://github.com/clalves13/orion-at` (redirecionando para `ORIONS-BELT`). Se for clonar do zero:
 ```bash
-cd pasta-onde-extraiu-o-zip
-git init
-git add .
-git commit -m "Orion AT"
-git remote add origin https://github.com/SEU_USUARIO/orion-at.git
-git push -u origin main
+git clone https://github.com/clalves13/orion-at.git
 ```
 
-### Passo 3 — Criar conta no Railway
-1. Acesse https://railway.app
-2. Clique **Login with GitHub**
-3. Autorize o Railway
+### Passo 2 — Criar conta no Render
+1. Acesse https://render.com e crie conta com GitHub (sem cartão)
+2. **New** → **Web Service** → selecione o repositório
 
-### Passo 4 — Criar o projeto
-1. No Railway, clique **New Project**
-2. Clique **Deploy from GitHub repo**
-3. Selecione o repositório `orion-at`
-4. O Railway detecta automaticamente o Node.js e faz o deploy
+### Passo 3 — Configurar o serviço
+| Campo | Valor |
+|---|---|
+| Runtime | Node |
+| Build Command | `npm install` |
+| Start Command | `node server.js` |
+| Instance Type | **Free** |
 
-### Passo 5 — Configurar variáveis de ambiente (OBRIGATÓRIO)
-1. No painel do Railway, clique no seu serviço
-2. Vá em **Variables** e adicione:
+### Passo 4 — Variáveis de ambiente (OBRIGATÓRIO)
+Em **Environment**, adicione:
 
 | Variável | Descrição |
 |---|---|
-| `MONGO_URI` | String de conexão do MongoDB Atlas |
-| `CLOUDINARY_CLOUD_NAME` | Nome do cloud no Cloudinary |
+| `MONGO_URI` | String de conexão do MongoDB Atlas (tier M0 gratuito) |
+| `CLOUDINARY_CLOUD_NAME` | Nome do cloud no Cloudinary (migração para Cloudflare R2 planejada — ver PROGRESSO.md) |
 | `CLOUDINARY_API_KEY` | Chave de API do Cloudinary |
 | `CLOUDINARY_API_SECRET` | Secret do Cloudinary |
 | `MASTER_PASSWORD` | Senha do usuário master (oculto) |
+| `ADMIN_PASSWORD` | Senha do primeiro usuário admin criado no primeiro start |
 | `SESSION_SECRET` | Frase longa e aleatória para segurança das sessões |
 
-### Passo 6 — Configurar volume de dados (IMPORTANTE)
-Para que os dados não se percam ao atualizar:
+### Passo 5 — Auto-Deploy
+Já vem configurado como **"On Commit"** — todo `git push` na branch `main` dispara build e deploy automáticos. Acompanhe em **Events** no painel do Render.
 
-1. No painel do Railway, clique no seu serviço
-2. Vá em **Settings** → **Volumes**
-3. Clique **Add Volume**
-4. Mount Path: `/app/data`
-5. Clique **Add**
+### Passo 6 — Acessar o sistema
+URL gerada automaticamente, formato `https://orions-belt-xxxx.onrender.com`.
 
-### Passo 7 — Acessar o sistema
-1. Vá em **Settings** → **Domains**
-2. Clique **Generate Domain**
-3. Você receberá um link como: `orion-at.up.railway.app`
-4. Esse link funciona em qualquer PC, celular ou tablet
+⚠️ **Free tier do Render "dorme" após 15 min sem acesso** — a primeira requisição depois disso demora de 30s a 2min para responder. Normal, não é erro.
 
 ---
 
 ## Primeiro acesso
 - **Usuário:** admin
-- **Senha:** admin123
+- **Senha:** a que você definiu em `ADMIN_PASSWORD`
 - ⚠️ Troque a senha imediatamente após o primeiro login
 
 ## Usuários
@@ -78,13 +63,15 @@ orion-at/
 ├── server.js          — Servidor Node.js + API
 ├── orion-agente.js    — Agente de monitoramento de impressoras (v2.1.0)
 ├── package.json       — Dependências
-├── railway.toml       — Configuração Railway
+├── railway.toml       — Configuração Railway (legado — não mais usado no deploy atual)
 ├── Dockerfile         — Configuração Docker
 └── public/
     ├── index.html     — Sistema completo (frontend)
     ├── portal.html    — Portal do cliente
     └── monitor.html   — Painel de monitoramento
 ```
+
+> **Plano de arquitetura futuro:** separação em dois produtos complementares (`orion-gestao` + `orion-monitor`) com multi-tenant, documentado em `PROGRESSO.md`.
 
 ## Rodando localmente (sem internet)
 ```bash
@@ -99,7 +86,7 @@ Acesse: http://localhost:3000
 3. **Laboratório** — Manutenção interna com checklist
 4. **Logística** — Rotas, frota e checklist de veículos
 5. **Clientes / Equipamentos** — Cadastro e histórico
-6. **Estoque** — Peças e suprimentos com alertas
+6. **Estoque** — Peças e suprimentos com alertas (consumo real detectado automaticamente via agente SNMP — ver PROGRESSO.md)
 7. **Financeiro** — Lançamentos, KPIs e MRR
 8. **Contratos** — Gestão de contratos e recorrência
 9. **Agenda** — Calendário interativo
