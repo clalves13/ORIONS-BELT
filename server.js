@@ -104,10 +104,28 @@ const PERFIS = {
   financeiro:     { label:'Financeiro',    modulos:['dashboard','os','historico','logistica'] },
   comercial:      { label:'Comercial',     modulos:['dashboard','os','historico','clientes'] },
   administrativo: { label:'Administrativo',modulos:['dashboard','os','lab','historico','estoque','supr-cli','clientes','logistica'] },
+  // Perfil de demonstração: mostra os módulos operacionais (o "produto" em si), mas nunca:
+  // usuários (gestão de acesso), financeiro (dinheiro real da empresa), técnicos (dados da equipe)
+  // e contratos (valores de contrato/MRR real). Além disso, é 100% somente-leitura — ver middleware
+  // bloqueiaEscritaDemo logo abaixo, que barra qualquer POST/PUT/DELETE para esse perfil no backend
+  // (não depende só de esconder botão na tela, que poderia ser burlado chamando a API direto).
+  demo:           { label:'Demonstração',  modulos:['dashboard','os','lab','historico','estoque','supr-cli','clientes','equipamentos','agenda','logistica','relatorios','notificacoes'] },
 };
 app.get('/api/perfis', requireAuth, (req,res) => {
   res.json(Object.entries(PERFIS).map(([k,v])=>({value:k, label:v.label, modulos:v.modulos})));
 });
+
+// Bloqueia qualquer ação de escrita (criar/editar/excluir) para o perfil "demo", no backend —
+// garante que a restrição vale de verdade, mesmo que alguém tente chamar a API diretamente,
+// não só quando usa a tela normal. Fica antes de todas as rotas de API.
+function bloqueiaEscritaDemo(req,res,next){
+  const u = req.session && req.session.user;
+  if (u && u.perfil === 'demo' && req.method !== 'GET' && req.path !== '/logout') {
+    return res.status(403).json({ error: 'Perfil de demonstração: somente visualização, sem permissão para criar, editar ou excluir.' });
+  }
+  next();
+}
+app.use('/api', bloqueiaEscritaDemo);
 
 // AUTH
 app.post('/api/login', rlLogin, async (req,res) => {
@@ -1732,7 +1750,44 @@ app.post('/api/monitor/telemetria', rlAgente, async (req,res) => {
     await col('monitor_telemetria').insertOne({ cliente_id:cid, cliente_nome:cliente.nome, hostname:hostname||'', platform:platform||'', agente_ver:agente_ver||'', timestamp:timestamp||now(), impressoras:impressoras||[], created_at:now() });
     for (const imp of (impressoras||[])) {
       const filtro = { cliente_id:cid, ip: imp.ip||imp.nome||'' };
+      const anterior = await col('monitor_impressoras').findOne(filtro); // leitura da rodada passada, ANTES de sobrescrever
       await col('monitor_impressoras').updateOne(filtro, { $set:{ ...imp, cliente_id:cid, cliente_nome:cliente.nome, ultimo_contato:now(), online:true }}, { upsert:true });
+
+      // ── Detecção automática de troca de toner (consumo real, não lançamento manual) ──
+      // Sinal: nível estava baixo (<=15%) na leitura anterior e subiu muito (+40 pontos) agora.
+      // Esse salto só acontece em um cenário real: alguém trocou o cartucho.
+      if (anterior && anterior.toner) {
+        const CORES = [
+          { chave:'preto',   item:'toner_preto'   },
+          { chave:'magenta', item:'toner_magenta' },
+          { chave:'ciano',   item:'toner_ciano'   },
+          { chave:'amarelo', item:'toner_amarelo' },
+        ];
+        for (const { chave, item } of CORES) {
+          const antes  = anterior.toner[chave];
+          const agoraN = imp.toner?.[chave];
+          if (antes===null || antes===undefined || agoraN===null || agoraN===undefined) continue;
+          const trocou = antes <= 15 && (agoraN - antes) >= 40;
+          if (!trocou) continue;
+          // Registra a saída (consumo real) — mesma lógica da rota manual de movimento
+          let row = await col('supr_cli').findOne({ cliente_id: cid });
+          if (!row) { await col('supr_cli').insertOne({ cliente_id:cid, toner_preto:0, toner_magenta:0, toner_ciano:0, toner_amarelo:0, grampos:0 }); row = await col('supr_cli').findOne({ cliente_id:cid }); }
+          const upd = {}; upd[item] = Math.max(0, (row[item]||0) - 1);
+          await col('supr_cli').updateOne({ cliente_id: cid }, { $set: upd });
+          await col('supr_movs').insertOne({
+            cliente_id: cid, tipo:'saida', item, quantidade:1,
+            data: (timestamp||now()).slice(0,10),
+            tecnico_id:'', tecnico_nome:'Detecção automática (Agente SNMP)',
+            obs:`Troca detectada automaticamente — nível subiu de ${antes}% para ${agoraN}% (${imp.descricao||imp.ip})`,
+            origem:'agente_auto', created_at: now()
+          });
+          await col('notificacoes').insertOne({
+            tipo:'info', modulo:'monitor', titulo:`Troca de toner detectada — ${cliente.nome}`,
+            msg:`${imp.descricao||imp.ip}: ${chave} subiu de ${antes}% para ${agoraN}% — consumo registrado automaticamente.`,
+            cliente_id: cid, lida:false, created_at: now()
+          });
+        }
+      }
 
       // Atualiza contador do equipamento cadastrado pelo número de série
       if (imp.serial && imp.paginas_total) {

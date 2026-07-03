@@ -4138,6 +4138,7 @@ Outros</textarea>
           <option value="administrativo">Administrativo</option>
           <option value="supervisor">Supervisor de Operações</option>
           <option value="admin">Administrador</option>
+          <option value="demo">Demonstração (somente visualização)</option>
         </select>
       </div>
       <div class="fg"><label>Status</label><select id="u-ativo"><option value="1">Ativo</option><option value="0">Inativo</option></select></div>
@@ -4372,7 +4373,16 @@ async function api(method, url, body) {
   const opts = { method, headers:{'Content-Type':'application/json'} };
   if (body) opts.body = JSON.stringify(body);
   const r = await fetch(url, opts);
-  if (!r.ok) { const e = await r.json().catch(()=>({})); throw new Error(e.error || r.statusText); }
+  if (!r.ok) {
+    const e = await r.json().catch(()=>({}));
+    // Aviso amigável para o perfil demo, em vez de deixar cada tela lidar com o erro cru —
+    // funciona em qualquer botão do sistema, sem precisar ajustar cada função de salvar.
+    if (r.status === 403 && (e.error||'').includes('Perfil de demonstração')) {
+      if (typeof showToast === 'function') showToast('🔒 Modo demonstração: apenas visualização, esta ação não está disponível.', 'warn');
+      else alert('Modo demonstração: apenas visualização, esta ação não está disponível.');
+    }
+    throw new Error(e.error || r.statusText);
+  }
   return r.json();
 }
 
@@ -7454,6 +7464,7 @@ const PERFIS_ACESSO={
   comercial:     {label:'Comercial',cor:'#e0103a',desc:'Dashboard, Clientes, OS, Estoque, Histórico',abas:['dashboard','clientes','os','estoque','historico']},
   financeiro:    {label:'Financeiro',cor:'var(--nv)',desc:'Dashboard, OS, Histórico, Relatórios',abas:['dashboard','os','historico','relatorios']},
   rh:            {label:'RH',cor:'#8899bb',desc:'Técnicos, Usuários, Dashboard',abas:['tecnicos','usuarios','dashboard']},
+  demo:          {label:'Demonstração',cor:'#8899bb',desc:'Somente visualização — sem Usuários, Financeiro, Técnicos ou Contratos, e sem poder criar/editar/excluir nada',abas:['dashboard','os','lab','historico','estoque','supr-cli','clientes','equipamentos','logistica','relatorios']},
 };
 const LABELS_ABAS={dashboard:'Dashboard',os:'OS/Atend.',lab:'Laboratório',historico:'Histórico',estoque:'Estoque','supr-cli':'Suprimentos',clientes:'Clientes',tecnicos:'Técnicos',usuarios:'Usuários',logistica:'Logística',relatorios:'Relatórios'};
 let G_recLog=[];
@@ -9903,6 +9914,10 @@ const PERFIS_MODULOS = {
   financeiro:     ['dashboard','os','historico','logistica','contratos','financeiro','notificacoes','relatorios'],
   comercial:      ['dashboard','os','agenda','historico','clientes','equipamentos','contratos','notificacoes'],
   administrativo: ['dashboard','os','agenda','lab','historico','estoque','supr-cli','clientes','equipamentos','logistica','contratos','notificacoes','relatorios'],
+  // Espelha exatamente a lista do backend (PERFIS.demo em server.js) — nunca mostra
+  // usuarios, financeiro, tecnicos ou contratos. Além disso é somente-leitura (ver
+  // bloqueiaEscritaDemo no server.js, que bloqueia POST/PUT/DELETE de verdade).
+  demo:           ['dashboard','os','lab','historico','estoque','supr-cli','clientes','equipamentos','agenda','logistica','relatorios','notificacoes'],
 };
 
 function applyPermissoes(user) {
@@ -9918,6 +9933,21 @@ function applyPermissoes(user) {
   document.querySelectorAll('.ni[data-modulo]').forEach(el => {
     el.style.display = permitidos.includes(el.getAttribute('data-modulo')) ? 'flex' : 'none';
   });
+
+  // Selo fixo "Modo Demonstração" — deixa claro o tempo todo, para quem estiver testando,
+  // que a conta é só de visualização (sem depender de perceber isso só quando um botão falha).
+  let selo = document.getElementById('selo-demo');
+  if (perfil === 'demo') {
+    if (!selo) {
+      selo = document.createElement('div');
+      selo.id = 'selo-demo';
+      selo.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:#F59E0B;color:#1a1a1a;text-align:center;font:700 12px Sora,sans-serif;padding:5px;letter-spacing:.3px';
+      selo.textContent = '🔎 MODO DEMONSTRAÇÃO — Somente visualização, sem permissão para criar, editar ou excluir';
+      document.body.prepend(selo);
+    }
+  } else if (selo) {
+    selo.remove();
+  }
 
   // Usuários: só admin/master vê
   const niUsr = document.getElementById('ni-usr');
