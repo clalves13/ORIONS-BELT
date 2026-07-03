@@ -1617,7 +1617,7 @@ label { font-size: 11px !important; font-weight: 600 !important; color: #475569 
         <div class="dash-card-hd">
           <div>
             <div class="dash-card-title">🖨 Suprimentos</div>
-            <div class="dash-card-sub">Consumo por tipo</div>
+            <div class="dash-card-sub">Top 4 clientes — consumo do mês atual</div>
           </div>
         </div>
         <canvas id="chart-toner-pizza" height="170" style="width:100%;display:block"></canvas>
@@ -8390,14 +8390,13 @@ function atualizarTimerDash() {
 async function loadDash(){
   try {
     if (!G_financeiro || !G_financeiro.length) { try { G_financeiro = await api('GET','/api/financeiro'); } catch(e){} }
-    // ── Filtro de período (lido antes, para mandar pro backend também) ──
-    const de  = document.getElementById('d-de')?.value  || '';
-    const ate = document.getElementById('d-ate')?.value || '';
-    const qs = (de || ate) ? `?${de?`de=${de}`:''}${de&&ate?'&':''}${ate?`ate=${ate}`:''}` : '';
-    const d = await api('GET','/api/dashboard'+qs);
+    const d = await api('GET','/api/dashboard');
     const now = new Date();
     document.getElementById('d-lastupdate').textContent = 'Atualizado às ' + now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
 
+    // ── Filtro de período (usado pelas outras métricas do dashboard — NÃO afeta o card de Suprimentos, que é sempre mensal) ──
+    const de  = document.getElementById('d-de')?.value  || '';
+    const ate = document.getElementById('d-ate')?.value || '';
     const inPeriod = (dateStr) => {
       if (!dateStr) return true;
       if (de  && dateStr < de)  return false;
@@ -9616,22 +9615,33 @@ function renderGraficoPizzaToner(d) {
   if (!window.Chart) return;
   _destroyChart('chart-toner-pizza');
   const el = document.getElementById('chart-toner-pizza'); if (!el) return;
-  const ct = d.consumo_toner||[];
-  const tots = { Preto:0, Magenta:0, Ciano:0, Amarelo:0, Grampos:0 };
-  ct.forEach(c => { tots.Preto+=(c.preto||0); tots.Magenta+=(c.magenta||0); tots.Ciano+=(c.ciano||0); tots.Amarelo+=(c.amarelo||0); tots.Grampos+=(c.grampos||0); });
-  const labels = Object.keys(tots).filter(k=>tots[k]>0);
-  const values = labels.map(k=>tots[k]);
-  const COLORS = {Preto:'#1E293B',Magenta:'#E91E63',Ciano:'#00BCD4',Amarelo:'#FFC107',Grampos:'#9B51E0'};
+  // consumo_toner já vem do backend como ranking: até 4 clientes, do que mais consumiu para o que menos consumiu, só do mês atual.
+  const top4 = d.consumo_toner||[];
+  const labels = top4.map(c=>c.cliente);
+  const values = top4.map(c=>c.total);
+  const COLORS = ['#1E293B','#E91E63','#00BCD4','#FFC107'];
   const total = values.reduce((a,b)=>a+b,0);
-  if (!total) { const c=getCanvasCtx('chart-toner-pizza');if(c){c.ctx.fillStyle='#8899bb';c.ctx.font='12px Sora,sans-serif';c.ctx.textAlign='center';c.ctx.fillText('Sem dados',c.W/2,c.H/2);} return; }
+  if (!total) { const c=getCanvasCtx('chart-toner-pizza');if(c){c.ctx.fillStyle='#8899bb';c.ctx.font='12px Sora,sans-serif';c.ctx.textAlign='center';c.ctx.fillText('Sem consumo registrado este mês',c.W/2,c.H/2);} return; }
   _charts['chart-toner-pizza'] = new Chart(el, {
     type: 'doughnut',
-    data: { labels, datasets:[{data:values,backgroundColor:labels.map(l=>COLORS[l]||PBI.gray),borderColor:'#fff',borderWidth:3,hoverOffset:6}] },
+    data: { labels, datasets:[{data:values,backgroundColor:labels.map((l,i)=>COLORS[i%COLORS.length]),borderColor:'#fff',borderWidth:3,hoverOffset:6}] },
     options: {
       responsive:true, maintainAspectRatio:false, cutout:'62%',
       plugins: {
         legend:{position:'right',labels:{font:PBI_FONT,padding:12,usePointStyle:true}},
-        tooltip:{callbacks:{label:ctx=>` ${ctx.label}: ${ctx.parsed} un. (${Math.round(ctx.parsed*100/total)}%)`}}
+        tooltip:{callbacks:{
+          label:ctx=>` ${ctx.label}: ${ctx.parsed} un. este mês (${Math.round(ctx.parsed*100/total)}%)`,
+          afterLabel:ctx=>{
+            const c = top4[ctx.dataIndex]||{};
+            const partes=[];
+            if(c.preto) partes.push(`Preto: ${c.preto}`);
+            if(c.magenta) partes.push(`Magenta: ${c.magenta}`);
+            if(c.ciano) partes.push(`Ciano: ${c.ciano}`);
+            if(c.amarelo) partes.push(`Amarelo: ${c.amarelo}`);
+            if(c.grampos) partes.push(`Grampos: ${c.grampos}`);
+            return partes;
+          }
+        }}
       }
     },
     plugins:[{id:'centerText',afterDraw(chart){
@@ -9639,7 +9649,7 @@ function renderGraficoPizzaToner(d) {
       const cx=(left+right)/2,cy=(top+bottom)/2;
       ctx.save();ctx.font='bold 20px Sora,sans-serif';ctx.fillStyle='#0F172A';
       ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(total,cx,cy-8);
-      ctx.font='10px Sora,sans-serif';ctx.fillStyle='#94A3B8';ctx.fillText('un. total',cx,cy+10);ctx.restore();
+      ctx.font='10px Sora,sans-serif';ctx.fillStyle='#94A3B8';ctx.fillText('un. no mês',cx,cy+10);ctx.restore();
     }}]
   });
 }
