@@ -1867,7 +1867,7 @@ async function enrichImps(imps) {
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
-app.get('/api/monitor/impressoras', async (req,res) => {
+app.get('/api/monitor/impressoras', requireAuth, async (req,res) => {
   try {
     const { cliente_id } = req.query;
     const filtro = cliente_id ? { cliente_id } : {};
@@ -1878,7 +1878,7 @@ app.get('/api/monitor/impressoras', async (req,res) => {
   } catch(e) { res.status(500).json({ error:e.message }); }
 });
 
-app.get('/api/monitor/historico', async (req,res) => {
+app.get('/api/monitor/historico', requireAuth, async (req,res) => {
   try {
     const { cliente_id, ip, limit=30 } = req.query;
     const filtro = { cliente_id };
@@ -1888,7 +1888,7 @@ app.get('/api/monitor/historico', async (req,res) => {
   } catch(e) { res.status(500).json({ error:e.message }); }
 });
 
-app.get('/api/monitor/dashboard', async (req,res) => {
+app.get('/api/monitor/dashboard', requireAuth, async (req,res) => {
   try {
     const total     = await col('monitor_impressoras').countDocuments();
     const online    = await col('monitor_impressoras').countDocuments({ online:true });
@@ -1971,7 +1971,7 @@ async function enviarAlertaMonitor(destinatario, nomeCliente, assunto, corpo) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ─── SIMULADOR DE IMPRESSORAS ────────────────────────────────────────────────
-app.post('/api/monitor/simular', async (req,res) => {
+app.post('/api/monitor/simular', requireAuth, requireAdmin, async (req,res) => {
   try {
     // Busca clientes reais com equipamentos cadastrados
     const clientesReais = await col('clientes').find({}, {
@@ -2076,7 +2076,7 @@ app.post('/api/monitor/simular', async (req,res) => {
   } catch(e) { res.status(500).json({ error:e.message }); }
 });
 
-app.delete('/api/monitor/simular', async (req,res) => {
+app.delete('/api/monitor/simular', requireAuth, requireAdmin, async (req,res) => {
   try {
     await col('monitor_impressoras').deleteMany({ _sim: true });
     await col('monitor_telemetria').deleteMany({ _sim: true });

@@ -231,14 +231,23 @@ async function api(method,url,body) {
     console.warn(`api ${method} ${url} → resposta não-JSON (${r.status})`);
     return null;
   }
+  if(r.status === 401) {
+    // Sessão caiu/expirou durante o uso do monitor — manda pro login em vez de
+    // continuar tentando renderizar dados sem autenticação.
+    mostrarLogin();
+    throw new Error('Não autenticado');
+  }
   if(!r.ok) {
     const err = await r.json().catch(()=>({message:`HTTP ${r.status}`}));
     throw new Error(err?.message||`HTTP ${r.status}`);
   }
   return r.json();
 }
-function mostrarLogin() { /* sem login */ }
-
+function mostrarLogin() {
+  // Sem sessão válida: manda para a tela de login do sistema principal.
+  // Preserva a URL atual para trazer o usuário de volta ao monitor depois de logar.
+  window.location.href = '/?redirect=' + encodeURIComponent(window.location.pathname);
+}
 
 function toggleSenha(inputId, iconId) {
   const inp = document.getElementById(inputId);
@@ -252,8 +261,18 @@ function toggleSenha(inputId, iconId) {
       : '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
   }
 }
-// Iniciar monitor direto sem login
-document.addEventListener('DOMContentLoaded', function() {
+// Checa sessão real antes de liberar o monitor — mesmo endpoint /api/me que o
+// sistema principal (index.html) usa. Sem sessão válida, redireciona pro login
+// em vez de mostrar os dados.
+document.addEventListener('DOMContentLoaded', async function() {
+  try {
+    const r = await fetch('/api/me', { credentials: 'include' });
+    if (!r.ok) { mostrarLogin(); return; }
+    _authOk = true;
+  } catch (e) {
+    mostrarLogin();
+    return;
+  }
   document.getElementById('mon-login').style.display = 'none';
   document.getElementById('mon-app').style.display = 'block';
   atualizar();
