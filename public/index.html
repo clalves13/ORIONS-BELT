@@ -1314,9 +1314,9 @@ label { font-size: 11px !important; font-weight: 600 !important; color: #475569 
     <div class="ni" data-modulo="notificacoes" data-tip="Notificações SLA" onclick="nav('notificacoes',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg><span>Notificações</span><span class="ni-badge" id="b-notif" style="background:var(--rd)">0</span></div>
     <div class="ni" data-modulo="relatorios" data-tip="Relatórios" onclick="nav('relatorios',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg><span>Relatórios</span></div>
     <!-- Monitor de Impressoras — link externo -->
-    <a href="/monitor" target="_blank" class="ni" style="text-decoration:none;color:rgba(255,255,255,.75)" data-tip="Portal do Monitor de Impressoras" title="Abrir Portal do Monitor em nova aba">
+    <a href="/monitor" target="_blank" class="ni" style="text-decoration:none;color:rgba(255,255,255,.75)" data-tip="Monitor de Impressoras" title="Abrir monitor em nova aba">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-      <span>Portal do Monitor</span>
+      <span>Monitor</span>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:10px;height:10px;opacity:.5;flex-shrink:0"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
     </a>
     <!-- Portal do Cliente — link externo -->
@@ -1326,7 +1326,7 @@ label { font-size: 11px !important; font-weight: 600 !important; color: #475569 
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:10px;height:10px;opacity:.5;flex-shrink:0"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
     </a>
     <!-- Configurações — submenu expansível -->
-    <div class="ni-parent" id="ni-cfg-parent" data-tip="Configurações" onclick="toggleCfgMenu()">
+    <div class="ni-parent" id="ni-cfg-parent" data-modulo="configuracoes" data-tip="Configurações" onclick="toggleCfgMenu()">
       <div class="ni-parent-left">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
         <span>Configurações</span>
@@ -9906,8 +9906,8 @@ function buildMapaSVG(){}
 
 // ─── PERFIS DE ACESSO ─────────────────────────────────────────
 const PERFIS_MODULOS = {
-  admin:          ['dashboard','os','agenda','lab','historico','estoque','supr-cli','clientes','equipamentos','tecnicos','usuarios','logistica','contratos','financeiro','notificacoes','relatorios'],
-  supervisor:     ['dashboard','os','agenda','lab','historico','estoque','supr-cli','clientes','equipamentos','tecnicos','usuarios','logistica','contratos','financeiro','notificacoes','relatorios'],
+  admin:          ['dashboard','os','agenda','lab','historico','estoque','supr-cli','clientes','equipamentos','tecnicos','usuarios','logistica','contratos','financeiro','notificacoes','relatorios','configuracoes'],
+  supervisor:     ['dashboard','os','agenda','lab','historico','estoque','supr-cli','clientes','equipamentos','tecnicos','usuarios','logistica','contratos','financeiro','notificacoes','relatorios','configuracoes'],
   tecnico:        ['dashboard','os','agenda','lab','historico','estoque','supr-cli','clientes','equipamentos','notificacoes'],
   logistica:      ['dashboard','logistica','os','agenda','clientes','equipamentos','estoque','notificacoes'],
   rh:             ['dashboard','tecnicos','usuarios'],
@@ -9921,7 +9921,7 @@ const PERFIS_MODULOS = {
 };
 
 function applyPermissoes(user) {
-  const TODOS_MODULOS = ['dashboard','os','agenda','lab','historico','estoque','supr-cli','clientes','equipamentos','tecnicos','usuarios','logistica','contratos','financeiro','notificacoes','relatorios'];
+  const TODOS_MODULOS = ['dashboard','os','agenda','lab','historico','estoque','supr-cli','clientes','equipamentos','tecnicos','usuarios','logistica','contratos','financeiro','notificacoes','relatorios','configuracoes'];
   const perfil = user.perfil || (user.role === 'admin' ? 'admin' : 'tecnico');
   const isAdmin   = user.role === 'admin' || perfil === 'supervisor';
   const isMaster  = _checkMaster(user);
@@ -9930,7 +9930,7 @@ function applyPermissoes(user) {
 
   const permitidos = (isMaster || isAdmin) ? TODOS_MODULOS : (PERFIS_MODULOS[perfil] || PERFIS_MODULOS.tecnico);
 
-  document.querySelectorAll('.ni[data-modulo]').forEach(el => {
+  document.querySelectorAll('.ni[data-modulo], .ni-parent[data-modulo]').forEach(el => {
     el.style.display = permitidos.includes(el.getAttribute('data-modulo')) ? 'flex' : 'none';
   });
 
