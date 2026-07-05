@@ -916,7 +916,7 @@ app.get('/api/telegram-updates', requireAuth, requireAdmin, async (req, res) => 
   }).on('error', e => res.status(500).json({ error: e.message }));
 });
 
-app.post('/api/forgot-password', async (req, res) => {
+app.post('/api/forgot-password', rlLogin, async (req, res) => {
   try {
     const { login, canal } = req.body; // canal: 'email' | 'whatsapp'
     if (!login) return res.status(400).json({ error: 'Informe o login ou email.' });
@@ -960,7 +960,7 @@ app.post('/api/forgot-password', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post('/api/reset-password', async (req, res) => {
+app.post('/api/reset-password', rlLogin, async (req, res) => {
   try {
     const { login, codigo, nova_senha } = req.body;
     if (!login || !codigo || !nova_senha) return res.status(400).json({ error: 'Dados incompletos.' });
@@ -992,9 +992,6 @@ app.post('/api/reset-password', async (req, res) => {
     res.json({ ok: true, msg: 'Senha redefinida com sucesso! Você já pode fazer login.' });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
-
-// Debug route
-app.get('/api/test', (req,res) => res.json({ok:true, session: req.session.user || null}));
 
 // Teste de envio Telegram
 app.post('/api/test-telegram', requireAuth, requireAdmin, async (req, res) => {
