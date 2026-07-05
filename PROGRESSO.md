@@ -3,7 +3,7 @@
 **Repositório:** https://github.com/clalves13/orion-at (redirecionando para `ORIONS-BELT` — renomeação em andamento, ver Sessão 9)
 **Branch:** main  
 **Arquivo principal:** `index.html`  
-**Última atualização:** 02/07/2026
+**Última atualização:** 05/07/2026
 
 ---
 
@@ -483,3 +483,65 @@ git push https://${TOKEN}@github.com/clalves13/orion-at.git main
 - [ ] LGPD/auditoria — coleção `audit_log` + política de retenção
 - [ ] **Calibrar os limiares de detecção automática de troca de toner com impressora real** (item novo desta sessão)
 - [ ] Separação física em monorepo (`/apps/orion-gestao`, `/apps/orion-monitor`, `/apps/orion-client`) — só depois do multi-tenant estar pronto
+
+---
+
+## Sessão 10 — 05/07/2026 — Perfil Demo + falhas de segurança reais no Monitor e em Configurações
+
+### Feature — Perfil "Demonstração" (somente visualização)
+
+**Motivação:** precisar mostrar o sistema a terceiros (demonstração comercial) sem expor dados críticos nem risco de alguém alterar/excluir dados reais.
+
+**Implementado em duas camadas** (a mais importante é a do backend — esconder botão na tela não impede alguém de chamar a API direto):
+1. **Backend (`server.js`):** novo perfil `demo` em `PERFIS`, sem os módulos `usuarios`, `financeiro`, `tecnicos` e `contratos`. Middleware novo `bloqueiaEscritaDemo` bloqueia **qualquer** `POST/PUT/DELETE` para esse perfil (exceto `/api/logout`), retornando 403 — funciona mesmo se alguém tentar burlar a tela e chamar a API direto pelo navegador.
+2. **Frontend (`index.html`):** módulos críticos somem da sidebar para esse perfil (`PERFIS_MODULOS.demo`, espelhando exatamente a lista do backend). Selo fixo laranja no topo (**"🔎 MODO DEMONSTRAÇÃO"**) sempre visível. A função central `api()` agora trata o erro 403 do modo demo com um aviso amigável (toast), em vez de erro cru — funciona em qualquer botão do sistema, sem precisar tratar tela por tela.
+
+**Como criar:** Usuários → Novo Usuário → Perfil → "Demonstração (somente visualização)".
+
+---
+
+### Falha de segurança real encontrada — Monitor (`monitor.html`) estava 100% público, sem login
+
+**Não era só "a tela não pede senha"** — a própria API por trás dela (`/api/monitor/impressoras`, `/historico`, `/dashboard`, e o simulador `/api/monitor/simular` POST/DELETE) **não tinha `requireAuth` nenhum**. Qualquer pessoa que soubesse a URL via dados de clientes/impressoras e podia até injetar ou apagar dados de teste — não dependia nem de estar logado, nem de ser perfil demo.
+
+**Causa no frontend:** o código do `monitor.html` tinha literalmente os comentários `/* Esconder login — não é necessário */` e `// Iniciar monitor direto sem login` — foi construído de propósito sem autenticação.
+
+**Correção:**
+- Backend: `requireAuth` adicionado em `/api/monitor/impressoras`, `/historico`, `/dashboard`; `requireAuth + requireAdmin` no simulador (POST e DELETE) — ferramenta de teste que injeta/apaga dados nunca deveria estar acessível a quem não é admin.
+- Frontend: `monitor.html` agora checa sessão real via `GET /api/me` antes de mostrar qualquer coisa. Sem sessão válida, redireciona para `/` (tela de login principal — usa o mesmo cookie de sessão do sistema, não tem senha própria separada). Botão do Simulador só aparece para admin/supervisor.
+- **Detalhe que causou reteste:** a primeira correção não funcionou porque `<div id="mon-app">` não tinha `display:none` por padrão — o conteúdo aparecia na tela antes mesmo do JavaScript rodar a checagem de sessão. Corrigido para `style="display:none"` por padrão, só é revelado depois de confirmar sessão válida.
+
+**Comportamento correto confirmado:** logado no sistema principal, o Monitor abre sem pedir senha de novo (usa o mesmo cookie) — isso é esperado, não é falha. Só pede login se não houver nenhuma sessão ativa no navegador.
+
+---
+
+### Falha de segurança real encontrada — aba "Configurações" sempre visível, para qualquer perfil
+
+O item de menu "Configurações" nunca teve `data-modulo` — não era um problema exclusivo do perfil demo, **todo mundo via, sempre**, inclusive técnico, logística, etc. Corrigido: `data-modulo="configuracoes"` adicionado ao item, e só `admin`/`supervisor` têm esse módulo liberado nas listas de perfil.
+
+---
+
+### Nota operacional — Auto-Deploy do Render não é 100% confiável nesta conta
+
+Ao longo desta sessão, o Auto-Deploy ("On Commit") não disparou automaticamente em pelo menos duas ocasiões, exigindo **Manual Deploy → Deploy latest commit**. Além disso, uma correção não "pegou" porque o arquivo local `monitor.html` tinha sido sobrescrito por uma versão antiga antes do commit (sem que isso fosse percebido de imediato).
+
+**Processo de verificação que resolveu isso, útil para repetir em correções futuras antes de deploy:**
+```bash
+findstr "algum_trecho_da_correcao" public\arquivo.html   # confirma que o arquivo LOCAL está certo
+git show origin/main:public/arquivo.html | findstr "algum_trecho"  # confirma que o GITHUB está certo
+# só então: Render → Manual Deploy → Deploy latest commit
+```
+
+### Pendências em aberto (atualizado 05/07/2026)
+- [ ] Renomear `orion_at` → `Orion Belt` no banco, `package.json` e textos restantes da interface (parcial: sidebar e título do Monitor já renomeados para "Portal Monitor" nesta sessão)
+- [ ] Implementar multi-tenant (`tenant_id`) antes de qualquer venda a terceiros
+- [ ] Mover controle de acesso do Orion Client do Gestão para o Agente/Monitor (mudança de modelo de dados)
+- [ ] Migrar Cloudinary → Cloudflare R2 (custo)
+- [ ] PWA (manifest + service worker) em `index.html` e `portal.html`
+- [ ] Certificado OV de code signing para o `.exe` do agente + submissão de reputação ao SmartScreen
+- [ ] Suporte multi-fabricante via Printer-MIB padrão (RFC 3805) no agente
+- [ ] Faturamento automático contador→NF via Focus NFe ou PlugNotas
+- [ ] LGPD/auditoria — coleção `audit_log` + política de retenção
+- [ ] Calibrar os limiares de detecção automática de troca de toner com impressora real
+- [ ] Separação física em monorepo — só depois do multi-tenant estar pronto
+- [ ] **Revisar se existem outras rotas de API sem `requireAuth` por descuido** (o caso do Monitor mostrou que isso já aconteceu uma vez — vale um levantamento geral, não só reagir caso a caso)
