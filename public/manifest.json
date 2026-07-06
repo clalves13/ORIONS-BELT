@@ -1,0 +1,16 @@
+{
+  "name": "Orion Belt — Gestão",
+  "short_name": "Orion",
+  "description": "Sistema de gestão para assistência técnica e outsourcing de impressão",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0f1623",
+  "theme_color": "#0d1f3c",
+  "orientation": "any",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

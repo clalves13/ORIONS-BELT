@@ -4,6 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0">
 <title>Orion Print — Assistência Técnica</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#0d1f3c">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="/icons/icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -12274,6 +12278,19 @@ window.openM = function(id) {
     document.getElementById('webcam-error').style.display='flex';
   }
 })();
+</script>
+
+<script>
+  // Registro do Service Worker — permite instalar o Orion como app e funcionar
+  // parcialmente offline (a tela abre mesmo sem internet; dados de API sempre
+  // exigem conexão real, por segurança e para nunca mostrar dado desatualizado).
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(err => {
+        console.warn('Falha ao registrar Service Worker:', err);
+      });
+    });
+  }
 </script>
 
 </body>

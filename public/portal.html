@@ -4,6 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Orion Client — Portal do Cliente</title>
+<link rel="manifest" href="/manifest-portal.json">
+<meta name="theme-color" content="#0d1f3c">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="/icons/icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -710,6 +714,18 @@ function mostrarNotifPortal(msg) {
   n._t = setTimeout(() => { n.style.opacity = '0'; }, 4000);
 }
 
+</script>
+
+<script>
+  // Registro do Service Worker com escopo próprio do Portal — o cliente final
+  // pode "instalar" o portal como app separado do sistema interno da empresa.
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js', { scope: '/portal' }).catch(err => {
+        console.warn('Falha ao registrar Service Worker:', err);
+      });
+    });
+  }
 </script>
 </body>
 </html>
