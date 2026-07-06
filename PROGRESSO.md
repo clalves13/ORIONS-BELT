@@ -3,7 +3,7 @@
 **Repositório:** https://github.com/clalves13/orion-at (redirecionando para `ORIONS-BELT` — renomeação em andamento, ver Sessão 9)
 **Branch:** main  
 **Arquivo principal:** `index.html`  
-**Última atualização:** 05/07/2026
+**Última atualização:** 05/07/2026 (sessão 11)
 
 ---
 
@@ -545,3 +545,40 @@ git show origin/main:public/arquivo.html | findstr "algum_trecho"  # confirma qu
 - [ ] Calibrar os limiares de detecção automática de troca de toner com impressora real
 - [ ] Separação física em monorepo — só depois do multi-tenant estar pronto
 - [ ] **Revisar se existem outras rotas de API sem `requireAuth` por descuido** (o caso do Monitor mostrou que isso já aconteceu uma vez — vale um levantamento geral, não só reagir caso a caso)
+
+---
+
+## Sessão 11 — 05/07/2026 — Cluster MongoDB dedicado para o Orion (isolamento de infraestrutura)
+
+### Falha de isolamento encontrada — Orion, LUA e Lunna compartilhavam o mesmo cluster
+
+Os três projetos (Orion, LUA, Lunna) rodavam no mesmo cluster gratuito do MongoDB Atlas (`Cluster0`, projeto "Project 0"). Pior do que isso: os usuários do banco de cada projeto (`clairton_db_user`, `luna_cloud_db_user`) estavam configurados com papel **`atlasAdmin@admin`** e recurso **"All Resources"** — ou seja, a credencial de qualquer um dos projetos tinha acesso de administrador a **todos os bancos do cluster**, não só ao próprio. Se a credencial de um projeto fosse exposta, o atacante teria acesso de leitura/escrita/exclusão aos dados dos outros dois projetos também.
+
+### Decisão: cluster próprio para o Orion
+
+Em vez de só corrigir a permissão (que resolveria o vazamento entre projetos, mas manteria os 512MB do M0 divididos entre os três), optou-se por criar um **projeto e cluster M0 gratuito dedicados** só para o Orion:
+- Atlas permite 1 cluster gratuito **por projeto** (não por organização) — criar um projeto novo ("Projeto Orion") dá direito a outro M0 gratuito, sem custo.
+- Resultado: 512MB inteiros só para o Orion, isolamento real entre os três sistemas (clusters diferentes, não só permissão diferente).
+
+### Migração — decidido começar com banco zerado, não migrar dado nenhum
+
+Como os dados existentes no Orion eram só teste (4 empresas fictícias, 5 equipamentos, sem cliente real ainda), não valia o esforço de migrar. O Atlas M0 não oferece migração de um clique entre clusters (isso é recurso de M10+, pago) — as alternativas gratuitas seriam exportar/importar coleção por coleção pela tela, ou usar `mongodump`/`mongorestore` via linha de comando. Optou-se por **não migrar nada**: trocar direto a `MONGO_URI` no Render para o cluster novo (vazio) e deixar o sistema recriar o necessário.
+
+**Confirmado no código que isso funciona sem passo manual:** o nome do banco é fixo no código (`db = client.db('orion_at')`, não depende do que vem na string de conexão), e existe bootstrap automático — se a coleção `users` estiver vazia, o sistema cria o usuário `admin` sozinho na primeira conexão, usando a variável `ADMIN_PASSWORD` já configurada no Render. Resultado: trocar a `MONGO_URI` e fazer redeploy foi suficiente, sem seed manual.
+
+### Pendência gerada por esta sessão
+- [ ] O usuário `orion_db_user` do cluster novo também foi criado com privilégio amplo (o assistente do Atlas oferece `atlasAdmin` por padrão ao criar o primeiro usuário de um projeto). Como agora está isolado num cluster só do Orion, o risco de vazar para outros projetos não existe mais — mas por boa prática, ainda vale restringir esse usuário para `readWrite` apenas no banco `orion_at`, em vez de admin do projeto inteiro.
+- [ ] As 4 empresas fictícias de teste precisam ser recriadas manualmente no banco novo (dado de teste, não é perda real).
+
+### Pendências em aberto (atualizado 05/07/2026, sessão 11)
+- [ ] Restringir permissão do usuário `orion_db_user` (novo cluster) para `readWrite` só no banco `orion_at`, em vez de `atlasAdmin`/projeto inteiro
+- [ ] Renomear `orion_at` → `Orion Belt` no banco, `package.json` e textos restantes da interface
+- [ ] Implementar multi-tenant (`tenant_id`) antes de qualquer venda a terceiros — **próximo item da fila**
+- [ ] Mover controle de acesso do Orion Client do Gestão para o Agente/Monitor (mudança de modelo de dados)
+- [ ] Migrar Cloudinary → Cloudflare R2 (custo)
+- [ ] Certificado OV de code signing para o `.exe` do agente + submissão de reputação ao SmartScreen
+- [ ] Suporte multi-fabricante via Printer-MIB padrão (RFC 3805) no agente
+- [ ] Faturamento automático contador→NF via Focus NFe ou PlugNotas
+- [ ] LGPD/auditoria — coleção `audit_log` + política de retenção
+- [ ] Calibrar os limiares de detecção automática de troca de toner com impressora real
+- [ ] Separação física em monorepo — só depois do multi-tenant estar pronto
