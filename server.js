@@ -46,11 +46,18 @@ const MASTER_HASH = bcrypt.hashSync(process.env.MASTER_PASSWORD || 'trocar_esta_
 if (!process.env.MASTER_PASSWORD) console.warn('⚠️  MASTER_PASSWORD não configurada — defina nas variáveis de ambiente.');
 
 let db;
+const TENANT_PADRAO = 'default'; // primeiro tenant (sua própria empresa). Novos tenants (clientes do produto) ganham outro _id.
 async function connectDB() {
   const client = new MongoClient(MONGO_URI);
   await client.connect();
   db = client.db('orion_at');
   console.log('MongoDB conectado!');
+  // Garante que sempre existe o tenant padrão, mesmo em bancos que já existiam antes do multi-tenant.
+  await db.collection('tenants').updateOne(
+    { _id: TENANT_PADRAO },
+    { $setOnInsert: { nome: 'Orion (empresa própria)', ativo: 1, created_at: new Date().toISOString() } },
+    { upsert: true }
+  );
   // Seed admin apenas se não existir nenhum usuário no sistema
   const totalUsers = await db.collection('users').countDocuments();
   if (totalUsers === 0) {
@@ -58,7 +65,7 @@ async function connectDB() {
     await db.collection('users').insertOne({
       login:'admin', nome:'Administrador',
       senha_hash: bcrypt.hashSync(adminPass,10),
-      role:'admin', isMaster:true, ativo:1, created_at: new Date().toISOString()
+      role:'admin', isMaster:true, ativo:1, tenant_id: TENANT_PADRAO, created_at: new Date().toISOString()
     });
     console.log('Usuário admin criado (primeiro acesso).');
   }
@@ -90,6 +97,36 @@ app.use(express.static(path.join(__dirname,'public')));
 const uid = () => new ObjectId().toString();
 const now = () => new Date().toISOString();
 const col = (name) => db.collection(name);
+
+// ─── MULTI-TENANT ────────────────────────────────────────────────────────────
+// Em vez de adicionar `tenant_id` manualmente em cada uma das ~170 chamadas de
+// col('...') espalhadas pelo arquivo (arriscado, fácil esquecer uma e vazar dado
+// entre empresas), esse helper centraliza a regra: toda leitura filtra por
+// tenant_id, toda escrita carimba com tenant_id automaticamente.
+// Uso: troca `col('clientes')` por `tenantCol('clientes', req)` na rota.
+// Rotas que ainda usam `col()` direto continuam funcionando normalmente
+// (retrofit está sendo feito coleção por coleção, não tudo de uma vez).
+function tenantCol(name, req) {
+  const c = col(name);
+  const tid = req?.session?.user?.tenant_id || TENANT_PADRAO;
+  const comTenant = (filtro={}) => ({ ...filtro, tenant_id: tid });
+  return {
+    find:            (filtro={}, ...r) => c.find(comTenant(filtro), ...r),
+    findOne:         (filtro={}, ...r) => c.findOne(comTenant(filtro), ...r),
+    insertOne:       (doc={}, ...r)    => c.insertOne({ ...doc, tenant_id: tid }, ...r),
+    insertMany:      (docs=[], ...r)   => c.insertMany(docs.map(d => ({ ...d, tenant_id: tid })), ...r),
+    updateOne:       (filtro={}, upd, ...r) => c.updateOne(comTenant(filtro), upd, ...r),
+    updateMany:      (filtro={}, upd, ...r) => c.updateMany(comTenant(filtro), upd, ...r),
+    deleteOne:       (filtro={}, ...r) => c.deleteOne(comTenant(filtro), ...r),
+    deleteMany:      (filtro={}, ...r) => c.deleteMany(comTenant(filtro), ...r),
+    countDocuments:  (filtro={}, ...r) => c.countDocuments(comTenant(filtro), ...r),
+    aggregate:       (pipeline=[], ...r) => c.aggregate([{ $match: { tenant_id: tid } }, ...pipeline], ...r),
+    // Acesso à coleção crua, para casos que precisem de algo fora do padrão acima —
+    // usar com cuidado, sem esse helper o isolamento por tenant não é automático.
+    _raw: c,
+  };
+}
+// ──────────────────────────────────────────────────────────────────────────────
 
 function requireAuth(req,res,next){ if(req.session.user)return next(); res.status(401).json({error:'Não autenticado'}); }
 function requireAdmin(req,res,next){ if(req.session.user&&(req.session.user.role==='admin'||req.session.user.isMaster))return next(); res.status(403).json({error:'Acesso negado'}); }
@@ -133,14 +170,14 @@ app.post('/api/login', rlLogin, async (req,res) => {
     const {login,senha} = req.body;
     // Master (coringa) — sempre funciona via variável de ambiente, nunca é apagado
     if (login==='master' && bcrypt.compareSync(senha||'', MASTER_HASH)) {
-      req.session.user = {id:'master',login:'master',nome:'Master Admin',role:'admin',perfil:'admin',isMaster:true};
+      req.session.user = {id:'master',login:'master',nome:'Master Admin',role:'admin',perfil:'admin',isMaster:true,tenant_id:TENANT_PADRAO};
       return res.json({ok:true,user:req.session.user});
     }
     // Todos os outros usuários (incluindo admin) — consulta o banco
     const user = await col('users').findOne({login, ativo:1});
     if (!user||!bcrypt.compareSync(senha||'',user.senha_hash)) return res.status(401).json({error:'Usuário ou senha incorretos'});
     await col('users').updateOne({_id:user._id},{$set:{ultimo_acesso:now()}});
-    req.session.user = {id:user._id.toString(),login:user.login,nome:user.nome,role:user.role,perfil:user.perfil||user.role,isMaster:!!user.isMaster};
+    req.session.user = {id:user._id.toString(),login:user.login,nome:user.nome,role:user.role,perfil:user.perfil||user.role,isMaster:!!user.isMaster,tenant_id:user.tenant_id||TENANT_PADRAO};
     res.json({ok:true,user:req.session.user});
   } catch(e){res.status(500).json({error:e.message});}
 });
@@ -163,7 +200,8 @@ app.post('/api/users', requireAuth, requireAdmin, async (req,res) => {
     await col('users').insertOne({
       login:b.login,nome:b.nome,senha_hash:bcrypt.hashSync(b.senha,10),
       role:b.role||'tecnico',perfil:b.perfil||b.role||'tecnico',
-      ativo:b.ativo??1,email:b.email||'',wpp:b.wpp||'',created_at:now()
+      ativo:b.ativo??1,email:b.email||'',wpp:b.wpp||'',created_at:now(),
+      tenant_id: req.session.user.tenant_id || TENANT_PADRAO // herda do admin que está criando
     });
     res.json({ok:true});
   }catch(e){res.status(500).json({error:e.message});}
@@ -224,16 +262,16 @@ app.put('/api/tecnicos/:id', requireAuth, async (req,res) => {
 app.delete('/api/tecnicos/:id', requireAuth, async (req,res) => { try{await col('tecnicos').deleteOne({_id:new ObjectId(req.params.id)}); res.json({ok:true});}catch(e){res.status(500).json({error:e.message});} });
 
 // CLIENTES
-app.get('/api/clientes', requireAuth, async (req,res) => { const d=await col('clientes').find().toArray(); res.json(d.map(x=>({...x,id:x._id.toString()}))); });
-app.post('/api/clientes', requireAuth, async (req,res) => { const b=req.body; const monitor_key = crypto.randomBytes(24).toString('hex'); await col('clientes').insertOne({nome:b.nome,end_logradouro:b.end||'',cidade:b.cidade||'',uf:b.uf||'',cep:b.cep||'',contato:b.contato||'',tel:b.tel||'',email:b.email||'',obs:b.obs||'',monitor_key,monitor_ativo:true,monitor_key_criada:now(),created_at:now()}); res.json({ok:true}); });
-app.put('/api/clientes/:id', requireAuth, async (req,res) => { try{const b=req.body; await col('clientes').updateOne({_id:new ObjectId(req.params.id)},{$set:{nome:b.nome,end_logradouro:b.end||'',cidade:b.cidade||'',uf:b.uf||'',cep:b.cep||'',contato:b.contato||'',tel:b.tel||'',email:b.email||'',obs:b.obs||''}}); res.json({ok:true});}catch(e){res.status(500).json({error:e.message});} });
-app.delete('/api/clientes/:id', requireAuth, async (req,res) => { try{await col('clientes').deleteOne({_id:new ObjectId(req.params.id)}); await col('equipamentos').deleteMany({cliente_id:req.params.id}); res.json({ok:true});}catch(e){res.status(500).json({error:e.message});} });
+app.get('/api/clientes', requireAuth, async (req,res) => { const d=await tenantCol('clientes', req).find().toArray(); res.json(d.map(x=>({...x,id:x._id.toString()}))); });
+app.post('/api/clientes', requireAuth, async (req,res) => { const b=req.body; const monitor_key = crypto.randomBytes(24).toString('hex'); await tenantCol('clientes', req).insertOne({nome:b.nome,end_logradouro:b.end||'',cidade:b.cidade||'',uf:b.uf||'',cep:b.cep||'',contato:b.contato||'',tel:b.tel||'',email:b.email||'',obs:b.obs||'',monitor_key,monitor_ativo:true,monitor_key_criada:now(),created_at:now()}); res.json({ok:true}); });
+app.put('/api/clientes/:id', requireAuth, async (req,res) => { try{const b=req.body; await tenantCol('clientes', req).updateOne({_id:new ObjectId(req.params.id)},{$set:{nome:b.nome,end_logradouro:b.end||'',cidade:b.cidade||'',uf:b.uf||'',cep:b.cep||'',contato:b.contato||'',tel:b.tel||'',email:b.email||'',obs:b.obs||''}}); res.json({ok:true});}catch(e){res.status(500).json({error:e.message});} });
+app.delete('/api/clientes/:id', requireAuth, async (req,res) => { try{await tenantCol('clientes', req).deleteOne({_id:new ObjectId(req.params.id)}); await tenantCol('equipamentos', req).deleteMany({cliente_id:req.params.id}); res.json({ok:true});}catch(e){res.status(500).json({error:e.message});} });
 
 // EQUIPAMENTOS
 // Migração: converte OS com num numérico para formato OS-YYYY-NNNN
 app.post('/api/admin/migrar-os-num', requireAuth, requireAdmin, async (req,res) => {
   try {
-    const ordens = await col('ordens').find().toArray();
+    const ordens = await tenantCol('ordens', req).find().toArray();
     let corrigidas = 0;
     for (const o of ordens) {
       // Só corrige se o num for número puro (ex: 4) ou string numérica
@@ -242,7 +280,7 @@ app.post('/api/admin/migrar-os-num', requireAuth, requireAdmin, async (req,res) 
         // Pega o ano da data de abertura ou ano atual
         const ano = o.data_ab ? o.data_ab.slice(0,4) : new Date().getFullYear();
         const novoNum = `OS-${ano}-${String(n).padStart(4,'0')}`;
-        await col('ordens').updateOne({_id:o._id}, {$set:{num: novoNum}});
+        await tenantCol('ordens', req).updateOne({_id:o._id}, {$set:{num: novoNum}});
         // Atualiza também no histórico
         await col('historico').updateMany({os_num: o.num}, {$set:{num: novoNum, os_num: novoNum}});
         corrigidas++;
@@ -252,23 +290,23 @@ app.post('/api/admin/migrar-os-num', requireAuth, requireAdmin, async (req,res) 
   } catch(e) { res.status(500).json({error:e.message}); }
 });
 
-app.get('/api/equipamentos', requireAuth, async (req,res) => { const d=await col('equipamentos').find().toArray(); res.json(d.map(x=>({...x,id:x._id.toString()}))); });
-app.get('/api/equipamentos/cliente/:cid', requireAuth, async (req,res) => { const d=await col('equipamentos').find({cliente_id:req.params.cid}).toArray(); res.json(d.map(x=>({...x,id:x._id.toString()}))); });
-app.post('/api/equipamentos', requireAuth, async (req,res) => { const b=req.body; const r=await col('equipamentos').insertOne({cliente_id:b.clienteId,nome:b.nome,marca:b.marca||'',modelo:b.modelo||'',nserie:b.nserie||'',contador:b.contador||0,data_inst:b.dataInst||'',contrato_ate:b.contrato||'',localizacao:b.local||b.localizacao||'',localizacao_status:b.localizacao_status||b.status||'No cliente',status:b.localizacao_status||b.status||'No cliente',obs:b.obs||'',created_at:now()}); res.json({ok:true,id:r.insertedId.toString()}); });
-app.put('/api/equipamentos/:id', requireAuth, async (req,res) => { try{const b=req.body; await col('equipamentos').updateOne({_id:new ObjectId(req.params.id)},{$set:{cliente_id:b.clienteId,nome:b.nome,marca:b.marca||'',modelo:b.modelo||'',nserie:b.nserie||'',contador:b.contador||0,data_inst:b.dataInst||'',contrato_ate:b.contrato||'',localizacao:b.local||b.localizacao||'',localizacao_status:b.localizacao_status||b.status||'No cliente',status:b.localizacao_status||b.status||'No cliente',obs:b.obs||''}}); res.json({ok:true});}catch(e){res.status(500).json({error:e.message});} });
-app.delete('/api/equipamentos/:id', requireAuth, async (req,res) => { try{await col('equipamentos').deleteOne({_id:new ObjectId(req.params.id)}); res.json({ok:true});}catch(e){res.status(500).json({error:e.message});} });
+app.get('/api/equipamentos', requireAuth, async (req,res) => { const d=await tenantCol('equipamentos', req).find().toArray(); res.json(d.map(x=>({...x,id:x._id.toString()}))); });
+app.get('/api/equipamentos/cliente/:cid', requireAuth, async (req,res) => { const d=await tenantCol('equipamentos', req).find({cliente_id:req.params.cid}).toArray(); res.json(d.map(x=>({...x,id:x._id.toString()}))); });
+app.post('/api/equipamentos', requireAuth, async (req,res) => { const b=req.body; const r=await tenantCol('equipamentos', req).insertOne({cliente_id:b.clienteId,nome:b.nome,marca:b.marca||'',modelo:b.modelo||'',nserie:b.nserie||'',contador:b.contador||0,data_inst:b.dataInst||'',contrato_ate:b.contrato||'',localizacao:b.local||b.localizacao||'',localizacao_status:b.localizacao_status||b.status||'No cliente',status:b.localizacao_status||b.status||'No cliente',obs:b.obs||'',created_at:now()}); res.json({ok:true,id:r.insertedId.toString()}); });
+app.put('/api/equipamentos/:id', requireAuth, async (req,res) => { try{const b=req.body; await tenantCol('equipamentos', req).updateOne({_id:new ObjectId(req.params.id)},{$set:{cliente_id:b.clienteId,nome:b.nome,marca:b.marca||'',modelo:b.modelo||'',nserie:b.nserie||'',contador:b.contador||0,data_inst:b.dataInst||'',contrato_ate:b.contrato||'',localizacao:b.local||b.localizacao||'',localizacao_status:b.localizacao_status||b.status||'No cliente',status:b.localizacao_status||b.status||'No cliente',obs:b.obs||''}}); res.json({ok:true});}catch(e){res.status(500).json({error:e.message});} });
+app.delete('/api/equipamentos/:id', requireAuth, async (req,res) => { try{await tenantCol('equipamentos', req).deleteOne({_id:new ObjectId(req.params.id)}); res.json({ok:true});}catch(e){res.status(500).json({error:e.message});} });
 
 // ORDENS DE SERVICO (unifica atendimento)
-app.get('/api/ordens', requireAuth, async (req,res) => { const d=await col('ordens').find().sort({data_ab:-1}).toArray(); res.json(d.map(x=>({...x,id:x._id.toString()}))); });
+app.get('/api/ordens', requireAuth, async (req,res) => { const d=await tenantCol('ordens', req).find().sort({data_ab:-1}).toArray(); res.json(d.map(x=>({...x,id:x._id.toString()}))); });
 app.post('/api/ordens', requireAuth, async (req,res) => {
   try {
     const b=req.body;
     const ctr=await col('counter').findOneAndUpdate({_id:'os'},{$inc:{valor:1}},{returnDocument:'after',upsert:true});
     const num=`OS-${new Date().getFullYear()}-${String(ctr.valor).padStart(4,'0')}`;
     const total=(b.viag||0)+(b.alim||0)+(b.hosp||0)+(b.comb||0)+(b.ped||0)+(b.outros||0);
-    const result=await col('ordens').insertOne({num,data_ab:b.dataAb,tecnico_id:b.tecnicoId||'',cliente_id:b.clienteId,contato:b.contato||'',tel:b.tel||'',end_logradouro:b.end||'',cep:b.cep||'',cidade:b.cidade||'',uf:b.uf||'',equip_id:b.equipId||'',modelo:b.modelo||'',nserie:b.nserie||'',contador:b.contador||'',defeito:b.defeito||'',procedimento:b.procedimento||'',pecas:b.pecas||'',obs:b.obs||'',data_chamado:b.dataChamado||'',data_atend:b.dataAtend||'',hora_chegada:b.horaChegada||'',hora_saida:b.horaSaida||'',viag:b.viag||0,alim:b.alim||0,hosp:b.hosp||0,comb:b.comb||0,ped:b.ped||0,outros:b.outros||0,total_os:total,status:'Aberta',tipo:b.tipo||'',sla_prazo:b.sla_prazo||'',sla_deadline:b.sla_deadline||null,origem:b.origem||'sistema',created_at:now()});
+    const result=await tenantCol('ordens', req).insertOne({num,data_ab:b.dataAb,tecnico_id:b.tecnicoId||'',cliente_id:b.clienteId,contato:b.contato||'',tel:b.tel||'',end_logradouro:b.end||'',cep:b.cep||'',cidade:b.cidade||'',uf:b.uf||'',equip_id:b.equipId||'',modelo:b.modelo||'',nserie:b.nserie||'',contador:b.contador||'',defeito:b.defeito||'',procedimento:b.procedimento||'',pecas:b.pecas||'',obs:b.obs||'',data_chamado:b.dataChamado||'',data_atend:b.dataAtend||'',hora_chegada:b.horaChegada||'',hora_saida:b.horaSaida||'',viag:b.viag||0,alim:b.alim||0,hosp:b.hosp||0,comb:b.comb||0,ped:b.ped||0,outros:b.outros||0,total_os:total,status:'Aberta',tipo:b.tipo||'',sla_prazo:b.sla_prazo||'',sla_deadline:b.sla_deadline||null,origem:b.origem||'sistema',created_at:now()});
     const id=result.insertedId.toString();
-    const cli=await col('clientes').findOne({_id:new ObjectId(b.clienteId)});
+    const cli=await tenantCol('clientes', req).findOne({_id:new ObjectId(b.clienteId)});
     const tec=b.tecnicoId?await col('tecnicos').findOne({_id:new ObjectId(b.tecnicoId)}):null;
     await col('historico').insertOne({tipo:'chamado',os_id:id,os_num:num,data:b.dataAb,cliente:cli?.nome||'',tecnico:tec?.nome||'',modelo:b.modelo||'',nserie:b.nserie||'',contador:b.contador||'',defeito:b.defeito||'',procedimento:'',pecas:'',status:'Aberta',created_at:now()});
     res.json({ok:true,num,id});
@@ -277,23 +315,23 @@ app.post('/api/ordens', requireAuth, async (req,res) => {
 app.put('/api/ordens/:id', requireAuth, async (req,res) => {
   try {
     const b=req.body;
-    const old=await col('ordens').findOne({_id:new ObjectId(req.params.id)});
+    const old=await tenantCol('ordens', req).findOne({_id:new ObjectId(req.params.id)});
     const total=(b.viag||0)+(b.alim||0)+(b.hosp||0)+(b.comb||0)+(b.ped||0)+(b.outros||0);
-    const cliSnap = b.clienteId ? await col('clientes').findOne({_id:new ObjectId(b.clienteId)}) : null;
+    const cliSnap = b.clienteId ? await tenantCol('clientes', req).findOne({_id:new ObjectId(b.clienteId)}) : null;
     const tecSnap = b.tecnicoId ? await col('tecnicos').findOne({_id:new ObjectId(b.tecnicoId)}) : null;
-    await col('ordens').updateOne({_id:new ObjectId(req.params.id)},{$set:{data_ab:b.dataAb,tecnico_id:b.tecnicoId||'',tecnico_nome:tecSnap?.nome||'',cliente_id:b.clienteId,cliente_nome:cliSnap?.nome||'',contato:b.contato||'',tel:b.tel||'',end_logradouro:b.end||'',cep:b.cep||'',cidade:b.cidade||'',uf:b.uf||'',equip_id:b.equipId||'',modelo:b.modelo||'',nserie:b.nserie||'',contador:b.contador||'',defeito:b.defeito||'',procedimento:b.procedimento||'',pecas:b.pecas||'',obs:b.obs||'',data_chamado:b.dataChamado||'',data_atend:b.dataAtend||'',hora_chegada:b.horaChegada||'',hora_saida:b.horaSaida||'',viag:b.viag||0,alim:b.alim||0,hosp:b.hosp||0,comb:b.comb||0,ped:b.ped||0,outros:b.outros||0,total_os:total,status:b.status||'Aberta',checklist:Array.isArray(b.checklist)?b.checklist:[],sig_tec:b.sig_tec||'',sig_cli:b.sig_cli||'',tipo:b.tipo||'',sla_prazo:b.sla_prazo||'',sla_deadline:b.sla_deadline||null,origem:b.origem||'sistema'}});
+    await tenantCol('ordens', req).updateOne({_id:new ObjectId(req.params.id)},{$set:{data_ab:b.dataAb,tecnico_id:b.tecnicoId||'',tecnico_nome:tecSnap?.nome||'',cliente_id:b.clienteId,cliente_nome:cliSnap?.nome||'',contato:b.contato||'',tel:b.tel||'',end_logradouro:b.end||'',cep:b.cep||'',cidade:b.cidade||'',uf:b.uf||'',equip_id:b.equipId||'',modelo:b.modelo||'',nserie:b.nserie||'',contador:b.contador||'',defeito:b.defeito||'',procedimento:b.procedimento||'',pecas:b.pecas||'',obs:b.obs||'',data_chamado:b.dataChamado||'',data_atend:b.dataAtend||'',hora_chegada:b.horaChegada||'',hora_saida:b.horaSaida||'',viag:b.viag||0,alim:b.alim||0,hosp:b.hosp||0,comb:b.comb||0,ped:b.ped||0,outros:b.outros||0,total_os:total,status:b.status||'Aberta',checklist:Array.isArray(b.checklist)?b.checklist:[],sig_tec:b.sig_tec||'',sig_cli:b.sig_cli||'',tipo:b.tipo||'',sla_prazo:b.sla_prazo||'',sla_deadline:b.sla_deadline||null,origem:b.origem||'sistema'}});
     if(old&&old.status!=='Concluída'&&b.status==='Concluída'){
-      const os=await col('ordens').findOne({_id:new ObjectId(req.params.id)});
-      const cli=await col('clientes').findOne({_id:new ObjectId(os.cliente_id)});
+      const os=await tenantCol('ordens', req).findOne({_id:new ObjectId(req.params.id)});
+      const cli=await tenantCol('clientes', req).findOne({_id:new ObjectId(os.cliente_id)});
       const tec=os.tecnico_id?await col('tecnicos').findOne({_id:new ObjectId(os.tecnico_id)}):null;
       await col('historico').insertOne({tipo:'atendimento',os_id:os._id.toString(),num:os.num,os_num:os.num,cliente_id:os.cliente_id||'',tecnico_id:os.tecnico_id||'',equip_id:os.equip_id||'',data:b.dataAtend||b.dataAb||os.data_ab||'',data_atend:b.dataAtend||os.data_atend||'',data_ab:os.data_ab||'',cliente:cli?.nome||'',tecnico:tec?.nome||'',modelo:os.modelo||'',nserie:os.nserie||'',contador:os.contador||'',defeito:os.defeito||'',procedimento:b.procedimento||os.procedimento||'',pecas:b.pecas||os.pecas||'',status:'Concluída',total_os:total,total:total,retrabalho:false,created_at:now()});
     }
     // Notifica portal do cliente em tempo real
-    try { const _osUpd=await col('ordens').findOne({_id:new ObjectId(req.params.id)}); if(_osUpd?.cliente_id) notificarPortalCliente(_osUpd.cliente_id,'os_atualizada',{id:req.params.id,status:_osUpd.status,num:_osUpd.num,procedimento:_osUpd.procedimento||''}); } catch(_){}
+    try { const _osUpd=await tenantCol('ordens', req).findOne({_id:new ObjectId(req.params.id)}); if(_osUpd?.cliente_id) notificarPortalCliente(_osUpd.cliente_id,'os_atualizada',{id:req.params.id,status:_osUpd.status,num:_osUpd.num,procedimento:_osUpd.procedimento||''}); } catch(_){}
     res.json({ok:true});
   }catch(e){res.status(500).json({error:e.message});}
 });
-app.delete('/api/ordens/:id', requireAuth, async (req,res) => { try{await col('ordens').deleteOne({_id:new ObjectId(req.params.id)}); res.json({ok:true});}catch(e){res.status(500).json({error:e.message});} });
+app.delete('/api/ordens/:id', requireAuth, async (req,res) => { try{await tenantCol('ordens', req).deleteOne({_id:new ObjectId(req.params.id)}); res.json({ok:true});}catch(e){res.status(500).json({error:e.message});} });
 
 // Histórico técnico de um equipamento (por nserie ou equip_id)
 app.get('/api/historico-tecnico', requireAuth, async (req,res) => {
@@ -304,7 +342,7 @@ app.get('/api/historico-tecnico', requireAuth, async (req,res) => {
     else if (equip_id) filter.equip_id = equip_id;
     else if (cliente_id) filter.cliente_id = cliente_id;
     else return res.json([]);
-    const ordens = await col('ordens').find(filter).sort({ data_ab: -1 }).toArray();
+    const ordens = await tenantCol('ordens', req).find(filter).sort({ data_ab: -1 }).toArray();
     const tecnicos = await col('tecnicos').find().toArray();
     res.json(ordens.map(o => ({
       id: o._id.toString(), num: o.num,
@@ -453,7 +491,7 @@ app.post('/api/admin/arquivar-mes-supr', requireAuth, requireAdmin, async (req,r
     if(!ano||!mes) return res.status(400).json({error:'Informe ano e mes'});
     const prefixo=`${ano}-${String(mes).padStart(2,'0')}`;
     const movs=await col('supr_movs').find().toArray();
-    const clientes=await col('clientes').find().toArray();
+    const clientes=await tenantCol('clientes', req).find().toArray();
     const ITEMS=['toner_preto','toner_magenta','toner_ciano','toner_amarelo','grampos'];
     const normData=d=>{if(!d)return '';const s=String(d).trim();if(/^\d{4}-\d{2}/.test(s))return s.slice(0,7);if(/^\d{2}\/\d{2}\/\d{4}/.test(s)){const[dd,mm,yyyy]=s.split('/');return `${yyyy}-${mm}`;}return s.slice(0,7);};
     const tonerMap={};
@@ -471,7 +509,7 @@ app.post('/api/admin/arquivar-mes-supr', requireAuth, requireAdmin, async (req,r
 
 app.get('/api/estoque-supr', requireAuth, async (req,res) => {
   const all=await col('supr_cli').find().toArray();
-  const clientes=await col('clientes').find().toArray();
+  const clientes=await tenantCol('clientes', req).find().toArray();
   const movs=await col('supr_movs').find().toArray();
   const ITEMS=['toner_preto','toner_magenta','toner_ciano','toner_amarelo','grampos'];
   // Recalcula saldo real pelas movimentações
@@ -521,11 +559,11 @@ app.delete('/api/estoque-supr/movimento/:id', requireAuth, async (req,res) => {
 app.get('/api/dashboard', requireAuth, async (req,res) => {
   try {
     const [atends,ordens,labs,tecnicos,clientes,suprCli,suprMovs]=await Promise.all([
-      col('ordens').find().toArray(),
-      col('ordens').find().toArray(),
+      tenantCol('ordens', req).find().toArray(),
+      tenantCol('ordens', req).find().toArray(),
       col('laboratorio').find().toArray(),
       col('tecnicos').find().toArray(),
-      col('clientes').find().toArray(),
+      tenantCol('clientes', req).find().toArray(),
       col('supr_cli').find().toArray(),
       col('supr_movs').find().sort({created_at:-1}).toArray()
     ]);
@@ -600,9 +638,9 @@ app.get('/api/backup', requireAuth, requireAdmin, async (req,res) => {
     const [users,tecnicos,clientes,equipamentos,ordens,laboratorio,logistica,historico,estoque,suprCli,suprMovs,estMovs,lancamentos,contratos,financeiro,agenda,veiculos]=await Promise.all([
       col('users').find().toArray(),
       col('tecnicos').find().toArray(),
-      col('clientes').find().toArray(),
-      col('equipamentos').find().toArray(),
-      col('ordens').find().toArray(),
+      tenantCol('clientes', req).find().toArray(),
+      tenantCol('equipamentos', req).find().toArray(),
+      tenantCol('ordens', req).find().toArray(),
       col('laboratorio').find().toArray(),
       col('logistica').find().toArray(),
       col('historico').find().toArray(),
@@ -742,10 +780,10 @@ app.put('/api/veiculos/:id', requireAuth, async (req,res) => { try{ const b=req.
 app.delete('/api/veiculos/:id', requireAuth, async (req,res) => { try{await col('veiculos').deleteOne({_id:new ObjectId(req.params.id)});res.json({ok:true});}catch(e){res.status(500).json({error:e.message});} });
 
 // ATENDIMENTOS alias (compatibilidade com ordens)
-app.get('/api/atendimentos', requireAuth, async (req,res) => { const d=await col('ordens').find().sort({created_at:-1}).toArray(); res.json(d.map(x=>({...x,id:x._id.toString()}))); });
-app.post('/api/atendimentos', requireAuth, async (req,res) => { try{ const b=req.body; const ctr=(await col('counter').findOneAndUpdate({_id:'os'},{$inc:{valor:1}},{upsert:true,returnDocument:'after'})); const num=`OS-${new Date().getFullYear()}-${String(ctr.valor).padStart(4,'0')}`; const cliente=b.clienteId?await col('clientes').findOne({_id:new ObjectId(b.clienteId)}):null; const tecnico=b.tecnicoId?await col('tecnicos').findOne({_id:new ObjectId(b.tecnicoId)}):null; const total=(b.viag||0)+(b.alim||0)+(b.hosp||0)+(b.comb||0)+(b.ped||0)+(b.outros||0); await col('ordens').insertOne({num,data_ab:b.data||b.data_ab||'',tecnico_id:b.tecnicoId||'',cliente_id:b.clienteId||'',equip_id:b.equipId||'',contato:b.contato||'',tel:b.tel||'',end_logradouro:b.end||'',cep:b.cep||'',cidade:b.cidade||'',uf:b.uf||'',modelo:b.modelo||'',nserie:b.nserie||'',contador:b.contador||'',defeito:b.descricao||b.defeito||'',procedimento:b.procedimento||'',pecas:b.pecas||'',obs:b.obs||'',viag:b.viag||0,alim:b.alim||0,hosp:b.hosp||0,comb:b.comb||0,ped:b.ped||0,outros:b.outros||0,total,data_chamado:b.data_chamado||'',data_atend:b.data_atend||'',hora_chegada:b.hora_chegada||'',hora_saida:b.hora_saida||'',status:b.status||'Aberta',checklist:b.checklist||[],sig_tec:b.sig_tec||'',sig_cli:b.sig_cli||'',tipo:b.tipo||'',sla_prazo:b.sla_prazo||'',sla_deadline:b.sla_deadline||null,created_at:new Date().toISOString()}); if(b.status==='Concluída'||b.status==='Concluído'){await col('historico').insertOne({tipo:'atendimento',os_num:num,num,cliente_id:b.clienteId||'',tecnico_id:b.tecnicoId||'',equip_id:b.equipId||'',data:b.data_atend||b.data||b.data_ab||'',data_atend:b.data_atend||'',data_ab:b.data||b.data_ab||'',cliente:cliente?.nome||'',tecnico:tecnico?.nome||'',modelo:b.modelo||'',nserie:b.nserie||'',contador:b.contador||'',defeito:b.descricao||b.defeito||'',procedimento:b.procedimento||'',pecas:b.pecas||'',status:'Concluída',total_os:total,total,retrabalho:false,created_at:new Date().toISOString()});} res.json({ok:true,num});}catch(e){res.status(500).json({error:e.message});} });
-app.put('/api/atendimentos/:id', requireAuth, async (req,res) => { try{ const b=req.body; const total=(b.viag||0)+(b.alim||0)+(b.hosp||0)+(b.comb||0)+(b.ped||0)+(b.outros||0); await col('ordens').updateOne({_id:new ObjectId(req.params.id)},{$set:{data_ab:b.data||b.data_ab||'',tecnico_id:b.tecnicoId||'',cliente_id:b.clienteId||'',equip_id:b.equipId||'',modelo:b.modelo||'',nserie:b.nserie||'',contador:b.contador||'',defeito:b.descricao||b.defeito||'',procedimento:b.procedimento||'',pecas:b.pecas||'',obs:b.obs||'',viag:b.viag||0,alim:b.alim||0,hosp:b.hosp||0,comb:b.comb||0,ped:b.ped||0,outros:b.outros||0,total,status:b.status||'Aberta',checklist:b.checklist||[],sig_tec:b.sig_tec||'',sig_cli:b.sig_cli||'',tipo:b.tipo||'',sla_prazo:b.sla_prazo||'',sla_deadline:b.sla_deadline||null}}); res.json({ok:true});}catch(e){res.status(500).json({error:e.message});} });
-app.delete('/api/atendimentos/:id', requireAuth, async (req,res) => { try{await col('ordens').deleteOne({_id:new ObjectId(req.params.id)});res.json({ok:true});}catch(e){res.status(500).json({error:e.message});} });
+app.get('/api/atendimentos', requireAuth, async (req,res) => { const d=await tenantCol('ordens', req).find().sort({created_at:-1}).toArray(); res.json(d.map(x=>({...x,id:x._id.toString()}))); });
+app.post('/api/atendimentos', requireAuth, async (req,res) => { try{ const b=req.body; const ctr=(await col('counter').findOneAndUpdate({_id:'os'},{$inc:{valor:1}},{upsert:true,returnDocument:'after'})); const num=`OS-${new Date().getFullYear()}-${String(ctr.valor).padStart(4,'0')}`; const cliente=b.clienteId?await tenantCol('clientes', req).findOne({_id:new ObjectId(b.clienteId)}):null; const tecnico=b.tecnicoId?await col('tecnicos').findOne({_id:new ObjectId(b.tecnicoId)}):null; const total=(b.viag||0)+(b.alim||0)+(b.hosp||0)+(b.comb||0)+(b.ped||0)+(b.outros||0); await tenantCol('ordens', req).insertOne({num,data_ab:b.data||b.data_ab||'',tecnico_id:b.tecnicoId||'',cliente_id:b.clienteId||'',equip_id:b.equipId||'',contato:b.contato||'',tel:b.tel||'',end_logradouro:b.end||'',cep:b.cep||'',cidade:b.cidade||'',uf:b.uf||'',modelo:b.modelo||'',nserie:b.nserie||'',contador:b.contador||'',defeito:b.descricao||b.defeito||'',procedimento:b.procedimento||'',pecas:b.pecas||'',obs:b.obs||'',viag:b.viag||0,alim:b.alim||0,hosp:b.hosp||0,comb:b.comb||0,ped:b.ped||0,outros:b.outros||0,total,data_chamado:b.data_chamado||'',data_atend:b.data_atend||'',hora_chegada:b.hora_chegada||'',hora_saida:b.hora_saida||'',status:b.status||'Aberta',checklist:b.checklist||[],sig_tec:b.sig_tec||'',sig_cli:b.sig_cli||'',tipo:b.tipo||'',sla_prazo:b.sla_prazo||'',sla_deadline:b.sla_deadline||null,created_at:new Date().toISOString()}); if(b.status==='Concluída'||b.status==='Concluído'){await col('historico').insertOne({tipo:'atendimento',os_num:num,num,cliente_id:b.clienteId||'',tecnico_id:b.tecnicoId||'',equip_id:b.equipId||'',data:b.data_atend||b.data||b.data_ab||'',data_atend:b.data_atend||'',data_ab:b.data||b.data_ab||'',cliente:cliente?.nome||'',tecnico:tecnico?.nome||'',modelo:b.modelo||'',nserie:b.nserie||'',contador:b.contador||'',defeito:b.descricao||b.defeito||'',procedimento:b.procedimento||'',pecas:b.pecas||'',status:'Concluída',total_os:total,total,retrabalho:false,created_at:new Date().toISOString()});} res.json({ok:true,num});}catch(e){res.status(500).json({error:e.message});} });
+app.put('/api/atendimentos/:id', requireAuth, async (req,res) => { try{ const b=req.body; const total=(b.viag||0)+(b.alim||0)+(b.hosp||0)+(b.comb||0)+(b.ped||0)+(b.outros||0); await tenantCol('ordens', req).updateOne({_id:new ObjectId(req.params.id)},{$set:{data_ab:b.data||b.data_ab||'',tecnico_id:b.tecnicoId||'',cliente_id:b.clienteId||'',equip_id:b.equipId||'',modelo:b.modelo||'',nserie:b.nserie||'',contador:b.contador||'',defeito:b.descricao||b.defeito||'',procedimento:b.procedimento||'',pecas:b.pecas||'',obs:b.obs||'',viag:b.viag||0,alim:b.alim||0,hosp:b.hosp||0,comb:b.comb||0,ped:b.ped||0,outros:b.outros||0,total,status:b.status||'Aberta',checklist:b.checklist||[],sig_tec:b.sig_tec||'',sig_cli:b.sig_cli||'',tipo:b.tipo||'',sla_prazo:b.sla_prazo||'',sla_deadline:b.sla_deadline||null}}); res.json({ok:true});}catch(e){res.status(500).json({error:e.message});} });
+app.delete('/api/atendimentos/:id', requireAuth, async (req,res) => { try{await tenantCol('ordens', req).deleteOne({_id:new ObjectId(req.params.id)});res.json({ok:true});}catch(e){res.status(500).json({error:e.message});} });
 
 
 // CONTRATOS
@@ -1359,7 +1397,7 @@ async function enviarEmailPortal(dest, nome, login, senha, url, empresa) {
 // Listar clientes com info de acesso ao portal (para tela de admin)
 app.get('/api/portal/clientes-acesso', requireAuth, requireAdmin, async (req,res) => {
   try {
-    const clientes = await col('clientes').find().sort({nome:1}).toArray();
+    const clientes = await tenantCol('clientes', req).find().sort({nome:1}).toArray();
     res.json(clientes.map(c=>({
       id: c._id.toString(), nome: c.nome, email: c.email||'',
       portal_login: c.portal_login||'',
@@ -1894,7 +1932,7 @@ app.get('/api/monitor/dashboard', requireAuth, async (req,res) => {
     const comErro   = await col('monitor_impressoras').countDocuments({ erros:{ $exists:true, $not:{ $size:0 } } });
     // ── Integração: conta clientes REAIS cadastrados com pelo menos 1 impressora ──
     const keysAtivas = await col('monitor_impressoras').distinct('monitor_key');
-    const clientesReais = await col('clientes').countDocuments({
+    const clientesReais = await tenantCol('clientes', req).countDocuments({
       monitor_key: { $in: keysAtivas.filter(Boolean) }
     });
     res.json({ total, online, offline, toner_critico:tonerCrit, com_erro:comErro, clientes_monitorados:clientesReais });
@@ -1906,14 +1944,14 @@ app.get('/api/monitor/status-integracao', requireAuth, async (req,res) => {
   try {
     const imps = await col('monitor_impressoras').find({}, { projection:{ monitor_key:1, cliente_nome:1, ip:1 } }).toArray();
     const keysAgentes = [...new Set(imps.map(i => i.monitor_key).filter(Boolean))];
-    const clientesCadastrados = await col('clientes').find({ monitor_key:{ $in:keysAgentes } }).toArray();
+    const clientesCadastrados = await tenantCol('clientes', req).find({ monitor_key:{ $in:keysAgentes } }).toArray();
     const keysCadastradas = new Set(clientesCadastrados.map(c => c.monitor_key));
     const semCadastro = keysAgentes.filter(k => !keysCadastradas.has(k)).map(k => ({
       monitor_key: k,
       cliente_nome: imps.find(i => i.monitor_key === k)?.cliente_nome || '—',
       impressoras: imps.filter(i => i.monitor_key === k).map(i => i.ip)
     }));
-    const totalComChave = await col('clientes').countDocuments({ monitor_key:{ $exists:true, $ne:'' } });
+    const totalComChave = await tenantCol('clientes', req).countDocuments({ monitor_key:{ $exists:true, $ne:'' } });
     res.json({
       ok: semCadastro.length === 0,
       clientes_com_chave: totalComChave,
@@ -1971,7 +2009,7 @@ async function enviarAlertaMonitor(destinatario, nomeCliente, assunto, corpo) {
 app.post('/api/monitor/simular', requireAuth, requireAdmin, async (req,res) => {
   try {
     // Busca clientes reais com equipamentos cadastrados
-    const clientesReais = await col('clientes').find({}, {
+    const clientesReais = await tenantCol('clientes', req).find({}, {
       projection:{ _id:1, nome:1, monitor_key:1 }
     }).toArray();
 
@@ -1979,7 +2017,7 @@ app.post('/api/monitor/simular', requireAuth, requireAdmin, async (req,res) => {
       return res.status(400).json({ error: 'Nenhum cliente cadastrado. Cadastre clientes e equipamentos primeiro.' });
 
     // Busca todos equipamentos vinculados a clientes
-    const equipamentos = await col('equipamentos').find({}, {
+    const equipamentos = await tenantCol('equipamentos', req).find({}, {
       projection:{ _id:1, cliente_id:1, modelo:1, nserie:1, fabricante:1, contador:1 }
     }).toArray();
 
@@ -2096,10 +2134,10 @@ app.post('/api/admin/migrar-historico', requireAuth, requireAdmin, async (req,re
       const osId = h.os_id;
       const num  = h.os_num || h.num;
       let os = null;
-      if (osId) { try { os = await col('ordens').findOne({ _id: new ObjectId(osId) }); } catch(_){} }
-      if (!os && num) os = await col('ordens').findOne({ num });
+      if (osId) { try { os = await tenantCol('ordens', req).findOne({ _id: new ObjectId(osId) }); } catch(_){} }
+      if (!os && num) os = await tenantCol('ordens', req).findOne({ num });
       if (!os && h.cliente) {
-        const cli = await col('clientes').findOne({ nome: h.cliente });
+        const cli = await tenantCol('clientes', req).findOne({ nome: h.cliente });
         if (cli) {
           await col('historico').updateOne({ _id: h._id }, { $set: { cliente_id: cli._id.toString() } });
           atualizados++;
@@ -2133,7 +2171,7 @@ app.post('/api/ordens/:id/anexos', requireAuth, upload.single('arquivo'), async 
   try {
     if (!req.file) return res.status(400).json({ error: 'Nenhum arquivo enviado' });
     const osId = req.params.id;
-    const os = await col('ordens').findOne({ _id: new ObjectId(osId) });
+    const os = await tenantCol('ordens', req).findOne({ _id: new ObjectId(osId) });
     if (!os) return res.status(404).json({ error: 'OS não encontrada' });
 
     // Comprime imagem se for foto (reduz para max 1200px, qualidade 80)
@@ -2166,7 +2204,7 @@ app.post('/api/ordens/:id/anexos', requireAuth, upload.single('arquivo'), async 
       criado_por:    req.session.user?.nome || 'Sistema',
     };
 
-    await col('ordens').updateOne(
+    await tenantCol('ordens', req).updateOne(
       { _id: new ObjectId(osId) },
       { $push: { anexos: anexo } }
     );
@@ -2181,7 +2219,7 @@ app.post('/api/ordens/:id/anexos', requireAuth, upload.single('arquivo'), async 
 // Listar anexos de uma OS
 app.get('/api/ordens/:id/anexos', requireAuth, async (req, res) => {
   try {
-    const os = await col('ordens').findOne({ _id: new ObjectId(req.params.id) }, { projection: { anexos: 1, num: 1 } });
+    const os = await tenantCol('ordens', req).findOne({ _id: new ObjectId(req.params.id) }, { projection: { anexos: 1, num: 1 } });
     if (!os) return res.status(404).json({ error: 'OS não encontrada' });
     res.json(os.anexos || []);
   } catch (e) { res.status(500).json({ error: e.message }); }
@@ -2195,7 +2233,7 @@ app.delete('/api/ordens/:id/anexos/:public_id', requireAuth, async (req, res) =>
     try { await cloudinary.uploader.destroy(publicId, { resource_type: 'raw' }); } catch (_) {}
     try { await cloudinary.uploader.destroy(publicId, { resource_type: 'image' }); } catch (_) {}
     // Remove do MongoDB
-    await col('ordens').updateOne(
+    await tenantCol('ordens', req).updateOne(
       { _id: new ObjectId(req.params.id) },
       { $pull: { anexos: { public_id: publicId } } }
     );
@@ -2206,7 +2244,7 @@ app.delete('/api/ordens/:id/anexos/:public_id', requireAuth, async (req, res) =>
 // Buscar OS por número com anexos
 app.get('/api/ordens/buscar/:num', requireAuth, async (req, res) => {
   try {
-    const os = await col('ordens').findOne({ num: req.params.num.toUpperCase() });
+    const os = await tenantCol('ordens', req).findOne({ num: req.params.num.toUpperCase() });
     if (!os) return res.status(404).json({ error: 'OS não encontrada' });
     res.json({ ...os, id: os._id.toString() });
   } catch (e) { res.status(500).json({ error: e.message }); }
