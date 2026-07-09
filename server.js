@@ -1474,7 +1474,45 @@ function gerarZip(arquivos) {
   return Buffer.concat([...partes, cdBuf, eocd]);
 }
 
+// Consulta se já existe um OrionAgente.exe enviado, e quando.
+app.get('/api/monitor/exe-info', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const cfg = await col('configuracoes').findOne({ chave: 'agente_exe_url' });
+    res.json({ url: cfg?.valor || null, atualizado_em: cfg?.atualizado_em || null });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
 
+// Recebe o OrionAgente.exe compilado (via pkg) e guarda no Cloudinary — é esse
+// arquivo que /download/pacote-agente/:clienteId empacota pros clientes baixarem.
+app.post('/api/monitor/upload-exe', requireAuth, requireAdmin, uploadExe.single('exe'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'Nenhum arquivo enviado' });
+    if (!req.file.originalname.toLowerCase().endsWith('.exe')) {
+      return res.status(400).json({ error: 'O arquivo precisa ser um .exe' });
+    }
+
+    const uploadResult = await new Promise((resolve, reject) => {
+      const opts = {
+        folder: 'orion/agente',
+        resource_type: 'raw',
+        public_id: 'OrionAgente',
+        overwrite: true,
+      };
+      const stream = cloudinary.uploader.upload_stream(opts, (err, result) => {
+        if (err) reject(err); else resolve(result);
+      });
+      streamifier.createReadStream(req.file.buffer).pipe(stream);
+    });
+
+    await col('configuracoes').updateOne(
+      { chave: 'agente_exe_url' },
+      { $set: { chave: 'agente_exe_url', valor: uploadResult.secure_url, atualizado_em: now(), tamanho: req.file.size } },
+      { upsert: true }
+    );
+
+    res.json({ ok: true, tamanho_mb: (req.file.size / 1024 / 1024).toFixed(1), url: uploadResult.secure_url });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
 
 app.get('/download/pacote-agente/:clienteId', requireAuth, async (req, res) => {
   try {
