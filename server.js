@@ -65,7 +65,7 @@ async function connectDB() {
     await db.collection('users').insertOne({
       login:'admin', nome:'Administrador',
       senha_hash: bcrypt.hashSync(adminPass,10),
-      role:'admin', isMaster:false, ativo:1, tenant_id: TENANT_PADRAO, created_at: new Date().toISOString()
+      role:'admin', isMaster:true, ativo:1, tenant_id: TENANT_PADRAO, created_at: new Date().toISOString()
     });
     console.log('Usuário admin criado (primeiro acesso).');
   }

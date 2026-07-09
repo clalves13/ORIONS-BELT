@@ -1,0 +1,15 @@
+[09/07/2026, 12:51:00] Orion Agente v1.0.0 iniciado
+[09/07/2026, 12:51:00] Servidor: https://orion-at-production.up.railway.app
+[09/07/2026, 12:51:00] Cliente ID:  | Intervalo: 15 min
+[09/07/2026, 12:51:00] === Iniciando ciclo de coleta ===
+[09/07/2026, 12:51:00] Subnet detectada: 192.168.100.0/24
+[09/07/2026, 12:51:00] Escaneando rede 192.168.100.0/24...
+[09/07/2026, 12:51:03] Impressoras encontradas na rede: 0 — IPs: 
+[09/07/2026, 12:51:03] USB detect error: Command failed: wmic printer get Name,PortName,PrinterStatus,WorkOffline /format:csv
+'wmic' n�o � reconhecido como um comando interno
+ou externo, um programa oper�vel ou um arquivo em lotes.
+
+[09/07/2026, 12:51:03] Impressoras USB locais: 0
+[09/07/2026, 12:51:03] Nenhuma impressora para enviar.
+[09/07/2026, 12:51:03] === Ciclo concluído. Próximo em 15 minutos ===
+
