@@ -268,7 +268,12 @@ document.addEventListener('DOMContentLoaded', async function() {
   try {
     const r = await fetch('/api/me', { credentials: 'include' });
     if (!r.ok) { mostrarLogin(); return; }
+    const me = await r.json();
     _authOk = true;
+    // Simulador de dados falsos é ferramenta interna de teste — só o usuário
+    // coringa "master" pode ver/usar, ninguém mais (nem admin comum).
+    const btnSim = document.getElementById('btn-sim');
+    if (btnSim && !me.isMaster) btnSim.style.display = 'none';
   } catch (e) {
     mostrarLogin();
     return;

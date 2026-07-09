@@ -130,6 +130,9 @@ function tenantCol(name, req) {
 
 function requireAuth(req,res,next){ if(req.session.user)return next(); res.status(401).json({error:'Não autenticado'}); }
 function requireAdmin(req,res,next){ if(req.session.user&&(req.session.user.role==='admin'||req.session.user.isMaster))return next(); res.status(403).json({error:'Acesso negado'}); }
+// Restrito ao usuário coringa "master" — nem admin comum passa. Usado no simulador
+// do monitor, que é ferramenta interna de teste, não algo para clientes/equipe.
+function requireMaster(req,res,next){ if(req.session.user&&req.session.user.isMaster)return next(); res.status(403).json({error:'Acesso negado'}); }
 
 
 // PERFIS DE ACESSO
@@ -1473,9 +1476,6 @@ function gerarZip(arquivos) {
 
 
 
-// Lê o agente diretamente do arquivo — garante sempre a versão mais atual
-const AGENTE_JS = fs.readFileSync(path.join(__dirname, 'orion-agente.js'), 'utf8');
-
 app.get('/download/pacote-agente/:clienteId', requireAuth, async (req, res) => {
   try {
     const cliente = await col('clientes').findOne({ _id: new ObjectId(req.params.clienteId) });
@@ -1492,9 +1492,12 @@ app.get('/download/pacote-agente/:clienteId', requireAuth, async (req, res) => {
     }
 
     const nomeSeguro = (cliente.nome || 'cliente').toLowerCase().replace(/[^a-z0-9]/g, '_');
+    // Deriva a URL do próprio request, em vez de hardcode — evita quebrar de novo
+    // numa próxima migração de host (já quebrou indo de Railway pro Render).
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
 
     const config = {
-      serverUrl:   'https://orion-at-production.up.railway.app',
+      serverUrl:   baseUrl,
       clientKey:   cliente.monitor_key,
       clientId:    cliente._id.toString(),
       clientNome:  cliente.nome,
@@ -1502,6 +1505,7 @@ app.get('/download/pacote-agente/:clienteId', requireAuth, async (req, res) => {
       subnet:      '',
       snmpTimeout: 3000,
       snmpRetries: 1,
+      snmpCommunity: 'public',
     };
 
     // Baixa o .exe do Cloudinary (em memória)
@@ -1542,7 +1546,12 @@ SUBNET (opcional):
   Edite C:\\OrionAgente\\config.json e preencha "subnet",
   ex: "192.168.5". Deixe vazio para descoberta automática.
 
-Suporte: Orion Soluções — https://orion-at-production.up.railway.app
+COMMUNITY SNMP (opcional):
+  Se a impressora não responder com a community padrão "public",
+  edite "snmpCommunity" em C:\\OrionAgente\\config.json com o valor
+  configurado no equipamento.
+
+Suporte: Orion Soluções — ${baseUrl}
 `;
 
     const arquivos = [
@@ -1561,182 +1570,6 @@ Suporte: Orion Soluções — https://orion-at-production.up.railway.app
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-
-// ──────────────────────────────────────────────────────────────────────────────
-// ROTA LEGADA — mantida apenas para não quebrar links antigos
-// Substitui o antigo zip com .bat pelo novo zip com .exe
-// (código abaixo pode ser removido após migração completa)
-// Rota legada — ZIP com .bat (mantida temporariamente, use /download/pacote-agente)
-app.get('/download/pacote-agente-legacy/:clienteId', requireAuth, async (req, res) => {
-  try {
-    const cliente = await col('clientes').findOne({ _id: new ObjectId(req.params.clienteId) });
-    if (!cliente) return res.status(404).json({ error: 'Cliente não encontrado' });
-    if (!cliente.monitor_key) return res.status(400).json({ error: 'Este cliente não possui chave de monitoramento. Gere a chave primeiro.' });
-
-    const nomeSeguro = (cliente.nome || 'cliente').toLowerCase().replace(/[^a-z0-9]/g, '_');
-
-    const config = {
-      serverUrl:    'https://orion-at-production.up.railway.app',
-      clientKey:    cliente.monitor_key,
-      clientId:     cliente._id.toString(),
-      clientNome:   cliente.nome,
-      intervalMin:  15,
-      subnet:       '',
-      snmpTimeout:  3000,
-      snmpRetries:  1,
-    };
-
-    const INSTALAR_BAT = `@echo off
-chcp 65001 > nul
-title Orion Agente — Instalador
-color 0A
-
-echo.
-echo  ============================================
-echo   ORION AGENTE — Instalador
-echo   Cliente: ${cliente.nome}
-echo  ============================================
-echo.
-
-:: Verifica se está rodando como Administrador
-net session >nul 2>&1
-if %errorLevel% NEQ 0 (
-    echo  [ERRO] Execute este arquivo como Administrador!
-    echo  Clique com o botao direito ^> "Executar como administrador"
-    echo.
-    pause
-    exit /b 1
-)
-
-:: Verifica se Node.js está instalado
-echo  [1/4] Verificando Node.js...
-where node >nul 2>&1
-if %errorLevel% NEQ 0 (
-    echo.
-    echo  Node.js nao encontrado. Baixando instalador...
-    echo  Aguarde, isso pode levar alguns minutos.
-    echo.
-    powershell -Command "Invoke-WebRequest -Uri 'https://nodejs.org/dist/v20.11.0/node-v20.11.0-x64.msi' -OutFile '%TEMP%\\node_setup.msi'"
-    if %errorLevel% NEQ 0 (
-        echo  [ERRO] Falha ao baixar Node.js. Verifique sua conexao com a internet.
-        pause
-        exit /b 1
-    )
-    echo  Instalando Node.js...
-    msiexec /i "%TEMP%\\node_setup.msi" /quiet /norestart
-    del "%TEMP%\\node_setup.msi" >nul 2>&1
-    :: Atualiza PATH da sessão atual
-    set "PATH=%PATH%;C:\\Program Files\\nodejs"
-    echo  Node.js instalado com sucesso!
-) else (
-    for /f "tokens=*" %%v in ('node --version') do echo  Node.js encontrado: %%v
-)
-echo.
-
-:: Define pasta de instalação
-set "INSTALL_DIR=C:\\OrionAgente"
-echo  [2/4] Copiando arquivos para %INSTALL_DIR%...
-if not exist "%INSTALL_DIR%" mkdir "%INSTALL_DIR%"
-copy /Y "%~dp0orion-agente.js" "%INSTALL_DIR%\\" >nul
-copy /Y "%~dp0config.json"     "%INSTALL_DIR%\\" >nul
-echo  Arquivos copiados.
-echo.
-
-:: Instala pm2 globalmente
-echo  [3/4] Instalando gerenciador de servico (pm2)...
-where pm2 >nul 2>&1
-if %errorLevel% NEQ 0 (
-    call npm install -g pm2 --silent
-    if %errorLevel% NEQ 0 (
-        echo  [ERRO] Falha ao instalar pm2. Verifique sua conexao com a internet.
-        pause
-        exit /b 1
-    )
-)
-echo  pm2 OK.
-echo.
-
-:: Inicia o agente e configura para iniciar com o Windows
-echo  [4/4] Iniciando o agente e configurando inicializacao automatica...
-cd /d "%INSTALL_DIR%"
-call pm2 delete orion-agente >nul 2>&1
-call pm2 start orion-agente.js --name orion-agente
-call pm2 save
-
-:: Registra pm2 como serviço do Windows via startup
-call pm2 startup windows -u "%USERNAME%" --hp "%USERPROFILE%" >nul 2>&1
-
-echo.
-echo  ============================================
-echo   INSTALACAO CONCLUIDA COM SUCESSO!
-echo.
-echo   O agente Orion esta rodando em segundo
-echo   plano e iniciara automaticamente com
-echo   o Windows.
-echo.
-echo   Para verificar o status:  pm2 status
-echo   Para ver os logs:         pm2 logs orion-agente
-echo   Para desinstalar:         execute desinstalar.bat
-echo  ============================================
-echo.
-pause
-`;
-
-    const DESINSTALAR_BAT = `@echo off
-chcp 65001 > nul
-title Orion Agente — Desinstalador
-color 0C
-
-echo.
-echo  ============================================
-echo   ORION AGENTE — Desinstalador
-echo   Cliente: ${cliente.nome}
-echo  ============================================
-echo.
-
-net session >nul 2>&1
-if %errorLevel% NEQ 0 (
-    echo  [ERRO] Execute este arquivo como Administrador!
-    pause
-    exit /b 1
-)
-
-echo  Parando e removendo o agente...
-call pm2 delete orion-agente >nul 2>&1
-call pm2 save >nul 2>&1
-
-echo  Removendo arquivos...
-set "INSTALL_DIR=C:\\OrionAgente"
-if exist "%INSTALL_DIR%" (
-    rmdir /s /q "%INSTALL_DIR%"
-    echo  Pasta %INSTALL_DIR% removida.
-)
-
-echo.
-echo  ============================================
-echo   Orion Agente removido com sucesso.
-echo  ============================================
-echo.
-pause
-`;
-
-    const arquivos = [
-      { nome: 'orion-agente.js',  conteudo: Buffer.from(AGENTE_JS, 'utf8') },
-      { nome: 'config.json',      conteudo: Buffer.from(JSON.stringify(config, null, 2), 'utf8') },
-      { nome: 'instalar.bat',     conteudo: Buffer.from(INSTALAR_BAT, 'utf8') },
-      { nome: 'desinstalar.bat',  conteudo: Buffer.from(DESINSTALAR_BAT, 'utf8') },
-      { nome: 'LEIA-ME.txt',      conteudo: Buffer.from(`Orion Agente (legado) — ${cliente.nome}\nUse o pacote .exe para instalação mais fácil.\n`, 'utf8') },
-    ];
-
-    const zip = gerarZip(arquivos);
-
-    res.setHeader('Content-Disposition', `attachment; filename="orion-agente-bat-${nomeSeguro}.zip"`);
-    res.setHeader('Content-Type', 'application/zip');
-    res.setHeader('Content-Length', zip.length);
-    res.send(zip);
-
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
 
 // Rota legada mantida por compatibilidade (redireciona para explicação)
 app.get('/download/agente/:clienteId?', requireAuth, async (req, res) => {
@@ -2006,7 +1839,7 @@ async function enviarAlertaMonitor(destinatario, nomeCliente, assunto, corpo) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ─── SIMULADOR DE IMPRESSORAS ────────────────────────────────────────────────
-app.post('/api/monitor/simular', requireAuth, requireAdmin, async (req,res) => {
+app.post('/api/monitor/simular', requireAuth, requireMaster, async (req,res) => {
   try {
     // Busca clientes reais com equipamentos cadastrados
     const clientesReais = await tenantCol('clientes', req).find({}, {
@@ -2111,7 +1944,7 @@ app.post('/api/monitor/simular', requireAuth, requireAdmin, async (req,res) => {
   } catch(e) { res.status(500).json({ error:e.message }); }
 });
 
-app.delete('/api/monitor/simular', requireAuth, requireAdmin, async (req,res) => {
+app.delete('/api/monitor/simular', requireAuth, requireMaster, async (req,res) => {
   try {
     await col('monitor_impressoras').deleteMany({ _sim: true });
     await col('monitor_telemetria').deleteMany({ _sim: true });

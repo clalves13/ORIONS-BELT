@@ -61,7 +61,9 @@ URL gerada automaticamente, formato `https://orions-belt-xxxx.onrender.com`.
 ```
 orion-at/
 ├── server.js          — Servidor Node.js + API
-├── orion-agente.js    — Agente de monitoramento de impressoras (v2.1.0)
+├── orion-agente/       — Agente de monitoramento (SNMP via net-snmp), roda no Windows do cliente
+│   ├── agent.js        — Código-fonte real (v1.0.0) — é o que gera o .exe distribuído
+│   └── package.json    — Dependências do agente (net-snmp, axios) + script de build (pkg)
 ├── package.json       — Dependências
 ├── railway.toml       — Configuração Railway (legado — não mais usado no deploy atual)
 ├── Dockerfile         — Configuração Docker
@@ -93,3 +95,16 @@ Acesse: http://localhost:3000
 10. **Relatórios** — Geração de PDF
 11. **Técnicos** — Cadastro da equipe
 12. **Usuários** — Controle de acesso (só admin)
+
+## Agente de monitoramento (orion-agente/)
+O `.exe` que os clientes instalam não é gerado automaticamente pelo servidor — é compilado localmente e enviado manualmente:
+
+```bash
+cd orion-agente
+npm install
+npm run build          # gera dist/OrionAgente.exe via pkg
+```
+
+Depois, no sistema: **Configurações → Monitor → Enviar Executável**, faça upload do `dist/OrionAgente.exe`. Ele fica hospedado no Cloudinary e é isso que a rota `/download/pacote-agente/:clienteId` empacota (junto com um `config.json` já preenchido com a chave do cliente) quando alguém baixa o pacote pela tela de Clientes.
+
+Sempre que o `agent.js` for alterado, é preciso repetir o `npm run build` e reenviar o novo `.exe` — o upload não é automático a partir do git push.
