@@ -1497,8 +1497,9 @@ app.post('/api/monitor/upload-exe', requireAuth, requireAdmin, uploadExe.single(
         resource_type: 'raw',
         public_id: 'OrionAgente',
         overwrite: true,
+        chunk_size: 6 * 1024 * 1024,
       };
-      const stream = cloudinary.uploader.upload_stream(opts, (err, result) => {
+      const stream = cloudinary.uploader.upload_large_stream(opts, (err, result) => {
         if (err) reject(err); else resolve(result);
       });
       streamifier.createReadStream(req.file.buffer).pipe(stream);
