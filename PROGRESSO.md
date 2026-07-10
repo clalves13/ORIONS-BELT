@@ -582,3 +582,47 @@ Como os dados existentes no Orion eram só teste (4 empresas fictícias, 5 equip
 - [ ] LGPD/auditoria — coleção `audit_log` + política de retenção
 - [ ] Calibrar os limiares de detecção automática de troca de toner com impressora real
 - [ ] Separação física em monorepo — só depois do multi-tenant estar pronto
+
+## Sessão 12 — 08–09/07/2026 — Consolidação do agente real, segurança do Monitor e permissões admin/master
+
+### Simulador do Monitor restrito ao coringa master
+O botão 🧪 Simulador (injeta/apaga dados falsos de impressora) estava liberado pra qualquer perfil `admin`. Criado middleware `requireMaster` (checa só `isMaster`, não `role`) e aplicado nas rotas `POST`/`DELETE /api/monitor/simular`, além de esconder o botão no `monitor.html` pra quem não é o login coringa `master`.
+
+### Descoberta: dois agentes de monitoramento paralelos
+O repositório tinha `orion-agente.js` (raiz, SNMP feito na mão) + `orion-build/`, mas o `.exe` que realmente é distribuído aos clientes vinha de um `agent.js` separado — usando a lib `net-snmp` — que morava numa pasta `orion-agente/` **fora do git** (excluída até no `.dockerignore`), sem backup nenhum.
+
+**Bug crítico encontrado nesse `agent.js` real:** a constante `CFG` era referenciada em várias linhas mas nunca tinha sido declarada (só existia `CFG_TEMP`) — o agente **crashava na inicialização** (`ReferenceError: CFG is not defined`) antes de fazer qualquer coleta. O `.exe` que estava em produção funcionava porque foi compilado de uma versão anterior a esse erro ter sido introduzido no código-fonte.
+
+**Decisão: consolidar em um único agente.** `orion-agente.js` e `orion-build/` (implementação morta) foram removidos do repositório. O `agent.js` real (net-snmp) passou a ser a versão oficial, trazido pro git em `orion-agente/agent.js`, com bug do `CFG` corrigido e community SNMP (`snmpCommunity`) tornada configurável via `config.json` (fallback `'public'`, retrocompatível). `package.json` desse agente foi reconstruído a partir dos `require()` reais do código (`net-snmp`, `axios`) — o original não foi preservado, então as versões exatas de dependência não puderam ser confirmadas contra o que estava instalado antes.
+
+Testado depois da correção (`node agent.js` local): completa o ciclo inteiro sem crashar. `.exe` recompilado localmente com sucesso (`npm run build` via `pkg`).
+
+### `serverUrl` hardcoded quebrava a cada migração de host
+O `config.json` gerado pelo servidor pra cada cliente tinha o `serverUrl` fixo na URL antiga do Railway, mesmo já estando em Render. Corrigido pra ser dinâmico (`req.protocol + req.get('host')`) nas duas rotas de geração de pacote — não depende mais de lembrar de atualizar isso numa próxima migração de host.
+
+### Conta `admin` com `isMaster: true` por engano — e um segundo bug que isso escondia
+O usuário `admin` de bootstrap nascia no banco com `isMaster: true`, misturando o conceito de admin comum com o do login coringa `master`. Corrigido no código (`isMaster:false` na criação inicial).
+
+Isso expôs um problema real e não relacionado ao código: em produção, a conta `admin` estava com **perfil "Administrativo"** (mais restrito — sem `usuarios`, `financeiro`, `configuracoes`) em vez de **"Administrador"** (perfil completo). O `isMaster:true` indevido vinha mascarando essa falta de acesso há tempos. Corrigido manualmente via tela de Usuários.
+
+### Rota de upload do `.exe` restaurada
+`/api/monitor/upload-exe` e `/api/monitor/exe-info` tinham desaparecido do `server.js` de produção num merge manual anterior (o middleware `uploadExe`/multer continuava declarado, mas sem rota nenhuma usando ele). Restauradas a partir de uma cópia mais antiga do arquivo.
+
+### Limpeza de arquivos não utilizados
+Removidos: `Dockerfile` (configurado pra Cloud Run, não usado — deploy atual é Render/Node nativo), `railway.toml` (legado do Railway), `.dockerignore`, `public/orion-theme-v8.css` (órfão, não referenciado em lugar nenhum).
+
+### Bloqueio encontrado — limite de 10MB do Cloudinary
+Ao tentar enviar o `.exe` corrigido (36.9MB) pela tela **Configurações → Monitor → Enviar Executável**, erro: `File size too large. Got 38743740. Maximum is 10485760` — teto de 10MB do Cloudinary no plano gratuito para upload direto. Decisão adiada entre duas opções (ver pendências).
+
+### Pendências em aberto (atualizado 09/07/2026, sessão 12)
+- [ ] **Resolver limite do Cloudinary** — opção rápida: trocar `upload_stream` por `upload_large_stream` (chunked, sem limite de 10MB, sem trocar de provedor); opção estrutural: migrar de vez pro Cloudflare R2 (já estava planejado por custo, agora também resolve o bloqueio de tamanho)
+- [ ] Confirmar upload do `.exe` corrigido feito com sucesso (`/api/monitor/exe-info` deve retornar a URL nova) — até lá, pacotes baixados por clientes ainda saem com o `.exe` antigo (com o bug do `CFG`)
+- [ ] Teste de campo com impressora real (Konica Minolta bizhub) — habilitar SNMP v1/v2c no equipamento, confirmar community, validar coleta real ponta a ponta
+- [ ] Estender multi-tenant (`tenant_id`) pro módulo de Monitor — hoje só cobre clientes/equipamentos/ordens
+- [ ] Confirmar `orion-agente/package.json` reconstruído (versões de `net-snmp`/`axios`) contra o que era usado antes, rodando `npm install` e comparando comportamento
+- [ ] Restringir permissão do usuário `orion_db_user` (novo cluster) para `readWrite` só no banco `orion_at`, em vez de `atlasAdmin`/projeto inteiro *(carregada da sessão 11)*
+- [ ] Renomear `orion_at` → `Orion Belt` no banco, `package.json` e textos restantes da interface *(carregada da sessão 11)*
+- [ ] Certificado OV de code signing para o `.exe` do agente + submissão de reputação ao SmartScreen *(carregada da sessão 11)*
+- [ ] LGPD/auditoria — coleção `audit_log` + política de retenção *(carregada da sessão 11)*
+- [ ] Faturamento automático contador→NF via Focus NFe ou PlugNotas *(carregada da sessão 11)*
+- [ ] Separação física em monorepo — só depois do multi-tenant estar pronto *(carregada da sessão 11)*
