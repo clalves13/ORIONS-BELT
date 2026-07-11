@@ -7,10 +7,10 @@ const bcrypt = require('bcryptjs');
 const { MongoClient, ObjectId } = require('mongodb');
 const MongoStore = require('connect-mongo');
 const path = require('path');
-const os = require('os');
 const crypto = require('crypto');
 const fs = require('fs');
 const https = require('https');
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -65,7 +65,7 @@ async function connectDB() {
     await db.collection('users').insertOne({
       login:'admin', nome:'Administrador',
       senha_hash: bcrypt.hashSync(adminPass,10),
-      role:'admin', isMaster:true, ativo:1, tenant_id: TENANT_PADRAO, created_at: new Date().toISOString()
+      role:'admin', isMaster:false, ativo:1, tenant_id: TENANT_PADRAO, created_at: new Date().toISOString()
     });
     console.log('Usuário admin criado (primeiro acesso).');
   }
@@ -1474,6 +1474,8 @@ function gerarZip(arquivos) {
   return Buffer.concat([...partes, cdBuf, eocd]);
 }
 
+
+
 // Consulta se já existe um OrionAgente.exe enviado, e quando.
 app.get('/api/monitor/exe-info', requireAuth, requireAdmin, async (req, res) => {
   try {
@@ -1482,41 +1484,101 @@ app.get('/api/monitor/exe-info', requireAuth, requireAdmin, async (req, res) => 
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// Recebe o OrionAgente.exe compilado (via pkg) e guarda no Cloudinary — é esse
-// arquivo que /download/pacote-agente/:clienteId empacota pros clientes baixarem.
+// Recebe o OrionAgente.exe compilado (via pkg) e publica como asset de uma
+// Release fixa no GitHub — é esse arquivo que /download/pacote-agente/:clienteId
+// empacota pros clientes baixarem.
+// Publica o OrionAgente.exe como asset de uma Release fixa no GitHub — sem
+// limite de 10MB (GitHub aceita até 2GB por asset), sem custo, sem cartão.
+// Precisa de GITHUB_TOKEN (fine-grained PAT, permissão Contents: Read and write)
+// e GITHUB_REPO (formato "owner/repo") nas variáveis de ambiente.
+const GITHUB_REPO  = process.env.GITHUB_REPO  || 'clalves13/ORIONS-BELT';
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN || '';
+const GITHUB_RELEASE_TAG = 'agente-exe';
+
+async function ghApi(path, opts = {}) {
+  const r = await fetch(`https://api.github.com${path}`, {
+    ...opts,
+    headers: {
+      'Authorization': `Bearer ${GITHUB_TOKEN}`,
+      'Accept': 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28',
+      'User-Agent': 'orion-at-server',
+      ...(opts.headers || {}),
+    },
+  });
+  return r;
+}
+
 app.post('/api/monitor/upload-exe', requireAuth, requireAdmin, uploadExe.single('exe'), async (req, res) => {
-  const tempPath = path.join(os.tmpdir(), `orion-agente-upload-${Date.now()}.exe`);
   try {
     if (!req.file) return res.status(400).json({ error: 'Nenhum arquivo enviado' });
     if (!req.file.originalname.toLowerCase().endsWith('.exe')) {
       return res.status(400).json({ error: 'O arquivo precisa ser um .exe' });
     }
+    if (!GITHUB_TOKEN) {
+      return res.status(400).json({ error: 'GITHUB_TOKEN não configurado nas variáveis de ambiente do servidor.' });
+    }
 
-    fs.writeFileSync(tempPath, req.file.buffer);
-
-    const uploadResult = await new Promise((resolve, reject) => {
-      cloudinary.uploader.upload_large(tempPath, {
-        folder: 'orion/agente',
-        resource_type: 'raw',
-        public_id: 'OrionAgente',
-        overwrite: true,
-        chunk_size: 6 * 1024 * 1024,
-      }, (err, result) => {
-        if (err) reject(err); else resolve(result);
+    // 1. Acha (ou cria) a release fixa que sempre guarda a versão mais recente
+    let releaseRes = await ghApi(`/repos/${GITHUB_REPO}/releases/tags/${GITHUB_RELEASE_TAG}`);
+    let release;
+    if (releaseRes.status === 404) {
+      const createRes = await ghApi(`/repos/${GITHUB_REPO}/releases`, {
+        method: 'POST',
+        body: JSON.stringify({
+          tag_name: GITHUB_RELEASE_TAG,
+          name: 'OrionAgente.exe (versão atual)',
+          body: 'Release fixa — sempre contém a versão mais recente do OrionAgente.exe. Gerenciada automaticamente pelo sistema.',
+          draft: false,
+          prerelease: false,
+        }),
       });
-    });
+      if (!createRes.ok) {
+        const errBody = await createRes.text();
+        throw new Error(`Falha ao criar release no GitHub: ${createRes.status} ${errBody}`);
+      }
+      release = await createRes.json();
+    } else if (releaseRes.ok) {
+      release = await releaseRes.json();
+    } else {
+      throw new Error(`Falha ao consultar release no GitHub: ${releaseRes.status}`);
+    }
+
+    // 2. Se já existe um asset com esse nome, apaga antes (GitHub não deixa
+    // reenviar com o mesmo nome sem apagar o anterior primeiro)
+    const existente = (release.assets || []).find(a => a.name === 'OrionAgente.exe');
+    if (existente) {
+      await ghApi(`/repos/${GITHUB_REPO}/releases/assets/${existente.id}`, { method: 'DELETE' });
+    }
+
+    // 3. Sobe o arquivo novo como asset da release
+    const uploadRes = await fetch(
+      `https://uploads.github.com/repos/${GITHUB_REPO}/releases/${release.id}/assets?name=OrionAgente.exe`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${GITHUB_TOKEN}`,
+          'Content-Type': 'application/octet-stream',
+          'User-Agent': 'orion-at-server',
+        },
+        body: req.file.buffer,
+      }
+    );
+    if (!uploadRes.ok) {
+      const errBody = await uploadRes.text();
+      throw new Error(`Falha ao enviar .exe pro GitHub: ${uploadRes.status} ${errBody}`);
+    }
+    const asset = await uploadRes.json();
 
     await col('configuracoes').updateOne(
       { chave: 'agente_exe_url' },
-      { $set: { chave: 'agente_exe_url', valor: uploadResult.secure_url, atualizado_em: now(), tamanho: req.file.size } },
+      { $set: { chave: 'agente_exe_url', valor: asset.browser_download_url, atualizado_em: now(), tamanho: req.file.size } },
       { upsert: true }
     );
 
-    res.json({ ok: true, tamanho_mb: (req.file.size / 1024 / 1024).toFixed(1), url: uploadResult.secure_url });
+    res.json({ ok: true, tamanho_mb: (req.file.size / 1024 / 1024).toFixed(1), url: asset.browser_download_url });
   } catch(e) {
     res.status(500).json({ error: e.message });
-  } finally {
-    fs.unlink(tempPath, () => {});
   }
 });
 
@@ -1552,15 +1614,24 @@ app.get('/download/pacote-agente/:clienteId', requireAuth, async (req, res) => {
       snmpCommunity: 'public',
     };
 
-    // Baixa o .exe do Cloudinary (em memória)
-    const exeBuffer = await new Promise((resolve, reject) => {
-      https.get(exeCfg.valor, (r) => {
-        const chunks = [];
-        r.on('data', c => chunks.push(c));
-        r.on('end', () => resolve(Buffer.concat(chunks)));
-        r.on('error', reject);
-      }).on('error', reject);
-    });
+    // Baixa o .exe do GitHub Releases (em memória) — segue redirecionamento,
+    // já que o browser_download_url do GitHub redireciona (302) pra CDN.
+    function baixarComRedirect(url, tentativas = 5) {
+      return new Promise((resolve, reject) => {
+        if (tentativas <= 0) return reject(new Error('Muitos redirecionamentos ao baixar o .exe'));
+        https.get(url, { headers: { 'User-Agent': 'orion-at-server' } }, (r) => {
+          if (r.statusCode >= 300 && r.statusCode < 400 && r.headers.location) {
+            r.resume();
+            return resolve(baixarComRedirect(r.headers.location, tentativas - 1));
+          }
+          const chunks = [];
+          r.on('data', c => chunks.push(c));
+          r.on('end', () => resolve(Buffer.concat(chunks)));
+          r.on('error', reject);
+        }).on('error', reject);
+      });
+    }
+    const exeBuffer = await baixarComRedirect(exeCfg.valor);
 
     const LEIA_ME =
 `Orion Agente — Pacote de Instalação
