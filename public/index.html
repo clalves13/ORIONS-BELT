@@ -4402,6 +4402,35 @@ function _checkMaster(u) {
 }
 function _applyMasterClass(v) { document.body.classList.toggle('is-master', !!v); }
 
+// Notificação flutuante simples — usada em dezenas de pontos do sistema
+// (upload de arquivos, cópia de chave, backup, etc.) que já chamavam
+// showToast(msg, tipo) sem essa função nunca ter sido implementada.
+function showToast(msg, tipo) {
+  let host = document.getElementById('_toast-host');
+  if (!host) {
+    host = document.createElement('div');
+    host.id = '_toast-host';
+    host.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:99999;display:flex;flex-direction:column;gap:8px;align-items:flex-end';
+    document.body.appendChild(host);
+  }
+  const cores = {
+    ok:   { bg: '#166534', bd: '#22c55e' },
+    warn: { bg: '#78350f', bd: '#f59e0b' },
+    err:  { bg: '#7f1d1d', bd: '#ef4444' },
+  };
+  const c = cores[tipo] || cores.ok;
+  const el = document.createElement('div');
+  el.textContent = msg;
+  el.style.cssText = `background:${c.bg};border:1px solid ${c.bd};color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:500;box-shadow:0 4px 12px rgba(0,0,0,.25);max-width:360px;opacity:0;transform:translateY(8px);transition:opacity .2s,transform .2s`;
+  host.appendChild(el);
+  requestAnimationFrame(() => { el.style.opacity = '1'; el.style.transform = 'translateY(0)'; });
+  setTimeout(() => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(8px)';
+    setTimeout(() => el.remove(), 250);
+  }, 3500);
+}
+
 async function doLogin() {
   const login = document.getElementById('l-user').value.trim();
   const senha = document.getElementById('l-pass').value;
