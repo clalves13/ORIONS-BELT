@@ -7,10 +7,10 @@ const bcrypt = require('bcryptjs');
 const { MongoClient, ObjectId } = require('mongodb');
 const MongoStore = require('connect-mongo');
 const path = require('path');
+const os = require('os');
 const crypto = require('crypto');
 const fs = require('fs');
 const https = require('https');
-
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -1485,24 +1485,25 @@ app.get('/api/monitor/exe-info', requireAuth, requireAdmin, async (req, res) => 
 // Recebe o OrionAgente.exe compilado (via pkg) e guarda no Cloudinary — é esse
 // arquivo que /download/pacote-agente/:clienteId empacota pros clientes baixarem.
 app.post('/api/monitor/upload-exe', requireAuth, requireAdmin, uploadExe.single('exe'), async (req, res) => {
+  const tempPath = path.join(os.tmpdir(), `orion-agente-upload-${Date.now()}.exe`);
   try {
     if (!req.file) return res.status(400).json({ error: 'Nenhum arquivo enviado' });
     if (!req.file.originalname.toLowerCase().endsWith('.exe')) {
       return res.status(400).json({ error: 'O arquivo precisa ser um .exe' });
     }
 
+    fs.writeFileSync(tempPath, req.file.buffer);
+
     const uploadResult = await new Promise((resolve, reject) => {
-      const opts = {
+      cloudinary.uploader.upload_large(tempPath, {
         folder: 'orion/agente',
         resource_type: 'raw',
         public_id: 'OrionAgente',
         overwrite: true,
         chunk_size: 6 * 1024 * 1024,
-      };
-      const stream = cloudinary.uploader.upload_large_stream(opts, (err, result) => {
+      }, (err, result) => {
         if (err) reject(err); else resolve(result);
       });
-      streamifier.createReadStream(req.file.buffer).pipe(stream);
     });
 
     await col('configuracoes').updateOne(
@@ -1512,7 +1513,11 @@ app.post('/api/monitor/upload-exe', requireAuth, requireAdmin, uploadExe.single(
     );
 
     res.json({ ok: true, tamanho_mb: (req.file.size / 1024 / 1024).toFixed(1), url: uploadResult.secure_url });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  } finally {
+    fs.unlink(tempPath, () => {});
+  }
 });
 
 app.get('/download/pacote-agente/:clienteId', requireAuth, async (req, res) => {
