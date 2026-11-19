@@ -2562,11 +2562,35 @@ label { font-size: 11px !important; font-weight: 600 !important; color: #475569 
     </div>
   </div>
   <div class="content">
+    <div class="card" style="margin-bottom:14px;padding:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+        <div><div style="font-weight:700;color:var(--nv);font-size:14px">⚙️ Configuração fiscal e financeira da empresa</div><div style="font-size:11px;color:var(--tx3)">Perfil tributário e parâmetros do emissor. Esta etapa não transmite notas nem armazena certificados.</div></div>
+        <button class="btn btn-primary btn-sm" onclick="salvarConfigFinanceira()">💾 Salvar configuração</button>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px">
+        <div class="fg"><label>Razão social</label><input id="fin-cfg-razao" placeholder="Razão social"></div>
+        <div class="fg"><label>Nome fantasia</label><input id="fin-cfg-fantasia" placeholder="Nome fantasia"></div>
+        <div class="fg"><label>CNPJ</label><input id="fin-cfg-cnpj" inputmode="numeric" maxlength="18" placeholder="00.000.000/0000-00"></div>
+        <div class="fg"><label>Inscrição municipal</label><input id="fin-cfg-im" placeholder="Inscrição municipal"></div>
+        <div class="fg"><label>Inscrição estadual</label><input id="fin-cfg-ie" placeholder="Inscrição estadual"></div>
+        <div class="fg"><label>CNAE</label><input id="fin-cfg-cnae" placeholder="Código CNAE"></div>
+        <div class="fg"><label>Município</label><input id="fin-cfg-municipio" placeholder="Município"></div>
+        <div class="fg"><label>UF</label><input id="fin-cfg-uf" maxlength="2" placeholder="UF"></div>
+        <div class="fg"><label>Regime tributário</label><select id="fin-cfg-regime"><option>Não definido</option><option>MEI</option><option>Simples Nacional</option><option>Lucro Presumido</option><option>Lucro Real</option><option>Outro</option></select></div>
+        <div class="fg"><label>Situação da empresa</label><select id="fin-cfg-situacao"><option>Ativa</option><option>Em abertura</option><option>Suspensa</option><option>Inativa</option></select></div>
+        <div class="fg"><label>Atividade principal</label><select id="fin-cfg-atividade"><option>Serviços</option><option>Comércio</option><option>Indústria</option><option>Serviços e comércio</option><option>Mista</option></select></div>
+        <div class="fg"><label>Documento fiscal principal</label><select id="fin-cfg-emissao"><option>Não definido</option><option>NFS-e</option><option>NF-e</option><option>NFC-e</option><option>NFS-e e NF-e</option></select></div>
+        <div class="fg"><label>Emissor / provedor fiscal</label><input id="fin-cfg-provedor" placeholder="Nacional, municipal ou provedor"></div>
+        <div class="fg"><label>Integração bancária</label><select id="fin-cfg-banco"><option>Não configurada</option><option>Banco próprio / API</option><option>Provedor de cobrança</option><option>Arquivo de retorno CNAB</option></select></div>
+      </div>
+      <div id="fin-cfg-msg" style="display:none;margin-top:10px;font-size:12px;padding:8px 10px;border-radius:7px"></div>
+    </div>
     <div id="fin-kpis" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:10px;margin-bottom:14px"></div>
     <div style="border-bottom:1px solid #e2e8f0;margin-bottom:12px;display:flex;gap:0">
       <button class="log-tab active" id="ftab-lancamentos" onclick="switchFinTab('lancamentos')">📒 Lançamentos</button>
       <button class="log-tab" id="ftab-dre" onclick="switchFinTab('dre')">📊 DRE</button>
       <button class="log-tab" id="ftab-fluxo" onclick="switchFinTab('fluxo')">📈 Fluxo de Caixa</button>
+      <button class="log-tab" id="ftab-titulos" onclick="switchFinTab('titulos')">💳 Contas a Pagar/Receber</button>
     </div>
     <!-- Filtros período -->
     <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
@@ -2595,6 +2619,30 @@ label { font-size: 11px !important; font-weight: 600 !important; color: #475569 
     <!-- Aba Fluxo -->
     <div id="fin-tab-fluxo" style="display:none">
       <div id="fin-fluxo-content"></div>
+    </div>
+    <!-- Aba Contas a Pagar/Receber -->
+    <div id="fin-tab-titulos" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+        <div style="font-size:11px;color:var(--tx3);max-width:560px">Contas controladas aqui só entram no caixa (Lançamentos, DRE e Fluxo) quando forem baixadas como pagas ou recebidas.</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-ghost btn-sm" onclick="exportFinTitulosCSV()">📊 Exportar</button>
+          <button class="btn btn-success btn-sm" onclick="openFinTitulo('receber')">+ Conta a Receber</button>
+          <button class="btn btn-danger btn-sm" onclick="openFinTitulo('pagar')">+ Conta a Pagar</button>
+        </div>
+      </div>
+      <div id="ft-kpis" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:12px"></div>
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
+        <div class="swrap" style="flex:1;min-width:160px"><span style="color:var(--tx3)">🔍</span><input type="text" id="ft-f-q" placeholder="Buscar descrição, cliente, fornecedor, documento..." oninput="renderFinTitulos()"></div>
+        <select id="ft-f-tipo" onchange="renderFinTitulos()" style="height:34px;padding:0 10px;border:1px solid var(--bd);border-radius:7px;font-size:13px;background:var(--sf);color:var(--tx)"><option value="">A pagar e a receber</option><option value="receber">Somente a receber</option><option value="pagar">Somente a pagar</option></select>
+        <select id="ft-f-sit" onchange="renderFinTitulos()" style="height:34px;padding:0 10px;border:1px solid var(--bd);border-radius:7px;font-size:13px;background:var(--sf);color:var(--tx)"><option value="">Todas as situações</option><option value="abertas">Em aberto (inclui vencidas)</option><option value="vencido">Vencidas</option><option value="parcial">Parcialmente pagas</option><option value="pago">Quitadas</option></select>
+        <label style="font-size:11px;color:var(--tx3)">Vencimento de</label><input type="date" id="ft-f-de" onchange="renderFinTitulos()" style="height:34px;padding:0 8px;border:1px solid var(--bd);border-radius:7px;font-size:13px;background:var(--sf);color:var(--tx)">
+        <label style="font-size:11px;color:var(--tx3)">até</label><input type="date" id="ft-f-ate" onchange="renderFinTitulos()" style="height:34px;padding:0 8px;border:1px solid var(--bd);border-radius:7px;font-size:13px;background:var(--sf);color:var(--tx)">
+      </div>
+      <div class="card" style="padding:0"><div class="twrap"><table>
+        <thead><tr><th>Vencimento</th><th>Tipo</th><th>Descrição</th><th>Cliente / Fornecedor</th><th>Valor R$</th><th>Pago R$</th><th>Saldo R$</th><th>Situação</th><th>Ações</th></tr></thead>
+        <tbody id="tb-ft"></tbody>
+        <tfoot id="tf-ft"></tfoot>
+      </table></div></div>
     </div>
   </div>
 </div>
@@ -4243,6 +4291,76 @@ Outros</textarea>
     </div>
   </div>
   <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('m-fin')">Cancelar</button><button class="btn btn-primary" id="fin-save-btn" onclick="saveLancFin()">Salvar</button></div>
+</div></div>
+
+<!-- Modal Conta a Pagar/Receber -->
+<div class="mov" id="m-fintit">
+<div class="modal" style="max-width:600px">
+  <div class="mhd"><div class="mhd-title" id="m-fintit-title">Nova Conta a Receber</div><button class="btnx" onclick="closeM('m-fintit')">×</button></div>
+  <div class="mbody">
+    <input type="hidden" id="ft-id">
+    <input type="hidden" id="ft-tipo">
+    <div class="fgrid fg2">
+      <div class="fg" style="grid-column:1/-1"><label>Descrição *</label><input type="text" id="ft-desc" placeholder="Ex: Mensalidade outsourcing — Cliente X"></div>
+      <div class="fg" id="ft-cli-wrap"><label>Cliente</label><select id="ft-cli"><option value="">— Selecione —</option></select></div>
+      <div class="fg" id="ft-forn-wrap"><label>Fornecedor</label><input type="text" id="ft-forn" placeholder="Nome do fornecedor"></div>
+      <div class="fg"><label>Categoria *</label>
+        <select id="ft-cat">
+          <option>OS / Atendimento</option><option>Contrato</option><option>Implantação</option>
+          <option>Peças / Material</option><option>Combustível</option><option>Salários</option>
+          <option>Aluguel</option><option>Serviços Terceiros</option><option>Impostos</option><option>Outros</option>
+        </select>
+      </div>
+      <div class="fg"><label>Valor R$ *</label><input type="number" id="ft-valor" value="0" step="0.01" min="0"></div>
+      <div class="fg"><label>Vencimento *</label><input type="date" id="ft-venc"></div>
+      <div class="fg"><label>Emissão</label><input type="date" id="ft-emissao"></div>
+      <div class="fg"><label>Competência</label><input type="month" id="ft-comp"></div>
+      <div class="fg"><label>Documento (NF, boleto, contrato)</label><input type="text" id="ft-doc" placeholder="Nº do documento"></div>
+      <div class="fg"><label>Forma de pagamento</label>
+        <select id="ft-forma"><option value="">—</option><option>Transferência</option><option>PIX</option><option>Boleto</option><option>Dinheiro</option><option>Cartão</option><option>Outro</option></select>
+      </div>
+      <div class="fg"><label>Centro de custo</label><input type="text" id="ft-cc" placeholder="Ex: Outsourcing, Assistência técnica"></div>
+      <div class="fg" id="ft-rep-wrap" style="grid-column:1/-1">
+        <label>Repetição</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <select id="ft-rep" onchange="ftAtualizaRep()" style="flex:1;min-width:200px">
+            <option value="unica">Conta única</option>
+            <option value="parcelada">Parcelada — divide o valor total em parcelas mensais</option>
+            <option value="recorrente">Recorrente — repete o mesmo valor todo mês</option>
+          </select>
+          <input type="number" id="ft-rep-qtd" value="2" min="2" max="60" step="1" style="width:90px;display:none" oninput="ftAtualizaRep()">
+        </div>
+        <div id="ft-rep-info" style="font-size:11px;color:var(--tx3);margin-top:4px"></div>
+      </div>
+      <div class="fg" style="grid-column:1/-1"><label>Observações</label><textarea id="ft-obs" rows="2"></textarea></div>
+    </div>
+  </div>
+  <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('m-fintit')">Cancelar</button><button class="btn btn-primary" id="ft-save-btn" onclick="salvarFinTitulo()">Salvar</button></div>
+</div></div>
+
+<!-- Modal Baixa de Título -->
+<div class="mov" id="m-finbaixa">
+<div class="modal" style="max-width:520px">
+  <div class="mhd"><div class="mhd-title" id="m-finbaixa-title">Registrar recebimento</div><button class="btnx" onclick="closeM('m-finbaixa')">×</button></div>
+  <div class="mbody">
+    <input type="hidden" id="fb-id">
+    <div id="fb-resumo" style="font-size:12px;color:var(--tx2);margin-bottom:10px;line-height:1.6"></div>
+    <div class="fgrid fg2">
+      <div class="fg"><label>Data do pagamento *</label><input type="date" id="fb-data" oninput="ftRecalcBaixa()"></div>
+      <div class="fg"><label>Forma</label>
+        <select id="fb-forma"><option>Transferência</option><option>PIX</option><option>Boleto</option><option>Dinheiro</option><option>Cartão</option><option>Outro</option></select>
+      </div>
+      <div class="fg" style="grid-column:1/-1"><label>Valor do título quitado nesta baixa R$ *</label><input type="number" id="fb-valor" step="0.01" min="0" oninput="ftRecalcBaixa()"></div>
+      <div class="fg"><label>Multa por atraso %</label><input type="number" id="fb-multa-pct" value="2" step="0.01" min="0" oninput="ftRecalcBaixa()"></div>
+      <div class="fg"><label>Juros % ao mês</label><input type="number" id="fb-juros-pct" value="1" step="0.01" min="0" oninput="ftRecalcBaixa()"></div>
+      <div class="fg"><label>Multa R$</label><input type="number" id="fb-multa" value="0" step="0.01" min="0" oninput="ftTotalBaixa()"></div>
+      <div class="fg"><label>Juros R$</label><input type="number" id="fb-juros" value="0" step="0.01" min="0" oninput="ftTotalBaixa()"></div>
+      <div class="fg" style="grid-column:1/-1"><label>Desconto R$ (ex.: antecipação)</label><input type="number" id="fb-desc" value="0" step="0.01" min="0" oninput="ftTotalBaixa()"></div>
+    </div>
+    <div id="fb-aviso" style="font-size:11px;color:var(--tx3);margin-top:6px"></div>
+    <div style="margin-top:10px;padding:10px 12px;border-radius:8px;background:var(--bl2bg);font-weight:700;color:var(--nv)" id="fb-total"></div>
+  </div>
+  <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('m-finbaixa')">Cancelar</button><button class="btn btn-primary" id="fb-save-btn" onclick="confirmarBaixaTitulo()">Confirmar baixa</button></div>
 </div></div>
 
 <!-- Modal Timeline do Atendimento -->
@@ -8011,6 +8129,19 @@ let G_financeiro = [];
 
 async function loadFinanceiro() {
   try { G_financeiro = await api('GET','/api/financeiro'); } catch(e) { G_financeiro=[]; }
+  try {
+    const c=await api('GET','/api/financeiro/config');
+    const campos={razao:'razao_social',fantasia:'nome_fantasia',cnpj:'cnpj',im:'inscricao_municipal',ie:'inscricao_estadual',cnae:'cnae',municipio:'municipio',uf:'uf',regime:'regime',situacao:'situacao',atividade:'atividade',emissao:'emissao',provedor:'provedor_fiscal',banco:'integracao_bancaria'};
+    Object.entries(campos).forEach(([id,k])=>{const el=document.getElementById('fin-cfg-'+id);if(el)el.value=c[k]|| (id==='regime'?'Não definido':id==='situacao'?'Ativa':id==='emissao'?'Não definido':id==='atividade'?'Serviços':id==='banco'?'Não configurada':'');});
+  } catch(e) { console.warn('Configuração financeira ainda não carregada:',e.message); }
+}
+
+async function salvarConfigFinanceira(){
+  const get=id=>document.getElementById('fin-cfg-'+id)?.value||'';
+  const dados={razao_social:get('razao'),nome_fantasia:get('fantasia'),cnpj:get('cnpj'),inscricao_municipal:get('im'),inscricao_estadual:get('ie'),cnae:get('cnae'),municipio:get('municipio'),uf:get('uf'),regime:get('regime'),situacao:get('situacao'),atividade:get('atividade'),emissao:get('emissao'),provedor_fiscal:get('provedor'),integracao_bancaria:get('banco')};
+  const msg=document.getElementById('fin-cfg-msg');
+  try{await api('PUT','/api/financeiro/config',dados);msg.style.display='block';msg.style.background='var(--gnbg)';msg.style.color='var(--gn)';msg.textContent='Configuração salva para esta empresa.';}
+  catch(e){msg.style.display='block';msg.style.background='var(--rdbg)';msg.style.color='var(--rd)';msg.textContent='Erro ao salvar: '+e.message;}
 }
 
 // Receita automática ao concluir OS (chamada do módulo OS)
@@ -8027,12 +8158,15 @@ async function lancarReceitaOS(os) {
 }
 
 function switchFinTab(tab) {
-  ['lancamentos','dre','fluxo'].forEach(t=>{
+  ['lancamentos','dre','fluxo','titulos'].forEach(t=>{
     document.getElementById(`fin-tab-${t}`).style.display=t===tab?'':'none';
     document.getElementById(`ftab-${t}`).classList.toggle('active',t===tab);
   });
+  // a barra de filtros de lançamentos não se aplica à aba de contas (que tem filtros próprios)
+  const barraFiltros=document.getElementById('s-fin')?.parentElement?.parentElement; if(barraFiltros)barraFiltros.style.display=tab==='titulos'?'none':'';
   if(tab==='dre')renderFinDRE();
   if(tab==='fluxo')renderFinFluxo();
+  if(tab==='titulos')carregarFinTitulos();
 }
 
 function renderFinKpis() {
@@ -8227,6 +8361,219 @@ async function delLancFin(id){
     await api('DELETE',`/api/financeiro/${id}`);
     await loadFinanceiro();renderFinLanc();
   }
+}
+
+// ─── CONTAS A PAGAR / RECEBER ─────────────────────────────
+let G_finTitulos = [];
+let _ftErro = '';
+const _ftEsc = s => String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const _ftHoje = () => { const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
+const _ftR2 = n => Math.round((Number(n)+Number.EPSILON)*100)/100;
+const _ftSaldo = t => Math.max(0,_ftR2((t.valor||0)-(t.valor_pago||0)));
+// situação exibida: vencido é calculado pela data de hoje; não é gravado no banco
+const _ftSit = t => { if(t.status==='pago'||_ftSaldo(t)<=0)return 'pago'; if(t.vencimento&&t.vencimento<_ftHoje())return 'vencido'; return t.status==='parcial'?'parcial':'aberto'; };
+function _ftAddMes(iso,n){ const [y,m,d]=iso.split('-').map(Number); const t=new Date(y,m-1+n,1); const ult=new Date(t.getFullYear(),t.getMonth()+1,0).getDate(); return `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(Math.min(d,ult)).padStart(2,'0')}`; }
+function _ftDias(deIso,ateIso){ if(!deIso||!ateIso)return 0; const a=new Date(deIso+'T00:00:00'),b=new Date(ateIso+'T00:00:00'); return Math.max(0,Math.round((b-a)/86400000)); }
+// divide o total em n parcelas em centavos; a última absorve a diferença de arredondamento
+function _ftParcelas(total,n){ const base=Math.floor(total*100/n)/100; const arr=Array(n).fill(base); arr[n-1]=_ftR2(total-base*(n-1)); return arr; }
+
+async function carregarFinTitulos(){
+  try { G_finTitulos=await api('GET','/api/financeiro/titulos'); _ftErro=''; }
+  catch(e){ G_finTitulos=[]; _ftErro=e.message||'Erro ao carregar contas.'; }
+  renderFinTitulos();
+}
+
+function _ftFiltrados(){
+  const q=(document.getElementById('ft-f-q')?.value||'').toLowerCase();
+  const tipo=document.getElementById('ft-f-tipo')?.value||'';
+  const sit=document.getElementById('ft-f-sit')?.value||'';
+  const de=document.getElementById('ft-f-de')?.value||'';
+  const ate=document.getElementById('ft-f-ate')?.value||'';
+  return [...G_finTitulos].filter(t=>{
+    if(tipo&&t.tipo!==tipo)return false;
+    const s=_ftSit(t);
+    if(sit==='abertas'&&s==='pago')return false;
+    if(sit&&sit!=='abertas'&&s!==sit)return false;
+    if(de&&t.vencimento<de)return false;
+    if(ate&&t.vencimento>ate)return false;
+    if(q){ const cli=(G.clientes||[]).find(x=>x.id===t.cliente_id); if(![t.descricao,t.fornecedor,t.documento,t.categoria,t.centro_custo,cli?.nome].join(' ').toLowerCase().includes(q))return false; }
+    return true;
+  }).sort((a,b)=>(a.vencimento||'').localeCompare(b.vencimento||''));
+}
+
+function renderFinTitulos(){
+  const tb=document.getElementById('tb-ft'),tf=document.getElementById('tf-ft'),kp=document.getElementById('ft-kpis');
+  if(!tb)return;
+  if(_ftErro){ kp.innerHTML=''; tf.innerHTML=''; tb.innerHTML=`<tr><td colspan="9"><div class="empty"><div class="empty-ico">🔒</div><div class="empty-t">${_ftEsc(_ftErro)}</div></div></td></tr>`; return; }
+  const hoje=_ftHoje(), mes=hoje.slice(0,7);
+  const soma=(arr,f)=>_ftR2(arr.reduce((s,t)=>s+f(t),0));
+  const rec=G_finTitulos.filter(t=>t.tipo==='receber'), pag=G_finTitulos.filter(t=>t.tipo==='pagar');
+  const abertoRec=rec.filter(t=>_ftSit(t)!=='pago'), abertoPag=pag.filter(t=>_ftSit(t)!=='pago');
+  const vencRec=abertoRec.filter(t=>_ftSit(t)==='vencido'), vencPag=abertoPag.filter(t=>_ftSit(t)==='vencido');
+  const baixasMes=(arr)=>_ftR2(arr.reduce((s,t)=>s+(t.baixas||[]).filter(b=>(b.data||'').slice(0,7)===mes).reduce((x,b)=>x+(b.principal||0),0),0));
+  const totRec=soma(rec,t=>t.valor||0), pagoRec=soma(rec,t=>t.valor_pago||0);
+  const inad=totRec>0?_ftR2(soma(vencRec,_ftSaldo)/totRec*100):0;
+  kp.innerHTML=[
+    {icon:'📥',val:fm(soma(abertoRec,_ftSaldo)),lab:'A receber (em aberto)',cor:'color:var(--gn)'},
+    {icon:'⚠️',val:fm(soma(vencRec,_ftSaldo)),lab:`Recebimentos vencidos (${vencRec.length})`,cor:'color:var(--rd)'},
+    {icon:'✅',val:fm(baixasMes(rec)),lab:'Recebido no mês',cor:'color:var(--gn)'},
+    {icon:'📤',val:fm(soma(abertoPag,_ftSaldo)),lab:'A pagar (em aberto)',cor:'color:var(--rd)'},
+    {icon:'⏰',val:fm(soma(vencPag,_ftSaldo)),lab:`Pagamentos vencidos (${vencPag.length})`,cor:'color:var(--or)'},
+    {icon:'💸',val:fm(baixasMes(pag)),lab:'Pago no mês',cor:'color:var(--rd)'},
+    {icon:'📊',val:inad.toFixed(1).replace('.',',')+'%',lab:'Vencido s/ total a receber',cor:'color:var(--bl2)'},
+  ].map(k=>`<div class="scard"><div class="snum" style="${k.cor};font-size:17px">${k.icon} ${k.val}</div><div class="slabel">${k.lab}</div></div>`).join('');
+  const rows=_ftFiltrados();
+  if(!rows.length){ tf.innerHTML=''; tb.innerHTML=`<tr><td colspan="9"><div class="empty"><div class="empty-ico">💳</div><div class="empty-t">Nenhuma conta encontrada</div></div></td></tr>`; return; }
+  const badge={pago:['bg','Quitada'],vencido:['br','Vencida'],parcial:['bo','Parcial'],aberto:['bb','Em aberto']};
+  tb.innerHTML=rows.map(t=>{
+    const isRec=t.tipo==='receber', s=_ftSit(t), cli=(G.clientes||[]).find(x=>x.id===t.cliente_id);
+    const quem=isRec?(cli?.nome||'—'):(t.fornecedor||'—');
+    const tip=(t.baixas||[]).map(b=>`${fd(b.data)}: ${fm(b.valor_caixa)}${b.juros||b.multa?` (juros ${fm(b.juros)}, multa ${fm(b.multa)})`:''}${b.desconto?` (desc. ${fm(b.desconto)})`:''}`).join('\n');
+    return `<tr>
+      <td style="font-size:12px;white-space:nowrap">${fd(t.vencimento)}</td>
+      <td><span class="badge ${isRec?'bg':'br'}" style="font-size:10px">${isRec?'▲ Receber':'▼ Pagar'}</span></td>
+      <td style="font-size:12px;max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${_ftEsc(t.descricao)}">${_ftEsc(t.descricao)}${t.parcela?` <span class="badge bgr" style="font-size:9px">${_ftEsc(t.parcela)}</span>`:''}${t.documento?`<div style="font-size:10px;color:var(--tx3)">Doc: ${_ftEsc(t.documento)}</div>`:''}</td>
+      <td style="font-size:12px">${_ftEsc(quem)}${t.centro_custo?`<div style="font-size:10px;color:var(--tx3)">${_ftEsc(t.centro_custo)}</div>`:''}</td>
+      <td style="font-weight:700;white-space:nowrap">${fm(t.valor)}</td>
+      <td style="white-space:nowrap;font-size:12px" title="${_ftEsc(tip)}">${fm(t.valor_pago||0)}</td>
+      <td style="font-weight:700;white-space:nowrap;color:${s==='pago'?'var(--tx3)':(s==='vencido'?'var(--rd)':'var(--tx)')}">${fm(_ftSaldo(t))}</td>
+      <td><span class="badge ${badge[s][0]}" style="font-size:10px">${badge[s][1]}</span></td>
+      <td style="white-space:nowrap">
+        ${s!=='pago'?`<button class="btn btn-success btn-xs" onclick="abrirBaixaTitulo('${t.id}')">${isRec?'Receber':'Pagar'}</button>`:''}
+        <button class="btn btn-ghost btn-xs" onclick="openFinTitulo('${t.tipo}','${t.id}')">Editar</button>
+        ${!(t.valor_pago>0)?`<button class="btn btn-danger btn-xs" onclick="excluirFinTitulo('${t.id}')">×</button>`:''}
+      </td></tr>`;
+  }).join('');
+  tf.innerHTML=`<tr style="font-weight:700;background:var(--bg2,#f4f6fb)"><td colspan="4" style="text-align:right;font-size:12px">Total do filtro (${rows.length}):</td><td>${fm(soma(rows,t=>t.valor||0))}</td><td>${fm(soma(rows,t=>t.valor_pago||0))}</td><td>${fm(soma(rows,_ftSaldo))}</td><td colspan="2"></td></tr>`;
+}
+
+function ftAtualizaRep(){
+  const modo=document.getElementById('ft-rep').value, qtd=document.getElementById('ft-rep-qtd');
+  qtd.style.display=modo==='unica'?'none':'';
+  const n=Math.max(2,Math.min(60,parseInt(qtd.value)||2)), v=+document.getElementById('ft-valor').value||0;
+  const info=document.getElementById('ft-rep-info');
+  if(modo==='parcelada'&&v>0){ const p=_ftParcelas(v,n); info.textContent=`${n} parcelas mensais: ${n-1}× ${fm(p[0])} + última de ${fm(p[n-1])} (total ${fm(v)}). O primeiro vencimento é a data informada.`; }
+  else if(modo==='recorrente'&&v>0){ info.textContent=`${n} contas mensais de ${fm(v)} cada (total ${fm(v*n)}), a partir do vencimento informado.`; }
+  else info.textContent='';
+}
+
+function openFinTitulo(tipo,id){
+  const isRec=tipo==='receber';
+  document.getElementById('ft-tipo').value=tipo;
+  document.getElementById('m-fintit-title').textContent=(id?'Editar ':'Nova ')+(isRec?'Conta a Receber':'Conta a Pagar');
+  document.getElementById('ft-save-btn').className=`btn ${isRec?'btn-success':'btn-danger'}`;
+  document.getElementById('ft-cli-wrap').style.display=isRec?'':'none';
+  document.getElementById('ft-forn-wrap').style.display=isRec?'none':'';
+  document.getElementById('ft-cli').innerHTML=`<option value="">— Selecione —</option>`+(G.clientes||[]).map(c=>`<option value="${c.id}">${_ftEsc(c.nome)}</option>`).join('');
+  const set=(k,v)=>document.getElementById(k).value=v;
+  if(id){
+    const t=G_finTitulos.find(x=>x.id===id); if(!t)return;
+    set('ft-id',t.id); set('ft-desc',t.descricao||''); set('ft-cli',t.cliente_id||''); set('ft-forn',t.fornecedor||'');
+    set('ft-cat',t.categoria||'Outros'); set('ft-valor',t.valor||0); set('ft-venc',t.vencimento||''); set('ft-emissao',t.emissao||'');
+    set('ft-comp',t.competencia||''); set('ft-doc',t.documento||''); set('ft-forma',t.forma_pagamento||''); set('ft-cc',t.centro_custo||''); set('ft-obs',t.observacoes||'');
+    document.getElementById('ft-rep-wrap').style.display='none';
+  } else {
+    ['ft-id','ft-desc','ft-forn','ft-doc','ft-cc','ft-obs','ft-emissao','ft-comp'].forEach(k=>set(k,''));
+    set('ft-cli',''); set('ft-forma',''); set('ft-cat',isRec?'Contrato':'Outros'); set('ft-valor',0); set('ft-venc',_ftHoje());
+    set('ft-rep','unica'); set('ft-rep-qtd',2); document.getElementById('ft-rep-wrap').style.display=''; ftAtualizaRep();
+  }
+  const v=document.getElementById('ft-valor'); v.oninput=ftAtualizaRep;
+  openM('m-fintit');
+}
+
+async function salvarFinTitulo(){
+  const g=k=>document.getElementById(k).value;
+  const desc=g('ft-desc').trim(), valor=_ftR2(+g('ft-valor')), venc=g('ft-venc'), tipo=g('ft-tipo'), eid=g('ft-id');
+  if(!desc){alert('Informe a descrição.');return;}
+  if(!(valor>0)){alert('Informe um valor maior que zero.');return;}
+  if(!venc){alert('Informe a data de vencimento.');return;}
+  const base={tipo,categoria:g('ft-cat'),cliente_id:tipo==='receber'?g('ft-cli'):'',fornecedor:tipo==='pagar'?g('ft-forn').trim():'',documento:g('ft-doc').trim(),emissao:g('ft-emissao'),forma_pagamento:g('ft-forma'),centro_custo:g('ft-cc').trim(),observacoes:g('ft-obs')};
+  const btn=document.getElementById('ft-save-btn'); btn.disabled=true;
+  try{
+    if(eid){
+      await api('PUT',`/api/financeiro/titulos/${eid}`,{...base,descricao:desc,valor,vencimento:venc,competencia:g('ft-comp')});
+    } else {
+      const modo=g('ft-rep'), n=modo==='unica'?1:Math.max(2,Math.min(60,parseInt(g('ft-rep-qtd'))||2));
+      const valores=modo==='parcelada'?_ftParcelas(valor,n):Array(n).fill(valor);
+      const grupo=n>1?('g'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)):'';
+      let criadas=0;
+      try{
+        for(let i=0;i<n;i++){
+          const comp=g('ft-comp');
+          await api('POST','/api/financeiro/titulos',{...base,descricao:n>1?`${desc} (${i+1}/${n})`:desc,valor:valores[i],vencimento:_ftAddMes(venc,i),
+            competencia:comp?_ftAddMes(comp+'-01',i).slice(0,7):'',parcela:n>1?`${i+1}/${n}`:'',grupo_id:grupo});
+          criadas++;
+        }
+      }catch(e){ await carregarFinTitulos(); alert(`Foram criadas ${criadas} de ${n} contas. Erro: ${e.message}\nConfira a lista antes de tentar novamente para não duplicar.`); btn.disabled=false; return; }
+    }
+    closeM('m-fintit'); await carregarFinTitulos();
+  }catch(e){alert(e.message);}
+  btn.disabled=false;
+}
+
+async function excluirFinTitulo(id){
+  if(!confirm('Excluir esta conta? Só é possível se não houver baixa registrada.'))return;
+  try{ await api('DELETE',`/api/financeiro/titulos/${id}`); await carregarFinTitulos(); }catch(e){alert(e.message);}
+}
+
+function abrirBaixaTitulo(id){
+  const t=G_finTitulos.find(x=>x.id===id); if(!t)return;
+  const isRec=t.tipo==='receber', cli=(G.clientes||[]).find(x=>x.id===t.cliente_id);
+  document.getElementById('fb-id').value=id;
+  document.getElementById('m-finbaixa-title').textContent=isRec?'Registrar recebimento':'Registrar pagamento';
+  document.getElementById('fb-save-btn').textContent=isRec?'Confirmar recebimento':'Confirmar pagamento';
+  document.getElementById('fb-resumo').innerHTML=`<b>${_ftEsc(t.descricao)}</b><br>${isRec?'Cliente':'Fornecedor'}: ${_ftEsc(isRec?(cli?.nome||'—'):(t.fornecedor||'—'))} · Vencimento: ${fd(t.vencimento)}<br>Valor: ${fm(t.valor)} · Já baixado: ${fm(t.valor_pago||0)} · <b>Saldo: ${fm(_ftSaldo(t))}</b>`;
+  document.getElementById('fb-data').value=_ftHoje();
+  document.getElementById('fb-valor').value=_ftSaldo(t).toFixed(2);
+  document.getElementById('fb-forma').value=t.forma_pagamento||'Transferência';
+  document.getElementById('fb-desc').value=0;
+  ftRecalcBaixa();
+  openM('m-finbaixa');
+}
+
+// Sugere multa e juros (editáveis) quando a baixa é feita depois do vencimento: multa fixa + juros simples pro rata dia
+function ftRecalcBaixa(){
+  const t=G_finTitulos.find(x=>x.id===document.getElementById('fb-id').value); if(!t)return;
+  const principal=+document.getElementById('fb-valor').value||0, dias=_ftDias(t.vencimento,document.getElementById('fb-data').value);
+  const multaPct=+document.getElementById('fb-multa-pct').value||0, jurosPct=+document.getElementById('fb-juros-pct').value||0;
+  const atraso=dias>0;
+  document.getElementById('fb-multa').value=atraso?_ftR2(principal*multaPct/100).toFixed(2):'0.00';
+  document.getElementById('fb-juros').value=atraso?_ftR2(principal*(jurosPct/100)/30*dias).toFixed(2):'0.00';
+  document.getElementById('fb-aviso').textContent=atraso
+    ?`Pagamento com ${dias} dia(s) de atraso. Multa e juros acima são sugestões calculadas pelos percentuais informados (juros simples pro rata dia) — confira o contrato e ajuste os valores se necessário.`
+    :'Sem atraso: multa e juros zerados. Use o desconto para antecipações.';
+  ftTotalBaixa();
+}
+function ftTotalBaixa(){
+  const n=k=>+document.getElementById(k).value||0;
+  const total=_ftR2(n('fb-valor')+n('fb-multa')+n('fb-juros')-n('fb-desc'));
+  const t=G_finTitulos.find(x=>x.id===document.getElementById('fb-id').value);
+  document.getElementById('fb-total').textContent=`Valor que ${t&&t.tipo==='pagar'?'sai do':'entra no'} caixa: ${fm(total)}`;
+}
+async function confirmarBaixaTitulo(){
+  const id=document.getElementById('fb-id').value, n=k=>+document.getElementById(k).value||0;
+  const btn=document.getElementById('fb-save-btn'); btn.disabled=true;
+  try{
+    await api('POST',`/api/financeiro/titulos/${id}/baixar`,{valor_pago:_ftR2(n('fb-valor')),juros:n('fb-juros'),multa:n('fb-multa'),desconto:n('fb-desc'),data_pagamento:document.getElementById('fb-data').value,forma_pagamento:document.getElementById('fb-forma').value});
+    closeM('m-finbaixa');
+    await carregarFinTitulos();
+    await loadFinanceiro(); renderFinLanc(); renderFinKpis();
+  }catch(e){alert(e.message);}
+  btn.disabled=false;
+}
+
+function exportFinTitulosCSV(){
+  const esc=v=>`"${String(v==null?'':v).replace(/"/g,'""')}"`;
+  const cols=['Vencimento','Tipo','Descrição','Cliente/Fornecedor','Documento','Categoria','Centro de custo','Competência','Valor R$','Pago R$','Saldo R$','Situação'];
+  const nomes={pago:'Quitada',vencido:'Vencida',parcial:'Parcial',aberto:'Em aberto'};
+  const num=v=>(v||0).toFixed(2).replace('.',',');
+  const lines=[cols.map(esc).join(';')];
+  _ftFiltrados().forEach(t=>{
+    const cli=(G.clientes||[]).find(x=>x.id===t.cliente_id);
+    lines.push([fd(t.vencimento),t.tipo==='receber'?'A receber':'A pagar',t.descricao,t.tipo==='receber'?cli?.nome:t.fornecedor,t.documento,t.categoria,t.centro_custo,t.competencia,num(t.valor),num(t.valor_pago),num(_ftSaldo(t)),nomes[_ftSit(t)]].map(esc).join(';'));
+  });
+  const blob=new Blob(['\uFEFF'+lines.join('\n')],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`Contas_${_ftHoje()}.csv`;a.click();
 }
 
 function exportFinExcel(){

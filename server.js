@@ -638,7 +638,7 @@ app.get('/api/dashboard', requireAuth, async (req,res) => {
 // BACKUP
 app.get('/api/backup', requireAuth, requireAdmin, async (req,res) => {
   try {
-    const [users,tecnicos,clientes,equipamentos,ordens,laboratorio,logistica,historico,estoque,suprCli,suprMovs,estMovs,lancamentos,contratos,financeiro,agenda,veiculos]=await Promise.all([
+    const [users,tecnicos,clientes,equipamentos,ordens,laboratorio,logistica,historico,estoque,suprCli,suprMovs,estMovs,lancamentos,contratos,financeiro,agenda,veiculos,financeiroTitulos,financeiroConfig]=await Promise.all([
       col('users').find().toArray(),
       col('tecnicos').find().toArray(),
       tenantCol('clientes', req).find().toArray(),
@@ -656,6 +656,8 @@ app.get('/api/backup', requireAuth, requireAdmin, async (req,res) => {
       col('financeiro').find().toArray(),
       col('agenda').find().toArray(),
       col('veiculos').find().toArray(),
+      col('financeiro_titulos').find().toArray(),
+      col('financeiro_config').find().toArray(),
     ]);
     // Converte _id ObjectId para string para preservar referências no restore
     const toStr = arr => arr.map(d => ({...d, _id: d._id?.toString(), id: d._id?.toString()}));
@@ -678,6 +680,8 @@ app.get('/api/backup', requireAuth, requireAdmin, async (req,res) => {
       financeiro:    toStr(financeiro),
       agenda:        toStr(agenda),
       veiculos:      toStr(veiculos),
+      financeiro_titulos: toStr(financeiroTitulos),
+      financeiro_config:  toStr(financeiroConfig),
     };
     res.setHeader('Content-Disposition',`attachment; filename="orion_backup_${new Date().toISOString().slice(0,10)}.json"`);
     res.json(backup);
@@ -718,6 +722,7 @@ app.post('/api/restore', requireAuth, requireAdmin, async (req, res) => {
       { key: 'financeiro',          col: 'financeiro' },
       { key: 'agenda',              col: 'agenda' },
       { key: 'veiculos',            col: 'veiculos' },
+      { key: 'financeiro_titulos',  col: 'financeiro_titulos' },
     ];
 
     const resultados = {};
@@ -728,6 +733,13 @@ app.post('/api/restore', requireAuth, requireAdmin, async (req, res) => {
       await col(colName).deleteMany({});
       const r = await col(colName).insertMany(docs);
       resultados[colName] = r.insertedCount;
+    }
+
+    // Configuração financeira por empresa — o _id é texto ('principal'), então não passa pelo toDoc
+    if (Array.isArray(d.financeiro_config) && d.financeiro_config.length > 0) {
+      await col('financeiro_config').deleteMany({});
+      const r = await col('financeiro_config').insertMany(d.financeiro_config.map(({ id, ...rest }) => rest));
+      resultados['financeiro_config'] = r.insertedCount;
     }
 
     // Restaurar usuários — preserva master, reimporta os demais com _id original
@@ -805,21 +817,128 @@ app.put('/api/contratos/:id', requireAuth, async (req,res) => {
 });
 app.delete('/api/contratos/:id', requireAuth, async (req,res) => { try{await col('contratos').deleteOne({_id:new ObjectId(req.params.id)});res.json({ok:true});}catch(e){res.status(500).json({error:e.message});} });
 
-// FINANCEIRO
-app.get('/api/financeiro', requireAuth, async (req,res) => { const d=await col('financeiro').find().sort({data:-1}).toArray(); res.json(d.map(x=>({...x,id:x._id.toString()}))); });
+// FINANCEIRO — base multiempresa. Registros antigos sem tenant_id ficam visíveis
+// exclusivamente ao tenant padrão até que a titularidade seja conferida/migrada.
+function filtroFinanceiroTenant(req, id) {
+  const tid = req.session?.user?.tenant_id || TENANT_PADRAO;
+  const base = tid === TENANT_PADRAO
+    ? { $or: [{ tenant_id: tid }, { tenant_id: { $exists: false } }] }
+    : { tenant_id: tid };
+  return id ? { $and: [base, { _id: id }] } : base;
+}
+// Acesso às rotas financeiras novas (config e títulos): somente admin, supervisor,
+// perfil financeiro e master — espelha quem enxerga o módulo Financeiro na tela.
+// As rotas antigas /api/financeiro (lançamentos) NÃO usam isto de propósito: o módulo
+// de OS e de Contratos grava receita automática nelas com qualquer perfil logado.
+function requireFinanceiroAcesso(req,res,next){
+  const u=req.session&&req.session.user;
+  if(u&&(u.isMaster||u.role==='admin'||['admin','supervisor','financeiro'].includes(u.perfil)))return next();
+  res.status(403).json({error:'Acesso negado ao módulo Financeiro.'});
+}
+
+// CONFIGURAÇÃO FISCAL/FINANCEIRA POR EMPRESA — não armazena certificado nem senha bancária.
+app.get('/api/financeiro/config', requireAuth, requireFinanceiroAcesso, async (req,res) => {
+  try { const cfg=await tenantCol('financeiro_config',req).findOne({_id:'principal'}); res.json(cfg?.dados||{}); }
+  catch(e){res.status(500).json({error:e.message});}
+});
+app.put('/api/financeiro/config', requireAuth, requireFinanceiroAcesso, async (req,res) => {
+  try {
+    const b=req.body||{};
+    const regime=['MEI','Simples Nacional','Lucro Presumido','Lucro Real','Não definido','Outro'].includes(b.regime)?b.regime:'Não definido';
+    const situacao=['Ativa','Em abertura','Suspensa','Inativa'].includes(b.situacao)?b.situacao:'Ativa';
+    const emissao=['NFS-e','NF-e','NFC-e','NFS-e e NF-e','Não definido'].includes(b.emissao)?b.emissao:'Não definido';
+    const dados={razao_social:String(b.razao_social||'').trim(),nome_fantasia:String(b.nome_fantasia||'').trim(),cnpj:String(b.cnpj||'').replace(/\D/g,''),inscricao_estadual:String(b.inscricao_estadual||'').trim(),inscricao_municipal:String(b.inscricao_municipal||'').trim(),cnae:String(b.cnae||'').trim(),municipio:String(b.municipio||'').trim(),uf:String(b.uf||'').trim().toUpperCase().slice(0,2),regime,situacao,atividade:b.atividade||'Serviços',emissao,provedor_fiscal:b.provedor_fiscal||'A definir',integracao_bancaria:b.integracao_bancaria||'Não configurada',updated_at:now()};
+    await tenantCol('financeiro_config',req).updateOne({_id:'principal'},{$set:{dados,updated_at:now()},$setOnInsert:{created_at:now()}},{upsert:true});
+    res.json({ok:true,dados});
+  } catch(e){res.status(500).json({error:e.message});}
+});
+
+app.get('/api/financeiro', requireAuth, async (req,res) => {
+  try { const d=await col('financeiro').find(filtroFinanceiroTenant(req)).sort({data:-1}).toArray(); res.json(d.map(x=>({...x,id:x._id.toString()}))); }
+  catch(e){res.status(500).json({error:e.message});}
+});
 app.post('/api/financeiro', requireAuth, async (req,res) => {
-  try{const b=req.body;
-    const r=await col('financeiro').insertOne({tipo:b.tipo||'receita',data:b.data||'',categoria:b.categoria||'Outros',descricao:b.descricao||'',valor:+(b.valor||0),cliente_id:b.cliente_id||'',ref:b.ref||'',forma:b.forma||'',obs:b.obs||'',created_at:now()});
+  try{const b=req.body; const tid=req.session?.user?.tenant_id||TENANT_PADRAO;
+    const valor=Number(b.valor); if(!Number.isFinite(valor)||valor<=0) return res.status(400).json({error:'Informe um valor maior que zero.'});
+    const r=await col('financeiro').insertOne({tenant_id:tid,tipo:b.tipo==='despesa'?'despesa':'receita',data:b.data||'',categoria:b.categoria||'Outros',descricao:String(b.descricao||'').trim(),valor,cliente_id:b.cliente_id||'',ref:b.ref||'',forma:b.forma||'',obs:b.obs||'',origem:b.origem||'manual',created_at:now(),updated_at:now()});
     res.json({ok:true,id:r.insertedId.toString()});
   }catch(e){res.status(500).json({error:e.message});}
 });
 app.put('/api/financeiro/:id', requireAuth, async (req,res) => {
-  try{const b=req.body;
-    await col('financeiro').updateOne({_id:new ObjectId(req.params.id)},{$set:{tipo:b.tipo,data:b.data||'',categoria:b.categoria,descricao:b.descricao,valor:+(b.valor||0),cliente_id:b.cliente_id||'',ref:b.ref||'',forma:b.forma||'',obs:b.obs||''}});
-    res.json({ok:true});
+  try{const b=req.body; const valor=Number(b.valor); if(!Number.isFinite(valor)||valor<=0) return res.status(400).json({error:'Informe um valor maior que zero.'});
+    const r=await col('financeiro').updateOne(filtroFinanceiroTenant(req,new ObjectId(req.params.id)),{$set:{tipo:b.tipo==='despesa'?'despesa':'receita',data:b.data||'',categoria:b.categoria||'Outros',descricao:String(b.descricao||'').trim(),valor,cliente_id:b.cliente_id||'',ref:b.ref||'',forma:b.forma||'',obs:b.obs||'',updated_at:now()}});
+    if(!r.matchedCount)return res.status(404).json({error:'Lançamento não encontrado nesta empresa.'}); res.json({ok:true});
   }catch(e){res.status(500).json({error:e.message});}
 });
-app.delete('/api/financeiro/:id', requireAuth, async (req,res) => { try{await col('financeiro').deleteOne({_id:new ObjectId(req.params.id)});res.json({ok:true});}catch(e){res.status(500).json({error:e.message});} });
+app.delete('/api/financeiro/:id', requireAuth, async (req,res) => { try{const r=await col('financeiro').deleteOne(filtroFinanceiroTenant(req,new ObjectId(req.params.id))); if(!r.deletedCount)return res.status(404).json({error:'Lançamento não encontrado nesta empresa.'}); res.json({ok:true});}catch(e){res.status(500).json({error:e.message});} });
+
+// TÍTULOS A PAGAR/RECEBER — separados do caixa realizado. O caixa (lançamentos) só é afetado na baixa.
+const round2Fin = n => Math.round((Number(n)+Number.EPSILON)*100)/100;
+const statusTituloFin = (valor, pago) => { valor=round2Fin(valor); pago=round2Fin(pago); return pago>=valor ? 'pago' : (pago>0 ? 'parcial' : 'aberto'); };
+const dataIsoFin = v => /^\d{4}-\d{2}-\d{2}$/.test(String(v||''));
+const nonNegFin = v => { const n=Number(v||0); return Number.isFinite(n)&&n>=0 ? round2Fin(n) : NaN; };
+app.get('/api/financeiro/titulos', requireAuth, requireFinanceiroAcesso, async (req,res) => {
+  try { const filtro={}; if(req.query.tipo && ['pagar','receber'].includes(req.query.tipo))filtro.tipo=req.query.tipo; const d=await tenantCol('financeiro_titulos',req).find(filtro).sort({vencimento:1}).toArray(); res.json(d.map(x=>({...x,id:x._id.toString()}))); }
+  catch(e){res.status(500).json({error:e.message});}
+});
+app.post('/api/financeiro/titulos', requireAuth, requireFinanceiroAcesso, async (req,res) => {
+  try { const b=req.body||{}; const valor=round2Fin(b.valor);
+    if(!Number.isFinite(valor)||valor<=0)return res.status(400).json({error:'Valor do título inválido.'});
+    if(!['pagar','receber'].includes(b.tipo))return res.status(400).json({error:'Tipo deve ser pagar ou receber.'});
+    if(!b.descricao||!String(b.descricao).trim())return res.status(400).json({error:'Informe a descrição.'});
+    if(!dataIsoFin(b.vencimento))return res.status(400).json({error:'Informe a data de vencimento.'});
+    const doc={tipo:b.tipo,descricao:String(b.descricao).trim(),categoria:b.categoria||'Outros',cliente_id:b.cliente_id||'',fornecedor:String(b.fornecedor||'').trim(),documento:String(b.documento||'').trim(),emissao:b.emissao||'',competencia:b.competencia||'',vencimento:b.vencimento,valor,valor_pago:0,status:'aberto',forma_pagamento:b.forma_pagamento||'',centro_custo:String(b.centro_custo||'').trim(),parcela:String(b.parcela||'').slice(0,20),grupo_id:String(b.grupo_id||'').slice(0,60),baixas:[],observacoes:b.observacoes||'',origem:b.origem||'manual',origem_id:b.origem_id||'',created_at:now(),updated_at:now()};
+    const r=await tenantCol('financeiro_titulos',req).insertOne(doc); res.json({ok:true,id:r.insertedId.toString(),titulo:doc});
+  } catch(e){res.status(500).json({error:e.message});}
+});
+app.put('/api/financeiro/titulos/:id', requireAuth, requireFinanceiroAcesso, async (req,res) => {
+  try { const b=req.body||{}; const valor=round2Fin(b.valor);
+    if(!Number.isFinite(valor)||valor<=0)return res.status(400).json({error:'Valor do título inválido.'});
+    if(!String(b.descricao||'').trim())return res.status(400).json({error:'Informe a descrição.'});
+    if(!dataIsoFin(b.vencimento))return res.status(400).json({error:'Informe a data de vencimento.'});
+    const tc=tenantCol('financeiro_titulos',req); const t=await tc.findOne({_id:new ObjectId(req.params.id)}); if(!t)return res.status(404).json({error:'Título não encontrado.'});
+    const pago=round2Fin(t.valor_pago||0); if(valor<pago)return res.status(400).json({error:'O valor não pode ser menor que o já baixado (R$ '+pago.toFixed(2).replace('.',',')+').'});
+    await tc.updateOne({_id:t._id},{$set:{descricao:String(b.descricao).trim(),categoria:b.categoria||'Outros',cliente_id:b.cliente_id||'',fornecedor:String(b.fornecedor||'').trim(),documento:String(b.documento||'').trim(),emissao:b.emissao||'',competencia:b.competencia||'',vencimento:b.vencimento,valor,status:statusTituloFin(valor,pago),forma_pagamento:b.forma_pagamento||'',centro_custo:String(b.centro_custo||'').trim(),observacoes:b.observacoes||'',updated_at:now()}});
+    res.json({ok:true});
+  } catch(e){res.status(500).json({error:e.message});}
+});
+app.delete('/api/financeiro/titulos/:id', requireAuth, requireFinanceiroAcesso, async (req,res) => {
+  try { const tc=tenantCol('financeiro_titulos',req); const t=await tc.findOne({_id:new ObjectId(req.params.id)}); if(!t)return res.status(404).json({error:'Título não encontrado.'});
+    if(round2Fin(t.valor_pago||0)>0||(t.baixas||[]).length)return res.status(409).json({error:'Título com baixa registrada não pode ser excluído.'});
+    await tc.deleteOne({_id:t._id}); res.json({ok:true});
+  } catch(e){res.status(500).json({error:e.message});}
+});
+// Baixa (pagamento/recebimento). valor_pago = principal quitado; juros/multa somam e desconto subtrai do valor que entra no caixa.
+app.post('/api/financeiro/titulos/:id/baixar', requireAuth, requireFinanceiroAcesso, async (req,res) => {
+  try {
+    const b=req.body||{};
+    const tc=tenantCol('financeiro_titulos',req);
+    const t=await tc.findOne({_id:new ObjectId(req.params.id)}); if(!t)return res.status(404).json({error:'Título não encontrado.'}); if(t.status==='pago')return res.status(409).json({error:'Este título já foi baixado.'});
+    const jaPago=round2Fin(t.valor_pago||0); const saldo=Math.max(0,round2Fin(Number(t.valor)-jaPago)); const valorPago=round2Fin(b.valor_pago??saldo);
+    if(!Number.isFinite(valorPago)||valorPago<=0||valorPago>saldo)return res.status(400).json({error:'Valor pago inválido ou superior ao saldo do título.'});
+    const juros=nonNegFin(b.juros), multa=nonNegFin(b.multa), desconto=nonNegFin(b.desconto);
+    if([juros,multa,desconto].some(Number.isNaN))return res.status(400).json({error:'Juros, multa e desconto devem ser valores positivos.'});
+    const valorCaixa=round2Fin(valorPago+juros+multa-desconto);
+    if(valorCaixa<0)return res.status(400).json({error:'O desconto não pode ser maior que o total a pagar.'});
+    const acumulado=round2Fin(jaPago+valorPago); const dataPg=dataIsoFin(b.data_pagamento)?b.data_pagamento:now().slice(0,10); const forma=b.forma_pagamento||t.forma_pagamento||'';
+    const baixasAntes=Array.isArray(t.baixas)?[...t.baixas]:[];
+    const antes={status:t.status||'aberto',data_pagamento:t.data_pagamento||'',forma_pagamento:t.forma_pagamento||''};
+    const u=req.session&&req.session.user; const nova={data:dataPg,principal:valorPago,juros,multa,desconto,valor_caixa:valorCaixa,forma,por:(u&&(u.nome||u.login))||'',em:now()};
+    const upd=await tc.updateOne({_id:t._id,status:{$ne:'pago'},valor_pago: t.valor_pago ?? {$in:[null,0]}},{$set:{status:statusTituloFin(t.valor,acumulado),valor_pago:acumulado,data_pagamento:dataPg,forma_pagamento:forma,baixas:[...baixasAntes,nova],updated_at:now()}});
+    if(!upd.modifiedCount)return res.status(409).json({error:'O título foi alterado por outra operação. Atualize e tente novamente.'});
+    if(valorCaixa>0){
+      try {
+        const extras=[juros?`juros R$ ${juros.toFixed(2)}`:'',multa?`multa R$ ${multa.toFixed(2)}`:'',desconto?`desconto R$ ${desconto.toFixed(2)}`:''].filter(Boolean).join(', ');
+        await tenantCol('financeiro',req).insertOne({tipo:t.tipo==='receber'?'receita':'despesa',data:dataPg,categoria:t.categoria||'Outros',descricao:t.descricao,valor:valorCaixa,cliente_id:t.cliente_id||'',ref:`Título ${req.params.id}`,forma,obs:'Baixa de título a pagar/receber'+(extras?` (principal R$ ${valorPago.toFixed(2)}; ${extras})`:''),origem:'baixa_titulo',origem_id:req.params.id,created_at:now()});
+      } catch(errCaixa) {
+        // desfaz a baixa do título para não ficar título pago sem o lançamento no caixa
+        await tc.updateOne({_id:t._id},{$set:{status:antes.status,valor_pago:jaPago,data_pagamento:antes.data_pagamento,forma_pagamento:antes.forma_pagamento,baixas:baixasAntes,updated_at:now()}});
+        throw errCaixa;
+      }
+    }
+    res.json({ok:true,valor_caixa:valorCaixa});
+  } catch(e){res.status(500).json({error:e.message});}
+});
 
 // LANÇAMENTOS MANUAIS (histórico sem OS)
 app.get('/api/lancamentos', requireAuth, async (req,res) => {
