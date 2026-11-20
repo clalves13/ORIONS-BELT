@@ -1252,6 +1252,33 @@ label { font-size: 11px !important; font-weight: 600 !important; color: #475569 
 .crit-pulse { animation: dkpi-enter .55s both, crit-glow 3s ease-in-out 1s infinite !important; }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+/* ── Financeiro: abas e configuração (escopo restrito à página Financeiro) ── */
+#fin-tabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:14px;padding:4px;background:var(--sf);border:1px solid var(--bd);border-radius:10px}
+#fin-tabs .log-tab{border:0;border-radius:7px;padding:8px 14px;font-size:13px;background:transparent;box-shadow:none}
+#fin-tabs .log-tab.active{background:var(--nv);color:#fff}
+#page-financeiro .fin-cfg-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:14px}
+#page-financeiro .fin-cfg-title{font-weight:700;font-size:15px;color:var(--nv)}
+#page-financeiro .fin-cfg-sub{font-size:12px;color:var(--tx3);max-width:640px;line-height:1.5;margin-top:3px}
+#page-financeiro .fin-sec{background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:14px 16px;margin-bottom:12px}
+#page-financeiro .fin-sec h4{margin:0 0 10px;font-size:13px;font-weight:700;color:var(--nv)}
+#page-financeiro .fin-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+</style>
+<style>
+/* Financeiro: visual limpo (escopo: página Financeiro) */
+#page-financeiro .fin-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:14px}
+#page-financeiro .fin-kpi{background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:12px 14px}
+#page-financeiro .fin-kpi-l{font-size:12px;color:var(--tx3)}#page-financeiro .fin-kpi-v{font-size:21px;font-weight:700;margin:3px 0 2px}#page-financeiro .fin-kpi-s{font-size:11px;color:var(--tx3)}
+#page-financeiro .fin-cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:12px}
+#page-financeiro .fin-mes,#page-financeiro .fin-bar select,#page-financeiro .fin-bar input{height:34px;padding:0 10px;border:1px solid var(--bd);border-radius:7px;font-size:13px;background:var(--sf);color:var(--tx)}
+#page-financeiro .fin-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+#page-financeiro .fin-meta{font-size:12px;color:var(--tx3);display:flex;gap:6px;align-items:center}#page-financeiro .fin-meta input{width:110px}
+#page-financeiro .fv-leg{font-size:11px;color:var(--tx3);display:flex;gap:6px;align-items:center;margin-top:4px}#page-financeiro .fv-leg i{width:10px;height:10px;border-radius:2px;display:inline-block;margin-left:8px}#page-financeiro .fv-leg i:first-child{margin-left:0}
+#page-financeiro .fv-vazio{font-size:12px;color:var(--tx3);padding:18px 0}#page-financeiro .fv-sub{font-size:11px;font-weight:700;color:var(--tx3);margin:6px 0 2px}
+#page-financeiro .hb{display:grid;grid-template-columns:130px 1fr 96px;gap:8px;align-items:center;font-size:12px;margin:5px 0}#page-financeiro .hb-l{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#page-financeiro .hb-t{background:var(--bg,#eef1f6);border-radius:4px;height:10px}#page-financeiro .hb-b{height:10px;border-radius:4px}#page-financeiro .hb-v{text-align:right;font-weight:600}
+#fin-relnav{gap:6px;margin:-4px 0 12px}#fin-relnav button{border:1px solid var(--bd);background:var(--sf);color:var(--tx2);border-radius:20px;padding:5px 14px;font-size:12px;cursor:pointer}#fin-relnav button.active{background:var(--nv);color:#fff;border-color:var(--nv)}
+</style>
 </head>
 <body>
 
@@ -2554,44 +2581,23 @@ label { font-size: 11px !important; font-weight: 600 !important; color: #475569 
 <!-- FINANCEIRO -->
 <div id="page-financeiro" class="page">
   <div class="topbar">
-    <div><div class="tb-title">Financeiro</div><div class="tb-sub">Receitas, despesas e DRE</div></div>
-    <div class="tb-right">
+    <div><div class="tb-title">Financeiro</div><div class="tb-sub">Resultado, contas, relatórios e configuração fiscal</div></div>
+    <div class="tb-right" id="fin-top-actions" style="display:none">
       <button class="btn btn-ghost btn-sm" onclick="exportFinExcel()">📊 Excel</button>
       <button class="btn btn-success btn-sm" onclick="openLancFin('receita')">+ Receita</button>
       <button class="btn btn-danger btn-sm" onclick="openLancFin('despesa')">− Despesa</button>
     </div>
   </div>
   <div class="content">
-    <div class="card" style="margin-bottom:14px;padding:14px">
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">
-        <div><div style="font-weight:700;color:var(--nv);font-size:14px">⚙️ Configuração fiscal e financeira da empresa</div><div style="font-size:11px;color:var(--tx3)">Informe os dados fiscais da sua empresa e como pretende emitir notas fiscais. Por enquanto, o Orion apenas salvará essas configurações; a emissão de notas e o uso de certificado digital serão habilitados em uma etapa futura.</div></div>
-        <button class="btn btn-primary btn-sm" onclick="salvarConfigFinanceira()">💾 Salvar configuração</button>
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px">
-        <div class="fg"><label>Razão social</label><input id="fin-cfg-razao" placeholder="Razão social"></div>
-        <div class="fg"><label>Nome fantasia</label><input id="fin-cfg-fantasia" placeholder="Nome fantasia"></div>
-        <div class="fg"><label>CNPJ</label><input id="fin-cfg-cnpj" inputmode="numeric" maxlength="18" placeholder="00.000.000/0000-00"></div>
-        <div class="fg"><label>Inscrição municipal</label><input id="fin-cfg-im" placeholder="Inscrição municipal"></div>
-        <div class="fg"><label>Inscrição estadual</label><input id="fin-cfg-ie" placeholder="Inscrição estadual"></div>
-        <div class="fg"><label>CNAE</label><input id="fin-cfg-cnae" placeholder="Código CNAE"></div>
-        <div class="fg"><label>Município</label><input id="fin-cfg-municipio" placeholder="Município"></div>
-        <div class="fg"><label>UF</label><input id="fin-cfg-uf" maxlength="2" placeholder="UF"></div>
-        <div class="fg"><label>Regime tributário</label><select id="fin-cfg-regime"><option>Não definido</option><option>MEI</option><option>Simples Nacional</option><option>Lucro Presumido</option><option>Lucro Real</option><option>Outro</option></select></div>
-        <div class="fg"><label>Situação da empresa</label><select id="fin-cfg-situacao"><option>Ativa</option><option>Em abertura</option><option>Suspensa</option><option>Inativa</option></select></div>
-        <div class="fg"><label>Atividade principal</label><select id="fin-cfg-atividade"><option>Serviços</option><option>Comércio</option><option>Indústria</option><option>Serviços e comércio</option><option>Mista</option></select></div>
-        <div class="fg"><label>Doc fiscal principal</label><select id="fin-cfg-emissao"><option>Não definido</option><option>NFS-e</option><option>NF-e</option><option>NFC-e</option><option>NFS-e e NF-e</option></select></div>
-        <div class="fg"><label>Emissor / provedor fiscal</label><input id="fin-cfg-provedor" placeholder="Nacional, municipal ou provedor"></div>
-        <div class="fg"><label>Integração bancária</label><select id="fin-cfg-banco"><option>Não configurada</option><option>Banco próprio / API</option><option>Provedor de cobrança</option><option>Arquivo de retorno CNAB</option></select></div>
-      </div>
-      <div id="fin-cfg-msg" style="display:none;margin-top:10px;font-size:12px;padding:8px 10px;border-radius:7px"></div>
-    </div>
-    <div id="fin-kpis" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:10px;margin-bottom:14px"></div>
-    <div style="border-bottom:1px solid #e2e8f0;margin-bottom:12px;display:flex;gap:0">
-      <button class="log-tab active" id="ftab-lancamentos" onclick="switchFinTab('lancamentos')">📒 Lançamentos</button>
-      <button class="log-tab" id="ftab-dre" onclick="switchFinTab('dre')">📊 DRE</button>
-      <button class="log-tab" id="ftab-fluxo" onclick="switchFinTab('fluxo')">📈 Fluxo de Caixa</button>
+    <div id="fin-kpis" style="display:none;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:10px;margin-bottom:14px"></div>
+    <div id="fin-tabs">
+      <button class="log-tab active" id="ftab-visao" onclick="switchFinTab('visao')">📊 Visão geral</button>
+      <button class="log-tab" id="ftab-lancamentos" onclick="switchFinTab('lancamentos')">📒 Lançamentos</button>
       <button class="log-tab" id="ftab-titulos" onclick="switchFinTab('titulos')">💳 Contas a Pagar/Receber</button>
+      <button class="log-tab" id="ftab-rel" onclick="switchFinTab('rel')">🧾 Relatórios</button>
+      <button class="log-tab" id="ftab-config" onclick="switchFinTab('config')">⚙️ Configuração fiscal</button>
     </div>
+    <div id="fin-relnav" style="display:none"><button data-t="rel" onclick="switchFinTab('rel')">Demonstrativo</button><button data-t="dre" onclick="switchFinTab('dre')">DRE</button><button data-t="fluxo" onclick="switchFinTab('fluxo')">Fluxo de caixa</button></div>
     <!-- Filtros período -->
     <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
       <div class="swrap" style="flex:1;min-width:160px"><span style="color:var(--tx3)">🔍</span><input type="text" id="s-fin" placeholder="Buscar descrição, categoria..." oninput="renderFinLanc()"></div>
@@ -2606,11 +2612,34 @@ label { font-size: 11px !important; font-weight: 600 !important; color: #475569 
       <input type="date" id="f-fin-ate" onchange="renderFinLanc()" style="height:34px;padding:0 8px;border:1px solid var(--bd);border-radius:7px;font-size:13px;background:var(--sf);color:var(--tx)">
     </div>
     <!-- Aba Lançamentos -->
-    <div id="fin-tab-lancamentos">
+    <!-- Aba Visão geral -->
+    <div id="fin-tab-visao">
+      <div class="fin-cfg-head"><div><div class="fin-cfg-title">Visão geral</div><div class="fin-cfg-sub" id="fv-sub">Receitas e despesas em regime de caixa (já recebido e pago). Contas em aberto vêm de Contas a Pagar/Receber.</div></div>
+        <input type="month" id="fv-mes" onchange="renderFinVisao()" class="fin-mes"></div>
+      <div id="fv-kpis" class="fin-kpis"></div>
+      <div class="fin-cols">
+        <div class="fin-sec"><h4>Receitas e despesas — últimos 6 meses</h4><div id="fv-ch1"></div></div>
+        <div class="fin-sec"><h4>Despesas por categoria no mês</h4><div id="fv-ch2"></div></div>
+        <div class="fin-sec"><h4>Contas em aberto por vencimento</h4><div id="fv-ch3"></div></div>
+        <div class="fin-sec"><h4>Maiores clientes no mês (receita recebida)</h4><div id="fv-ch4"></div></div>
+      </div>
+    </div>
+    <div id="fin-tab-lancamentos" style="display:none">
       <div class="card" style="padding:0"><div class="twrap"><table>
         <thead><tr><th>Data</th><th>Tipo</th><th>Categoria</th><th>Descrição</th><th>Valor R$</th><th>Ref.</th><th>Ações</th></tr></thead>
         <tbody id="tb-fin"></tbody>
       </table></div></div>
+    </div>
+    <!-- Aba Relatórios (Demonstrativo) -->
+    <div id="fin-tab-rel" style="display:none">
+      <div class="fin-bar">
+        <select id="fd-per" onchange="renderFinDemo()"><option value="mes">Mês atual</option><option value="mesant">Mês anterior</option><option value="tri">Trimestre atual</option><option value="ano">Ano atual</option><option value="custom">Personalizado</option></select>
+        <input type="date" id="fd-de" onchange="document.getElementById('fd-per').value='custom';renderFinDemo()"><span>até</span><input type="date" id="fd-ate" onchange="document.getElementById('fd-per').value='custom';renderFinDemo()">
+        <label class="fin-meta">Meta de salários (% da receita) <input type="number" id="fd-meta" min="0" max="100" step="0.1" placeholder="não definida" onchange="renderFinDemo()"></label>
+        <span style="flex:1"></span>
+        <button class="btn btn-ghost btn-sm" onclick="exportFinDemoCSV()">📊 Excel</button><button class="btn btn-primary btn-sm" onclick="imprimirFinDemo()">🖨️ Imprimir / PDF</button>
+      </div>
+      <div class="card" style="padding:18px"><div id="fin-demo" class="demo"></div></div>
     </div>
     <!-- Aba DRE -->
     <div id="fin-tab-dre" style="display:none">
@@ -2619,6 +2648,38 @@ label { font-size: 11px !important; font-weight: 600 !important; color: #475569 
     <!-- Aba Fluxo -->
     <div id="fin-tab-fluxo" style="display:none">
       <div id="fin-fluxo-content"></div>
+    </div>
+    <!-- Aba Configuração fiscal -->
+    <div id="fin-tab-config" style="display:none">
+      <div class="fin-cfg-head">
+        <div><div class="fin-cfg-title">Configuração fiscal e financeira</div>
+        <div class="fin-cfg-sub">Informe os dados fiscais da sua empresa e como pretende emitir notas fiscais. Por enquanto, o Orion apenas salvará essas configurações; a emissão de notas e o uso de certificado digital serão habilitados em uma etapa futura.</div></div>
+        <button class="btn btn-primary" onclick="salvarConfigFinanceira()">Salvar configuração</button>
+      </div>
+      <div class="fin-sec"><h4>Dados da empresa</h4>
+        <div class="fin-grid">
+          <div class="fg"><label>Razão social</label><input id="fin-cfg-razao" placeholder="Razão social"></div>
+          <div class="fg"><label>Nome fantasia</label><input id="fin-cfg-fantasia" placeholder="Nome fantasia"></div>
+          <div class="fg"><label>CNPJ</label><input id="fin-cfg-cnpj" inputmode="numeric" maxlength="18" placeholder="00.000.000/0000-00"></div>
+          <div class="fg"><label>Inscrição municipal</label><input id="fin-cfg-im" placeholder="Inscrição municipal"></div>
+          <div class="fg"><label>Inscrição estadual</label><input id="fin-cfg-ie" placeholder="Inscrição estadual"></div>
+          <div class="fg"><label>CNAE</label><input id="fin-cfg-cnae" placeholder="Código CNAE"></div>
+          <div class="fg"><label>Município</label><input id="fin-cfg-municipio" placeholder="Município"></div>
+          <div class="fg"><label>UF</label><input id="fin-cfg-uf" maxlength="2" placeholder="UF"></div>
+        </div></div>
+      <div class="fin-sec"><h4>Tributação</h4>
+        <div class="fin-grid">
+          <div class="fg"><label>Regime tributário</label><select id="fin-cfg-regime"><option>Não definido</option><option>MEI</option><option>Simples Nacional</option><option>Lucro Presumido</option><option>Lucro Real</option><option>Outro</option></select></div>
+          <div class="fg"><label>Situação da empresa</label><select id="fin-cfg-situacao"><option>Ativa</option><option>Em abertura</option><option>Suspensa</option><option>Inativa</option></select></div>
+          <div class="fg"><label>Atividade principal</label><select id="fin-cfg-atividade"><option>Serviços</option><option>Comércio</option><option>Indústria</option><option>Serviços e comércio</option><option>Mista</option></select></div>
+        </div></div>
+      <div class="fin-sec"><h4>Emissão de notas e banco</h4>
+        <div class="fin-grid">
+          <div class="fg"><label>Documento fiscal principal</label><select id="fin-cfg-emissao"><option>Não definido</option><option>NFS-e</option><option>NF-e</option><option>NFC-e</option><option>NFS-e e NF-e</option></select></div>
+          <div class="fg"><label>Emissor / provedor fiscal</label><input id="fin-cfg-provedor" placeholder="Nacional, municipal ou provedor"></div>
+          <div class="fg"><label>Integração bancária</label><select id="fin-cfg-banco"><option>Não configurada</option><option>Banco próprio / API</option><option>Provedor de cobrança</option><option>Arquivo de retorno CNAB</option></select></div>
+        </div></div>
+      <div id="fin-cfg-msg" style="display:none;margin-top:10px;font-size:12px;padding:8px 10px;border-radius:7px"></div>
     </div>
     <!-- Aba Contas a Pagar/Receber -->
     <div id="fin-tab-titulos" style="display:none">
@@ -5071,7 +5132,7 @@ function nav(p, el) {
   }
   const pg = document.getElementById('page-'+p); if(pg) pg.classList.add('active');
   if(el) el.classList.add('active');
-  const renders = { os:renderOS, logistica:renderLogistica, lab:renderLab, clientes:renderClientes, tecnicos:renderTec, usuarios:renderUsers, historico:renderHist, equipamentos:renderEquipamentos, estoque:async()=>{await loadEstMovs();renderEstoque();renderEstKpis();}, 'supr-cli':renderSuprCli, dashboard:loadDash, contratos:async()=>{await loadContratos();renderContratos();}, financeiro:async()=>{await loadFinanceiro();renderFinLanc();renderFinKpis();}, notificacoes:async()=>{await gerarNotificacoes();}, relatorios:()=>{ setRelPeriodo('mes'); renderRelatorios(); }, configuracoes:()=>{loadCfg();}, agenda:async()=>{await loadAgenda();renderAgenda();} };
+  const renders = { os:renderOS, logistica:renderLogistica, lab:renderLab, clientes:renderClientes, tecnicos:renderTec, usuarios:renderUsers, historico:renderHist, equipamentos:renderEquipamentos, estoque:async()=>{await loadEstMovs();renderEstoque();renderEstKpis();}, 'supr-cli':renderSuprCli, dashboard:loadDash, contratos:async()=>{await loadContratos();renderContratos();}, financeiro:async()=>{await loadFinanceiro();renderFinLanc();renderFinKpis();switchFinTab(_finTab);}, notificacoes:async()=>{await gerarNotificacoes();}, relatorios:()=>{ setRelPeriodo('mes'); renderRelatorios(); }, configuracoes:()=>{loadCfg();}, agenda:async()=>{await loadAgenda();renderAgenda();} };
   if(renders[p]) renders[p]();
   // Auto-refresh: inicia ao entrar na OS, para ao sair
   if (p === 'os') { iniciarAutoRefreshOS(); } else { pararAutoRefreshOS(); }
@@ -8157,16 +8218,20 @@ async function lancarReceitaOS(os) {
   } catch(e){ console.log('Erro ao lançar receita OS:',e); }
 }
 
+let _finTab='visao';
 function switchFinTab(tab) {
-  ['lancamentos','dre','fluxo','titulos'].forEach(t=>{
-    document.getElementById(`fin-tab-${t}`).style.display=t===tab?'':'none';
-    document.getElementById(`ftab-${t}`).classList.toggle('active',t===tab);
-  });
-  // a barra de filtros de lançamentos não se aplica à aba de contas (que tem filtros próprios)
-  const barraFiltros=document.getElementById('s-fin')?.parentElement?.parentElement; if(barraFiltros)barraFiltros.style.display=tab==='titulos'?'none':'';
+  _finTab=tab; const rels=['rel','dre','fluxo'], aba=rels.includes(tab)?'rel':tab;
+  ['visao','lancamentos','titulos','rel','dre','fluxo','config'].forEach(t=>{const p=document.getElementById('fin-tab-'+t); if(p)p.style.display=t===tab?'':'none';});
+  ['visao','lancamentos','titulos','rel','config'].forEach(t=>{const b=document.getElementById('ftab-'+t); if(b)b.classList.toggle('active',t===aba);});
+  const show=(id,v)=>{const e=document.getElementById(id); if(e)e.style.display=v;};
+  show('fin-kpis',tab==='lancamentos'?'grid':'none'); show('fin-top-actions',tab==='lancamentos'?'':'none'); show('fin-relnav',rels.includes(tab)?'flex':'none');
+  const barra=document.getElementById('s-fin')?.parentElement?.parentElement; if(barra)barra.style.display=(tab==='lancamentos'||tab==='dre'||tab==='fluxo')?'':'none';
+  document.querySelectorAll('#fin-relnav button').forEach(b=>b.classList.toggle('active',b.dataset.t===tab));
+  if(tab==='visao')renderFinVisao();
   if(tab==='dre')renderFinDRE();
   if(tab==='fluxo')renderFinFluxo();
   if(tab==='titulos')carregarFinTitulos();
+  if(tab==='rel')renderFinDemo();
 }
 
 function renderFinKpis() {
@@ -8575,6 +8640,78 @@ function exportFinTitulosCSV(){
   const blob=new Blob(['\uFEFF'+lines.join('\n')],{type:'text/csv;charset=utf-8'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`Contas_${_ftHoje()}.csv`;a.click();
 }
+
+// ─── VISÃO GERAL (dashboard) ──────────────────────────────
+const _fvMeses=(mes,n)=>{const [y,m]=mes.split('-').map(Number);return Array.from({length:n},(_,i)=>{const d=new Date(y,m-1-(n-1-i),1);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;});};
+const _fvSoma=(mes,tipo)=>_ftR2(G_financeiro.filter(l=>l.tipo===tipo&&(l.data||'').slice(0,7)===mes).reduce((s,l)=>s+(l.valor||0),0));
+function _fvBarras(ms,rec,desp){const W=560,H=190,pb=26,pt=10,mx=Math.max(1,...rec,...desp),bh=H-pb-pt,gw=W/ms.length,bw=gw*0.3;
+  let s=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block" role="img" aria-label="Receitas e despesas por mês"><line x1="0" x2="${W}" y1="${pt+bh}" y2="${pt+bh}" stroke="var(--bd)"/>`;
+  ms.forEach((m,i)=>{const x=i*gw+gw/2,hr=rec[i]/mx*bh,hd=desp[i]/mx*bh;
+    s+=`<rect x="${x-bw-1}" y="${pt+bh-hr}" width="${bw}" height="${hr}" rx="2" fill="var(--gn)"><title>Receitas ${fm(rec[i])}</title></rect><rect x="${x+1}" y="${pt+bh-hd}" width="${bw}" height="${hd}" rx="2" fill="var(--rd)"><title>Despesas ${fm(desp[i])}</title></rect><text x="${x}" y="${H-8}" text-anchor="middle" font-size="11" fill="var(--tx3)">${m.slice(5)}/${m.slice(2,4)}</text>`;});
+  return s+'</svg><div class="fv-leg"><i style="background:var(--gn)"></i>Receitas<i style="background:var(--rd)"></i>Despesas</div>';}
+function _fvHB(items,vazio){ if(!items.length||!items.some(i=>i.v>0))return `<div class="fv-vazio">${vazio}</div>`; const mx=Math.max(...items.map(i=>i.v));
+  return items.map(i=>`<div class="hb"><span class="hb-l" title="${_ftEsc(i.l)}">${_ftEsc(i.l)}</span><div class="hb-t"><div class="hb-b" style="width:${Math.max(2,i.v/mx*100)}%;background:${i.cor}"></div></div><span class="hb-v">${fm(i.v)}</span></div>`).join('');}
+function _fvAging(tipo){ const b=[['A vencer',0],['1 a 30 dias',0],['31 a 60 dias',0],['Mais de 60 dias',0]], hoje=_ftHoje();
+  G_finTitulos.filter(t=>t.tipo===tipo&&_ftSit(t)!=='pago').forEach(t=>{const d=t.vencimento<hoje?_ftDias(t.vencimento,hoje):0; b[d===0?0:d<=30?1:d<=60?2:3][1]+=_ftSaldo(t);});
+  return b.map(([l,v],i)=>({l,v:_ftR2(v),cor:i===0?'var(--bl2)':i===1?'var(--or)':'var(--rd)'}));}
+async function renderFinVisao(){
+  const el=document.getElementById('fv-mes'); if(!el)return; if(!el.value)el.value=_ftHoje().slice(0,7); const mes=el.value;
+  const rec=_fvSoma(mes,'receita'), desp=_fvSoma(mes,'despesa'), res=_ftR2(rec-desp), marg=rec>0?(res/rec*100).toFixed(1).replace('.',',')+'% da receita':'sem receita no mês';
+  const ab=t=>G_finTitulos.filter(x=>x.tipo===t&&_ftSit(x)!=='pago'), sd=a=>_ftR2(a.reduce((s,x)=>s+_ftSaldo(x),0)), vc=a=>a.filter(x=>_ftSit(x)==='vencido');
+  const card=(l,v,sub,cor)=>`<div class="fin-kpi"><div class="fin-kpi-l">${l}</div><div class="fin-kpi-v" style="color:${cor}">${v}</div><div class="fin-kpi-s">${sub}</div></div>`;
+  document.getElementById('fv-kpis').innerHTML=card('Receitas do mês',fm(rec),'recebido','var(--gn)')+card('Despesas do mês',fm(desp),'pago','var(--rd)')+card('Resultado',fm(res),marg,res>=0?'var(--gn)':'var(--rd)')
+    +(_ftErro?card('Contas em aberto','—','sem acesso ou sem dados','var(--tx3)'):card('A receber em aberto',fm(sd(ab('receber'))),`${fm(sd(vc(ab('receber'))))} vencido`,'var(--bl2)')+card('A pagar em aberto',fm(sd(ab('pagar'))),`${fm(sd(vc(ab('pagar'))))} vencido`,'var(--or)'));
+  const ms=_fvMeses(mes,6); document.getElementById('fv-ch1').innerHTML=_fvBarras(ms,ms.map(m=>_fvSoma(m,'receita')),ms.map(m=>_fvSoma(m,'despesa')));
+  const cat={},cli={}; G_financeiro.filter(l=>(l.data||'').slice(0,7)===mes).forEach(l=>{ if(l.tipo==='despesa')cat[l.categoria||'Outros']=(cat[l.categoria||'Outros']||0)+(l.valor||0); else if(l.tipo==='receita'){const n=(G.clientes||[]).find(c=>c.id===l.cliente_id)?.nome||'Sem cliente'; cli[n]=(cli[n]||0)+(l.valor||0);} });
+  const top=o=>Object.entries(o).sort((a,b)=>b[1]-a[1]).slice(0,6).map(([l,v])=>({l,v:_ftR2(v)}));
+  document.getElementById('fv-ch2').innerHTML=_fvHB(top(cat).map(i=>({...i,cor:'var(--rd)'})),'Sem despesas no mês.');
+  document.getElementById('fv-ch4').innerHTML=_fvHB(top(cli).slice(0,5).map(i=>({...i,cor:'var(--gn)'})),'Sem receitas no mês.');
+  document.getElementById('fv-ch3').innerHTML=_ftErro?'<div class="fv-vazio">Sem acesso às contas.</div>':'<div class="fv-sub">A receber</div>'+_fvHB(_fvAging('receber'),'Nada a receber em aberto.')+'<div class="fv-sub">A pagar</div>'+_fvHB(_fvAging('pagar'),'Nada a pagar em aberto.');
+  if(!el._carregou){ el._carregou=true; await carregarFinTitulos(); if(_finTab==='visao')renderFinVisao(); }
+}
+
+// ─── RELATÓRIO: DEMONSTRATIVO FINANCEIRO ──────────────────
+const _DEMO_CSS=`.demo{font-family:Arial,Helvetica,sans-serif;color:#111;font-size:12px}.demo .dh{text-align:center;line-height:1.35;margin-bottom:10px}.demo .dh b{display:block;font-size:14px}.demo .dm{display:flex;justify-content:space-between;font-size:11px;margin:6px 0 8px}.demo table{width:100%;border-collapse:collapse;margin-bottom:14px;border:1px solid #222}.demo th{border-bottom:1px solid #222;padding:6px 8px;text-align:center;font-weight:600;font-size:11px}.demo th:first-child{text-align:center;border-right:1px solid #222}.demo th+th{border-left:1px solid #222}.demo td{padding:4px 8px;text-align:right;border-left:1px solid #222}.demo td:first-child{text-align:left;border-left:0}.demo tr.b td{font-weight:700}.demo tr.i td:first-child{padding-left:22px}.demo .nd{color:#777;font-style:italic}.demo .dn{font-size:10px;color:#444;margin:2px 0 10px}.demo .ass{display:flex;gap:40px;margin-top:28px;font-size:11px}.demo .ass div{flex:1;border-top:1px solid #222;padding-top:4px;text-align:center}`;
+let _finDemoRows=[];
+function _fdPeriodo(){ const p=document.getElementById('fd-per').value, d=new Date(), y=d.getFullYear(), m=d.getMonth(), f=x=>`${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`;
+  if(p==='mes')return[f(new Date(y,m,1)),f(new Date(y,m+1,0))]; if(p==='mesant')return[f(new Date(y,m-1,1)),f(new Date(y,m,0))];
+  if(p==='tri'){const q=Math.floor(m/3)*3;return[f(new Date(y,q,1)),f(new Date(y,q+3,0))];} if(p==='ano')return[`${y}-01-01`,`${y}-12-31`];
+  return[document.getElementById('fd-de').value,document.getElementById('fd-ate').value]; }
+function renderFinDemo(){
+  const per=document.getElementById('fd-per'); if(!per)return; const [de,ate]=_fdPeriodo(); if(per.value!=='custom'){document.getElementById('fd-de').value=de;document.getElementById('fd-ate').value=ate;}
+  const metaEl=document.getElementById('fd-meta'); try{ if(!metaEl._ini){metaEl._ini=1;metaEl.value=localStorage.getItem('orion_fin_meta_sal')||'';} else localStorage.setItem('orion_fin_meta_sal',metaEl.value);}catch(e){}
+  const meta=metaEl.value===''?null:+metaEl.value;
+  if(!de||!ate){document.getElementById('fin-demo').innerHTML='<div class="fv-vazio">Informe o período.</div>';return;}
+  const L=G_financeiro.filter(l=>l.data>=de&&l.data<=ate), tot=t=>_ftR2(L.filter(l=>l.tipo===t).reduce((s,l)=>s+(l.valor||0),0)), rec=tot('receita'), desp=tot('despesa');
+  const porCat=t=>{const o={};L.filter(l=>l.tipo===t).forEach(l=>{o[l.categoria||'Outros']=(o[l.categoria||'Outros']||0)+(l.valor||0);});return Object.entries(o).sort((a,b)=>b[1]-a[1]);};
+  const pc=v=>rec>0&&v!=null?_ftR2(v/rec*100):null, R=(l,v,o={})=>({l,v,p:o.sp?null:pc(v),b:o.b,i:o.i,nd:o.nd});
+  const B=[]; const hoje=_ftHoje();
+  B.push({t:'Receita do período (recebida)',r:[R('Receita total realizada',rec,{b:1}),...porCat('receita').map(([c,v])=>R(c,_ftR2(v),{i:1})),R('Deduções de impostos sobre o faturamento',null,{nd:1})]});
+  const sal=_ftR2((porCat('despesa').find(([c])=>c==='Salários')||[0,0])[1]), res=_ftR2(rec-desp);
+  B.push({t:'Despesas e resultado',r:[R('Total de despesas pagas',desp,{b:1}),...porCat('despesa').map(([c,v])=>R(c,_ftR2(v),{i:1})),R('Resultado do período (receitas − despesas)',res,{b:1}),
+    meta==null?{l:'Meta de despesa com salários (definida pela gestão)',v:null,p:null,nd:1,txt:'não definida'}:{l:`Meta de salários: ${String(meta).replace('.',',')}% da receita — ${rec>0?(sal/rec*100<=meta?'dentro da meta':'acima da meta'):'sem receita'}`,v:sal,p:pc(sal),i:1}]});
+  if(_ftErro){B.push({t:'Obrigações e carteira de clientes',r:[R('Contas a pagar/receber',null,{nd:1})]});}
+  else{ const ab=t=>G_finTitulos.filter(x=>x.tipo===t&&_ftSit(x)!=='pago'), sd=a=>_ftR2(a.reduce((s,x)=>s+_ftSaldo(x),0)), ap=ab('pagar'), ar=ab('receber'), venc=a=>a.filter(x=>_ftSit(x)==='vencido'), em30=ap.filter(x=>x.vencimento>=hoje&&_ftDias(hoje,x.vencimento)<=30);
+    B.push({t:`Obrigações — posição em ${fd(hoje)}`,r:[R('Contas a pagar em aberto',sd(ap),{b:1}),R('Vencidas',sd(venc(ap)),{i:1}),R('A vencer em 30 dias',sd(em30),{i:1}),R('Posição líquida (a receber − a pagar)',_ftR2(sd(ar)-sd(ap)),{b:1})]});
+    const fx=(a,b)=>sd(ar.filter(x=>x.vencimento<hoje&&_ftDias(x.vencimento,hoje)>=a&&_ftDias(x.vencimento,hoje)<=b));
+    B.push({t:`Carteira de clientes — posição em ${fd(hoje)}`,r:[R('Contas a receber em aberto',sd(ar),{b:1}),R('Vencido',sd(venc(ar)),{b:1}),R('1 a 30 dias',fx(1,30),{i:1}),R('31 a 60 dias',fx(31,60),{i:1}),R('61 a 90 dias',fx(61,90),{i:1}),R('Mais de 90 dias',fx(91,99999),{i:1})]}); }
+  const ativos=(G_contratos||[]).filter(c=>c.status==='Ativo'), mrr=_ftR2(ativos.filter(c=>c.tipo==='Fixo Mensal').reduce((s,c)=>{const v=c.valor_mensal||0,p=c.periodicidade||'Mensal';return s+(p==='Anual'?v/12:p==='Semestral'?v/6:p==='Trimestral'?v/3:v);},0));
+  B.push({t:'Contratos',r:[R('Receita recorrente mensal contratada (fixo mensal)',mrr,{b:1}),{l:'Contratos ativos (quantidade)',v:ativos.length,p:null,i:1,qtd:1},R('Franquia contratada × excedente faturado',null,{nd:1}),R('Rentabilidade por contrato',null,{nd:1})]});
+  const razao=document.getElementById('fin-cfg-razao')?.value||'Empresa', cnpj=document.getElementById('fin-cfg-cnpj')?.value||'';
+  const n2=v=>v==null?'':'R$ '+(+v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}), pp=p=>p==null?'':p.toFixed(2).replace('.',',')+' %';
+  _finDemoRows=[]; let html=`<div class="dh"><b>${_ftEsc(razao)}${cnpj?' — CNPJ '+_ftEsc(cnpj):''}</b><b>DEMONSTRATIVO FINANCEIRO — OUTSOURCING DE IMPRESSÃO</b>REGIME DE CAIXA (valores efetivamente recebidos e pagos)<br>PERÍODO DE REFERÊNCIA: ${fd(de)} a ${fd(ate)}</div><div class="dm"><span>Gerado em ${fd(hoje)}</span><span>Valores em R$ (reais)</span></div>`;
+  B.forEach(b=>{ html+=`<table><thead><tr><th style="width:62%">${_ftEsc(b.t.toUpperCase())}</th><th>VALOR</th><th>% SOBRE A RECEITA</th></tr></thead><tbody>`;
+    b.r.forEach(r=>{ _finDemoRows.push([b.t,r.l,r.qtd?r.v:(r.v==null?'indisponível':r.v),r.p==null?'':r.p]);
+      html+=`<tr class="${r.b?'b':''} ${r.i?'i':''}"><td>${_ftEsc(r.l)}</td><td${r.nd||r.txt?' class="nd"':''}>${r.qtd?r.v:(r.v==null?(r.txt||'indisponível'):n2(r.v))}</td><td>${pp(r.p)}</td></tr>`; });
+    html+='</tbody></table>'; });
+  html+='<div class="dn">Linhas “indisponível” dependem de módulos ainda não implantados (faturamento por página e fiscal) e não são estimadas. Percentuais calculados sobre a receita recebida no período.</div><div class="ass"><div>Elaborado por</div><div>Responsável</div></div>';
+  if(!document.getElementById('demo-css')){const s=document.createElement('style');s.id='demo-css';s.textContent=_DEMO_CSS;document.head.appendChild(s);}
+  document.getElementById('fin-demo').innerHTML=html;
+}
+function imprimirFinDemo(){const w=window.open('','_blank'); if(!w){alert('Permita pop-ups para imprimir.');return;} w.document.write(`<html><head><meta charset="utf-8"><title>Demonstrativo financeiro</title><style>body{margin:18px}${_DEMO_CSS}</style></head><body><div class="demo">${document.getElementById('fin-demo').innerHTML}</div></body></html>`); w.document.close(); w.focus(); setTimeout(()=>w.print(),300);}
+function exportFinDemoCSV(){const esc=v=>`"${String(v==null?'':v).replace(/"/g,'""')}"`,n=v=>typeof v==='number'?String(v).replace('.',','):v;
+  const lines=[['Bloco','Linha','Valor','% sobre a receita'].map(esc).join(';'),..._finDemoRows.map(r=>[r[0],r[1],n(r[2]),r[3]===''?'':String(r[3]).replace('.',',')].map(esc).join(';'))];
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\uFEFF'+lines.join('\n')],{type:'text/csv;charset=utf-8'}));a.download=`Demonstrativo_${_ftHoje()}.csv`;a.click();}
 
 function exportFinExcel(){
   const esc=v=>`"${String(v||'').replace(/"/g,'""')}"`;
