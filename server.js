@@ -638,7 +638,7 @@ app.get('/api/dashboard', requireAuth, async (req,res) => {
 // BACKUP
 app.get('/api/backup', requireAuth, requireAdmin, async (req,res) => {
   try {
-    const [users,tecnicos,clientes,equipamentos,ordens,laboratorio,logistica,historico,estoque,suprCli,suprMovs,estMovs,lancamentos,contratos,financeiro,agenda,veiculos,financeiroTitulos,financeiroConfig]=await Promise.all([
+    const [users,tecnicos,clientes,equipamentos,ordens,laboratorio,logistica,historico,estoque,suprCli,suprMovs,estMovs,lancamentos,contratos,financeiro,agenda,veiculos,financeiroTitulos,financeiroConfig,financeiroFiscal,financeiroServicos,financeiroNotas]=await Promise.all([
       col('users').find().toArray(),
       col('tecnicos').find().toArray(),
       tenantCol('clientes', req).find().toArray(),
@@ -658,6 +658,9 @@ app.get('/api/backup', requireAuth, requireAdmin, async (req,res) => {
       col('veiculos').find().toArray(),
       col('financeiro_titulos').find().toArray(),
       col('financeiro_config').find().toArray(),
+      col('financeiro_fiscal').find().toArray(),
+      col('financeiro_servicos').find().toArray(),
+      col('financeiro_notas').find().toArray(),
     ]);
     // Converte _id ObjectId para string para preservar referências no restore
     const toStr = arr => arr.map(d => ({...d, _id: d._id?.toString(), id: d._id?.toString()}));
@@ -682,6 +685,9 @@ app.get('/api/backup', requireAuth, requireAdmin, async (req,res) => {
       veiculos:      toStr(veiculos),
       financeiro_titulos: toStr(financeiroTitulos),
       financeiro_config:  toStr(financeiroConfig),
+      financeiro_fiscal:  toStr(financeiroFiscal),
+      financeiro_servicos: toStr(financeiroServicos),
+      financeiro_notas:   toStr(financeiroNotas),
     };
     res.setHeader('Content-Disposition',`attachment; filename="orion_backup_${new Date().toISOString().slice(0,10)}.json"`);
     res.json(backup);
@@ -723,6 +729,9 @@ app.post('/api/restore', requireAuth, requireAdmin, async (req, res) => {
       { key: 'agenda',              col: 'agenda' },
       { key: 'veiculos',            col: 'veiculos' },
       { key: 'financeiro_titulos',  col: 'financeiro_titulos' },
+      { key: 'financeiro_fiscal',   col: 'financeiro_fiscal' },
+      { key: 'financeiro_servicos', col: 'financeiro_servicos' },
+      { key: 'financeiro_notas',    col: 'financeiro_notas' },
     ];
 
     const resultados = {};
@@ -939,6 +948,44 @@ app.post('/api/financeiro/titulos/:id/baixar', requireAuth, requireFinanceiroAce
     res.json({ok:true,valor_caixa:valorCaixa});
   } catch(e){res.status(500).json({error:e.message});}
 });
+
+// FISCAL — complementos dos cadastros existentes (cliente/peça), serviços tributáveis e notas (emissão assistida)
+const strFin=(v,n=120)=>String(v==null?'':v).trim().slice(0,n);
+const pctFin=v=>{const n=Number(v||0);return Number.isFinite(n)&&n>=0&&n<=100?round2Fin(n):NaN;};
+const listFin=(nome,sort)=>async(req,res)=>{try{const d=await tenantCol(nome,req).find({}).sort(sort).toArray();res.json(d.map(x=>({...x,id:x._id.toString()})));}catch(e){res.status(500).json({error:e.message});}};
+app.get('/api/financeiro/fiscal', requireAuth, requireFinanceiroAcesso, listFin('financeiro_fiscal',{tipo:1}));
+app.put('/api/financeiro/fiscal/:tipo/:ref', requireAuth, requireFinanceiroAcesso, async (req,res) => {
+  try { const tipo=req.params.tipo, ref=strFin(req.params.ref,40), b=req.body||{}; if(!['cliente','peca'].includes(tipo)||!ref)return res.status(400).json({error:'Cadastro inválido.'});
+    let d;
+    if(tipo==='cliente'){ const p=['irrf','pis','cofins','csll'].map(k=>pctFin(b['ret_'+k])); if(p.some(Number.isNaN))return res.status(400).json({error:'Percentuais de retenção devem estar entre 0 e 100.'});
+      d={documento:String(b.documento||'').replace(/\D/g,'').slice(0,14),ie:strFin(b.ie,30),im:strFin(b.im,30),email_fiscal:strFin(b.email_fiscal),ret_irrf:p[0],ret_pis:p[1],ret_cofins:p[2],ret_csll:p[3],iss_retido:!!b.iss_retido,obs:strFin(b.obs,300)};
+      if(d.documento&&![11,14].includes(d.documento.length))return res.status(400).json({error:'CPF deve ter 11 dígitos e CNPJ 14.'}); }
+    else d={ncm:String(b.ncm||'').replace(/\D/g,'').slice(0,8),cfop:String(b.cfop||'').replace(/\D/g,'').slice(0,4),unidade:strFin(b.unidade,6),obs:strFin(b.obs,300)};
+    const tc=tenantCol('financeiro_fiscal',req), ex=await tc.findOne({tipo,ref_id:ref});
+    if(ex)await tc.updateOne({_id:ex._id},{$set:{...d,updated_at:now()}}); else await tc.insertOne({tipo,ref_id:ref,...d,created_at:now(),updated_at:now()});
+    res.json({ok:true});
+  } catch(e){res.status(500).json({error:e.message});}
+});
+const servFin=b=>{ if(!strFin(b.nome))return{erro:'Informe o nome do serviço.'}; const al=(b.aliquota_iss===''||b.aliquota_iss==null)?null:pctFin(b.aliquota_iss); if(Number.isNaN(al))return{erro:'Alíquota de ISS deve estar entre 0 e 100.'};
+  return{d:{nome:strFin(b.nome),codigo:strFin(b.codigo,12),cnae:strFin(b.cnae,12),aliquota_iss:al,descricao_padrao:strFin(b.descricao_padrao,500),ativo:b.ativo!==false}}; };
+app.get('/api/financeiro/servicos', requireAuth, requireFinanceiroAcesso, listFin('financeiro_servicos',{nome:1}));
+app.post('/api/financeiro/servicos', requireAuth, requireFinanceiroAcesso, async (req,res) => { try{ const r=servFin(req.body||{}); if(r.erro)return res.status(400).json({error:r.erro}); const x=await tenantCol('financeiro_servicos',req).insertOne({...r.d,created_at:now()}); res.json({ok:true,id:x.insertedId.toString()}); }catch(e){res.status(500).json({error:e.message});} });
+app.put('/api/financeiro/servicos/:id', requireAuth, requireFinanceiroAcesso, async (req,res) => { try{ const r=servFin(req.body||{}); if(r.erro)return res.status(400).json({error:r.erro}); const u=await tenantCol('financeiro_servicos',req).updateOne({_id:new ObjectId(req.params.id)},{$set:{...r.d,updated_at:now()}}); if(!u.matchedCount)return res.status(404).json({error:'Serviço não encontrado.'}); res.json({ok:true}); }catch(e){res.status(500).json({error:e.message});} });
+app.delete('/api/financeiro/servicos/:id', requireAuth, requireFinanceiroAcesso, async (req,res) => { try{ const id=req.params.id; if(await tenantCol('financeiro_notas',req).findOne({servico_id:id}))return res.status(409).json({error:'Serviço usado em notas. Desative em vez de excluir.'}); await tenantCol('financeiro_servicos',req).deleteOne({_id:new ObjectId(id)}); res.json({ok:true}); }catch(e){res.status(500).json({error:e.message});} });
+// Notas (emissão assistida): o Orion monta os dados; a emissão oficial é feita pelo Emissor Nacional e o número é registrado aqui.
+const notaFin=b=>{ const valor=round2Fin(b.valor); if(!strFin(b.cliente_id,40))return{erro:'Selecione o cliente.'}; if(!Number.isFinite(valor)||valor<=0)return{erro:'Informe um valor maior que zero.'}; if(!strFin(b.descricao))return{erro:'Informe a descrição do serviço.'};
+  const c={}; for(const k of ['iss','irrf','pis','cofins','csll','liquido']){const n=Number(b.calculo&&b.calculo[k]); c[k]=Number.isFinite(n)?round2Fin(n):0;}
+  return{d:{tipo:'nfse',cliente_id:strFin(b.cliente_id,40),servico_id:strFin(b.servico_id,40),descricao:strFin(b.descricao,1000),valor,competencia:strFin(b.competencia,7),titulo_id:strFin(b.titulo_id,40),calculo:c,aliquota_iss:b.aliquota_iss==null?null:pctFin(b.aliquota_iss)}}; };
+app.get('/api/financeiro/notas', requireAuth, requireFinanceiroAcesso, listFin('financeiro_notas',{created_at:-1}));
+app.post('/api/financeiro/notas', requireAuth, requireFinanceiroAcesso, async (req,res) => { try{ const r=notaFin(req.body||{}); if(r.erro)return res.status(400).json({error:r.erro}); const x=await tenantCol('financeiro_notas',req).insertOne({...r.d,status:'rascunho',created_at:now(),updated_at:now()}); res.json({ok:true,id:x.insertedId.toString()}); }catch(e){res.status(500).json({error:e.message});} });
+app.put('/api/financeiro/notas/:id', requireAuth, requireFinanceiroAcesso, async (req,res) => {
+  try{ const b=req.body||{}, tc=tenantCol('financeiro_notas',req), n=await tc.findOne({_id:new ObjectId(req.params.id)}); if(!n)return res.status(404).json({error:'Nota não encontrada.'}); const acao=b.acao||'salvar';
+    if(acao==='salvar'){ if(n.status!=='rascunho')return res.status(409).json({error:'Só rascunhos podem ser editados.'}); const r=notaFin(b); if(r.erro)return res.status(400).json({error:r.erro}); await tc.updateOne({_id:n._id},{$set:{...r.d,updated_at:now()}}); return res.json({ok:true}); }
+    if(acao==='emitida'){ if(n.status!=='rascunho')return res.status(409).json({error:'Esta nota já foi registrada.'}); const num=strFin(b.numero,20), chave=String(b.chave||'').replace(/\D/g,'').slice(0,50); if(!num)return res.status(400).json({error:'Informe o número da NFS-e emitida.'}); if(!dataIsoFin(b.data_emissao))return res.status(400).json({error:'Informe a data de emissão.'});
+      await tc.updateOne({_id:n._id},{$set:{status:'emitida',numero:num,chave,data_emissao:b.data_emissao,updated_at:now()}}); return res.json({ok:true}); }
+    if(acao==='cancelada'){ if(n.status!=='emitida')return res.status(409).json({error:'Só notas emitidas podem ser marcadas como canceladas.'}); await tc.updateOne({_id:n._id},{$set:{status:'cancelada',motivo_cancelamento:strFin(b.motivo,300),updated_at:now()}}); return res.json({ok:true}); }
+    res.status(400).json({error:'Ação inválida.'}); }catch(e){res.status(500).json({error:e.message});} });
+app.delete('/api/financeiro/notas/:id', requireAuth, requireFinanceiroAcesso, async (req,res) => { try{ const tc=tenantCol('financeiro_notas',req), n=await tc.findOne({_id:new ObjectId(req.params.id)}); if(!n)return res.status(404).json({error:'Nota não encontrada.'}); if(n.status!=='rascunho')return res.status(409).json({error:'Só rascunhos podem ser excluídos.'}); await tc.deleteOne({_id:n._id}); res.json({ok:true}); }catch(e){res.status(500).json({error:e.message});} });
 
 // LANÇAMENTOS MANUAIS (histórico sem OS)
 app.get('/api/lancamentos', requireAuth, async (req,res) => {

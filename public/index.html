@@ -1279,6 +1279,10 @@ label { font-size: 11px !important; font-weight: 600 !important; color: #475569 
 #page-financeiro .hb-t{background:var(--bg,#eef1f6);border-radius:4px;height:10px}#page-financeiro .hb-b{height:10px;border-radius:4px}#page-financeiro .hb-v{text-align:right;font-weight:600}
 #fin-relnav{gap:6px;margin:-4px 0 12px}#fin-relnav button{border:1px solid var(--bd);background:var(--sf);color:var(--tx2);border-radius:20px;padding:5px 14px;font-size:12px;cursor:pointer}#fin-relnav button.active{background:var(--nv);color:#fff;border-color:var(--nv)}
 </style>
+<style>
+#fin-fiscnav{gap:6px;margin:-4px 0 12px}#fin-fiscnav button{border:1px solid var(--bd);background:var(--sf);color:var(--tx2);border-radius:20px;padding:5px 14px;font-size:12px;cursor:pointer}#fin-fiscnav button.active{background:var(--nv);color:#fff;border-color:var(--nv)}
+#m-femit .nd{color:var(--tx3);font-style:italic}#m-femit td{padding:4px 6px;border-bottom:1px solid var(--bd)}#m-femit td:first-child{color:var(--tx3);width:36%}
+</style>
 </head>
 <body>
 
@@ -2595,8 +2599,10 @@ label { font-size: 11px !important; font-weight: 600 !important; color: #475569 
       <button class="log-tab" id="ftab-lancamentos" onclick="switchFinTab('lancamentos')">📒 Lançamentos</button>
       <button class="log-tab" id="ftab-titulos" onclick="switchFinTab('titulos')">💳 Contas a Pagar/Receber</button>
       <button class="log-tab" id="ftab-rel" onclick="switchFinTab('rel')">🧾 Relatórios</button>
+      <button class="log-tab" id="ftab-fiscal" onclick="switchFinTab('fiscal')">🏛️ Fiscal</button>
       <button class="log-tab" id="ftab-config" onclick="switchFinTab('config')">⚙️ Configuração fiscal</button>
     </div>
+    <div id="fin-fiscnav" style="display:none"><button data-s="notas" onclick="finFiscSub('notas')">Notas fiscais</button><button data-s="clientes" onclick="finFiscSub('clientes')">Clientes</button><button data-s="pecas" onclick="finFiscSub('pecas')">Peças</button><button data-s="servicos" onclick="finFiscSub('servicos')">Serviços</button></div>
     <div id="fin-relnav" style="display:none"><button data-t="rel" onclick="switchFinTab('rel')">Demonstrativo</button><button data-t="dre" onclick="switchFinTab('dre')">DRE</button><button data-t="fluxo" onclick="switchFinTab('fluxo')">Fluxo de caixa</button></div>
     <!-- Filtros período -->
     <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
@@ -2648,6 +2654,27 @@ label { font-size: 11px !important; font-weight: 600 !important; color: #475569 
     <!-- Aba Fluxo -->
     <div id="fin-tab-fluxo" style="display:none">
       <div id="fin-fluxo-content"></div>
+    </div>
+    <!-- Aba Fiscal -->
+    <div id="fin-tab-fiscal" style="display:none">
+      <div id="ff-notas">
+        <div class="fin-bar"><div class="fin-cfg-sub" style="flex:1;margin:0">Emissão assistida: o Orion monta os dados da nota com as informações do sistema; você emite no Emissor Nacional e registra o número aqui.</div><button class="btn btn-primary btn-sm" onclick="abrirFinNota()">+ Nova nota</button></div>
+        <div class="card" style="padding:0"><div class="twrap"><table><thead><tr><th>Data</th><th>Cliente</th><th>Serviço</th><th>Valor R$</th><th>Situação</th><th>Ações</th></tr></thead><tbody id="tb-ffn"></tbody></table></div></div>
+      </div>
+      <div id="ff-clientes" style="display:none">
+        <div class="fin-bar"><div class="swrap" style="flex:1;min-width:200px"><span style="color:var(--tx3)">🔍</span><input type="text" id="ff-q-cli" placeholder="Buscar cliente pelo nome..." oninput="renderFinFiscal()"></div></div>
+        <div class="fin-cfg-sub" style="margin:0 0 8px">Os clientes vêm do cadastro de Clientes. Aqui você só complementa os dados fiscais.</div>
+        <div class="card" style="padding:0"><div class="twrap"><table><thead><tr><th>Cliente</th><th>CNPJ / CPF</th><th>Insc. estadual</th><th>Insc. municipal</th><th>Retenções</th><th>Situação</th><th>Ações</th></tr></thead><tbody id="tb-ffc"></tbody></table></div></div>
+      </div>
+      <div id="ff-pecas" style="display:none">
+        <div class="fin-bar"><div class="swrap" style="flex:1;min-width:200px"><span style="color:var(--tx3)">🔍</span><input type="text" id="ff-q-peca" placeholder="Buscar peça ou suprimento pelo nome..." oninput="renderFinFiscal()"></div></div>
+        <div class="fin-cfg-sub" style="margin:0 0 8px">As peças vêm do cadastro de Peças e Suprimentos. Aqui você só complementa NCM, CFOP e unidade.</div>
+        <div class="card" style="padding:0"><div class="twrap"><table><thead><tr><th>Peça / suprimento</th><th>Categoria</th><th>NCM</th><th>CFOP</th><th>Unid.</th><th>Situação</th><th>Ações</th></tr></thead><tbody id="tb-ffp"></tbody></table></div></div>
+      </div>
+      <div id="ff-servicos" style="display:none">
+        <div class="fin-bar"><div class="fin-cfg-sub" style="flex:1;margin:0">Serviços tributáveis usados nas notas. Código e alíquota devem ser confirmados com o contador.</div><button class="btn btn-primary btn-sm" onclick="abrirFinServ()">+ Novo serviço</button></div>
+        <div class="card" style="padding:0"><div class="twrap"><table><thead><tr><th>Serviço</th><th>Código de serviço</th><th>CNAE</th><th>ISS %</th><th>Situação</th><th>Ações</th></tr></thead><tbody id="tb-ffs"></tbody></table></div></div>
+      </div>
     </div>
     <!-- Aba Configuração fiscal -->
     <div id="fin-tab-config" style="display:none">
@@ -4422,6 +4449,53 @@ Outros</textarea>
     <div style="margin-top:10px;padding:10px 12px;border-radius:8px;background:var(--bl2bg);font-weight:700;color:var(--nv)" id="fb-total"></div>
   </div>
   <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('m-finbaixa')">Cancelar</button><button class="btn btn-primary" id="fb-save-btn" onclick="confirmarBaixaTitulo()">Confirmar baixa</button></div>
+</div></div>
+
+<!-- Modais Fiscal -->
+<div class="mov" id="m-ffisc"><div class="modal" style="max-width:560px">
+  <div class="mhd"><div class="mhd-title" id="m-ffisc-title">Dados fiscais</div><button class="btnx" onclick="closeM('m-ffisc')">×</button></div>
+  <div class="mbody"><input type="hidden" id="ff-tipo"><input type="hidden" id="ff-ref">
+    <div class="fgrid fg2" id="ff-g-cli">
+      <div class="fg"><label>CNPJ / CPF</label><input id="ff-doc" inputmode="numeric" maxlength="18" placeholder="Somente números"></div>
+      <div class="fg"><label>E-mail para a nota</label><input id="ff-em" placeholder="Se vazio, usa o e-mail do cadastro"></div>
+      <div class="fg"><label>Inscrição estadual</label><input id="ff-ie"></div><div class="fg"><label>Inscrição municipal</label><input id="ff-im"></div>
+      <div class="fg" style="grid-column:1/-1"><label>ISS retido pelo cliente?</label><select id="ff-issr"><option value="0">Não</option><option value="1">Sim</option></select></div>
+      <div class="fg"><label>IRRF retido %</label><input type="number" id="ff-irrf" step="0.01" min="0" max="100" value="0"></div><div class="fg"><label>PIS retido %</label><input type="number" id="ff-pis" step="0.01" min="0" max="100" value="0"></div>
+      <div class="fg"><label>COFINS retido %</label><input type="number" id="ff-cof" step="0.01" min="0" max="100" value="0"></div><div class="fg"><label>CSLL retido %</label><input type="number" id="ff-csl" step="0.01" min="0" max="100" value="0"></div>
+    </div>
+    <div class="fgrid fg2" id="ff-g-peca" style="display:none">
+      <div class="fg"><label>NCM</label><input id="ff-ncm" inputmode="numeric" maxlength="10" placeholder="8 dígitos"></div><div class="fg"><label>CFOP</label><input id="ff-cfop" inputmode="numeric" maxlength="4" placeholder="4 dígitos"></div>
+      <div class="fg"><label>Unidade</label><input id="ff-un" maxlength="6" placeholder="UN, CX, PC..."></div>
+    </div>
+    <div class="fg" style="margin-top:10px"><label>Observações fiscais</label><textarea id="ff-obs" rows="2"></textarea></div>
+    <div class="fin-cfg-sub" style="margin-top:6px">Percentuais de retenção: informe os definidos pelo seu contador para este cliente. Em branco ou 0 = sem retenção.</div>
+  </div>
+  <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('m-ffisc')">Cancelar</button><button class="btn btn-primary" onclick="salvarFinFiscal()">Salvar</button></div>
+</div></div>
+<div class="mov" id="m-fserv"><div class="modal" style="max-width:520px">
+  <div class="mhd"><div class="mhd-title" id="m-fserv-title">Novo serviço</div><button class="btnx" onclick="closeM('m-fserv')">×</button></div>
+  <div class="mbody"><input type="hidden" id="fs-id"><div class="fgrid fg2">
+    <div class="fg" style="grid-column:1/-1"><label>Nome do serviço *</label><input id="fs-nome" placeholder="Ex: Manutenção de impressoras"></div>
+    <div class="fg"><label>Código de serviço (lista LC 116)</label><input id="fs-cod" placeholder="Ex: 14.01"></div><div class="fg"><label>CNAE</label><input id="fs-cnae"></div>
+    <div class="fg"><label>Alíquota de ISS %</label><input type="number" id="fs-aliq" step="0.01" min="0" max="100" placeholder="definida com o contador"></div>
+    <div class="fg"><label>Situação</label><select id="fs-ativo"><option value="1">Ativo</option><option value="0">Inativo</option></select></div>
+    <div class="fg" style="grid-column:1/-1"><label>Descrição padrão na nota</label><textarea id="fs-desc" rows="2"></textarea></div></div></div>
+  <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('m-fserv')">Cancelar</button><button class="btn btn-primary" onclick="salvarFinServ()">Salvar</button></div>
+</div></div>
+<div class="mov" id="m-fnota"><div class="modal" style="max-width:600px">
+  <div class="mhd"><div class="mhd-title" id="m-fnota-title">Nova nota de serviço</div><button class="btnx" onclick="closeM('m-fnota')">×</button></div>
+  <div class="mbody"><input type="hidden" id="fn-id"><div class="fgrid fg2">
+    <div class="fg" style="grid-column:1/-1"><label>Partir de uma conta a receber (opcional)</label><select id="fn-tit" onchange="finNotaDeTitulo()"><option value="">— Nota avulsa —</option></select></div>
+    <div class="fg" style="grid-column:1/-1"><label>Cliente * (digite para filtrar)</label><input id="fn-cq" placeholder="Buscar pelo nome..." oninput="finNotaFiltraCli()"><select id="fn-cli" onchange="finNotaCalc()" style="margin-top:6px"></select></div>
+    <div class="fg"><label>Serviço *</label><select id="fn-serv" onchange="finNotaServ()"></select></div><div class="fg"><label>Competência</label><input type="month" id="fn-comp"></div>
+    <div class="fg"><label>Valor R$ *</label><input type="number" id="fn-valor" step="0.01" min="0" oninput="finNotaCalc()"></div>
+    <div class="fg" style="grid-column:1/-1"><label>Descrição do serviço *</label><textarea id="fn-desc" rows="3"></textarea></div></div>
+    <div id="fn-calc" style="margin-top:10px;padding:10px 12px;border-radius:8px;background:var(--bl2bg);font-size:12px;line-height:1.7"></div></div>
+  <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('m-fnota')">Cancelar</button><button class="btn btn-primary" onclick="salvarFinNota()">Salvar rascunho</button></div>
+</div></div>
+<div class="mov" id="m-femit"><div class="modal" style="max-width:680px">
+  <div class="mhd"><div class="mhd-title" id="m-femit-title">Emissão assistida</div><button class="btnx" onclick="closeM('m-femit')">×</button></div>
+  <div class="mbody" id="fe-body"></div><div class="mfoot" id="fe-foot"></div>
 </div></div>
 
 <!-- Modal Timeline do Atendimento -->
@@ -8221,10 +8295,10 @@ async function lancarReceitaOS(os) {
 let _finTab='visao';
 function switchFinTab(tab) {
   _finTab=tab; const rels=['rel','dre','fluxo'], aba=rels.includes(tab)?'rel':tab;
-  ['visao','lancamentos','titulos','rel','dre','fluxo','config'].forEach(t=>{const p=document.getElementById('fin-tab-'+t); if(p)p.style.display=t===tab?'':'none';});
-  ['visao','lancamentos','titulos','rel','config'].forEach(t=>{const b=document.getElementById('ftab-'+t); if(b)b.classList.toggle('active',t===aba);});
+  ['visao','lancamentos','titulos','rel','dre','fluxo','fiscal','config'].forEach(t=>{const p=document.getElementById('fin-tab-'+t); if(p)p.style.display=t===tab?'':'none';});
+  ['visao','lancamentos','titulos','rel','fiscal','config'].forEach(t=>{const b=document.getElementById('ftab-'+t); if(b)b.classList.toggle('active',t===aba);});
   const show=(id,v)=>{const e=document.getElementById(id); if(e)e.style.display=v;};
-  show('fin-kpis',tab==='lancamentos'?'grid':'none'); show('fin-top-actions',tab==='lancamentos'?'':'none'); show('fin-relnav',rels.includes(tab)?'flex':'none');
+  show('fin-kpis',tab==='lancamentos'?'grid':'none'); show('fin-top-actions',tab==='lancamentos'?'':'none'); show('fin-relnav',rels.includes(tab)?'flex':'none'); show('fin-fiscnav',tab==='fiscal'?'flex':'none');
   const barra=document.getElementById('s-fin')?.parentElement?.parentElement; if(barra)barra.style.display=(tab==='lancamentos'||tab==='dre'||tab==='fluxo')?'':'none';
   document.querySelectorAll('#fin-relnav button').forEach(b=>b.classList.toggle('active',b.dataset.t===tab));
   if(tab==='visao')renderFinVisao();
@@ -8232,6 +8306,7 @@ function switchFinTab(tab) {
   if(tab==='fluxo')renderFinFluxo();
   if(tab==='titulos')carregarFinTitulos();
   if(tab==='rel')renderFinDemo();
+  if(tab==='fiscal')carregarFinFiscal();
 }
 
 function renderFinKpis() {
@@ -8712,6 +8787,95 @@ function imprimirFinDemo(){const w=window.open('','_blank'); if(!w){alert('Permi
 function exportFinDemoCSV(){const esc=v=>`"${String(v==null?'':v).replace(/"/g,'""')}"`,n=v=>typeof v==='number'?String(v).replace('.',','):v;
   const lines=[['Bloco','Linha','Valor','% sobre a receita'].map(esc).join(';'),..._finDemoRows.map(r=>[r[0],r[1],n(r[2]),r[3]===''?'':String(r[3]).replace('.',',')].map(esc).join(';'))];
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\uFEFF'+lines.join('\n')],{type:'text/csv;charset=utf-8'}));a.download=`Demonstrativo_${_ftHoje()}.csv`;a.click();}
+
+// ─── FISCAL: dados fiscais, serviços e notas (emissão assistida) ──────────
+let G_finFiscal=[],G_finServ=[],G_finNotas=[],_ffErro='',_ffSub='notas',_feCopia=[];
+const _ffGet=(t,id)=>G_finFiscal.find(x=>x.tipo===t&&x.ref_id===id)||{};
+const _ffDoc=d=>{d=String(d||'').replace(/\D/g,'');return d.length===11?d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/,'$1.$2.$3-$4'):d.length===14?d.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/,'$1.$2.$3/$4-$5'):d;};
+const _ffPct=v=>v?String(v).replace('.',',')+'%':'';
+const _ffCli=id=>(G.clientes||[]).find(c=>c.id===id)||{};
+const _ffV=id=>document.getElementById(id).value;
+async function carregarFinFiscal(){
+  try{[G_finFiscal,G_finServ,G_finNotas]=await Promise.all([api('GET','/api/financeiro/fiscal'),api('GET','/api/financeiro/servicos'),api('GET','/api/financeiro/notas')]);_ffErro='';}
+  catch(e){_ffErro=e.message||'Erro ao carregar dados fiscais.';G_finFiscal=[];G_finServ=[];G_finNotas=[];}
+  renderFinFiscal();
+}
+function finFiscSub(s){_ffSub=s;renderFinFiscal();}
+function renderFinFiscal(){
+  ['notas','clientes','pecas','servicos'].forEach(s=>{const e=document.getElementById('ff-'+s);if(e)e.style.display=s===_ffSub?'':'none';});
+  document.querySelectorAll('#fin-fiscnav button').forEach(b=>b.classList.toggle('active',b.dataset.s===_ffSub));
+  const vazio=(c,t)=>`<tr><td colspan="${c}"><div class="empty"><div class="empty-ico">📄</div><div class="empty-t">${t}</div></div></td></tr>`;
+  if(_ffErro){['tb-ffn','tb-ffc','tb-ffp','tb-ffs'].forEach(i=>{document.getElementById(i).innerHTML=vazio(7,_ftEsc(_ffErro));});return;}
+  const bd={rascunho:['bgr','Rascunho'],emitida:['bg','Emitida'],cancelada:['br','Cancelada']};
+  document.getElementById('tb-ffn').innerHTML=G_finNotas.length?G_finNotas.map(n=>`<tr><td style="font-size:12px">${fd((n.data_emissao||n.created_at||'').slice(0,10))}</td><td>${_ftEsc(_ffCli(n.cliente_id).nome||'—')}</td><td style="font-size:12px">${_ftEsc((G_finServ.find(s=>s.id===n.servico_id)||{}).nome||'—')}</td><td style="font-weight:700">${fm(n.valor)}</td><td><span class="badge ${bd[n.status][0]}" style="font-size:10px">${bd[n.status][1]}${n.numero?' nº '+_ftEsc(n.numero):''}</span></td><td style="white-space:nowrap"><button class="btn btn-success btn-xs" onclick="abrirFinEmissao('${n.id}')">${n.status==='rascunho'?'Emitir':'Ver'}</button>${n.status==='rascunho'?` <button class="btn btn-ghost btn-xs" onclick="abrirFinNota('${n.id}')">Editar</button> <button class="btn btn-danger btn-xs" onclick="excluirFinNota('${n.id}')">×</button>`:''}</td></tr>`).join(''):vazio(6,'Nenhuma nota ainda. Clique em “+ Nova nota”.');
+  const q1=(document.getElementById('ff-q-cli')?.value||'').toLowerCase(),q2=(document.getElementById('ff-q-peca')?.value||'').toLowerCase();
+  const cl=(G.clientes||[]).filter(c=>(c.nome||'').toLowerCase().includes(q1));
+  document.getElementById('tb-ffc').innerHTML=cl.length?cl.map(c=>{const f=_ffGet('cliente',c.id),ret=[['IRRF',f.ret_irrf],['PIS',f.ret_pis],['COFINS',f.ret_cofins],['CSLL',f.ret_csll]].filter(r=>r[1]).map(r=>r[0]+' '+_ffPct(r[1])).concat(f.iss_retido?['ISS retido']:[]).join(' · ');
+    return `<tr><td>${_ftEsc(c.nome)}</td><td style="font-size:12px">${_ftEsc(_ffDoc(f.documento))||'—'}</td><td style="font-size:12px">${_ftEsc(f.ie||'')||'—'}</td><td style="font-size:12px">${_ftEsc(f.im||'')||'—'}</td><td style="font-size:11px">${_ftEsc(ret)||'—'}</td><td><span class="badge ${f.documento?'bg':'bo'}" style="font-size:10px">${f.documento?'Com CNPJ/CPF':'Falta CNPJ/CPF'}</span></td><td><button class="btn btn-ghost btn-xs" onclick="abrirFinFiscal('cliente','${c.id}')">Complementar</button></td></tr>`;}).join(''):vazio(7,'Nenhum cliente encontrado.');
+  const pc=(G.estoque||[]).filter(p=>(p.nome||'').toLowerCase().includes(q2));
+  document.getElementById('tb-ffp').innerHTML=pc.length?pc.map(p=>{const f=_ffGet('peca',p.id);return `<tr><td>${_ftEsc(p.nome)}</td><td style="font-size:12px">${_ftEsc(p.categoria||'')}</td><td style="font-size:12px">${_ftEsc(f.ncm||'')||'—'}</td><td style="font-size:12px">${_ftEsc(f.cfop||'')||'—'}</td><td style="font-size:12px">${_ftEsc(f.unidade||'')||'—'}</td><td><span class="badge ${f.ncm?'bg':'bo'}" style="font-size:10px">${f.ncm?'Com NCM':'Falta NCM'}</span></td><td><button class="btn btn-ghost btn-xs" onclick="abrirFinFiscal('peca','${p.id}')">Complementar</button></td></tr>`;}).join(''):vazio(7,'Nenhuma peça encontrada.');
+  document.getElementById('tb-ffs').innerHTML=G_finServ.length?G_finServ.map(s=>`<tr><td>${_ftEsc(s.nome)}</td><td style="font-size:12px">${_ftEsc(s.codigo||'')||'—'}</td><td style="font-size:12px">${_ftEsc(s.cnae||'')||'—'}</td><td>${s.aliquota_iss==null?'<span class="badge bo" style="font-size:10px">não definida</span>':_ffPct(s.aliquota_iss)||'0%'}</td><td><span class="badge ${s.ativo?'bg':'bgr'}" style="font-size:10px">${s.ativo?'Ativo':'Inativo'}</span></td><td style="white-space:nowrap"><button class="btn btn-ghost btn-xs" onclick="abrirFinServ('${s.id}')">Editar</button> <button class="btn btn-danger btn-xs" onclick="excluirFinServ('${s.id}')">×</button></td></tr>`).join(''):vazio(6,'Nenhum serviço. Clique em “+ Novo serviço”.');
+}
+function abrirFinFiscal(tipo,id){
+  const cli=tipo==='cliente',f=_ffGet(tipo,id),nome=cli?_ffCli(id).nome:((G.estoque||[]).find(p=>p.id===id)||{}).nome;
+  document.getElementById('m-ffisc-title').textContent='Dados fiscais — '+(nome||''); _ffSetV({'ff-tipo':tipo,'ff-ref':id,'ff-obs':f.obs||''});
+  document.getElementById('ff-g-cli').style.display=cli?'':'none';document.getElementById('ff-g-peca').style.display=cli?'none':'';
+  if(cli)_ffSetV({'ff-doc':f.documento||'','ff-em':f.email_fiscal||'','ff-ie':f.ie||'','ff-im':f.im||'','ff-issr':f.iss_retido?'1':'0','ff-irrf':f.ret_irrf||0,'ff-pis':f.ret_pis||0,'ff-cof':f.ret_cofins||0,'ff-csl':f.ret_csll||0});
+  else _ffSetV({'ff-ncm':f.ncm||'','ff-cfop':f.cfop||'','ff-un':f.unidade||''});
+  openM('m-ffisc');
+}
+const _ffSetV=o=>Object.entries(o).forEach(([k,v])=>{document.getElementById(k).value=v;});
+async function salvarFinFiscal(){
+  const t=_ffV('ff-tipo'),b=t==='cliente'?{documento:_ffV('ff-doc'),email_fiscal:_ffV('ff-em'),ie:_ffV('ff-ie'),im:_ffV('ff-im'),iss_retido:_ffV('ff-issr')==='1',ret_irrf:+_ffV('ff-irrf'),ret_pis:+_ffV('ff-pis'),ret_cofins:+_ffV('ff-cof'),ret_csll:+_ffV('ff-csl'),obs:_ffV('ff-obs')}:{ncm:_ffV('ff-ncm'),cfop:_ffV('ff-cfop'),unidade:_ffV('ff-un'),obs:_ffV('ff-obs')};
+  try{await api('PUT',`/api/financeiro/fiscal/${t}/${_ffV('ff-ref')}`,b);closeM('m-ffisc');await carregarFinFiscal();}catch(e){alert(e.message);}
+}
+function abrirFinServ(id){const s=G_finServ.find(x=>x.id===id)||{};document.getElementById('m-fserv-title').textContent=id?'Editar serviço':'Novo serviço';
+  _ffSetV({'fs-id':id||'','fs-nome':s.nome||'','fs-cod':s.codigo||'','fs-cnae':s.cnae||'','fs-aliq':s.aliquota_iss==null?'':s.aliquota_iss,'fs-desc':s.descricao_padrao||'','fs-ativo':s.ativo===false?'0':'1'});openM('m-fserv');}
+async function salvarFinServ(){const id=_ffV('fs-id'),b={nome:_ffV('fs-nome'),codigo:_ffV('fs-cod'),cnae:_ffV('fs-cnae'),aliquota_iss:_ffV('fs-aliq'),descricao_padrao:_ffV('fs-desc'),ativo:_ffV('fs-ativo')==='1'};
+  try{await api(id?'PUT':'POST','/api/financeiro/servicos'+(id?'/'+id:''),b);closeM('m-fserv');await carregarFinFiscal();}catch(e){alert(e.message);}}
+async function excluirFinServ(id){if(!confirm('Excluir este serviço?'))return;try{await api('DELETE','/api/financeiro/servicos/'+id);await carregarFinFiscal();}catch(e){alert(e.message);}}
+// cálculo da nota: valores calculados a partir dos percentuais cadastrados (rotulados como tal na tela)
+function _ffCalc(valor,cliId,servId){const f=_ffGet('cliente',cliId),sv=G_finServ.find(x=>x.id===servId)||{},pc=p=>_ftR2(valor*(p||0)/100),iss=sv.aliquota_iss==null?0:pc(sv.aliquota_iss),r={irrf:pc(f.ret_irrf),pis:pc(f.ret_pis),cofins:pc(f.ret_cofins),csll:pc(f.ret_csll)},issRet=f.iss_retido?iss:0;
+  return{...r,iss,issRet,aliq:sv.aliquota_iss,liquido:_ftR2(valor-issRet-r.irrf-r.pis-r.cofins-r.csll),f,sv};}
+async function abrirFinNota(id){
+  if(!G_finTitulos.length)await carregarFinTitulos(); const n=G_finNotas.find(x=>x.id===id)||{};
+  document.getElementById('m-fnota-title').textContent=id?'Editar rascunho':'Nova nota de serviço';
+  document.getElementById('fn-tit').innerHTML='<option value="">— Nota avulsa —</option>'+G_finTitulos.filter(t=>t.tipo==='receber'&&_ftSit(t)!=='pago').map(t=>`<option value="${t.id}">${fd(t.vencimento)} · ${_ftEsc(t.descricao)} · ${fm(_ftSaldo(t))}</option>`).join('');
+  document.getElementById('fn-serv').innerHTML='<option value="">— Selecione —</option>'+G_finServ.filter(s=>s.ativo||s.id===n.servico_id).map(s=>`<option value="${s.id}">${_ftEsc(s.nome)}</option>`).join('');
+  _ffSetV({'fn-id':id||'','fn-cq':'','fn-valor':n.valor||'','fn-desc':n.descricao||'','fn-comp':n.competencia||'','fn-tit':n.titulo_id||''}); finNotaFiltraCli(n.cliente_id); document.getElementById('fn-serv').value=n.servico_id||''; finNotaCalc(); openM('m-fnota');
+}
+function finNotaFiltraCli(sel){const q=_ffV('fn-cq').toLowerCase(),atual=sel||_ffV('fn-cli'),l=(G.clientes||[]).filter(c=>(c.nome||'').toLowerCase().includes(q));
+  document.getElementById('fn-cli').innerHTML='<option value="">— Selecione —</option>'+l.map(c=>`<option value="${c.id}">${_ftEsc(c.nome)}</option>`).join('');document.getElementById('fn-cli').value=l.some(c=>c.id===atual)?atual:(q&&l.length===1?l[0].id:'');finNotaCalc();}
+function finNotaDeTitulo(){const t=G_finTitulos.find(x=>x.id===_ffV('fn-tit'));if(!t)return;_ffSetV({'fn-valor':_ftSaldo(t),'fn-desc':t.descricao||'','fn-comp':t.competencia||''});document.getElementById('fn-cq').value='';finNotaFiltraCli(t.cliente_id);}
+function finNotaServ(){const s=G_finServ.find(x=>x.id===_ffV('fn-serv'));if(s&&s.descricao_padrao&&!_ffV('fn-desc'))document.getElementById('fn-desc').value=s.descricao_padrao;finNotaCalc();}
+function finNotaCalc(){const v=+_ffV('fn-valor')||0,c=_ffCalc(v,_ffV('fn-cli'),_ffV('fn-serv')),l=[`ISS ${c.aliq==null?'(alíquota não definida no serviço)':_ffPct(c.aliq)||'0%'}: <b>${fm(c.iss)}</b>${c.f.iss_retido?' — retido pelo cliente':''}`];
+  [['IRRF',c.irrf],['PIS',c.pis],['COFINS',c.cofins],['CSLL',c.csll]].forEach(r=>{if(r[1])l.push(`${r[0]} retido: <b>${fm(r[1])}</b>`);});
+  document.getElementById('fn-calc').innerHTML=`<div style="font-weight:700;margin-bottom:2px">Valores calculados (conferir com o contador)</div>${l.join('<br>')}<br>Valor líquido a receber: <b>${fm(c.liquido)}</b>`;}
+async function salvarFinNota(){const id=_ffV('fn-id'),v=+_ffV('fn-valor')||0,c=_ffCalc(v,_ffV('fn-cli'),_ffV('fn-serv'));
+  const b={cliente_id:_ffV('fn-cli'),servico_id:_ffV('fn-serv'),descricao:_ffV('fn-desc'),valor:v,competencia:_ffV('fn-comp'),titulo_id:_ffV('fn-tit'),aliquota_iss:c.aliq==null?null:c.aliq,calculo:{iss:c.iss,irrf:c.irrf,pis:c.pis,cofins:c.cofins,csll:c.csll,liquido:c.liquido},acao:'salvar'};
+  try{await api(id?'PUT':'POST','/api/financeiro/notas'+(id?'/'+id:''),b);closeM('m-fnota');await carregarFinFiscal();}catch(e){alert(e.message);}}
+async function excluirFinNota(id){if(!confirm('Excluir este rascunho?'))return;try{await api('DELETE','/api/financeiro/notas/'+id);await carregarFinFiscal();}catch(e){alert(e.message);}}
+// Emissão assistida: mostra os dados prontos para copiar no Emissor Nacional e registra o número depois
+function _ffCopia(i){const t=_feCopia[i];if(navigator.clipboard)navigator.clipboard.writeText(t).catch(()=>{});}
+function abrirFinEmissao(id){
+  const n=G_finNotas.find(x=>x.id===id);if(!n)return;_feCopia=[];const cfg=k=>document.getElementById('fin-cfg-'+k)?.value||'',cli=_ffCli(n.cliente_id),c=_ffCalc(n.valor,n.cliente_id,n.servico_id),sv=c.sv,f=c.f,pend=[];
+  if(!cfg('cnpj'))pend.push('CNPJ da empresa (Configuração fiscal)');if(!cfg('im'))pend.push('inscrição municipal da empresa');if(!f.documento)pend.push('CNPJ/CPF do cliente');if(!sv.codigo)pend.push('código de serviço');if(sv.aliquota_iss==null)pend.push('alíquota de ISS do serviço');
+  const row=(l,v,calc)=>{const t=String(v==null?'':v);if(!t)return `<tr><td>${l}</td><td class="nd" colspan="2">não informado</td></tr>`;_feCopia.push(t);return `<tr><td>${l}</td><td>${_ftEsc(t)}${calc?' <span class="badge bo" style="font-size:9px">calculado</span>':''}</td><td style="width:70px"><button class="btn btn-ghost btn-xs" onclick="_ffCopia(${_feCopia.length-1})">Copiar</button></td></tr>`;};
+  const sec=(t,r)=>`<div class="fin-sec" style="padding:10px 12px"><h4>${t}</h4><table style="width:100%;font-size:12px"><tbody>${r.join('')}</tbody></table></div>`,num=v=>String(v).replace('.',',');
+  const comp=n.competencia?n.competencia.slice(5)+'/'+n.competencia.slice(0,4):'';
+  let h=`<div class="fin-cfg-sub" style="max-width:none;margin-bottom:8px">Confira os dados, emita a nota no <a href="https://www.gov.br/nfse" target="_blank" rel="noopener">Emissor Nacional (gov.br/nfse)</a> e registre o número no fim desta tela. O Orion ainda não envia a nota por conta própria.</div>`;
+  if(pend.length)h+=`<div style="background:var(--orbg);color:var(--or);border-radius:8px;padding:8px 12px;font-size:12px;margin-bottom:8px">Faltam dados para emitir: ${pend.join('; ')}.</div>`;
+  h+=sec('Prestador (sua empresa)',[row('Razão social',cfg('razao')),row('CNPJ',_ffDoc(cfg('cnpj'))),row('Inscrição municipal',cfg('im')),row('Município / UF',[cfg('municipio'),cfg('uf')].filter(Boolean).join(' / ')),row('Regime tributário',cfg('regime'))])
+   +sec('Tomador (cliente)',[row('Nome',cli.nome),row('CNPJ / CPF',_ffDoc(f.documento)),row('Inscrição municipal',f.im),row('E-mail',f.email_fiscal||cli.email),row('Endereço',[cli.end_logradouro,[cli.cidade,cli.uf].filter(Boolean).join('/'),cli.cep?'CEP '+cli.cep:''].filter(Boolean).join(', '))])
+   +sec('Serviço',[row('Código de serviço',sv.codigo),row('Descrição do serviço',n.descricao),row('Competência',comp),row('Local da prestação (sugestão: município da empresa — confirmar)',[cfg('municipio'),cfg('uf')].filter(Boolean).join(' / '))])
+   +sec('Valores',[row('Valor do serviço (R$)',num(n.valor.toFixed(2))),row('Alíquota ISS (%)',sv.aliquota_iss==null?'':num(sv.aliquota_iss)),row('ISS (R$)',sv.aliquota_iss==null?'':num(c.iss.toFixed(2)),1),row('ISS retido pelo tomador?',f.iss_retido?'Sim':'Não'),...[['IRRF',c.irrf],['PIS',c.pis],['COFINS',c.cofins],['CSLL',c.csll]].filter(r=>r[1]).map(r=>row(r[0]+' retido (R$)',num(r[1].toFixed(2)),1)),row('Valor líquido (R$)',num(c.liquido.toFixed(2)),1)]);
+  document.getElementById('m-femit-title').textContent=(n.status==='rascunho'?'Emissão assistida':'Nota fiscal')+' — '+(cli.nome||'');
+  document.getElementById('fe-body').innerHTML=h+(n.status==='rascunho'?`<div class="fin-sec" style="padding:10px 12px"><h4>Depois de emitir, registre aqui</h4><div class="fgrid fg2"><div class="fg"><label>Número da NFS-e *</label><input id="fe-num"></div><div class="fg"><label>Data de emissão *</label><input type="date" id="fe-data" value="${_ftHoje()}"></div><div class="fg" style="grid-column:1/-1"><label>Chave de acesso (opcional)</label><input id="fe-chave" placeholder="Somente números"></div></div></div>`:`<div class="fin-sec" style="padding:10px 12px"><h4>Registro</h4><div style="font-size:12px;line-height:1.7">Situação: <b>${n.status==='emitida'?'Emitida':'Cancelada'}</b><br>Número: <b>${_ftEsc(n.numero||'')}</b> · Emissão: ${fd(n.data_emissao)}${n.chave?'<br>Chave: '+_ftEsc(n.chave):''}${n.motivo_cancelamento?'<br>Motivo do cancelamento: '+_ftEsc(n.motivo_cancelamento):''}</div></div>`);
+  document.getElementById('fe-foot').innerHTML=`<button class="btn btn-ghost" onclick="closeM('m-femit')">Fechar</button>`+(n.status==='rascunho'?`<button class="btn btn-primary" onclick="registrarEmissaoNota('${n.id}')">Registrar emissão</button>`:n.status==='emitida'?`<button class="btn btn-danger" onclick="cancelarNotaFin('${n.id}')">Marcar como cancelada</button>`:'');
+  openM('m-femit');
+}
+async function registrarEmissaoNota(id){try{await api('PUT','/api/financeiro/notas/'+id,{acao:'emitida',numero:_ffV('fe-num'),data_emissao:_ffV('fe-data'),chave:_ffV('fe-chave')});closeM('m-femit');await carregarFinFiscal();}catch(e){alert(e.message);}}
+async function cancelarNotaFin(id){const m=prompt('Motivo do cancelamento (a nota deve ser cancelada também no Emissor Nacional):');if(m===null)return;try{await api('PUT','/api/financeiro/notas/'+id,{acao:'cancelada',motivo:m});closeM('m-femit');await carregarFinFiscal();}catch(e){alert(e.message);}}
 
 function exportFinExcel(){
   const esc=v=>`"${String(v||'').replace(/"/g,'""')}"`;
