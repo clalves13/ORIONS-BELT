@@ -638,7 +638,7 @@ app.get('/api/dashboard', requireAuth, async (req,res) => {
 // BACKUP
 app.get('/api/backup', requireAuth, requireAdmin, async (req,res) => {
   try {
-    const [users,tecnicos,clientes,equipamentos,ordens,laboratorio,logistica,historico,estoque,suprCli,suprMovs,estMovs,lancamentos,contratos,financeiro,agenda,veiculos,financeiroTitulos,financeiroConfig,financeiroFiscal,financeiroServicos,financeiroNotas]=await Promise.all([
+    const [users,tecnicos,clientes,equipamentos,ordens,laboratorio,logistica,historico,estoque,suprCli,suprMovs,estMovs,lancamentos,contratos,financeiro,agenda,veiculos,financeiroTitulos,financeiroConfig,financeiroFiscal,financeiroServicos,financeiroNotas,financeiroPedidos]=await Promise.all([
       col('users').find().toArray(),
       col('tecnicos').find().toArray(),
       tenantCol('clientes', req).find().toArray(),
@@ -661,6 +661,7 @@ app.get('/api/backup', requireAuth, requireAdmin, async (req,res) => {
       col('financeiro_fiscal').find().toArray(),
       col('financeiro_servicos').find().toArray(),
       col('financeiro_notas').find().toArray(),
+      col('financeiro_pedidos').find().toArray(),
     ]);
     // Converte _id ObjectId para string para preservar referências no restore
     const toStr = arr => arr.map(d => ({...d, _id: d._id?.toString(), id: d._id?.toString()}));
@@ -688,6 +689,7 @@ app.get('/api/backup', requireAuth, requireAdmin, async (req,res) => {
       financeiro_fiscal:  toStr(financeiroFiscal),
       financeiro_servicos: toStr(financeiroServicos),
       financeiro_notas:   toStr(financeiroNotas),
+      financeiro_pedidos: toStr(financeiroPedidos),
     };
     res.setHeader('Content-Disposition',`attachment; filename="orion_backup_${new Date().toISOString().slice(0,10)}.json"`);
     res.json(backup);
@@ -732,6 +734,7 @@ app.post('/api/restore', requireAuth, requireAdmin, async (req, res) => {
       { key: 'financeiro_fiscal',   col: 'financeiro_fiscal' },
       { key: 'financeiro_servicos', col: 'financeiro_servicos' },
       { key: 'financeiro_notas',    col: 'financeiro_notas' },
+      { key: 'financeiro_pedidos',  col: 'financeiro_pedidos' },
     ];
 
     const resultados = {};
@@ -986,6 +989,33 @@ app.put('/api/financeiro/notas/:id', requireAuth, requireFinanceiroAcesso, async
     if(acao==='cancelada'){ if(n.status!=='emitida')return res.status(409).json({error:'Só notas emitidas podem ser marcadas como canceladas.'}); await tc.updateOne({_id:n._id},{$set:{status:'cancelada',motivo_cancelamento:strFin(b.motivo,300),updated_at:now()}}); return res.json({ok:true}); }
     res.status(400).json({error:'Ação inválida.'}); }catch(e){res.status(500).json({error:e.message});} });
 app.delete('/api/financeiro/notas/:id', requireAuth, requireFinanceiroAcesso, async (req,res) => { try{ const tc=tenantCol('financeiro_notas',req), n=await tc.findOne({_id:new ObjectId(req.params.id)}); if(!n)return res.status(404).json({error:'Nota não encontrada.'}); if(n.status!=='rascunho')return res.status(409).json({error:'Só rascunhos podem ser excluídos.'}); await tc.deleteOne({_id:n._id}); res.json({ok:true}); }catch(e){res.status(500).json({error:e.message});} });
+
+// PEDIDOS AVULSOS — serviços prestados e venda de produtos/peças. Faturar gera as contas a receber (sem baixar estoque).
+const itensFin=a=>{ if(!Array.isArray(a)||!a.length||a.length>60)return{erro:'Inclua de 1 a 60 itens.'}; const it=[]; for(const x of a){ const qtd=Number(x.qtd), vu=round2Fin(x.valor_unit);
+  if(!['servico','peca','outro'].includes(x.tipo)||!strFin(x.descricao)||!Number.isFinite(qtd)||qtd<=0||!Number.isFinite(vu)||vu<0)return{erro:'Confira os itens: descrição, quantidade e valor.'};
+  it.push({tipo:x.tipo,ref_id:strFin(x.ref_id,40),descricao:strFin(x.descricao,200),qtd:round2Fin(qtd),valor_unit:vu,total:round2Fin(qtd*vu)}); } return{it}; };
+const pedFin=b=>{ if(!strFin(b.cliente_id,40))return{erro:'Selecione o cliente.'}; const r=itensFin(b.itens); if(r.erro)return r; const desc=nonNegFin(b.desconto); if(Number.isNaN(desc))return{erro:'Desconto inválido.'};
+  const sub=round2Fin(r.it.reduce((s,x)=>s+x.total,0)), total=round2Fin(sub-desc); if(total<=0)return{erro:'O total deve ser maior que zero.'}; if(!dataIsoFin(b.data))return{erro:'Informe a data.'};
+  return{d:{cliente_id:strFin(b.cliente_id,40),data:b.data,categoria:strFin(b.categoria,40)||'Outros',itens:r.it,subtotal:sub,desconto:desc,total,obs:strFin(b.obs,500)}}; };
+app.get('/api/financeiro/pedidos', requireAuth, requireFinanceiroAcesso, listFin('financeiro_pedidos',{created_at:-1}));
+app.post('/api/financeiro/pedidos', requireAuth, requireFinanceiroAcesso, async (req,res) => { try{ const r=pedFin(req.body||{}); if(r.erro)return res.status(400).json({error:r.erro}); const x=await tenantCol('financeiro_pedidos',req).insertOne({...r.d,status:'aberto',titulo_ids:[],nota_id:'',created_at:now(),updated_at:now()}); res.json({ok:true,id:x.insertedId.toString()}); }catch(e){res.status(500).json({error:e.message});} });
+app.put('/api/financeiro/pedidos/:id', requireAuth, requireFinanceiroAcesso, async (req,res) => { try{ const b=req.body||{}, tc=tenantCol('financeiro_pedidos',req), p=await tc.findOne({_id:new ObjectId(req.params.id)}); if(!p)return res.status(404).json({error:'Lançamento não encontrado.'});
+  if(b.acao==='vincular_nota'){ await tc.updateOne({_id:p._id},{$set:{nota_id:strFin(b.nota_id,40),updated_at:now()}}); return res.json({ok:true}); }
+  if(p.status!=='aberto')return res.status(409).json({error:'Só lançamentos ainda não faturados podem ser editados.'}); const r=pedFin(b); if(r.erro)return res.status(400).json({error:r.erro}); await tc.updateOne({_id:p._id},{$set:{...r.d,updated_at:now()}}); res.json({ok:true}); }catch(e){res.status(500).json({error:e.message});} });
+app.delete('/api/financeiro/pedidos/:id', requireAuth, requireFinanceiroAcesso, async (req,res) => { try{ const tc=tenantCol('financeiro_pedidos',req), p=await tc.findOne({_id:new ObjectId(req.params.id)}); if(!p)return res.status(404).json({error:'Lançamento não encontrado.'}); if(p.status!=='aberto')return res.status(409).json({error:'Lançamento já faturado não pode ser excluído.'}); await tc.deleteOne({_id:p._id}); res.json({ok:true}); }catch(e){res.status(500).json({error:e.message});} });
+app.post('/api/financeiro/pedidos/:id/faturar', requireAuth, requireFinanceiroAcesso, async (req,res) => {
+  try{ const b=req.body||{}, tc=tenantCol('financeiro_pedidos',req), tt=tenantCol('financeiro_titulos',req), p=await tc.findOne({_id:new ObjectId(req.params.id)}); if(!p)return res.status(404).json({error:'Lançamento não encontrado.'}); if(p.status!=='aberto')return res.status(409).json({error:'Este lançamento já foi faturado.'});
+    const n=parseInt(b.parcelas||1,10); if(!(n>=1&&n<=60))return res.status(400).json({error:'Parcelas de 1 a 60.'}); if(!dataIsoFin(b.vencimento))return res.status(400).json({error:'Informe o primeiro vencimento.'});
+    const u=await tc.updateOne({_id:p._id,status:'aberto'},{$set:{status:'faturado',faturado_em:now(),updated_at:now()}}); if(!u.modifiedCount)return res.status(409).json({error:'Este lançamento já foi faturado.'});
+    const base=Math.floor(p.total*100/n)/100, vals=Array(n).fill(base); vals[n-1]=round2Fin(p.total-base*(n-1));
+    const addMes=(iso,k)=>{const [y,m,d]=iso.split('-').map(Number), t=new Date(y,m-1+k,1), ult=new Date(t.getFullYear(),t.getMonth()+1,0).getDate(); return `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(Math.min(d,ult)).padStart(2,'0')}`;};
+    const ids=[], resumo=p.itens.map(i=>i.descricao).join(', ').slice(0,100);
+    try{ for(let i=0;i<n;i++){ const r=await tt.insertOne({tipo:'receber',descricao:`Pedido ${p.data} — ${resumo}`+(n>1?` (${i+1}/${n})`:''),categoria:p.categoria||'Outros',cliente_id:p.cliente_id,fornecedor:'',documento:'',emissao:p.data,competencia:p.data.slice(0,7),vencimento:addMes(b.vencimento,i),valor:vals[i],valor_pago:0,status:'aberto',forma_pagamento:strFin(b.forma_pagamento,30),centro_custo:'',parcela:n>1?`${i+1}/${n}`:'',grupo_id:'ped'+String(p._id),baixas:[],observacoes:'',origem:'pedido',origem_id:String(p._id),created_at:now(),updated_at:now()}); ids.push(r.insertedId); }
+      await tc.updateOne({_id:p._id},{$set:{titulo_ids:ids.map(String)}}); }
+    catch(err){ for(const id of ids)await tt.deleteOne({_id:id}); await tc.updateOne({_id:p._id},{$set:{status:'aberto',updated_at:now()}}); throw err; }
+    res.json({ok:true,titulos:n});
+  }catch(e){res.status(500).json({error:e.message});}
+});
 
 // LANÇAMENTOS MANUAIS (histórico sem OS)
 app.get('/api/lancamentos', requireAuth, async (req,res) => {

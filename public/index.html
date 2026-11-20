@@ -2597,12 +2597,12 @@ label { font-size: 11px !important; font-weight: 600 !important; color: #475569 
     <div id="fin-tabs">
       <button class="log-tab active" id="ftab-visao" onclick="switchFinTab('visao')">📊 Visão geral</button>
       <button class="log-tab" id="ftab-lancamentos" onclick="switchFinTab('lancamentos')">📒 Lançamentos</button>
+      <button class="log-tab" id="ftab-vendas" onclick="switchFinTab('vendas')">🛒 Vendas e serviços</button>
       <button class="log-tab" id="ftab-titulos" onclick="switchFinTab('titulos')">💳 Contas a Pagar/Receber</button>
       <button class="log-tab" id="ftab-rel" onclick="switchFinTab('rel')">🧾 Relatórios</button>
       <button class="log-tab" id="ftab-fiscal" onclick="switchFinTab('fiscal')">🏛️ Fiscal</button>
-      <button class="log-tab" id="ftab-config" onclick="switchFinTab('config')">⚙️ Configuração fiscal</button>
     </div>
-    <div id="fin-fiscnav" style="display:none"><button data-s="notas" onclick="finFiscSub('notas')">Notas fiscais</button><button data-s="clientes" onclick="finFiscSub('clientes')">Clientes</button><button data-s="pecas" onclick="finFiscSub('pecas')">Peças</button><button data-s="servicos" onclick="finFiscSub('servicos')">Serviços</button></div>
+    <div id="fin-fiscnav" style="display:none"><button data-s="notas" onclick="finFiscSub('notas')">Notas fiscais</button><button data-s="clientes" onclick="finFiscSub('clientes')">Clientes</button><button data-s="pecas" onclick="finFiscSub('pecas')">Peças</button><button data-s="servicos" onclick="finFiscSub('servicos')">Serviços</button><button data-s="config" onclick="switchFinTab('config')">Configuração da empresa</button></div>
     <div id="fin-relnav" style="display:none"><button data-t="rel" onclick="switchFinTab('rel')">Demonstrativo</button><button data-t="dre" onclick="switchFinTab('dre')">DRE</button><button data-t="fluxo" onclick="switchFinTab('fluxo')">Fluxo de caixa</button></div>
     <!-- Filtros período -->
     <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
@@ -2654,6 +2654,14 @@ label { font-size: 11px !important; font-weight: 600 !important; color: #475569 
     <!-- Aba Fluxo -->
     <div id="fin-tab-fluxo" style="display:none">
       <div id="fin-fluxo-content"></div>
+    </div>
+    <!-- Aba Vendas e serviços -->
+    <div id="fin-tab-vendas" style="display:none">
+      <div class="fin-bar"><div class="swrap" style="flex:1;min-width:180px"><span style="color:var(--tx3)">🔍</span><input type="text" id="fp-q" placeholder="Buscar cliente ou item..." oninput="renderFinPedidos()"></div>
+        <select id="fp-sit" onchange="renderFinPedidos()"><option value="">Todos</option><option value="aberto">A faturar</option><option value="faturado">Faturados</option></select>
+        <button class="btn btn-primary btn-sm" onclick="abrirFinPedido()">+ Lançar serviço / venda</button></div>
+      <div class="fin-cfg-sub" style="margin:0 0 8px">Registre serviços prestados e produtos/peças vendidos. Ao faturar, o Orion cria as contas a receber (à vista ou parceladas).</div>
+      <div class="card" style="padding:0"><div class="twrap"><table><thead><tr><th>Data</th><th>Cliente</th><th>Itens</th><th>Total R$</th><th>Situação</th><th>Ações</th></tr></thead><tbody id="tb-fp"></tbody></table></div></div>
     </div>
     <!-- Aba Fiscal -->
     <div id="fin-tab-fiscal" style="display:none">
@@ -4449,6 +4457,33 @@ Outros</textarea>
     <div style="margin-top:10px;padding:10px 12px;border-radius:8px;background:var(--bl2bg);font-weight:700;color:var(--nv)" id="fb-total"></div>
   </div>
   <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('m-finbaixa')">Cancelar</button><button class="btn btn-primary" id="fb-save-btn" onclick="confirmarBaixaTitulo()">Confirmar baixa</button></div>
+</div></div>
+
+<!-- Modais Vendas e serviços -->
+<div class="mov" id="m-fped"><div class="modal" style="max-width:720px">
+  <div class="mhd"><div class="mhd-title" id="m-fped-title">Lançar serviço / venda</div><button class="btnx" onclick="closeM('m-fped')">×</button></div>
+  <div class="mbody"><input type="hidden" id="fp-id"><div class="fgrid fg2">
+    <div class="fg" style="grid-column:1/-1"><label>Cliente * (digite para filtrar)</label><input id="fp-cq" placeholder="Buscar pelo nome..." oninput="finPedFiltraCli()"><select id="fp-cli" style="margin-top:6px"></select></div>
+    <div class="fg"><label>Data *</label><input type="date" id="fp-data"></div>
+    <div class="fg"><label>Categoria da receita</label><select id="fp-cat"><option>OS / Atendimento</option><option>Contrato</option><option>Implantação</option><option>Peças / Material</option><option>Outros</option></select></div></div>
+    <div style="margin:12px 0 4px;font-weight:700;font-size:13px;color:var(--nv)">Itens</div>
+    <datalist id="dl-fp-servico"></datalist><datalist id="dl-fp-peca"></datalist>
+    <div id="fp-itens"></div>
+    <button class="btn btn-ghost btn-sm" onclick="finPedAddItem()" style="margin-top:6px">+ Adicionar item</button>
+    <div class="fgrid fg2" style="margin-top:12px"><div class="fg"><label>Desconto R$</label><input type="number" id="fp-desc" value="0" step="0.01" min="0" oninput="finPedTot()"></div>
+      <div class="fg"><label>Observações</label><input id="fp-obs"></div></div>
+    <div id="fp-tot" style="margin-top:10px;padding:10px 12px;border-radius:8px;background:var(--bl2bg);font-weight:700;color:var(--nv)"></div>
+    <div class="fin-cfg-sub" style="margin-top:6px">Itens de peça/produto não baixam o estoque: a baixa continua sendo feita no módulo de Estoque. Valores unitários são informados por você.</div></div>
+  <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('m-fped')">Cancelar</button><button class="btn btn-primary" onclick="salvarFinPedido()">Salvar</button></div>
+</div></div>
+<div class="mov" id="m-ffat"><div class="modal" style="max-width:440px">
+  <div class="mhd"><div class="mhd-title">Faturar lançamento</div><button class="btnx" onclick="closeM('m-ffat')">×</button></div>
+  <div class="mbody"><input type="hidden" id="ft2-id"><div id="ft2-res" style="font-size:12px;margin-bottom:10px;line-height:1.6"></div><div class="fgrid fg2">
+    <div class="fg"><label>Parcelas (mensais)</label><input type="number" id="ft2-n" value="1" min="1" max="60" oninput="finFatInfo()"></div>
+    <div class="fg"><label>1º vencimento *</label><input type="date" id="ft2-venc"></div>
+    <div class="fg" style="grid-column:1/-1"><label>Forma de pagamento</label><select id="ft2-forma"><option value="">—</option><option>Boleto</option><option>PIX</option><option>Transferência</option><option>Cartão</option><option>Dinheiro</option></select></div></div>
+    <div id="ft2-info" style="font-size:11px;color:var(--tx3);margin-top:8px"></div></div>
+  <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('m-ffat')">Cancelar</button><button class="btn btn-success" onclick="confirmarFaturar()">Faturar</button></div>
 </div></div>
 
 <!-- Modais Fiscal -->
@@ -8294,11 +8329,11 @@ async function lancarReceitaOS(os) {
 
 let _finTab='visao';
 function switchFinTab(tab) {
-  _finTab=tab; const rels=['rel','dre','fluxo'], aba=rels.includes(tab)?'rel':tab;
-  ['visao','lancamentos','titulos','rel','dre','fluxo','fiscal','config'].forEach(t=>{const p=document.getElementById('fin-tab-'+t); if(p)p.style.display=t===tab?'':'none';});
-  ['visao','lancamentos','titulos','rel','fiscal','config'].forEach(t=>{const b=document.getElementById('ftab-'+t); if(b)b.classList.toggle('active',t===aba);});
+  _finTab=tab; const rels=['rel','dre','fluxo'], aba=rels.includes(tab)?'rel':(tab==='config'?'fiscal':tab);
+  ['visao','lancamentos','vendas','titulos','rel','dre','fluxo','fiscal','config'].forEach(t=>{const p=document.getElementById('fin-tab-'+t); if(p)p.style.display=t===tab?'':'none';});
+  ['visao','lancamentos','vendas','titulos','rel','fiscal'].forEach(t=>{const b=document.getElementById('ftab-'+t); if(b)b.classList.toggle('active',t===aba);});
   const show=(id,v)=>{const e=document.getElementById(id); if(e)e.style.display=v;};
-  show('fin-kpis',tab==='lancamentos'?'grid':'none'); show('fin-top-actions',tab==='lancamentos'?'':'none'); show('fin-relnav',rels.includes(tab)?'flex':'none'); show('fin-fiscnav',tab==='fiscal'?'flex':'none');
+  show('fin-kpis',tab==='lancamentos'?'grid':'none'); show('fin-top-actions',tab==='lancamentos'?'':'none'); show('fin-relnav',rels.includes(tab)?'flex':'none'); show('fin-fiscnav',(tab==='fiscal'||tab==='config')?'flex':'none');
   const barra=document.getElementById('s-fin')?.parentElement?.parentElement; if(barra)barra.style.display=(tab==='lancamentos'||tab==='dre'||tab==='fluxo')?'':'none';
   document.querySelectorAll('#fin-relnav button').forEach(b=>b.classList.toggle('active',b.dataset.t===tab));
   if(tab==='visao')renderFinVisao();
@@ -8307,6 +8342,8 @@ function switchFinTab(tab) {
   if(tab==='titulos')carregarFinTitulos();
   if(tab==='rel')renderFinDemo();
   if(tab==='fiscal')carregarFinFiscal();
+  if(tab==='vendas')carregarFinPedidos();
+  if(tab==='config')document.querySelectorAll('#fin-fiscnav button').forEach(b=>b.classList.toggle('active',b.dataset.s==='config'));
 }
 
 function renderFinKpis() {
@@ -8800,7 +8837,7 @@ async function carregarFinFiscal(){
   catch(e){_ffErro=e.message||'Erro ao carregar dados fiscais.';G_finFiscal=[];G_finServ=[];G_finNotas=[];}
   renderFinFiscal();
 }
-function finFiscSub(s){_ffSub=s;renderFinFiscal();}
+function finFiscSub(s){_ffSub=s;if(_finTab!=='fiscal')switchFinTab('fiscal');else renderFinFiscal();}
 function renderFinFiscal(){
   ['notas','clientes','pecas','servicos'].forEach(s=>{const e=document.getElementById('ff-'+s);if(e)e.style.display=s===_ffSub?'':'none';});
   document.querySelectorAll('#fin-fiscnav button').forEach(b=>b.classList.toggle('active',b.dataset.s===_ffSub));
@@ -8876,6 +8913,61 @@ function abrirFinEmissao(id){
 }
 async function registrarEmissaoNota(id){try{await api('PUT','/api/financeiro/notas/'+id,{acao:'emitida',numero:_ffV('fe-num'),data_emissao:_ffV('fe-data'),chave:_ffV('fe-chave')});closeM('m-femit');await carregarFinFiscal();}catch(e){alert(e.message);}}
 async function cancelarNotaFin(id){const m=prompt('Motivo do cancelamento (a nota deve ser cancelada também no Emissor Nacional):');if(m===null)return;try{await api('PUT','/api/financeiro/notas/'+id,{acao:'cancelada',motivo:m});closeM('m-femit');await carregarFinFiscal();}catch(e){alert(e.message);}}
+
+// ─── VENDAS E SERVIÇOS (pedidos avulsos) ─────────────────
+let G_finPed=[],_fpErro='',_fpItens=[];
+async function carregarFinPedidos(){
+  try{G_finPed=await api('GET','/api/financeiro/pedidos');_fpErro='';}catch(e){G_finPed=[];_fpErro=e.message||'Erro ao carregar.';}
+  if(!G_finServ.length)try{G_finServ=await api('GET','/api/financeiro/servicos');}catch(e){}
+  renderFinPedidos();
+}
+function renderFinPedidos(){
+  const tb=document.getElementById('tb-fp');if(!tb)return;
+  if(_fpErro){tb.innerHTML=`<tr><td colspan="6"><div class="empty"><div class="empty-ico">🔒</div><div class="empty-t">${_ftEsc(_fpErro)}</div></div></td></tr>`;return;}
+  const q=(document.getElementById('fp-q').value||'').toLowerCase(),sit=document.getElementById('fp-sit').value;
+  const l=G_finPed.filter(p=>(!sit||p.status===sit)&&(!q||[_ffCli(p.cliente_id).nome,...p.itens.map(i=>i.descricao)].join(' ').toLowerCase().includes(q))).sort((a,b)=>(b.data||'').localeCompare(a.data||''));
+  tb.innerHTML=l.length?l.map(p=>{const res=p.itens.slice(0,2).map(i=>(i.qtd!==1?i.qtd+'× ':'')+i.descricao).join('; ')+(p.itens.length>2?` +${p.itens.length-2}`:''),ab=p.status==='aberto',tem=p.itens.some(i=>i.tipo==='servico');
+    return `<tr><td style="font-size:12px">${fd(p.data)}</td><td>${_ftEsc(_ffCli(p.cliente_id).nome||'—')}</td><td style="font-size:12px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${_ftEsc(res)}">${_ftEsc(res)}</td><td style="font-weight:700">${fm(p.total)}</td><td><span class="badge ${ab?'bo':'bg'}" style="font-size:10px">${ab?'A faturar':'Faturado'}</span>${p.nota_id?' <span class="badge bb" style="font-size:10px">Nota</span>':''}</td><td style="white-space:nowrap">${ab?`<button class="btn btn-success btn-xs" onclick="abrirFaturar('${p.id}')">Faturar</button> <button class="btn btn-ghost btn-xs" onclick="abrirFinPedido('${p.id}')">Editar</button> <button class="btn btn-danger btn-xs" onclick="excluirFinPedido('${p.id}')">×</button>`:''}${tem&&!p.nota_id?` <button class="btn btn-ghost btn-xs" onclick="gerarNotaDoPedido('${p.id}')">Gerar nota</button>`:''}</td></tr>`;}).join(''):`<tr><td colspan="6"><div class="empty"><div class="empty-ico">🛒</div><div class="empty-t">Nenhum lançamento. Clique em “+ Lançar serviço / venda”.</div></div></td></tr>`;
+}
+function finPedFiltraCli(sel){const q=_ffV('fp-cq').toLowerCase(),at=sel||_ffV('fp-cli'),l=(G.clientes||[]).filter(c=>(c.nome||'').toLowerCase().includes(q));
+  document.getElementById('fp-cli').innerHTML='<option value="">— Selecione —</option>'+l.map(c=>`<option value="${c.id}">${_ftEsc(c.nome)}</option>`).join('');document.getElementById('fp-cli').value=l.some(c=>c.id===at)?at:(q&&l.length===1?l[0].id:'');}
+async function abrirFinPedido(id){
+  if(!G_finServ.length)try{G_finServ=await api('GET','/api/financeiro/servicos');}catch(e){}
+  const p=G_finPed.find(x=>x.id===id)||{};document.getElementById('m-fped-title').textContent=id?'Editar lançamento':'Lançar serviço / venda';
+  document.getElementById('dl-fp-servico').innerHTML=G_finServ.filter(s=>s.ativo).map(s=>`<option value="${_ftEsc(s.nome)}">`).join('');
+  document.getElementById('dl-fp-peca').innerHTML=(G.estoque||[]).map(x=>`<option value="${_ftEsc(x.nome)}">`).join('');
+  _ffSetV({'fp-id':id||'','fp-cq':'','fp-data':p.data||_ftHoje(),'fp-cat':p.categoria||'OS / Atendimento','fp-desc':p.desconto||0,'fp-obs':p.obs||''});finPedFiltraCli(p.cliente_id);
+  _fpItens=p.itens?p.itens.map(i=>({...i})):[{tipo:'servico',ref_id:'',descricao:'',qtd:1,valor_unit:''}];finPedItens();openM('m-fped');
+}
+function finPedItens(){document.getElementById('fp-itens').innerHTML=_fpItens.map((it,i)=>`<div style="display:grid;grid-template-columns:110px 1fr 70px 100px 90px 28px;gap:6px;margin-bottom:6px;align-items:center">
+  <select onchange="_fpSet(${i},'tipo',this.value,1)"><option value="servico"${it.tipo==='servico'?' selected':''}>Serviço</option><option value="peca"${it.tipo==='peca'?' selected':''}>Peça/produto</option><option value="outro"${it.tipo==='outro'?' selected':''}>Outro</option></select>
+  <input value="${_ftEsc(it.descricao)}" list="${it.tipo==='outro'?'':'dl-fp-'+it.tipo}" placeholder="${it.tipo==='servico'?'Serviço (lista) ou descrição':it.tipo==='peca'?'Peça/produto (cadastro)':'Descrição'}" oninput="_fpSet(${i},'descricao',this.value)">
+  <input type="number" value="${it.qtd}" min="0" step="0.01" title="Quantidade" oninput="_fpSet(${i},'qtd',this.value)"><input type="number" value="${it.valor_unit}" min="0" step="0.01" placeholder="Valor un." oninput="_fpSet(${i},'valor_unit',this.value)">
+  <span id="fp-it-${i}" style="font-size:12px;text-align:right;font-weight:600"></span><button class="btn btn-danger btn-xs" onclick="finPedDelItem(${i})">×</button></div>`).join('');finPedTot();}
+function _fpSet(i,k,v,re){const it=_fpItens[i];it[k]=v;if(k==='tipo'){it.ref_id='';}
+  if(k==='descricao'||k==='tipo'){const l=it.tipo==='servico'?G_finServ:it.tipo==='peca'?(G.estoque||[]):[],m=l.find(x=>x.nome===it.descricao);it.ref_id=m?m.id:'';}
+  if(re)finPedItens();else finPedTot();}
+function finPedAddItem(){_fpItens.push({tipo:'servico',ref_id:'',descricao:'',qtd:1,valor_unit:''});finPedItens();}
+function finPedDelItem(i){if(_fpItens.length>1){_fpItens.splice(i,1);finPedItens();}}
+function finPedTot(){let sub=0;_fpItens.forEach((it,i)=>{const t=_ftR2((+it.qtd||0)*(+it.valor_unit||0));sub+=t;const e=document.getElementById('fp-it-'+i);if(e)e.textContent=fm(t);});
+  const d=+_ffV('fp-desc')||0;document.getElementById('fp-tot').textContent=`Subtotal ${fm(sub)} − desconto ${fm(d)} = Total ${fm(_ftR2(sub-d))}`;}
+async function salvarFinPedido(){const id=_ffV('fp-id'),b={cliente_id:_ffV('fp-cli'),data:_ffV('fp-data'),categoria:_ffV('fp-cat'),desconto:+_ffV('fp-desc')||0,obs:_ffV('fp-obs'),itens:_fpItens.map(i=>({tipo:i.tipo,ref_id:i.ref_id||'',descricao:i.descricao,qtd:+i.qtd,valor_unit:+i.valor_unit||0}))};
+  try{await api(id?'PUT':'POST','/api/financeiro/pedidos'+(id?'/'+id:''),b);closeM('m-fped');await carregarFinPedidos();}catch(e){alert(e.message);}}
+async function excluirFinPedido(id){if(!confirm('Excluir este lançamento?'))return;try{await api('DELETE','/api/financeiro/pedidos/'+id);await carregarFinPedidos();}catch(e){alert(e.message);}}
+function abrirFaturar(id){const p=G_finPed.find(x=>x.id===id);if(!p)return;_ffSetV({'ft2-id':id,'ft2-n':1,'ft2-venc':_ftHoje(),'ft2-forma':''});
+  document.getElementById('ft2-res').innerHTML=`<b>${_ftEsc(_ffCli(p.cliente_id).nome||'')}</b> · ${fd(p.data)}<br>Total a faturar: <b>${fm(p.total)}</b>`;finFatInfo();openM('m-ffat');}
+function finFatInfo(){const p=G_finPed.find(x=>x.id===_ffV('ft2-id')),n=Math.max(1,Math.min(60,parseInt(_ffV('ft2-n'))||1));if(!p)return;const b=Math.floor(p.total*100/n)/100;
+  document.getElementById('ft2-info').textContent=n===1?`Será criada 1 conta a receber de ${fm(p.total)}.`:`Serão criadas ${n} contas a receber: ${n-1}× ${fm(b)} + última de ${fm(_ftR2(p.total-b*(n-1)))}.`;}
+async function confirmarFaturar(){try{await api('POST',`/api/financeiro/pedidos/${_ffV('ft2-id')}/faturar`,{parcelas:+_ffV('ft2-n'),vencimento:_ffV('ft2-venc'),forma_pagamento:_ffV('ft2-forma')});closeM('m-ffat');await carregarFinPedidos();await carregarFinTitulos();}catch(e){alert(e.message);}}
+// Gera rascunho de NFS-e só com os itens de serviço (peças/produtos exigem NF-e, ainda não disponível)
+async function gerarNotaDoPedido(id){const p=G_finPed.find(x=>x.id===id);if(!p)return;await carregarFinFiscal();
+  const sv=p.itens.filter(i=>i.tipo==='servico');if(!sv.length)return alert('Este lançamento não tem itens de serviço.');
+  const base=_ftR2(sv.reduce((s,i)=>s+i.total,0)),val=p.subtotal>0?_ftR2(base-p.desconto*base/p.subtotal):base,sid=(sv.find(i=>i.ref_id)||{}).ref_id||'';
+  if(!sid)return alert('Escolha o serviço da lista (cadastro em Fiscal › Serviços) em pelo menos um item para gerar a nota.');
+  if(!confirm(`Criar rascunho de nota de serviço de ${fm(val)}?`+(p.itens.some(i=>i.tipo!=='servico')?'\nOs itens de peça/produto não entram (exigem NF-e, ainda indisponível).':'')))return;
+  const c=_ffCalc(val,p.cliente_id,sid);
+  try{const r=await api('POST','/api/financeiro/notas',{cliente_id:p.cliente_id,servico_id:sid,descricao:sv.map(i=>i.descricao).join('; '),valor:val,competencia:(p.data||'').slice(0,7),aliquota_iss:c.aliq==null?null:c.aliq,calculo:{iss:c.iss,irrf:c.irrf,pis:c.pis,cofins:c.cofins,csll:c.csll,liquido:c.liquido}});
+    await api('PUT','/api/financeiro/pedidos/'+id,{acao:'vincular_nota',nota_id:r.id});await carregarFinPedidos();alert('Rascunho criado em Fiscal › Notas fiscais.');}catch(e){alert(e.message);}}
 
 function exportFinExcel(){
   const esc=v=>`"${String(v||'').replace(/"/g,'""')}"`;
