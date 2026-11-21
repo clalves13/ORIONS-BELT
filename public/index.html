@@ -8639,13 +8639,13 @@ function renderFinTitulos(){
       <td style="white-space:nowrap;font-size:12px" title="${_ftEsc(tip)}">${fm(t.valor_pago||0)}</td>
       <td style="font-weight:700;white-space:nowrap;color:${s==='pago'?'var(--tx3)':(s==='vencido'?'var(--rd)':'var(--tx)')}">${fm(_ftSaldo(t))}</td>
       <td><span class="badge ${badge[s][0]}" style="font-size:10px">${badge[s][1]}</span></td>
-      <td style="white-space:nowrap">
+      <td><div style="display:flex;flex-wrap:wrap;gap:4px;min-width:130px;max-width:190px">
         ${s!=='pago'?`<button class="btn btn-success btn-xs" onclick="abrirBaixaTitulo('${t.id}')">${isRec?'Receber':'Pagar'}</button>`:''}
         <button class="btn btn-ghost btn-xs" onclick="openFinTitulo('${t.tipo}','${t.id}')">Editar</button>
         ${!(t.valor_pago>0)?`<button class="btn btn-danger btn-xs" onclick="excluirFinTitulo('${t.id}')">×</button>`:''}
         ${(t.baixas||[]).length?`<button class="btn btn-ghost btn-xs" title="Desfazer a última baixa" onclick="estornarFinTitulo('${t.id}')">Estornar</button>`:''}
         ${nSerie>1&&(t.origem||'manual')==='manual'?`<button class="btn btn-ghost btn-xs" title="Excluir todas as contas desta série que não têm baixa" onclick="excluirSerieFinTitulo('${t.grupo_id}')">Série (${nSerie})</button>`:''}
-      </td></tr>`;
+      </div></td></tr>`;
   }).join('');
   tf.innerHTML=`<tr style="font-weight:700;background:var(--bg2,#f4f6fb)"><td colspan="4" style="text-align:right;font-size:12px">Total do filtro (${rows.length}):</td><td>${fm(soma(rows,t=>t.valor||0))}</td><td>${fm(soma(rows,t=>t.valor_pago||0))}</td><td>${fm(soma(rows,_ftSaldo))}</td><td colspan="2"></td></tr>`;
 }
