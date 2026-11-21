@@ -2670,7 +2670,8 @@ label { font-size: 11px !important; font-weight: 600 !important; color: #475569 
       </div>
       <div id="fv-fech" style="display:none">
         <div class="fin-bar"><label style="font-size:12px;color:var(--tx3)">Competência</label><input type="month" id="fc-mes" onchange="carregarFinFech()">
-          <div class="swrap" style="flex:1;min-width:160px"><span style="color:var(--tx3)">🔍</span><input type="text" id="fc-q" placeholder="Buscar cliente..." oninput="renderFinFech()"></div></div>
+          <div class="swrap" style="flex:1;min-width:160px"><span style="color:var(--tx3)">🔍</span><input type="text" id="fc-q" placeholder="Buscar cliente..." oninput="renderFinFech()"></div>
+          <label style="font-size:12px;color:var(--tx3)">Dia padrão de vencimento</label><input type="number" id="fc-dia" min="1" max="31" style="width:70px" placeholder="1-31"><button class="btn btn-ghost btn-sm" onclick="salvarDiaPadrao()">Salvar dia</button></div>
         <div class="fin-cfg-sub" style="margin:0 0 8px">Escolha o mês e feche cada contrato: o Orion importa o contador de cada máquina do monitoramento (você pode corrigir ou digitar), calcula o excedente e gera <b>uma única fatura por cliente</b>.</div>
         <div class="card" style="padding:0"><div class="twrap"><table><thead><tr><th>Cliente</th><th>Contrato</th><th>Mensalidade</th><th>Franquia contratada</th><th>Fechamento</th><th>Ação</th></tr></thead><tbody id="tb-fc"></tbody></table></div></div>
       </div>
@@ -4469,6 +4470,18 @@ Outros</textarea>
     <div style="margin-top:10px;padding:10px 12px;border-radius:8px;background:var(--bl2bg);font-weight:700;color:var(--nv)" id="fb-total"></div>
   </div>
   <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('m-finbaixa')">Cancelar</button><button class="btn btn-primary" id="fb-save-btn" onclick="confirmarBaixaTitulo()">Confirmar baixa</button></div>
+</div></div>
+
+<!-- Modal Previsão do contrato -->
+<div class="mov" id="m-fcfg"><div class="modal" style="max-width:520px">
+  <div class="mhd"><div class="mhd-title" id="m-fcfg-title">Previsão do contrato</div><button class="btnx" onclick="closeM('m-fcfg')">×</button></div>
+  <div class="mbody"><input type="hidden" id="cf-id">
+    <div class="fg"><label>Dia de vencimento deste contrato</label><input type="number" id="cf-dia" min="1" max="31" placeholder="1 a 31"><div class="fin-cfg-sub" id="cf-pad" style="margin-top:4px"></div></div>
+    <div style="margin:12px 0 4px;font-weight:700;font-size:13px;color:var(--nv)">Itens fixos mensais além do valor do contrato</div>
+    <div class="fin-cfg-sub" style="margin:0 0 6px;max-width:none">Ex.: monitoramento, suporte. Entram na previsão e na mensalidade do fechamento.</div>
+    <div id="cf-itens"></div><button class="btn btn-ghost btn-sm" onclick="_cfItens.push({descricao:'',valor:''});cfRender()">+ Item fixo</button>
+    <div id="cf-res" style="margin-top:12px;padding:10px 12px;border-radius:8px;background:var(--bl2bg);font-size:12px;font-weight:600;color:var(--nv)"></div></div>
+  <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('m-fcfg')">Cancelar</button><button class="btn btn-primary" onclick="salvarCfgContrato()">Salvar</button></div>
 </div></div>
 
 <!-- Modal Fechamento de contrato -->
@@ -8808,6 +8821,7 @@ async function renderFinVisao(){
   document.getElementById('fv-ch4').innerHTML=_fvHB(top(cli).slice(0,5).map(i=>({...i,cor:'var(--gn)'})),'Sem receitas no mês.');
   document.getElementById('fv-ch3').innerHTML=_ftErro?'<div class="fv-vazio">Sem acesso às contas.</div>':'<div class="fv-sub">A receber</div>'+_fvHB(_fvAging('receber'),'Nada a receber em aberto.')+'<div class="fv-sub">A pagar</div>'+_fvHB(_fvAging('pagar'),'Nada a pagar em aberto.');
   if(!el._carregou){ el._carregou=true; await carregarFinTitulos(); if(_finTab==='visao')renderFinVisao(); }
+  _prevEnsure().then(_fvPrevCard);
 }
 
 // ─── RELATÓRIO: DEMONSTRATIVO FINANCEIRO ──────────────────
@@ -9004,12 +9018,12 @@ const _fcN=v=>{const n=Number(v);return Number.isFinite(n)&&n>0?n:0;};
 function finVendasSub(s){document.getElementById('fv-avulso').style.display=s==='avulso'?'':'none';document.getElementById('fv-fech').style.display=s==='fech'?'':'none';
   document.querySelectorAll('#fin-vendasnav button').forEach(b=>b.classList.toggle('active',b.dataset.s===s));if(s==='fech')carregarFinFech();}
 async function carregarFinFech(){const el=document.getElementById('fc-mes');if(!el.value)el.value=_fcMesPadrao();
-  try{G_finFech=await api('GET','/api/financeiro/fechamentos?competencia='+el.value);_fcErro='';}catch(e){G_finFech=[];_fcErro=e.message||'Erro ao carregar.';}renderFinFech();}
+  try{G_finFech=await api('GET','/api/financeiro/fechamentos?competencia='+el.value);_fcErro='';}catch(e){G_finFech=[];_fcErro=e.message||'Erro ao carregar.';}await _prevEnsure(true);document.getElementById('fc-dia').value=G_finCfgCt.padrao||'';renderFinFech();}
 function renderFinFech(){const tb=document.getElementById('tb-fc');if(!tb)return;
   if(_fcErro){tb.innerHTML=`<tr><td colspan="6"><div class="empty"><div class="empty-ico">🔒</div><div class="empty-t">${_ftEsc(_fcErro)}</div></div></td></tr>`;return;}
   const q=(document.getElementById('fc-q').value||'').toLowerCase(),l=(G_contratos||[]).filter(c=>c.status==='Ativo'&&(_ffCli(c.cliente_id).nome||'').toLowerCase().includes(q));
   tb.innerHTML=l.length?l.map(c=>{const f=G_finFech.find(x=>x.contrato_id===c.id);const st=f?`<span class="badge ${f.status==='faturado'?'bg':'bo'}" style="font-size:10px">${f.status==='faturado'?'Faturado':'Rascunho'}</span> <b>${fm(f.total)}</b>`:'<span class="badge bgr" style="font-size:10px">Não fechado</span>';
-    return `<tr><td>${_ftEsc(_ffCli(c.cliente_id).nome||'—')}</td><td style="font-size:12px">${_ftEsc(c.tipo||'')}${c.periodicidade&&c.periodicidade!=='Mensal'?` · ${_ftEsc(c.periodicidade)}`:''}</td><td>${fm(c.valor_mensal)}</td><td style="font-size:12px">P&B ${c.franq_pb||0} · Color ${c.franq_cor||0}</td><td>${st}</td><td><button class="btn ${f&&f.status==='faturado'?'btn-ghost':'btn-primary'} btn-xs" onclick="abrirFechamento('${c.id}')">${f?(f.status==='faturado'?'Ver':'Continuar'):'Fechar mês'}</button></td></tr>`;}).join(''):`<tr><td colspan="6"><div class="empty"><div class="empty-ico">📑</div><div class="empty-t">Nenhum contrato ativo encontrado.</div></div></td></tr>`;}
+    return `<tr><td>${_ftEsc(_ffCli(c.cliente_id).nome||'—')}</td><td style="font-size:12px">${_ftEsc(c.tipo||'')}${c.periodicidade&&c.periodicidade!=='Mensal'?` · ${_ftEsc(c.periodicidade)}`:''}</td><td>${fm(c.valor_mensal)}</td><td style="font-size:12px">P&B ${c.franq_pb||0} · Color ${c.franq_cor||0}</td><td>${st}</td><td><button class="btn ${f&&f.status==='faturado'?'btn-ghost':'btn-primary'} btn-xs" onclick="abrirFechamento('${c.id}')">${f?(f.status==='faturado'?'Ver':'Continuar'):'Fechar mês'}</button> <button class="btn btn-ghost btn-xs" title="Dia de vencimento e itens fixos deste contrato" onclick="abrirCfgContrato('${c.id}')">⚙ Previsão</button></td></tr>`;}).join(''):`<tr><td colspan="6"><div class="empty"><div class="empty-ico">📑</div><div class="empty-t">Nenhum contrato ativo encontrado.</div></div></td></tr>`;}
 function _fcCalc(){const ct=_fcCt,L=_fcLin.map(l=>({...l,pg_pb:Math.max(0,_fcN(l.fim_pb)-_fcN(l.ini_pb)),pg_cor:Math.max(0,_fcN(l.fim_cor)-_fcN(l.ini_cor))})),tp=L.reduce((s,l)=>s+l.pg_pb,0),tc=L.reduce((s,l)=>s+l.pg_cor,0);let ep=0,ec=0;
   if(_fcModo==='maquina'){L.forEach(l=>{l.ep=Math.max(0,l.pg_pb-_fcN(l.franq_pb));l.ec=Math.max(0,l.pg_cor-_fcN(l.franq_cor));ep+=l.ep;ec+=l.ec;});}
   else{ep=Math.max(0,tp-_fcN(ct.franq_pb));ec=Math.max(0,tc-_fcN(ct.franq_cor));L.forEach(l=>{l.ep=tp>0?ep*l.pg_pb/tp:0;l.ec=tc>0?ec*l.pg_cor/tc:0;});}
@@ -9021,7 +9035,7 @@ async function abrirFechamento(ctId){const comp=document.getElementById('fc-mes'
     _fcLin=(ex?ex.linhas:r.proposta.linhas).map(l=>({...l}));_fcAv=ex?[]:r.proposta.avisos;finFechRender(comp);openM('m-ffech');}catch(e){alert(e.message);}}
 function finFechRender(comp){const ct=_fcCt,cli=_ffCli(ct.cliente_id).nome||'',[y,m]=(comp||document.getElementById('fc-mes').value).split('-'),mq=_fcModo==='maquina',ro=_fcLock?' disabled':'';
   document.getElementById('m-ffech-title').textContent=`Fechamento ${m}/${y} — ${cli}`;
-  document.getElementById('fch-info').innerHTML=`${_ftEsc(ct.tipo||'')} · franquia contratada: P&B ${ct.franq_pb} · Color ${ct.franq_cor} · excedente: ${fm(ct.exc_pb)}/pág P&B · ${fm(ct.exc_cor)}/pág Color`+(ct.periodicidade!=='Mensal'?`<br><span style="color:var(--or)">Atenção: contrato de periodicidade ${_ftEsc(ct.periodicidade)}. A mensalidade abaixo é a cadastrada no contrato: confira se corresponde ao período faturado.</span>`:'');
+  document.getElementById('fch-info').innerHTML=`${_ftEsc(ct.tipo||'')} · franquia contratada: P&B ${ct.franq_pb} · Color ${ct.franq_cor} · excedente: ${fm(ct.exc_pb)}/pág P&B · ${fm(ct.exc_cor)}/pág Color`+(ct.itens_fixos_total?`<br>Mensalidade = valor do contrato ${fm(ct.valor_mensal)} + itens fixos ${fm(ct.itens_fixos_total)}`:'')+(ct.periodicidade!=='Mensal'?`<br><span style="color:var(--or)">Atenção: contrato de periodicidade ${_ftEsc(ct.periodicidade)}. A mensalidade abaixo é a cadastrada no contrato: confira se corresponde ao período faturado.</span>`:'');
   document.getElementById('fch-av').innerHTML=_fcAv.length?`<div style="background:var(--orbg);color:var(--or);border-radius:8px;padding:8px 12px;font-size:12px;margin:8px 0">${_fcAv.map(_ftEsc).join('<br>')}</div>`:'';
   document.getElementById('fch-modo').innerHTML=`<option value="somada"${mq?'':' selected'}>Franquia somada (do contrato, todas as máquinas)</option><option value="maquina"${mq?' selected':''}>Franquia por máquina</option>`;document.getElementById('fch-modo').disabled=_fcLock;
   document.getElementById('fch-mens').value=_fcMens;document.getElementById('fch-mens').disabled=_fcLock;
@@ -9052,18 +9066,47 @@ async function excluirSerieFinTitulo(gid){const l=G_finTitulos.filter(x=>x.grupo
   if(!confirm(`Excluir esta série de ${l.length} contas?\n\n${com?com+' conta(s) com baixa NÃO serão excluídas (estorne a baixa antes).':'Nenhuma tem baixa.'}`))return;
   try{const r=await api('DELETE','/api/financeiro/titulos/grupo/'+encodeURIComponent(gid));await carregarFinTitulos();alert(`${r.excluidas} conta(s) excluída(s)`+(r.mantidas?`, ${r.mantidas} mantida(s).`:'.'));}catch(e){alert(e.message);}}
 
-// ─── PROJEÇÃO do fluxo de caixa (contas em aberto) ───────
+// ─── PREVISÃO DE CONTRATOS (valor fixo dos contratos ativos, ainda não faturado) ───
+let G_finCfgCt={padrao:null,contratos:[]},G_finFechAll=[],_prevOk=false,_cfItens=[];
+const _prevMeses={Mensal:1,Trimestral:3,Semestral:6,Anual:12};
+async function _prevEnsure(force){if(_prevOk&&!force)return;try{G_finCfgCt=await api('GET','/api/financeiro/contratos-cfg');G_finFechAll=await api('GET','/api/financeiro/fechamentos');_prevOk=true;}catch(e){G_finCfgCt={padrao:null,contratos:[]};G_finFechAll=[];}}
+// Cada competência (mês de referência) é faturada com vencimento no dia escolhido do MÊS SEGUINTE, como no fluxo de fechamento.
+function _prevContratos(){const out={itens:[],avisos:[],semDia:false},hoje=_ftHoje(),comps=_fvMeses(_ftAddMes(hoje.slice(0,8)+'01',11).slice(0,7),13);
+  (G_contratos||[]).filter(c=>c.status==='Ativo').forEach(c=>{const cli=_ffCli(c.cliente_id).nome||'cliente',cc=G_finCfgCt.contratos.find(x=>x.contrato_id===c.id)||{},dia=cc.dia||G_finCfgCt.padrao,k=_prevMeses[c.periodicidade||'Mensal']||1;
+    if(!dia){out.semDia=true;return;} if(k>1&&!c.inicio){out.avisos.push(`${cli}: contrato ${c.periodicidade} sem data de início — previsão não calculada.`);return;}
+    const fixos=_ftR2((cc.itens_fixos||[]).reduce((s,i)=>s+i.valor,0)*k),valor=_ftR2((c.valor_mensal||0)+fixos); if(!(valor>0))return;
+    comps.forEach(comp=>{if(c.inicio&&c.inicio.slice(0,7)>comp)return;if(c.vencimento&&c.vencimento.slice(0,7)<comp)return;
+      if(k>1){const [y1,m1]=c.inicio.slice(0,7).split('-').map(Number),[y2,m2]=comp.split('-').map(Number),d=(y2-y1)*12+(m2-m1);if(d<0||d%k)return;}
+      if(G_finFechAll.some(f=>f.contrato_id===c.id&&f.competencia===comp&&f.status==='faturado'))return;
+      const ms=_ftAddMes(comp+'-01',1).slice(0,7),[y,m]=ms.split('-').map(Number),venc=`${ms}-${String(Math.min(dia,new Date(y,m,0).getDate())).padStart(2,'0')}`;
+      out.itens.push({contrato_id:c.id,cliente_id:c.cliente_id,comp,venc,valor,pendente:venc<hoje,rascunho:G_finFechAll.some(f=>f.contrato_id===c.id&&f.competencia===comp&&f.status==='rascunho')});});});
+  return out;}
+function _fvPrevCard(){const k=document.getElementById('fv-kpis');if(!k)return;const o=document.getElementById('fv-prev');if(o)o.remove();const p=_prevContratos(),hoje=_ftHoje(),lim=_ftAddMes(hoje,1);
+  const v=_ftR2(p.itens.filter(i=>i.venc>=hoje&&i.venc<=lim).reduce((s,i)=>s+i.valor,0)),pend=_ftR2(p.itens.filter(i=>i.pendente).reduce((s,i)=>s+i.valor,0));
+  k.insertAdjacentHTML('beforeend',`<div class="fin-kpi" id="fv-prev"><div class="fin-kpi-l">Contratos previstos (30 dias) <span class="badge bo" style="font-size:9px">PREVISÃO</span></div><div class="fin-kpi-v" style="color:var(--bl2)">${p.semDia&&!p.itens.length?'—':fm(v)}</div><div class="fin-kpi-s">${p.semDia&&!p.itens.length?'defina o dia padrão em Vendas › Fechamento de contratos':(pend?fm(pend)+' com fechamento pendente':'valor fixo, ainda não faturado')}</div></div>`);}
 async function renderFinProjecao(){const el=document.getElementById('fin-proj');if(!el)return;
-  if(!G_finTitulos.length&&!_ftErro)await carregarFinTitulos();
+  if(!G_finTitulos.length&&!_ftErro)await carregarFinTitulos(); await _prevEnsure();
   if(_ftErro){el.innerHTML=`<div class="fv-vazio">Projeção indisponível: ${_ftEsc(_ftErro)}</div>`;return;}
-  const hoje=_ftHoje(),mes0=hoje.slice(0,7),ms=_fvMeses(_ftAddMes(hoje.slice(0,8)+'01',11).slice(0,7),12),ab=G_finTitulos.filter(t=>_ftSit(t)!=='pago');
-  const venc=ab.filter(t=>t.vencimento<hoje),rv=_ftR2(venc.filter(t=>t.tipo==='receber').reduce((s,t)=>s+_ftSaldo(t),0)),pv=_ftR2(venc.filter(t=>t.tipo==='pagar').reduce((s,t)=>s+_ftSaldo(t),0));
-  const lin=ms.map(m=>{const l=ab.filter(t=>t.vencimento>=hoje&&t.vencimento.slice(0,7)===m),r=_ftR2(l.filter(t=>t.tipo==='receber').reduce((s,t)=>s+_ftSaldo(t),0)),p=_ftR2(l.filter(t=>t.tipo==='pagar').reduce((s,t)=>s+_ftSaldo(t),0));return{m,r,p};});
-  let acc=_ftR2(rv-pv);const rows=[{l:'Em atraso (vencidas)',r:rv,p:pv,s:_ftR2(rv-pv),a:acc,atraso:1}].concat(lin.map(x=>{const s=_ftR2(x.r-x.p);acc=_ftR2(acc+s);return{l:x.m.slice(5)+'/'+x.m.slice(0,4),r:x.r,p:x.p,s,a:acc};}));
+  const hoje=_ftHoje(),ms=_fvMeses(_ftAddMes(hoje.slice(0,8)+'01',11).slice(0,7),12),ab=G_finTitulos.filter(t=>_ftSit(t)!=='pago'),P=_prevContratos(),sm=(l,f)=>_ftR2(l.reduce((s,x)=>s+f(x),0));
+  const rec=l=>sm(l.filter(t=>t.tipo==='receber'),_ftSaldo),pag=l=>sm(l.filter(t=>t.tipo==='pagar'),_ftSaldo),venc=ab.filter(t=>t.vencimento<hoje);
+  const lin=ms.map(m=>{const l=ab.filter(t=>t.vencimento>=hoje&&t.vencimento.slice(0,7)===m);return{m,r:rec(l),c:sm(P.itens.filter(i=>!i.pendente&&i.venc.slice(0,7)===m),i=>i.valor),p:pag(l)};});
+  let acc=_ftR2(rec(venc)+sm(P.itens.filter(i=>i.pendente),i=>i.valor)-pag(venc));
+  const rows=[{l:'Em atraso / fechamento pendente',r:rec(venc),c:sm(P.itens.filter(i=>i.pendente),i=>i.valor),p:pag(venc),s:acc,a:acc,atraso:1}].concat(lin.map(x=>{const s=_ftR2(x.r+x.c-x.p);acc=_ftR2(acc+s);return{l:x.m.slice(5)+'/'+x.m.slice(0,4),r:x.r,c:x.c,p:x.p,s,a:acc};}));
   el.innerHTML=`<div class="fin-sec" style="margin-top:14px"><h4>Projeção dos próximos 12 meses <span class="badge bo" style="font-size:10px;margin-left:6px">PROJEÇÃO</span></h4>
-    <div class="fin-cfg-sub" style="max-width:none;margin:0 0 8px">Calculada só com as contas a pagar e a receber <b>em aberto</b>, pela data de vencimento. Não inclui saldo bancário, contratos ainda não fechados nem despesas não cadastradas. O acumulado parte de zero.</div>
-    ${_fvBarras(lin.map(x=>x.m),lin.map(x=>x.r),lin.map(x=>x.p))}
-    <div class="twrap" style="margin-top:8px"><table><thead><tr><th>Período</th><th>A receber</th><th>A pagar</th><th>Saldo do período</th><th>Acumulado</th></tr></thead><tbody>${rows.map(r=>`<tr${r.atraso?' style="background:var(--orbg)"':''}><td>${r.l}</td><td>${fm(r.r)}</td><td>${fm(r.p)}</td><td style="font-weight:700;color:${r.s>=0?'var(--gn)':'var(--rd)'}">${fm(r.s)}</td><td style="font-weight:700;color:${r.a>=0?'var(--gn)':'var(--rd)'}">${fm(r.a)}</td></tr>`).join('')}</tbody></table></div></div>`;}
+    <div class="fin-cfg-sub" style="max-width:none;margin:0 0 8px">Soma as contas em aberto (por vencimento) e a <b>previsão do valor fixo dos contratos ativos</b> ainda não faturados. Não inclui saldo bancário, o excedente de páginas (só se conhece ao fechar o mês) nem despesas não cadastradas. O acumulado parte de zero.</div>
+    ${P.semDia?'<div style="background:var(--orbg);color:var(--or);border-radius:8px;padding:8px 12px;font-size:12px;margin-bottom:8px">Há contratos ativos sem previsão: defina o <b>dia padrão de vencimento</b> em Vendas e serviços › Fechamento de contratos.</div>':''}${P.avisos.map(a=>`<div style="background:var(--orbg);color:var(--or);border-radius:8px;padding:6px 12px;font-size:12px;margin-bottom:6px">${_ftEsc(a)}</div>`).join('')}
+    ${_fvBarras(lin.map(x=>x.m),lin.map(x=>_ftR2(x.r+x.c)),lin.map(x=>x.p))}
+    <div class="twrap" style="margin-top:8px"><table><thead><tr><th>Período</th><th>Contas a receber</th><th>Contratos <span class="badge bo" style="font-size:9px">PREVISÃO</span></th><th>A pagar</th><th>Saldo do período</th><th>Acumulado</th></tr></thead><tbody>${rows.map(r=>`<tr${r.atraso?' style="background:var(--orbg)"':''}><td>${r.l}</td><td>${fm(r.r)}</td><td style="color:var(--bl2)">${fm(r.c)}</td><td>${fm(r.p)}</td><td style="font-weight:700;color:${r.s>=0?'var(--gn)':'var(--rd)'}">${fm(r.s)}</td><td style="font-weight:700;color:${r.a>=0?'var(--gn)':'var(--rd)'}">${fm(r.a)}</td></tr>`).join('')}</tbody></table></div></div>`;}
+async function salvarDiaPadrao(){const d=document.getElementById('fc-dia').value;try{await api('PUT','/api/financeiro/contratos-cfg/padrao',{dia:d});await _prevEnsure(true);alert('Dia padrão de vencimento salvo: dia '+d+'.');}catch(e){alert(e.message);}}
+function abrirCfgContrato(id){const c=(G_contratos||[]).find(x=>x.id===id);if(!c)return;const cc=G_finCfgCt.contratos.find(x=>x.contrato_id===id)||{};
+  document.getElementById('m-fcfg-title').textContent='Previsão — '+(_ffCli(c.cliente_id).nome||'');document.getElementById('cf-id').value=id;document.getElementById('cf-dia').value=cc.dia||'';
+  document.getElementById('cf-pad').textContent=G_finCfgCt.padrao?`vazio = usa o dia padrão (${G_finCfgCt.padrao})`:'vazio = usa o dia padrão (ainda não definido)';
+  _cfItens=(cc.itens_fixos||[]).map(i=>({...i}));cfRender();openM('m-fcfg');}
+function cfRender(){const id=document.getElementById('cf-id').value,c=(G_contratos||[]).find(x=>x.id===id)||{},tot=_ftR2(_cfItens.reduce((s,i)=>s+(+i.valor||0),0)),k=_prevMeses[c.periodicidade||'Mensal']||1;
+  document.getElementById('cf-itens').innerHTML=_cfItens.map((i,n)=>`<div style="display:grid;grid-template-columns:1fr 120px 28px;gap:6px;margin-bottom:6px"><input value="${_ftEsc(i.descricao)}" placeholder="Ex: Monitoramento" oninput="_cfItens[${n}].descricao=this.value"><input type="number" min="0" step="0.01" value="${i.valor||''}" placeholder="Valor R$" oninput="_cfItens[${n}].valor=this.value;cfRes()"><button class="btn btn-danger btn-xs" onclick="_cfItens.splice(${n},1);cfRender()">×</button></div>`).join('')||'<div class="fv-vazio" style="padding:6px 0">Nenhum item fixo extra.</div>';
+  document.getElementById('cf-res').dataset.v=c.valor_mensal||0;document.getElementById('cf-res').dataset.k=k;cfRes();}
+function cfRes(){const r=document.getElementById('cf-res'),v=+r.dataset.v,k=+r.dataset.k,t=_ftR2(_cfItens.reduce((s,i)=>s+(+i.valor||0),0)*k);r.textContent=`Valor do contrato ${fm(v)} + itens fixos ${fm(t)}${k>1?` (valor mensal × ${k} meses)`:''} = ${fm(_ftR2(v+t))} por cobrança prevista`;}
+async function salvarCfgContrato(){const id=document.getElementById('cf-id').value;try{await api('PUT','/api/financeiro/contratos-cfg/contrato/'+id,{dia:document.getElementById('cf-dia').value,itens_fixos:_cfItens.map(i=>({descricao:i.descricao,valor:+i.valor}))});await _prevEnsure(true);closeM('m-fcfg');renderFinFech();}catch(e){alert(e.message);}}
 
 function exportFinExcel(){
   const esc=v=>`"${String(v||'').replace(/"/g,'""')}"`;

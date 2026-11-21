@@ -638,7 +638,7 @@ app.get('/api/dashboard', requireAuth, async (req,res) => {
 // BACKUP
 app.get('/api/backup', requireAuth, requireAdmin, async (req,res) => {
   try {
-    const [users,tecnicos,clientes,equipamentos,ordens,laboratorio,logistica,historico,estoque,suprCli,suprMovs,estMovs,lancamentos,contratos,financeiro,agenda,veiculos,financeiroTitulos,financeiroConfig,financeiroFiscal,financeiroServicos,financeiroNotas,financeiroPedidos,financeiroFechamentos]=await Promise.all([
+    const [users,tecnicos,clientes,equipamentos,ordens,laboratorio,logistica,historico,estoque,suprCli,suprMovs,estMovs,lancamentos,contratos,financeiro,agenda,veiculos,financeiroTitulos,financeiroConfig,financeiroFiscal,financeiroServicos,financeiroNotas,financeiroPedidos,financeiroFechamentos,financeiroContratosCfg]=await Promise.all([
       col('users').find().toArray(),
       col('tecnicos').find().toArray(),
       tenantCol('clientes', req).find().toArray(),
@@ -663,6 +663,7 @@ app.get('/api/backup', requireAuth, requireAdmin, async (req,res) => {
       col('financeiro_notas').find().toArray(),
       col('financeiro_pedidos').find().toArray(),
       col('financeiro_fechamentos').find().toArray(),
+      col('financeiro_contratos_cfg').find().toArray(),
     ]);
     // Converte _id ObjectId para string para preservar referências no restore
     const toStr = arr => arr.map(d => ({...d, _id: d._id?.toString(), id: d._id?.toString()}));
@@ -692,6 +693,7 @@ app.get('/api/backup', requireAuth, requireAdmin, async (req,res) => {
       financeiro_notas:   toStr(financeiroNotas),
       financeiro_pedidos: toStr(financeiroPedidos),
       financeiro_fechamentos: toStr(financeiroFechamentos),
+      financeiro_contratos_cfg: toStr(financeiroContratosCfg),
     };
     res.setHeader('Content-Disposition',`attachment; filename="orion_backup_${new Date().toISOString().slice(0,10)}.json"`);
     res.json(backup);
@@ -738,6 +740,7 @@ app.post('/api/restore', requireAuth, requireAdmin, async (req, res) => {
       { key: 'financeiro_notas',    col: 'financeiro_notas' },
       { key: 'financeiro_pedidos',  col: 'financeiro_pedidos' },
       { key: 'financeiro_fechamentos', col: 'financeiro_fechamentos' },
+      { key: 'financeiro_contratos_cfg', col: 'financeiro_contratos_cfg' },
     ];
 
     const resultados = {};
@@ -1040,6 +1043,18 @@ app.post('/api/financeiro/pedidos/:id/faturar', requireAuth, requireFinanceiroAc
   }catch(e){res.status(500).json({error:e.message});}
 });
 
+// PREVISÃO DE CONTRATOS — dia de vencimento padrão, dia próprio por contrato e itens fixos mensais (guardados à parte: a aba Contratos não é alterada)
+const diaFin=v=>{ if(v===''||v===null||v===undefined)return null; const n=parseInt(v,10); return (n>=1&&n<=31)?n:NaN; };
+const MESES_PERIODO_FIN={Mensal:1,Trimestral:3,Semestral:6,Anual:12};
+app.get('/api/financeiro/contratos-cfg', requireAuth, requireFinanceiroAcesso, async (req,res) => { try{ const l=await tenantCol('financeiro_contratos_cfg',req).find({}).toArray(), p=l.find(x=>x.kind==='padrao');
+  res.json({padrao:p?p.dia:null,contratos:l.filter(x=>x.kind==='contrato').map(x=>({contrato_id:x.contrato_id,dia:x.dia===undefined?null:x.dia,itens_fixos:x.itens_fixos||[]}))}); }catch(e){res.status(500).json({error:e.message});} });
+app.put('/api/financeiro/contratos-cfg/padrao', requireAuth, requireFinanceiroAcesso, async (req,res) => { try{ const d=diaFin((req.body||{}).dia); if(d===null||Number.isNaN(d))return res.status(400).json({error:'Informe um dia de vencimento de 1 a 31.'});
+  const tc=tenantCol('financeiro_contratos_cfg',req), ex=await tc.findOne({kind:'padrao'}); if(ex)await tc.updateOne({_id:ex._id},{$set:{dia:d,updated_at:now()}}); else await tc.insertOne({kind:'padrao',dia:d,created_at:now(),updated_at:now()}); res.json({ok:true}); }catch(e){res.status(500).json({error:e.message});} });
+app.put('/api/financeiro/contratos-cfg/contrato/:id', requireAuth, requireFinanceiroAcesso, async (req,res) => { try{ const b=req.body||{}, id=strFin(req.params.id,40), d=diaFin(b.dia); if(!id||Number.isNaN(d))return res.status(400).json({error:'Dia de vencimento deve ser de 1 a 31 (ou vazio para usar o padrão).'});
+  const itens=Array.isArray(b.itens_fixos)?b.itens_fixos:[]; if(itens.length>20)return res.status(400).json({error:'No máximo 20 itens fixos.'}); const it=[];
+  for(const x of itens){ const v=round2Fin(x.valor); if(!strFin(x.descricao,80)||!Number.isFinite(v)||v<=0)return res.status(400).json({error:'Cada item fixo precisa de descrição e valor maior que zero.'}); it.push({descricao:strFin(x.descricao,80),valor:v}); }
+  const tc=tenantCol('financeiro_contratos_cfg',req), ex=await tc.findOne({kind:'contrato',contrato_id:id}); if(ex)await tc.updateOne({_id:ex._id},{$set:{dia:d,itens_fixos:it,updated_at:now()}}); else await tc.insertOne({kind:'contrato',contrato_id:id,dia:d,itens_fixos:it,created_at:now(),updated_at:now()}); res.json({ok:true}); }catch(e){res.status(500).json({error:e.message});} });
+
 // FECHAMENTO DE CONTRATOS — leitura de contador por máquina (importada do monitoramento ou digitada), excedente e fatura única por cliente
 const numFin=v=>{const n=Number(v);return Number.isFinite(n)&&n>=0?n:0;};
 function calcFechFin(ct,modo,linhas,mens){
@@ -1077,7 +1092,8 @@ app.get('/api/financeiro/fechamentos', requireAuth, requireFinanceiroAcesso, asy
 app.post('/api/financeiro/fechamentos/preparar', requireAuth, requireFinanceiroAcesso, async (req,res) => { try{ const b=req.body||{}; if(!compFin(b.competencia))return res.status(400).json({error:'Competência inválida.'});
   const ct=await col('contratos').findOne({_id:new ObjectId(b.contrato_id)}); if(!ct)return res.status(404).json({error:'Contrato não encontrado.'});
   const ex=await tenantCol('financeiro_fechamentos',req).findOne({contrato_id:b.contrato_id,competencia:b.competencia}); const prop=await leituraMonitorFin(req,ct.cliente_id,b.competencia);
-  res.json({contrato:{id:b.contrato_id,cliente_id:ct.cliente_id,tipo:ct.tipo,valor_mensal:ct.valor_mensal||0,franq_pb:ct.franq_pb||0,exc_pb:ct.exc_pb||0,franq_cor:ct.franq_cor||0,exc_cor:ct.exc_cor||0,periodicidade:ct.periodicidade||'Mensal'},existente:ex?{...ex,id:ex._id.toString()}:null,proposta:{...prop,modo:'somada',mensalidade:ct.valor_mensal||0}}); }catch(e){res.status(500).json({error:e.message});} });
+  const cc=await tenantCol('financeiro_contratos_cfg',req).findOne({kind:'contrato',contrato_id:b.contrato_id}), meses=MESES_PERIODO_FIN[ct.periodicidade||'Mensal']||1, fixos=round2Fin(((cc&&cc.itens_fixos)||[]).reduce((s,x)=>s+numFin(x.valor),0)*meses);
+  res.json({contrato:{id:b.contrato_id,cliente_id:ct.cliente_id,tipo:ct.tipo,valor_mensal:ct.valor_mensal||0,franq_pb:ct.franq_pb||0,exc_pb:ct.exc_pb||0,franq_cor:ct.franq_cor||0,exc_cor:ct.exc_cor||0,periodicidade:ct.periodicidade||'Mensal',itens_fixos_total:fixos},existente:ex?{...ex,id:ex._id.toString()}:null,proposta:{...prop,modo:'somada',mensalidade:round2Fin((ct.valor_mensal||0)+fixos)}}); }catch(e){res.status(500).json({error:e.message});} });
 app.post('/api/financeiro/fechamentos', requireAuth, requireFinanceiroAcesso, async (req,res) => { try{ const b=req.body||{}; if(!compFin(b.competencia))return res.status(400).json({error:'Competência inválida.'});
   const ct=await col('contratos').findOne({_id:new ObjectId(b.contrato_id)}); if(!ct)return res.status(404).json({error:'Contrato não encontrado.'}); const L=linhasFin(b.linhas); if(!L)return res.status(400).json({error:'Inclua de 1 a 60 máquinas.'});
   const modo=b.modo==='maquina'?'maquina':'somada', c=calcFechFin(ct,modo,L,b.mensalidade), tc=tenantCol('financeiro_fechamentos',req), ex=await tc.findOne({contrato_id:b.contrato_id,competencia:b.competencia});
