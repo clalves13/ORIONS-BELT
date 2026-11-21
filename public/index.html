@@ -2656,6 +2656,7 @@ label { font-size: 11px !important; font-weight: 600 !important; color: #475569 
     <!-- Aba Fluxo -->
     <div id="fin-tab-fluxo" style="display:none">
       <div id="fin-fluxo-content"></div>
+      <div id="fin-proj"></div>
     </div>
     <!-- Aba Vendas e serviços -->
     <div id="fin-tab-vendas" style="display:none">
@@ -4432,8 +4433,8 @@ Outros</textarea>
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
           <select id="ft-rep" onchange="ftAtualizaRep()" style="flex:1;min-width:200px">
             <option value="unica">Conta única</option>
-            <option value="parcelada">Parcelada — divide o valor total em parcelas mensais</option>
-            <option value="recorrente">Recorrente — repete o mesmo valor todo mês</option>
+            <option value="parcelada">Dividir o valor TOTAL em parcelas mensais</option>
+            <option value="recorrente">Repetir o MESMO valor todo mês (valor de cada mês)</option>
           </select>
           <input type="number" id="ft-rep-qtd" value="2" min="2" max="60" step="1" style="width:90px;display:none" oninput="ftAtualizaRep()">
         </div>
@@ -8361,7 +8362,7 @@ function switchFinTab(tab) {
   document.querySelectorAll('#fin-relnav button').forEach(b=>b.classList.toggle('active',b.dataset.t===tab));
   if(tab==='visao')renderFinVisao();
   if(tab==='dre')renderFinDRE();
-  if(tab==='fluxo')renderFinFluxo();
+  if(tab==='fluxo'){renderFinFluxo();renderFinProjecao();}
   if(tab==='titulos')carregarFinTitulos();
   if(tab==='rel')renderFinDemo();
   if(tab==='fiscal')carregarFinFiscal();
@@ -8626,7 +8627,7 @@ function renderFinTitulos(){
   if(!rows.length){ tf.innerHTML=''; tb.innerHTML=`<tr><td colspan="9"><div class="empty"><div class="empty-ico">💳</div><div class="empty-t">Nenhuma conta encontrada</div></div></td></tr>`; return; }
   const badge={pago:['bg','Quitada'],vencido:['br','Vencida'],parcial:['bo','Parcial'],aberto:['bb','Em aberto']};
   tb.innerHTML=rows.map(t=>{
-    const isRec=t.tipo==='receber', s=_ftSit(t), cli=(G.clientes||[]).find(x=>x.id===t.cliente_id);
+    const isRec=t.tipo==='receber', s=_ftSit(t), cli=(G.clientes||[]).find(x=>x.id===t.cliente_id), nSerie=t.grupo_id?G_finTitulos.filter(x=>x.grupo_id===t.grupo_id).length:0;
     const quem=isRec?(cli?.nome||'—'):(t.fornecedor||'—');
     const tip=(t.baixas||[]).map(b=>`${fd(b.data)}: ${fm(b.valor_caixa)}${b.juros||b.multa?` (juros ${fm(b.juros)}, multa ${fm(b.multa)})`:''}${b.desconto?` (desc. ${fm(b.desconto)})`:''}`).join('\n');
     return `<tr>
@@ -8642,6 +8643,8 @@ function renderFinTitulos(){
         ${s!=='pago'?`<button class="btn btn-success btn-xs" onclick="abrirBaixaTitulo('${t.id}')">${isRec?'Receber':'Pagar'}</button>`:''}
         <button class="btn btn-ghost btn-xs" onclick="openFinTitulo('${t.tipo}','${t.id}')">Editar</button>
         ${!(t.valor_pago>0)?`<button class="btn btn-danger btn-xs" onclick="excluirFinTitulo('${t.id}')">×</button>`:''}
+        ${(t.baixas||[]).length?`<button class="btn btn-ghost btn-xs" title="Desfazer a última baixa" onclick="estornarFinTitulo('${t.id}')">Estornar</button>`:''}
+        ${nSerie>1&&(t.origem||'manual')==='manual'?`<button class="btn btn-ghost btn-xs" title="Excluir todas as contas desta série que não têm baixa" onclick="excluirSerieFinTitulo('${t.grupo_id}')">Série (${nSerie})</button>`:''}
       </td></tr>`;
   }).join('');
   tf.innerHTML=`<tr style="font-weight:700;background:var(--bg2,#f4f6fb)"><td colspan="4" style="text-align:right;font-size:12px">Total do filtro (${rows.length}):</td><td>${fm(soma(rows,t=>t.valor||0))}</td><td>${fm(soma(rows,t=>t.valor_pago||0))}</td><td>${fm(soma(rows,_ftSaldo))}</td><td colspan="2"></td></tr>`;
@@ -8652,8 +8655,9 @@ function ftAtualizaRep(){
   qtd.style.display=modo==='unica'?'none':'';
   const n=Math.max(2,Math.min(60,parseInt(qtd.value)||2)), v=+document.getElementById('ft-valor').value||0;
   const info=document.getElementById('ft-rep-info');
-  if(modo==='parcelada'&&v>0){ const p=_ftParcelas(v,n); info.textContent=`${n} parcelas mensais: ${n-1}× ${fm(p[0])} + última de ${fm(p[n-1])} (total ${fm(v)}). O primeiro vencimento é a data informada.`; }
-  else if(modo==='recorrente'&&v>0){ info.textContent=`${n} contas mensais de ${fm(v)} cada (total ${fm(v*n)}), a partir do vencimento informado.`; }
+  info.style.cssText=modo==='unica'?'':'font-size:12px;font-weight:600;color:var(--nv);margin-top:6px';
+  if(modo==='parcelada'&&v>0){ const p=_ftParcelas(v,n); info.textContent=`O valor informado (${fm(v)}) é o TOTAL e será dividido em ${n} parcelas: ${n-1}× ${fm(p[0])} + última de ${fm(p[n-1])}. Total: ${fm(v)}.`; }
+  else if(modo==='recorrente'&&v>0){ info.textContent=`O valor informado (${fm(v)}) é o de CADA mês: serão criadas ${n} contas de ${fm(v)}. Total: ${fm(_ftR2(v*n))}.`; }
   else info.textContent='';
 }
 
@@ -8695,6 +8699,7 @@ async function salvarFinTitulo(){
     } else {
       const modo=g('ft-rep'), n=modo==='unica'?1:Math.max(2,Math.min(60,parseInt(g('ft-rep-qtd'))||2));
       const valores=modo==='parcelada'?_ftParcelas(valor,n):Array(n).fill(valor);
+      if(n>1&&!confirm(`Serão criadas ${n} contas a ${tipo==='receber'?'receber':'pagar'}, em ${modo==='parcelada'?'parcelas dividindo o total':'valor repetido'}: total de ${fm(_ftR2(valores.reduce((a,b)=>a+b,0)))}.\n\nConfirmar?`)){btn.disabled=false;return;}
       const grupo=n>1?('g'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)):'';
       let criadas=0;
       try{
@@ -9038,6 +9043,27 @@ async function fcSalvar(){try{await _fcSalvar();closeM('m-ffech');await carregar
 async function fcFaturar(){const v=document.getElementById('fch-venc').value;if(!v)return alert('Informe o vencimento da fatura.');const c=_fcCalc();if(!(c.total>0))return alert('O total do fechamento é zero.');
   if(!confirm(`Faturar ${fm(c.total)} (mensalidade ${fm(c.m)} + excedente ${fm(c.exc)})? Será criada uma conta a receber e o fechamento ficará bloqueado.`))return;
   try{await _fcSalvar();await api('POST',`/api/financeiro/fechamentos/${_fcId}/faturar`,{vencimento:v,forma_pagamento:document.getElementById('fch-forma').value});closeM('m-ffech');await carregarFinFech();await carregarFinTitulos();}catch(e){alert(e.message);}}
+
+async function estornarFinTitulo(id){const t=G_finTitulos.find(x=>x.id===id);if(!t||!(t.baixas||[]).length)return;const b=t.baixas[t.baixas.length-1];
+  if(!confirm(`Estornar a última baixa deste título?\n\n${fd(b.data)} — ${fm(b.valor_caixa!=null?b.valor_caixa:b.principal)}\n\nO lançamento correspondente no caixa será removido e o título voltará a ter saldo.`))return;
+  const motivo=prompt('Motivo do estorno (opcional):')||'';
+  try{await api('POST',`/api/financeiro/titulos/${id}/estornar`,{motivo});await carregarFinTitulos();await loadFinanceiro();renderFinLanc();renderFinKpis();}catch(e){alert(e.message);}}
+async function excluirSerieFinTitulo(gid){const l=G_finTitulos.filter(x=>x.grupo_id===gid),com=l.filter(x=>(x.valor_pago||0)>0||(x.baixas||[]).length).length;
+  if(!confirm(`Excluir esta série de ${l.length} contas?\n\n${com?com+' conta(s) com baixa NÃO serão excluídas (estorne a baixa antes).':'Nenhuma tem baixa.'}`))return;
+  try{const r=await api('DELETE','/api/financeiro/titulos/grupo/'+encodeURIComponent(gid));await carregarFinTitulos();alert(`${r.excluidas} conta(s) excluída(s)`+(r.mantidas?`, ${r.mantidas} mantida(s).`:'.'));}catch(e){alert(e.message);}}
+
+// ─── PROJEÇÃO do fluxo de caixa (contas em aberto) ───────
+async function renderFinProjecao(){const el=document.getElementById('fin-proj');if(!el)return;
+  if(!G_finTitulos.length&&!_ftErro)await carregarFinTitulos();
+  if(_ftErro){el.innerHTML=`<div class="fv-vazio">Projeção indisponível: ${_ftEsc(_ftErro)}</div>`;return;}
+  const hoje=_ftHoje(),mes0=hoje.slice(0,7),ms=_fvMeses(_ftAddMes(hoje.slice(0,8)+'01',11).slice(0,7),12),ab=G_finTitulos.filter(t=>_ftSit(t)!=='pago');
+  const venc=ab.filter(t=>t.vencimento<hoje),rv=_ftR2(venc.filter(t=>t.tipo==='receber').reduce((s,t)=>s+_ftSaldo(t),0)),pv=_ftR2(venc.filter(t=>t.tipo==='pagar').reduce((s,t)=>s+_ftSaldo(t),0));
+  const lin=ms.map(m=>{const l=ab.filter(t=>t.vencimento>=hoje&&t.vencimento.slice(0,7)===m),r=_ftR2(l.filter(t=>t.tipo==='receber').reduce((s,t)=>s+_ftSaldo(t),0)),p=_ftR2(l.filter(t=>t.tipo==='pagar').reduce((s,t)=>s+_ftSaldo(t),0));return{m,r,p};});
+  let acc=_ftR2(rv-pv);const rows=[{l:'Em atraso (vencidas)',r:rv,p:pv,s:_ftR2(rv-pv),a:acc,atraso:1}].concat(lin.map(x=>{const s=_ftR2(x.r-x.p);acc=_ftR2(acc+s);return{l:x.m.slice(5)+'/'+x.m.slice(0,4),r:x.r,p:x.p,s,a:acc};}));
+  el.innerHTML=`<div class="fin-sec" style="margin-top:14px"><h4>Projeção dos próximos 12 meses <span class="badge bo" style="font-size:10px;margin-left:6px">PROJEÇÃO</span></h4>
+    <div class="fin-cfg-sub" style="max-width:none;margin:0 0 8px">Calculada só com as contas a pagar e a receber <b>em aberto</b>, pela data de vencimento. Não inclui saldo bancário, contratos ainda não fechados nem despesas não cadastradas. O acumulado parte de zero.</div>
+    ${_fvBarras(lin.map(x=>x.m),lin.map(x=>x.r),lin.map(x=>x.p))}
+    <div class="twrap" style="margin-top:8px"><table><thead><tr><th>Período</th><th>A receber</th><th>A pagar</th><th>Saldo do período</th><th>Acumulado</th></tr></thead><tbody>${rows.map(r=>`<tr${r.atraso?' style="background:var(--orbg)"':''}><td>${r.l}</td><td>${fm(r.r)}</td><td>${fm(r.p)}</td><td style="font-weight:700;color:${r.s>=0?'var(--gn)':'var(--rd)'}">${fm(r.s)}</td><td style="font-weight:700;color:${r.a>=0?'var(--gn)':'var(--rd)'}">${fm(r.a)}</td></tr>`).join('')}</tbody></table></div></div>`;}
 
 function exportFinExcel(){
   const esc=v=>`"${String(v||'').replace(/"/g,'""')}"`;

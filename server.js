@@ -955,6 +955,26 @@ app.post('/api/financeiro/titulos/:id/baixar', requireAuth, requireFinanceiroAce
   } catch(e){res.status(500).json({error:e.message});}
 });
 
+// Desfazer a última baixa de um título (remove também o lançamento correspondente no caixa) e excluir série de contas manuais sem baixa
+app.post('/api/financeiro/titulos/:id/estornar', requireAuth, requireFinanceiroAcesso, async (req,res) => {
+  try{ const tc=tenantCol('financeiro_titulos',req), t=await tc.findOne({_id:new ObjectId(req.params.id)}); if(!t)return res.status(404).json({error:'Título não encontrado.'});
+    const bx=Array.isArray(t.baixas)?[...t.baixas]:[]; if(!bx.length)return res.status(409).json({error:'Este título não tem baixa para estornar.'});
+    const ult=bx[bx.length-1], pagoAntes=round2Fin(t.valor_pago||0), novoPago=Math.max(0,round2Fin(pagoAntes-(ult.principal||0))), novas=bx.slice(0,-1), u=req.session&&req.session.user;
+    const est=[...(Array.isArray(t.estornos)?t.estornos:[]),{em:now(),por:(u&&(u.nome||u.login))||'',data:ult.data||'',principal:ult.principal||0,valor_caixa:ult.valor_caixa||0,motivo:strFin(req.body&&req.body.motivo,200)}];
+    const r=await tc.updateOne({_id:t._id,valor_pago:t.valor_pago},{$set:{valor_pago:novoPago,status:statusTituloFin(t.valor,novoPago),baixas:novas,data_pagamento:novas.length?(novas[novas.length-1].data||''):'',estornos:est,updated_at:now()}});
+    if(!r.modifiedCount)return res.status(409).json({error:'O título foi alterado por outra operação. Atualize e tente novamente.'});
+    let removido=false; try{ const fc=tenantCol('financeiro',req), vc=round2Fin(ult.valor_caixa!=null?ult.valor_caixa:ult.principal), l=vc>0?await fc.findOne({origem:'baixa_titulo',origem_id:req.params.id,valor:vc,data:ult.data}):null; if(l){await fc.deleteOne({_id:l._id});removido=true;} }
+    catch(err){ await tc.updateOne({_id:t._id},{$set:{valor_pago:t.valor_pago||0,status:t.status,baixas:bx,data_pagamento:t.data_pagamento||'',estornos:Array.isArray(t.estornos)?t.estornos:[],updated_at:now()}}); throw err; }
+    res.json({ok:true,lancamento_removido:removido});
+  }catch(e){res.status(500).json({error:e.message});}
+});
+app.delete('/api/financeiro/titulos/grupo/:gid', requireAuth, requireFinanceiroAcesso, async (req,res) => {
+  try{ const gid=strFin(req.params.gid,60); if(!gid)return res.status(400).json({error:'Série inválida.'}); const tc=tenantCol('financeiro_titulos',req), l=await tc.find({grupo_id:gid}).toArray();
+    const del=l.filter(t=>(t.origem||'manual')==='manual'&&!(round2Fin(t.valor_pago||0)>0)&&!(t.baixas||[]).length); for(const t of del)await tc.deleteOne({_id:t._id});
+    res.json({ok:true,excluidas:del.length,mantidas:l.length-del.length});
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
 // FISCAL — complementos dos cadastros existentes (cliente/peça), serviços tributáveis e notas (emissão assistida)
 const strFin=(v,n=120)=>String(v==null?'':v).trim().slice(0,n);
 const pctFin=v=>{const n=Number(v||0);return Number.isFinite(n)&&n>=0&&n<=100?round2Fin(n):NaN;};
