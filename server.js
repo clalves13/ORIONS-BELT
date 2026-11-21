@@ -638,7 +638,7 @@ app.get('/api/dashboard', requireAuth, async (req,res) => {
 // BACKUP
 app.get('/api/backup', requireAuth, requireAdmin, async (req,res) => {
   try {
-    const [users,tecnicos,clientes,equipamentos,ordens,laboratorio,logistica,historico,estoque,suprCli,suprMovs,estMovs,lancamentos,contratos,financeiro,agenda,veiculos,financeiroTitulos,financeiroConfig,financeiroFiscal,financeiroServicos,financeiroNotas,financeiroPedidos]=await Promise.all([
+    const [users,tecnicos,clientes,equipamentos,ordens,laboratorio,logistica,historico,estoque,suprCli,suprMovs,estMovs,lancamentos,contratos,financeiro,agenda,veiculos,financeiroTitulos,financeiroConfig,financeiroFiscal,financeiroServicos,financeiroNotas,financeiroPedidos,financeiroFechamentos]=await Promise.all([
       col('users').find().toArray(),
       col('tecnicos').find().toArray(),
       tenantCol('clientes', req).find().toArray(),
@@ -662,6 +662,7 @@ app.get('/api/backup', requireAuth, requireAdmin, async (req,res) => {
       col('financeiro_servicos').find().toArray(),
       col('financeiro_notas').find().toArray(),
       col('financeiro_pedidos').find().toArray(),
+      col('financeiro_fechamentos').find().toArray(),
     ]);
     // Converte _id ObjectId para string para preservar referências no restore
     const toStr = arr => arr.map(d => ({...d, _id: d._id?.toString(), id: d._id?.toString()}));
@@ -690,6 +691,7 @@ app.get('/api/backup', requireAuth, requireAdmin, async (req,res) => {
       financeiro_servicos: toStr(financeiroServicos),
       financeiro_notas:   toStr(financeiroNotas),
       financeiro_pedidos: toStr(financeiroPedidos),
+      financeiro_fechamentos: toStr(financeiroFechamentos),
     };
     res.setHeader('Content-Disposition',`attachment; filename="orion_backup_${new Date().toISOString().slice(0,10)}.json"`);
     res.json(backup);
@@ -735,6 +737,7 @@ app.post('/api/restore', requireAuth, requireAdmin, async (req, res) => {
       { key: 'financeiro_servicos', col: 'financeiro_servicos' },
       { key: 'financeiro_notas',    col: 'financeiro_notas' },
       { key: 'financeiro_pedidos',  col: 'financeiro_pedidos' },
+      { key: 'financeiro_fechamentos', col: 'financeiro_fechamentos' },
     ];
 
     const resultados = {};
@@ -1016,6 +1019,60 @@ app.post('/api/financeiro/pedidos/:id/faturar', requireAuth, requireFinanceiroAc
     res.json({ok:true,titulos:n});
   }catch(e){res.status(500).json({error:e.message});}
 });
+
+// FECHAMENTO DE CONTRATOS — leitura de contador por máquina (importada do monitoramento ou digitada), excedente e fatura única por cliente
+const numFin=v=>{const n=Number(v);return Number.isFinite(n)&&n>=0?n:0;};
+function calcFechFin(ct,modo,linhas,mens){
+  const L=linhas.map(l=>({...l,pg_pb:Math.max(0,numFin(l.fim_pb)-numFin(l.ini_pb)),pg_cor:Math.max(0,numFin(l.fim_cor)-numFin(l.ini_cor))}));
+  const tp=L.reduce((s,l)=>s+l.pg_pb,0), tc=L.reduce((s,l)=>s+l.pg_cor,0); let ep=0, ec=0;
+  if(modo==='maquina'){ L.forEach(l=>{l.exc_pb_qtd=Math.max(0,l.pg_pb-numFin(l.franq_pb)); l.exc_cor_qtd=Math.max(0,l.pg_cor-numFin(l.franq_cor)); ep+=l.exc_pb_qtd; ec+=l.exc_cor_qtd;}); }
+  else { ep=Math.max(0,tp-numFin(ct.franq_pb)); ec=Math.max(0,tc-numFin(ct.franq_cor)); L.forEach(l=>{l.exc_pb_qtd=tp>0?round2Fin(ep*l.pg_pb/tp):0; l.exc_cor_qtd=tc>0?round2Fin(ec*l.pg_cor/tc):0;}); } // em modo somado o rateio por máquina é apenas informativo
+  L.forEach(l=>{l.valor_exc=round2Fin(l.exc_pb_qtd*numFin(ct.exc_pb)+l.exc_cor_qtd*numFin(ct.exc_cor));});
+  const vp=round2Fin(ep*numFin(ct.exc_pb)), vc=round2Fin(ec*numFin(ct.exc_cor)), exc=round2Fin(vp+vc), m=round2Fin(numFin(mens));
+  return {linhas:L,pg_pb_total:tp,pg_cor_total:tc,exc_pb_qtd:ep,exc_cor_qtd:ec,valor_exc_pb:vp,valor_exc_cor:vc,excedente:exc,mensalidade:m,total:round2Fin(m+exc)};
+}
+// Lê do monitoramento (telemetria) o contador de cada impressora do cliente no início e no fim da competência
+async function leituraMonitorFin(req,cid,comp){
+  const [y,m]=comp.split('-').map(Number), ini=new Date(Date.UTC(y,m-1,1)).toISOString(), fimD=new Date(Date.UTC(y,m,1)-1).toISOString(), desde=new Date(Date.UTC(y,m-1,1)-45*86400000).toISOString();
+  const am=await col('monitor_telemetria').find({cliente_id:cid,created_at:{$gte:desde,$lte:fimD}},{projection:{created_at:1,'impressoras.ip':1,'impressoras.nome':1,'impressoras.descricao':1,'impressoras.serial':1,'impressoras.paginas_total':1,'impressoras.paginas_pb':1,'impressoras.paginas_color':1}}).sort({created_at:1}).toArray();
+  const eqs=await tenantCol('equipamentos',req).find({cliente_id:cid}).toArray(), por={}, n=v=>(v===null||v===undefined||v===''||!Number.isFinite(Number(v)))?null:Number(v);
+  for(const a of am)for(const imp of (a.impressoras||[])){ const k=imp.serial||imp.ip||imp.nome; if(!k)continue; const r=por[k]=por[k]||{antes:null,primeiro:null,ultimo:null}; r.imp=imp; const l={t:a.created_at,pb:n(imp.paginas_pb),cor:n(imp.paginas_color),tot:n(imp.paginas_total)}; if(a.created_at<ini)r.antes=l; else{ if(!r.primeiro)r.primeiro=l; r.ultimo=l; } }
+  const linhas=[], avisos=[]; const dia=t=>t.slice(8,10)+'/'+t.slice(5,7);
+  for(const [k,r] of Object.entries(por)){ const eq=eqs.find(e=>e.nserie&&e.nserie===r.imp.serial), nome=eq?[eq.nome,eq.modelo].filter(Boolean).join(' '):(r.imp.descricao||r.imp.nome||r.imp.ip||k); const av=[];
+    if(!r.ultimo){ avisos.push(`${nome}: sem leitura do monitoramento neste mês.`); continue; }
+    const a=r.antes||r.primeiro; if(!r.antes)av.push('sem leitura do mês anterior: usada a primeira leitura do mês (início aproximado)');
+    const apenasTotal=a.pb===null&&a.cor===null&&r.ultimo.pb===null&&r.ultimo.cor===null;
+    const ipb=apenasTotal?(a.tot||0):(a.pb||0), fpb=apenasTotal?(r.ultimo.tot||0):(r.ultimo.pb||0), icor=apenasTotal?0:(a.cor||0), fcor=apenasTotal?0:(r.ultimo.cor||0);
+    if(apenasTotal)av.push('monitoramento informou só o total de páginas: lançado como P&B, confira a divisão P&B/Color');
+    if(fpb<ipb||fcor<icor)av.push('contador diminuiu (troca ou zeragem da máquina?): confira a leitura');
+    if(new Date(fimD)-new Date(r.ultimo.t)>7*86400000)av.push(`última leitura em ${dia(r.ultimo.t)}`);
+    if(!eq)av.push('equipamento não encontrado no cadastro pelo nº de série');
+    linhas.push({equip_id:eq?eq._id.toString():'',nome,serial:r.imp.serial||'',origem:'monitoramento',ini_pb:ipb,fim_pb:fpb,ini_cor:icor,fim_cor:fcor,franq_pb:0,franq_cor:0,leitura_ini:a.t,leitura_fim:r.ultimo.t,aviso:av.join('; ')}); }
+  if(!linhas.length)avisos.push('Nenhuma leitura do monitoramento encontrada para este cliente no período. Digite as leituras manualmente.');
+  return {linhas,avisos};
+}
+const compFin=v=>/^\d{4}-(0[1-9]|1[0-2])$/.test(String(v||''));
+const linhasFin=a=>{ if(!Array.isArray(a)||!a.length||a.length>60)return null; return a.map(l=>({equip_id:strFin(l.equip_id,40),nome:strFin(l.nome,120),serial:strFin(l.serial,40),origem:l.origem==='monitoramento'?'monitoramento':'manual',ini_pb:numFin(l.ini_pb),fim_pb:numFin(l.fim_pb),ini_cor:numFin(l.ini_cor),fim_cor:numFin(l.fim_cor),franq_pb:numFin(l.franq_pb),franq_cor:numFin(l.franq_cor),leitura_ini:strFin(l.leitura_ini,30),leitura_fim:strFin(l.leitura_fim,30),aviso:strFin(l.aviso,300)})); };
+app.get('/api/financeiro/fechamentos', requireAuth, requireFinanceiroAcesso, async (req,res) => { try{ const f=compFin(req.query.competencia)?{competencia:req.query.competencia}:{}; const d=await tenantCol('financeiro_fechamentos',req).find(f).sort({created_at:-1}).toArray(); res.json(d.map(x=>({...x,id:x._id.toString()}))); }catch(e){res.status(500).json({error:e.message});} });
+app.post('/api/financeiro/fechamentos/preparar', requireAuth, requireFinanceiroAcesso, async (req,res) => { try{ const b=req.body||{}; if(!compFin(b.competencia))return res.status(400).json({error:'Competência inválida.'});
+  const ct=await col('contratos').findOne({_id:new ObjectId(b.contrato_id)}); if(!ct)return res.status(404).json({error:'Contrato não encontrado.'});
+  const ex=await tenantCol('financeiro_fechamentos',req).findOne({contrato_id:b.contrato_id,competencia:b.competencia}); const prop=await leituraMonitorFin(req,ct.cliente_id,b.competencia);
+  res.json({contrato:{id:b.contrato_id,cliente_id:ct.cliente_id,tipo:ct.tipo,valor_mensal:ct.valor_mensal||0,franq_pb:ct.franq_pb||0,exc_pb:ct.exc_pb||0,franq_cor:ct.franq_cor||0,exc_cor:ct.exc_cor||0,periodicidade:ct.periodicidade||'Mensal'},existente:ex?{...ex,id:ex._id.toString()}:null,proposta:{...prop,modo:'somada',mensalidade:ct.valor_mensal||0}}); }catch(e){res.status(500).json({error:e.message});} });
+app.post('/api/financeiro/fechamentos', requireAuth, requireFinanceiroAcesso, async (req,res) => { try{ const b=req.body||{}; if(!compFin(b.competencia))return res.status(400).json({error:'Competência inválida.'});
+  const ct=await col('contratos').findOne({_id:new ObjectId(b.contrato_id)}); if(!ct)return res.status(404).json({error:'Contrato não encontrado.'}); const L=linhasFin(b.linhas); if(!L)return res.status(400).json({error:'Inclua de 1 a 60 máquinas.'});
+  const modo=b.modo==='maquina'?'maquina':'somada', c=calcFechFin(ct,modo,L,b.mensalidade), tc=tenantCol('financeiro_fechamentos',req), ex=await tc.findOne({contrato_id:b.contrato_id,competencia:b.competencia});
+  if(ex&&ex.status==='faturado')return res.status(409).json({error:'Este fechamento já foi faturado.'});
+  const doc={contrato_id:b.contrato_id,cliente_id:ct.cliente_id,competencia:b.competencia,modo,...c,updated_at:now()};
+  if(ex){ await tc.updateOne({_id:ex._id},{$set:doc}); return res.json({ok:true,id:ex._id.toString(),...c}); }
+  const r=await tc.insertOne({...doc,status:'rascunho',titulo_id:'',created_at:now()}); res.json({ok:true,id:r.insertedId.toString(),...c}); }catch(e){res.status(500).json({error:e.message});} });
+app.post('/api/financeiro/fechamentos/:id/faturar', requireAuth, requireFinanceiroAcesso, async (req,res) => { try{ const b=req.body||{}, tc=tenantCol('financeiro_fechamentos',req), f=await tc.findOne({_id:new ObjectId(req.params.id)}); if(!f)return res.status(404).json({error:'Fechamento não encontrado.'}); if(f.status!=='rascunho')return res.status(409).json({error:'Este fechamento já foi faturado.'});
+  if(!dataIsoFin(b.vencimento))return res.status(400).json({error:'Informe o vencimento.'}); if(!(f.total>0))return res.status(400).json({error:'O total do fechamento deve ser maior que zero.'});
+  const u=await tc.updateOne({_id:f._id,status:'rascunho'},{$set:{status:'faturado',faturado_em:now(),updated_at:now()}}); if(!u.modifiedCount)return res.status(409).json({error:'Este fechamento já foi faturado.'});
+  const [y,m]=f.competencia.split('-'), det=[`Mensalidade R$ ${f.mensalidade.toFixed(2)}`]; if(f.exc_pb_qtd)det.push(`excedente P&B ${f.exc_pb_qtd} pág. R$ ${f.valor_exc_pb.toFixed(2)}`); if(f.exc_cor_qtd)det.push(`excedente Color ${f.exc_cor_qtd} pág. R$ ${f.valor_exc_cor.toFixed(2)}`);
+  try{ const r=await tenantCol('financeiro_titulos',req).insertOne({tipo:'receber',descricao:`Contrato — fechamento ${m}/${y}`,categoria:'Contrato',cliente_id:f.cliente_id,fornecedor:'',documento:'',emissao:now().slice(0,10),competencia:f.competencia,vencimento:b.vencimento,valor:f.total,valor_pago:0,status:'aberto',forma_pagamento:strFin(b.forma_pagamento,30),centro_custo:'',parcela:'',grupo_id:'',baixas:[],observacoes:det.join('; '),origem:'fechamento',origem_id:String(f._id),created_at:now(),updated_at:now()});
+    await tc.updateOne({_id:f._id},{$set:{titulo_id:r.insertedId.toString()}}); res.json({ok:true,titulo_id:r.insertedId.toString()});
+  }catch(err){ await tc.updateOne({_id:f._id},{$set:{status:'rascunho',updated_at:now()}}); throw err; } }catch(e){res.status(500).json({error:e.message});} });
+app.delete('/api/financeiro/fechamentos/:id', requireAuth, requireFinanceiroAcesso, async (req,res) => { try{ const tc=tenantCol('financeiro_fechamentos',req), f=await tc.findOne({_id:new ObjectId(req.params.id)}); if(!f)return res.status(404).json({error:'Fechamento não encontrado.'}); if(f.status!=='rascunho')return res.status(409).json({error:'Fechamento faturado não pode ser excluído.'}); await tc.deleteOne({_id:f._id}); res.json({ok:true}); }catch(e){res.status(500).json({error:e.message});} });
 
 // LANÇAMENTOS MANUAIS (histórico sem OS)
 app.get('/api/lancamentos', requireAuth, async (req,res) => {

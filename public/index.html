@@ -1280,6 +1280,8 @@ label { font-size: 11px !important; font-weight: 600 !important; color: #475569 
 #fin-relnav{gap:6px;margin:-4px 0 12px}#fin-relnav button{border:1px solid var(--bd);background:var(--sf);color:var(--tx2);border-radius:20px;padding:5px 14px;font-size:12px;cursor:pointer}#fin-relnav button.active{background:var(--nv);color:#fff;border-color:var(--nv)}
 </style>
 <style>
+#fin-vendasnav{display:flex;gap:6px;margin:0 0 12px}#fin-vendasnav button{border:1px solid var(--bd);background:var(--sf);color:var(--tx2);border-radius:20px;padding:5px 14px;font-size:12px;cursor:pointer}#fin-vendasnav button.active{background:var(--nv);color:#fff;border-color:var(--nv)}
+#fch-lin input{height:30px;padding:0 6px;border:1px solid var(--bd);border-radius:6px;font-size:12px;background:var(--sf);color:var(--tx)}#fch-lin td,#fch-lin th{padding:4px 6px;font-size:12px;vertical-align:top}
 #fin-fiscnav{gap:6px;margin:-4px 0 12px}#fin-fiscnav button{border:1px solid var(--bd);background:var(--sf);color:var(--tx2);border-radius:20px;padding:5px 14px;font-size:12px;cursor:pointer}#fin-fiscnav button.active{background:var(--nv);color:#fff;border-color:var(--nv)}
 #m-femit .nd{color:var(--tx3);font-style:italic}#m-femit td{padding:4px 6px;border-bottom:1px solid var(--bd)}#m-femit td:first-child{color:var(--tx3);width:36%}
 </style>
@@ -2657,11 +2659,20 @@ label { font-size: 11px !important; font-weight: 600 !important; color: #475569 
     </div>
     <!-- Aba Vendas e serviços -->
     <div id="fin-tab-vendas" style="display:none">
+      <div id="fin-vendasnav"><button class="active" data-s="avulso" onclick="finVendasSub('avulso')">Lançamentos avulsos</button><button data-s="fech" onclick="finVendasSub('fech')">Fechamento de contratos</button></div>
+      <div id="fv-avulso">
       <div class="fin-bar"><div class="swrap" style="flex:1;min-width:180px"><span style="color:var(--tx3)">🔍</span><input type="text" id="fp-q" placeholder="Buscar cliente ou item..." oninput="renderFinPedidos()"></div>
         <select id="fp-sit" onchange="renderFinPedidos()"><option value="">Todos</option><option value="aberto">A faturar</option><option value="faturado">Faturados</option></select>
         <button class="btn btn-primary btn-sm" onclick="abrirFinPedido()">+ Lançar serviço / venda</button></div>
       <div class="fin-cfg-sub" style="margin:0 0 8px">Registre serviços prestados e produtos/peças vendidos. Ao faturar, o Orion cria as contas a receber (à vista ou parceladas).</div>
       <div class="card" style="padding:0"><div class="twrap"><table><thead><tr><th>Data</th><th>Cliente</th><th>Itens</th><th>Total R$</th><th>Situação</th><th>Ações</th></tr></thead><tbody id="tb-fp"></tbody></table></div></div>
+      </div>
+      <div id="fv-fech" style="display:none">
+        <div class="fin-bar"><label style="font-size:12px;color:var(--tx3)">Competência</label><input type="month" id="fc-mes" onchange="carregarFinFech()">
+          <div class="swrap" style="flex:1;min-width:160px"><span style="color:var(--tx3)">🔍</span><input type="text" id="fc-q" placeholder="Buscar cliente..." oninput="renderFinFech()"></div></div>
+        <div class="fin-cfg-sub" style="margin:0 0 8px">Escolha o mês e feche cada contrato: o Orion importa o contador de cada máquina do monitoramento (você pode corrigir ou digitar), calcula o excedente e gera <b>uma única fatura por cliente</b>.</div>
+        <div class="card" style="padding:0"><div class="twrap"><table><thead><tr><th>Cliente</th><th>Contrato</th><th>Mensalidade</th><th>Franquia contratada</th><th>Fechamento</th><th>Ação</th></tr></thead><tbody id="tb-fc"></tbody></table></div></div>
+      </div>
     </div>
     <!-- Aba Fiscal -->
     <div id="fin-tab-fiscal" style="display:none">
@@ -4457,6 +4468,18 @@ Outros</textarea>
     <div style="margin-top:10px;padding:10px 12px;border-radius:8px;background:var(--bl2bg);font-weight:700;color:var(--nv)" id="fb-total"></div>
   </div>
   <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('m-finbaixa')">Cancelar</button><button class="btn btn-primary" id="fb-save-btn" onclick="confirmarBaixaTitulo()">Confirmar baixa</button></div>
+</div></div>
+
+<!-- Modal Fechamento de contrato -->
+<div class="mov" id="m-ffech"><div class="modal" style="max-width:1000px">
+  <div class="mhd"><div class="mhd-title" id="m-ffech-title">Fechamento</div><button class="btnx" onclick="closeM('m-ffech')">×</button></div>
+  <div class="mbody"><div id="fch-info" style="font-size:12px;color:var(--tx2);line-height:1.6"></div><div id="fch-av"></div>
+    <div class="fgrid fg2" style="margin-top:8px"><div class="fg"><label>Como calcular a franquia</label><select id="fch-modo" onchange="fcModo(this.value)"></select></div><div class="fg"><label>Mensalidade R$ (do contrato, editável)</label><input type="number" id="fch-mens" step="0.01" min="0" oninput="fcMens(this.value)"></div></div>
+    <div class="twrap" style="margin-top:10px"><table id="fch-lin"></table></div>
+    <div style="display:flex;gap:8px;margin-top:8px"><button class="btn btn-ghost btn-sm" id="fch-add" onclick="fcAddLinha()">+ Máquina manual</button><button class="btn btn-ghost btn-sm" id="fch-rei" onclick="fcReimportar()">📡 Reimportar do monitoramento</button></div>
+    <div id="fch-res" style="margin-top:12px;padding:10px 12px;border-radius:8px;background:var(--bl2bg)"></div>
+    <div class="fgrid fg2" style="margin-top:10px"><div class="fg"><label>Vencimento da fatura</label><input type="date" id="fch-venc"></div><div class="fg"><label>Forma de pagamento</label><select id="fch-forma"><option value="">—</option><option>Boleto</option><option>PIX</option><option>Transferência</option></select></div></div></div>
+  <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('m-ffech')">Fechar</button><button class="btn btn-ghost" id="fch-save" onclick="fcSalvar()">Salvar rascunho</button><button class="btn btn-success" id="fch-fat" onclick="fcFaturar()">Faturar</button></div>
 </div></div>
 
 <!-- Modais Vendas e serviços -->
@@ -8968,6 +8991,53 @@ async function gerarNotaDoPedido(id){const p=G_finPed.find(x=>x.id===id);if(!p)r
   const c=_ffCalc(val,p.cliente_id,sid);
   try{const r=await api('POST','/api/financeiro/notas',{cliente_id:p.cliente_id,servico_id:sid,descricao:sv.map(i=>i.descricao).join('; '),valor:val,competencia:(p.data||'').slice(0,7),aliquota_iss:c.aliq==null?null:c.aliq,calculo:{iss:c.iss,irrf:c.irrf,pis:c.pis,cofins:c.cofins,csll:c.csll,liquido:c.liquido}});
     await api('PUT','/api/financeiro/pedidos/'+id,{acao:'vincular_nota',nota_id:r.id});await carregarFinPedidos();alert('Rascunho criado em Fiscal › Notas fiscais.');}catch(e){alert(e.message);}}
+
+// ─── FECHAMENTO DE CONTRATOS (leitura por máquina, excedente, fatura única) ────
+let G_finFech=[],_fcErro='',_fcCt=null,_fcLin=[],_fcAv=[],_fcId='',_fcModo='somada',_fcLock=false,_fcMens=0;
+const _fcMesPadrao=()=>{const d=new Date();d.setDate(1);d.setMonth(d.getMonth()-1);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;};
+const _fcN=v=>{const n=Number(v);return Number.isFinite(n)&&n>0?n:0;};
+function finVendasSub(s){document.getElementById('fv-avulso').style.display=s==='avulso'?'':'none';document.getElementById('fv-fech').style.display=s==='fech'?'':'none';
+  document.querySelectorAll('#fin-vendasnav button').forEach(b=>b.classList.toggle('active',b.dataset.s===s));if(s==='fech')carregarFinFech();}
+async function carregarFinFech(){const el=document.getElementById('fc-mes');if(!el.value)el.value=_fcMesPadrao();
+  try{G_finFech=await api('GET','/api/financeiro/fechamentos?competencia='+el.value);_fcErro='';}catch(e){G_finFech=[];_fcErro=e.message||'Erro ao carregar.';}renderFinFech();}
+function renderFinFech(){const tb=document.getElementById('tb-fc');if(!tb)return;
+  if(_fcErro){tb.innerHTML=`<tr><td colspan="6"><div class="empty"><div class="empty-ico">🔒</div><div class="empty-t">${_ftEsc(_fcErro)}</div></div></td></tr>`;return;}
+  const q=(document.getElementById('fc-q').value||'').toLowerCase(),l=(G_contratos||[]).filter(c=>c.status==='Ativo'&&(_ffCli(c.cliente_id).nome||'').toLowerCase().includes(q));
+  tb.innerHTML=l.length?l.map(c=>{const f=G_finFech.find(x=>x.contrato_id===c.id);const st=f?`<span class="badge ${f.status==='faturado'?'bg':'bo'}" style="font-size:10px">${f.status==='faturado'?'Faturado':'Rascunho'}</span> <b>${fm(f.total)}</b>`:'<span class="badge bgr" style="font-size:10px">Não fechado</span>';
+    return `<tr><td>${_ftEsc(_ffCli(c.cliente_id).nome||'—')}</td><td style="font-size:12px">${_ftEsc(c.tipo||'')}${c.periodicidade&&c.periodicidade!=='Mensal'?` · ${_ftEsc(c.periodicidade)}`:''}</td><td>${fm(c.valor_mensal)}</td><td style="font-size:12px">P&B ${c.franq_pb||0} · Color ${c.franq_cor||0}</td><td>${st}</td><td><button class="btn ${f&&f.status==='faturado'?'btn-ghost':'btn-primary'} btn-xs" onclick="abrirFechamento('${c.id}')">${f?(f.status==='faturado'?'Ver':'Continuar'):'Fechar mês'}</button></td></tr>`;}).join(''):`<tr><td colspan="6"><div class="empty"><div class="empty-ico">📑</div><div class="empty-t">Nenhum contrato ativo encontrado.</div></div></td></tr>`;}
+function _fcCalc(){const ct=_fcCt,L=_fcLin.map(l=>({...l,pg_pb:Math.max(0,_fcN(l.fim_pb)-_fcN(l.ini_pb)),pg_cor:Math.max(0,_fcN(l.fim_cor)-_fcN(l.ini_cor))})),tp=L.reduce((s,l)=>s+l.pg_pb,0),tc=L.reduce((s,l)=>s+l.pg_cor,0);let ep=0,ec=0;
+  if(_fcModo==='maquina'){L.forEach(l=>{l.ep=Math.max(0,l.pg_pb-_fcN(l.franq_pb));l.ec=Math.max(0,l.pg_cor-_fcN(l.franq_cor));ep+=l.ep;ec+=l.ec;});}
+  else{ep=Math.max(0,tp-_fcN(ct.franq_pb));ec=Math.max(0,tc-_fcN(ct.franq_cor));L.forEach(l=>{l.ep=tp>0?ep*l.pg_pb/tp:0;l.ec=tc>0?ec*l.pg_cor/tc:0;});}
+  L.forEach(l=>{l.vx=_ftR2(l.ep*_fcN(ct.exc_pb)+l.ec*_fcN(ct.exc_cor));});
+  const vp=_ftR2(ep*_fcN(ct.exc_pb)),vc=_ftR2(ec*_fcN(ct.exc_cor)),m=_ftR2(_fcN(_fcMens));return{L,tp,tc,ep,ec,vp,vc,exc:_ftR2(vp+vc),m,total:_ftR2(m+vp+vc)};}
+async function abrirFechamento(ctId){const comp=document.getElementById('fc-mes').value;
+  try{const r=await api('POST','/api/financeiro/fechamentos/preparar',{contrato_id:ctId,competencia:comp});
+    _fcCt=r.contrato;const ex=r.existente;_fcId=ex?ex.id:'';_fcLock=!!(ex&&ex.status==='faturado');_fcModo=ex?ex.modo:'somada';_fcMens=ex?ex.mensalidade:r.proposta.mensalidade;
+    _fcLin=(ex?ex.linhas:r.proposta.linhas).map(l=>({...l}));_fcAv=ex?[]:r.proposta.avisos;finFechRender(comp);openM('m-ffech');}catch(e){alert(e.message);}}
+function finFechRender(comp){const ct=_fcCt,cli=_ffCli(ct.cliente_id).nome||'',[y,m]=(comp||document.getElementById('fc-mes').value).split('-'),mq=_fcModo==='maquina',ro=_fcLock?' disabled':'';
+  document.getElementById('m-ffech-title').textContent=`Fechamento ${m}/${y} — ${cli}`;
+  document.getElementById('fch-info').innerHTML=`${_ftEsc(ct.tipo||'')} · franquia contratada: P&B ${ct.franq_pb} · Color ${ct.franq_cor} · excedente: ${fm(ct.exc_pb)}/pág P&B · ${fm(ct.exc_cor)}/pág Color`+(ct.periodicidade!=='Mensal'?`<br><span style="color:var(--or)">Atenção: contrato de periodicidade ${_ftEsc(ct.periodicidade)}. A mensalidade abaixo é a cadastrada no contrato: confira se corresponde ao período faturado.</span>`:'');
+  document.getElementById('fch-av').innerHTML=_fcAv.length?`<div style="background:var(--orbg);color:var(--or);border-radius:8px;padding:8px 12px;font-size:12px;margin:8px 0">${_fcAv.map(_ftEsc).join('<br>')}</div>`:'';
+  document.getElementById('fch-modo').innerHTML=`<option value="somada"${mq?'':' selected'}>Franquia somada (do contrato, todas as máquinas)</option><option value="maquina"${mq?' selected':''}>Franquia por máquina</option>`;document.getElementById('fch-modo').disabled=_fcLock;
+  document.getElementById('fch-mens').value=_fcMens;document.getElementById('fch-mens').disabled=_fcLock;
+  document.getElementById('fch-lin').innerHTML=`<thead><tr><th>Máquina</th><th>Série</th><th>P&B ini</th><th>P&B fim</th><th>Color ini</th><th>Color fim</th>${mq?'<th>Franq. P&B</th><th>Franq. Color</th>':''}<th>Pág. P&B</th><th>Pág. Color</th><th>Excedente</th><th></th></tr></thead><tbody>`+_fcLin.map((l,i)=>{const inp=(k,w)=>`<input type="number" min="0" value="${l[k]===0?0:(l[k]||'')}" style="width:${w||78}px" oninput="_fcSet(${i},'${k}',this.value)"${ro}>`;
+    return `<tr><td><input value="${_ftEsc(l.nome)}" style="width:130px" oninput="_fcSet(${i},'nome',this.value,1)"${ro}><div style="font-size:10px;color:var(--tx3)">${l.origem==='monitoramento'?'📡 monitoramento':'✍️ manual'}${l.aviso?` · <span style="color:var(--or)">${_ftEsc(l.aviso)}</span>`:''}</div></td><td><input value="${_ftEsc(l.serial||'')}" style="width:90px" oninput="_fcSet(${i},'serial',this.value,1)"${ro}></td><td>${inp('ini_pb')}</td><td>${inp('fim_pb')}</td><td>${inp('ini_cor')}</td><td>${inp('fim_cor')}</td>${mq?`<td>${inp('franq_pb',70)}</td><td>${inp('franq_cor',70)}</td>`:''}<td id="fl-pb-${i}" style="text-align:right"></td><td id="fl-cor-${i}" style="text-align:right"></td><td id="fl-x-${i}" style="text-align:right;font-weight:600"></td><td>${_fcLock?'':`<button class="btn btn-danger btn-xs" onclick="_fcDel(${i})">×</button>`}</td></tr>`;}).join('')+'</tbody>';
+  document.getElementById('fch-add').style.display=_fcLock?'none':'';document.getElementById('fch-rei').style.display=_fcLock?'none':'';document.getElementById('fch-save').style.display=_fcLock?'none':'';document.getElementById('fch-fat').style.display=_fcLock?'none':'';
+  document.getElementById('fch-venc').parentElement.parentElement.style.display=_fcLock?'none':'';if(!document.getElementById('fch-venc').value)document.getElementById('fch-venc').value=_ftHoje();_fcTot();}
+function _fcTot(){const c=_fcCalc(),mq=_fcModo==='maquina',ct=_fcCt;c.L.forEach((l,i)=>{const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};set('fl-pb-'+i,l.pg_pb);set('fl-cor-'+i,l.pg_cor);set('fl-x-'+i,fm(l.vx)+(mq?'':' ≈'));});
+  document.getElementById('fch-res').innerHTML=`<table style="width:100%;font-size:12px"><tr><td></td><td>Páginas</td><td>Franquia</td><td>Excedente</td><td>Valor</td></tr><tr><td>P&B</td><td>${c.tp}</td><td>${mq?'por máquina':ct.franq_pb}</td><td>${_ftR2(c.ep)}</td><td>${fm(c.vp)}</td></tr><tr><td>Color</td><td>${c.tc}</td><td>${mq?'por máquina':ct.franq_cor}</td><td>${_ftR2(c.ec)}</td><td>${fm(c.vc)}</td></tr></table><div style="margin-top:6px">Mensalidade ${fm(c.m)} + excedente ${fm(c.exc)} = <b style="font-size:15px">${fm(c.total)}</b></div>${mq?'':'<div style="font-size:10px;color:var(--tx3);margin-top:4px">≈ Em franquia somada, o excedente por máquina é um rateio proporcional apenas informativo.</div>'}`;}
+function _fcSet(i,k,v,re){_fcLin[i][k]=v;if(re)return;_fcTot();}
+function _fcDel(i){if(_fcLin.length>1){_fcLin.splice(i,1);finFechRender();}}
+function fcAddLinha(){_fcLin.push({equip_id:'',nome:'',serial:'',origem:'manual',ini_pb:0,fim_pb:0,ini_cor:0,fim_cor:0,franq_pb:0,franq_cor:0});finFechRender();}
+function fcModo(v){_fcModo=v;finFechRender();}
+function fcMens(v){_fcMens=v;_fcTot();}
+async function fcReimportar(){if(!confirm('Substituir as leituras da tela pelas do monitoramento?'))return;const comp=document.getElementById('fc-mes').value;
+  try{const r=await api('POST','/api/financeiro/fechamentos/preparar',{contrato_id:_fcCt.id,competencia:comp});_fcLin=r.proposta.linhas.map(l=>({...l}));_fcAv=r.proposta.avisos;if(!_fcLin.length)_fcLin=[{equip_id:'',nome:'',serial:'',origem:'manual',ini_pb:0,fim_pb:0,ini_cor:0,fim_cor:0,franq_pb:0,franq_cor:0}];finFechRender();}catch(e){alert(e.message);}}
+async function _fcSalvar(){const r=await api('POST','/api/financeiro/fechamentos',{contrato_id:_fcCt.id,competencia:document.getElementById('fc-mes').value,modo:_fcModo,mensalidade:_fcN(_fcMens),linhas:_fcLin.map(l=>({...l,ini_pb:_fcN(l.ini_pb),fim_pb:_fcN(l.fim_pb),ini_cor:_fcN(l.ini_cor),fim_cor:_fcN(l.fim_cor),franq_pb:_fcN(l.franq_pb),franq_cor:_fcN(l.franq_cor)}))});_fcId=r.id;return r;}
+async function fcSalvar(){try{await _fcSalvar();closeM('m-ffech');await carregarFinFech();}catch(e){alert(e.message);}}
+async function fcFaturar(){const v=document.getElementById('fch-venc').value;if(!v)return alert('Informe o vencimento da fatura.');const c=_fcCalc();if(!(c.total>0))return alert('O total do fechamento é zero.');
+  if(!confirm(`Faturar ${fm(c.total)} (mensalidade ${fm(c.m)} + excedente ${fm(c.exc)})? Será criada uma conta a receber e o fechamento ficará bloqueado.`))return;
+  try{await _fcSalvar();await api('POST',`/api/financeiro/fechamentos/${_fcId}/faturar`,{vencimento:v,forma_pagamento:document.getElementById('fch-forma').value});closeM('m-ffech');await carregarFinFech();await carregarFinTitulos();}catch(e){alert(e.message);}}
 
 function exportFinExcel(){
   const esc=v=>`"${String(v||'').replace(/"/g,'""')}"`;
