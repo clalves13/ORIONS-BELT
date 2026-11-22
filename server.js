@@ -638,7 +638,7 @@ app.get('/api/dashboard', requireAuth, async (req,res) => {
 // BACKUP
 app.get('/api/backup', requireAuth, requireAdmin, async (req,res) => {
   try {
-    const [users,tecnicos,clientes,equipamentos,ordens,laboratorio,logistica,historico,estoque,suprCli,suprMovs,estMovs,lancamentos,contratos,financeiro,agenda,veiculos,financeiroTitulos,financeiroConfig,financeiroFiscal,financeiroServicos,financeiroNotas,financeiroPedidos,financeiroFechamentos,financeiroContratosCfg]=await Promise.all([
+    const [users,tecnicos,clientes,equipamentos,ordens,laboratorio,logistica,historico,estoque,suprCli,suprMovs,estMovs,lancamentos,contratos,financeiro,agenda,veiculos,financeiroTitulos,financeiroConfig,financeiroFiscal,financeiroServicos,financeiroNotas,financeiroPedidos,financeiroFechamentos,financeiroContratosCfg,financeiroAuditoria]=await Promise.all([
       col('users').find().toArray(),
       col('tecnicos').find().toArray(),
       tenantCol('clientes', req).find().toArray(),
@@ -664,6 +664,7 @@ app.get('/api/backup', requireAuth, requireAdmin, async (req,res) => {
       col('financeiro_pedidos').find().toArray(),
       col('financeiro_fechamentos').find().toArray(),
       col('financeiro_contratos_cfg').find().toArray(),
+      col('financeiro_auditoria').find().toArray(),
     ]);
     // Converte _id ObjectId para string para preservar referências no restore
     const toStr = arr => arr.map(d => ({...d, _id: d._id?.toString(), id: d._id?.toString()}));
@@ -694,6 +695,7 @@ app.get('/api/backup', requireAuth, requireAdmin, async (req,res) => {
       financeiro_pedidos: toStr(financeiroPedidos),
       financeiro_fechamentos: toStr(financeiroFechamentos),
       financeiro_contratos_cfg: toStr(financeiroContratosCfg),
+      financeiro_auditoria: toStr(financeiroAuditoria),
     };
     res.setHeader('Content-Disposition',`attachment; filename="orion_backup_${new Date().toISOString().slice(0,10)}.json"`);
     res.json(backup);
@@ -855,6 +857,35 @@ function requireFinanceiroAcesso(req,res,next){
 }
 
 // CONFIGURAÇÃO FISCAL/FINANCEIRA POR EMPRESA — não armazena certificado nem senha bancária.
+// AUDITORIA — registra (sem rota de edição ou exclusão) toda alteração bem-sucedida feita nas rotas /api/financeiro: quem, quando, o quê, antes e dados enviados
+const ID24='([a-f0-9]{24})', AUDIT_ROTAS=[
+  ['POST',/^\/?$/,'lancamento','criar'],['PUT',new RegExp('^\\/'+ID24+'$'),'lancamento','editar','financeiro'],['DELETE',new RegExp('^\\/'+ID24+'$'),'lancamento','excluir','financeiro'],
+  ['POST',/^\/titulos$/,'titulo','criar'],['PUT',new RegExp('^\\/titulos\\/'+ID24+'$'),'titulo','editar','financeiro_titulos'],['DELETE',new RegExp('^\\/titulos\\/'+ID24+'$'),'titulo','excluir','financeiro_titulos'],
+  ['POST',new RegExp('^\\/titulos\\/'+ID24+'\\/baixar$'),'titulo','baixa','financeiro_titulos'],['POST',new RegExp('^\\/titulos\\/'+ID24+'\\/estornar$'),'titulo','estorno','financeiro_titulos'],['DELETE',/^\/titulos\/grupo\/([\w-]+)$/,'titulo','excluir série'],
+  ['PUT',/^\/config$/,'config','configurar'],['PUT',/^\/fiscal\/(\w+)\/([\w-]+)$/,'fiscal','configurar'],
+  ['POST',/^\/servicos$/,'servico','criar'],['PUT',new RegExp('^\\/servicos\\/'+ID24+'$'),'servico','editar','financeiro_servicos'],['DELETE',new RegExp('^\\/servicos\\/'+ID24+'$'),'servico','excluir','financeiro_servicos'],
+  ['POST',/^\/notas$/,'nota','criar'],['PUT',new RegExp('^\\/notas\\/'+ID24+'$'),'nota','editar','financeiro_notas'],['DELETE',new RegExp('^\\/notas\\/'+ID24+'$'),'nota','excluir','financeiro_notas'],
+  ['POST',/^\/pedidos$/,'pedido','criar'],['PUT',new RegExp('^\\/pedidos\\/'+ID24+'$'),'pedido','editar','financeiro_pedidos'],['DELETE',new RegExp('^\\/pedidos\\/'+ID24+'$'),'pedido','excluir','financeiro_pedidos'],['POST',new RegExp('^\\/pedidos\\/'+ID24+'\\/faturar$'),'pedido','faturar','financeiro_pedidos'],
+  ['POST',/^\/fechamentos$/,'fechamento','salvar'],['POST',new RegExp('^\\/fechamentos\\/'+ID24+'\\/faturar$'),'fechamento','faturar','financeiro_fechamentos'],['DELETE',new RegExp('^\\/fechamentos\\/'+ID24+'$'),'fechamento','excluir','financeiro_fechamentos'],
+  ['PUT',/^\/contratos-cfg\/padrao$/,'previsao','configurar'],['PUT',/^\/contratos-cfg\/contrato\/([\w-]+)$/,'previsao','configurar']];
+const slimFin=o=>{ if(o==null)return null; let t; try{t=JSON.stringify(o);}catch(e){return null;} return t.length>6000?{_truncado:true,tamanho:t.length}:JSON.parse(t); };
+app.use('/api/financeiro', async (req,res,next) => {
+  try{ const u=req.session&&req.session.user; if(!u||req.method==='GET'||req.method==='OPTIONS')return next();
+    const r=AUDIT_ROTAS.find(x=>x[0]===req.method&&x[1].test(req.path)); if(!r)return next();
+    const m=req.path.match(r[1]), refPath=(m&&m[1])?m.slice(1).join('/'):''; let antes=null;
+    if(r[4]&&/^[a-f0-9]{24}$/.test(refPath)){ try{ antes=await tenantCol(r[4],req).findOne({_id:new ObjectId(refPath)}); }catch(e){} }
+    const body=req.body, orig=res.json.bind(res); let resp=null; res.json=function(b){resp=b;return orig(b);};
+    res.on('finish',()=>{ try{ if(res.statusCode>=400)return; const b=body||{}, acaoCorpo={emitida:'emitir',cancelada:'cancelar',vincular_nota:'vincular nota'}[b.acao], acao=acaoCorpo||r[3];
+      const nome=(antes&&(antes.descricao||antes.nome))||b.descricao||b.nome||b.razao_social||'', v=b.valor_pago!=null?b.valor_pago:(b.valor!=null?b.valor:(antes&&antes.valor));
+      const ref=refPath||(resp&&(resp.id||resp.titulo_id))||'';
+      tenantCol('financeiro_auditoria',req).insertOne({em:now(),usuario_id:String(u.id||u._id||''),usuario:u.nome||u.login||'',perfil:u.perfil||u.role||'',ip:req.ip||'',metodo:req.method,rota:(req.baseUrl||'')+req.path,entidade:r[2],acao,ref_id:String(ref),resumo:[acao,nome&&('— '+nome),Number.isFinite(Number(v))&&v!==''&&v!=null?('· R$ '+Number(v).toFixed(2)):''].filter(Boolean).join(' '),antes:slimFin(antes),dados:slimFin(b)}).catch(e=>console.error('auditoria:',e.message));
+    }catch(e){console.error('auditoria:',e.message);} });
+  }catch(e){console.error('auditoria:',e.message);} next(); });
+app.get('/api/financeiro/auditoria', requireAuth, requireAdmin, async (req,res) => { try{ const q=req.query, f={}, ate=/^\d{4}-\d{2}-\d{2}$/.test(q.ate||'')?q.ate:null, de=/^\d{4}-\d{2}-\d{2}$/.test(q.de||'')?q.de:new Date(Date.now()-30*86400000).toISOString().slice(0,10);
+  f.em={$gte:de+'T00:00:00.000Z'}; if(ate)f.em.$lte=ate+'T23:59:59.999Z'; if(q.entidade)f.entidade=String(q.entidade).slice(0,20); if(q.acao)f.acao=String(q.acao).slice(0,20);
+  let l=await tenantCol('financeiro_auditoria',req).find(f).sort({em:-1}).toArray(); const u=String(q.usuario||'').toLowerCase().trim(); if(u)l=l.filter(x=>(x.usuario||'').toLowerCase().includes(u)); const total=l.length;
+  res.json({total,limitado:total>1000,itens:l.slice(0,1000).map(x=>({...x,id:x._id.toString()}))}); }catch(e){res.status(500).json({error:e.message});} });
+
 app.get('/api/financeiro/config', requireAuth, requireFinanceiroAcesso, async (req,res) => {
   try { const cfg=await tenantCol('financeiro_config',req).findOne({_id:'principal'}); res.json(cfg?.dados||{}); }
   catch(e){res.status(500).json({error:e.message});}

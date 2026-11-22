@@ -2605,7 +2605,7 @@ label { font-size: 11px !important; font-weight: 600 !important; color: #475569 
       <button class="log-tab" id="ftab-fiscal" onclick="switchFinTab('fiscal')">🏛️ Fiscal</button>
     </div>
     <div id="fin-fiscnav" style="display:none"><button data-s="notas" onclick="finFiscSub('notas')">Notas fiscais</button><button data-s="clientes" onclick="finFiscSub('clientes')">Clientes</button><button data-s="pecas" onclick="finFiscSub('pecas')">Peças</button><button data-s="servicos" onclick="finFiscSub('servicos')">Serviços</button><button data-s="config" onclick="switchFinTab('config')">Configuração da empresa</button></div>
-    <div id="fin-relnav" style="display:none"><button data-t="rel" onclick="switchFinTab('rel')">Demonstrativo</button><button data-t="dre" onclick="switchFinTab('dre')">DRE</button><button data-t="fluxo" onclick="switchFinTab('fluxo')">Fluxo de caixa</button></div>
+    <div id="fin-relnav" style="display:none"><button data-t="rel" onclick="switchFinTab('rel')">Demonstrativo</button><button data-t="dre" onclick="switchFinTab('dre')">DRE</button><button data-t="fluxo" onclick="switchFinTab('fluxo')">Fluxo de caixa</button><button data-t="audit" onclick="switchFinTab('audit')">Auditoria</button></div>
     <!-- Filtros período -->
     <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
       <div class="swrap" style="flex:1;min-width:160px"><span style="color:var(--tx3)">🔍</span><input type="text" id="s-fin" placeholder="Buscar descrição, categoria..." oninput="renderFinLanc()"></div>
@@ -2675,6 +2675,19 @@ label { font-size: 11px !important; font-weight: 600 !important; color: #475569 
         <div class="fin-cfg-sub" style="margin:0 0 8px">Escolha o mês e feche cada contrato: o Orion importa o contador de cada máquina do monitoramento (você pode corrigir ou digitar), calcula o excedente e gera <b>uma única fatura por cliente</b>.</div>
         <div class="card" style="padding:0"><div class="twrap"><table><thead><tr><th>Cliente</th><th>Contrato</th><th>Mensalidade</th><th>Franquia contratada</th><th>Fechamento</th><th>Ação</th></tr></thead><tbody id="tb-fc"></tbody></table></div></div>
       </div>
+    </div>
+    <!-- Aba Auditoria -->
+    <div id="fin-tab-audit" style="display:none">
+      <div class="fin-bar">
+        <label style="font-size:12px;color:var(--tx3)">De</label><input type="date" id="aud-de"><label style="font-size:12px;color:var(--tx3)">até</label><input type="date" id="aud-ate">
+        <input type="text" id="aud-user" placeholder="Usuário" style="width:140px">
+        <select id="aud-ent"><option value="">Todos os itens</option><option value="titulo">Contas a pagar/receber</option><option value="lancamento">Lançamentos</option><option value="pedido">Lançamentos avulsos</option><option value="fechamento">Fechamentos de contrato</option><option value="nota">Notas fiscais</option><option value="servico">Serviços</option><option value="fiscal">Dados fiscais</option><option value="previsao">Previsão de contratos</option><option value="config">Configuração da empresa</option></select>
+        <select id="aud-acao"><option value="">Todas as ações</option><option value="criar">Criar</option><option value="editar">Editar</option><option value="excluir">Excluir</option><option value="baixa">Baixa</option><option value="estorno">Estorno</option><option value="faturar">Faturar</option><option value="emitir">Emitir nota</option><option value="cancelar">Cancelar nota</option><option value="configurar">Configurar</option></select>
+        <button class="btn btn-primary btn-sm" onclick="carregarFinAuditoria()">Buscar</button><span style="flex:1"></span><button class="btn btn-ghost btn-sm" onclick="exportFinAuditoriaCSV()">📊 Excel</button>
+      </div>
+      <div class="fin-cfg-sub" style="margin:0 0 8px;max-width:none">Registro de quem criou, alterou ou excluiu itens do Financeiro. Os registros não podem ser editados nem apagados pelo sistema. Acesso restrito a administradores. Horários no fuso do seu navegador.</div>
+      <div id="aud-aviso"></div>
+      <div class="card" style="padding:0"><div class="twrap"><table><thead><tr><th>Data e hora</th><th>Usuário</th><th>Item</th><th>Ação</th><th>Resumo</th><th>Detalhes</th></tr></thead><tbody id="tb-aud"></tbody></table></div></div>
     </div>
     <!-- Aba Fiscal -->
     <div id="fin-tab-fiscal" style="display:none">
@@ -4470,6 +4483,12 @@ Outros</textarea>
     <div style="margin-top:10px;padding:10px 12px;border-radius:8px;background:var(--bl2bg);font-weight:700;color:var(--nv)" id="fb-total"></div>
   </div>
   <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('m-finbaixa')">Cancelar</button><button class="btn btn-primary" id="fb-save-btn" onclick="confirmarBaixaTitulo()">Confirmar baixa</button></div>
+</div></div>
+
+<!-- Modal Detalhe da auditoria -->
+<div class="mov" id="m-faud"><div class="modal" style="max-width:760px">
+  <div class="mhd"><div class="mhd-title" id="m-faud-title">Detalhe do registro</div><button class="btnx" onclick="closeM('m-faud')">×</button></div>
+  <div class="mbody" id="faud-body"></div><div class="mfoot"><button class="btn btn-ghost" onclick="closeM('m-faud')">Fechar</button></div>
 </div></div>
 
 <!-- Modal Previsão do contrato -->
@@ -8366,8 +8385,8 @@ async function lancarReceitaOS(os) {
 
 let _finTab='visao';
 function switchFinTab(tab) {
-  _finTab=tab; const rels=['rel','dre','fluxo'], aba=rels.includes(tab)?'rel':(tab==='config'?'fiscal':tab);
-  ['visao','lancamentos','vendas','titulos','rel','dre','fluxo','fiscal','config'].forEach(t=>{const p=document.getElementById('fin-tab-'+t); if(p)p.style.display=t===tab?'':'none';});
+  _finTab=tab; const rels=['rel','dre','fluxo','audit'], aba=rels.includes(tab)?'rel':(tab==='config'?'fiscal':tab);
+  ['visao','lancamentos','vendas','titulos','rel','dre','fluxo','audit','fiscal','config'].forEach(t=>{const p=document.getElementById('fin-tab-'+t); if(p)p.style.display=t===tab?'':'none';});
   ['visao','lancamentos','vendas','titulos','rel','fiscal'].forEach(t=>{const b=document.getElementById('ftab-'+t); if(b)b.classList.toggle('active',t===aba);});
   const show=(id,v)=>{const e=document.getElementById(id); if(e)e.style.display=v;};
   show('fin-kpis',tab==='lancamentos'?'grid':'none'); show('fin-top-actions',tab==='lancamentos'?'':'none'); show('fin-relnav',rels.includes(tab)?'flex':'none'); show('fin-fiscnav',(tab==='fiscal'||tab==='config')?'flex':'none');
@@ -8378,6 +8397,7 @@ function switchFinTab(tab) {
   if(tab==='fluxo'){renderFinFluxo();renderFinProjecao();}
   if(tab==='titulos')carregarFinTitulos();
   if(tab==='rel')renderFinDemo();
+  if(tab==='audit')carregarFinAuditoria();
   if(tab==='fiscal')carregarFinFiscal();
   if(tab==='vendas')carregarFinPedidos();
   if(tab==='config')document.querySelectorAll('#fin-fiscnav button').forEach(b=>b.classList.toggle('active',b.dataset.s==='config'));
@@ -9107,6 +9127,25 @@ function cfRender(){const id=document.getElementById('cf-id').value,c=(G_contrat
   document.getElementById('cf-res').dataset.v=c.valor_mensal||0;document.getElementById('cf-res').dataset.k=k;cfRes();}
 function cfRes(){const r=document.getElementById('cf-res'),v=+r.dataset.v,k=+r.dataset.k,t=_ftR2(_cfItens.reduce((s,i)=>s+(+i.valor||0),0)*k);r.textContent=`Valor do contrato ${fm(v)} + itens fixos ${fm(t)}${k>1?` (valor mensal × ${k} meses)`:''} = ${fm(_ftR2(v+t))} por cobrança prevista`;}
 async function salvarCfgContrato(){const id=document.getElementById('cf-id').value;try{await api('PUT','/api/financeiro/contratos-cfg/contrato/'+id,{dia:document.getElementById('cf-dia').value,itens_fixos:_cfItens.map(i=>({descricao:i.descricao,valor:+i.valor}))});await _prevEnsure(true);closeM('m-fcfg');renderFinFech();}catch(e){alert(e.message);}}
+
+// ─── AUDITORIA (somente administradores) ─────────────────
+let G_finAud=[],_audErro='';
+const _audEnt={titulo:'Conta a pagar/receber',lancamento:'Lançamento',pedido:'Lançamento avulso',fechamento:'Fechamento de contrato',nota:'Nota fiscal',servico:'Serviço',fiscal:'Dados fiscais',previsao:'Previsão de contratos',config:'Configuração da empresa'};
+const _audDH=iso=>{const d=new Date(iso);return isNaN(d)?'':d.toLocaleString('pt-BR');};
+async function carregarFinAuditoria(){const de=document.getElementById('aud-de');if(!de.value){const d=new Date();d.setDate(d.getDate()-30);de.value=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
+  const q=new URLSearchParams({de:de.value,ate:document.getElementById('aud-ate').value,usuario:document.getElementById('aud-user').value,entidade:document.getElementById('aud-ent').value,acao:document.getElementById('aud-acao').value});
+  try{const r=await api('GET','/api/financeiro/auditoria?'+q.toString());G_finAud=r.itens;_audErro='';document.getElementById('aud-aviso').innerHTML=r.limitado?`<div style="background:var(--orbg);color:var(--or);border-radius:8px;padding:6px 12px;font-size:12px;margin-bottom:8px">Mostrando os 1.000 registros mais recentes de ${r.total}. Restrinja o período para ver os demais.</div>`:'';}
+  catch(e){G_finAud=[];_audErro=/negado/i.test(e.message||'')?'Acesso restrito a administradores.':(e.message||'Erro ao carregar.');document.getElementById('aud-aviso').innerHTML='';}
+  renderFinAuditoria();}
+function renderFinAuditoria(){const tb=document.getElementById('tb-aud');if(!tb)return;
+  if(_audErro){tb.innerHTML=`<tr><td colspan="6"><div class="empty"><div class="empty-ico">🔒</div><div class="empty-t">${_ftEsc(_audErro)}</div></div></td></tr>`;return;}
+  tb.innerHTML=G_finAud.length?G_finAud.map((a,i)=>`<tr><td style="font-size:12px;white-space:nowrap">${_audDH(a.em)}</td><td style="font-size:12px">${_ftEsc(a.usuario||'—')}<div style="font-size:10px;color:var(--tx3)">${_ftEsc(a.perfil||'')}</div></td><td style="font-size:12px">${_ftEsc(_audEnt[a.entidade]||a.entidade)}</td><td><span class="badge ${/exclu|estorno|cancel/.test(a.acao)?'br':(/criar|baixa|emitir|faturar/.test(a.acao)?'bg':'bb')}" style="font-size:10px">${_ftEsc(a.acao)}</span></td><td style="font-size:12px;max-width:340px">${_ftEsc(a.resumo||'')}</td><td><button class="btn btn-ghost btn-xs" onclick="verFinAuditoria(${i})">Ver</button></td></tr>`).join(''):`<tr><td colspan="6"><div class="empty"><div class="empty-ico">🧾</div><div class="empty-t">Nenhum registro no período.</div></div></td></tr>`;}
+function verFinAuditoria(i){const a=G_finAud[i];if(!a)return;const bloco=(t,o)=>`<div style="font-weight:700;font-size:12px;margin:10px 0 4px;color:var(--nv)">${t}</div><pre style="background:var(--bg,#f4f6fb);border:1px solid var(--bd);border-radius:8px;padding:10px;font-size:11px;max-height:220px;overflow:auto;white-space:pre-wrap">${o?_ftEsc(JSON.stringify(o,null,2)):'— sem dados —'}</pre>`;
+  document.getElementById('m-faud-title').textContent=`${a.acao} — ${_audEnt[a.entidade]||a.entidade}`;
+  document.getElementById('faud-body').innerHTML=`<div style="font-size:12px;line-height:1.7">Data e hora: <b>${_audDH(a.em)}</b><br>Usuário: <b>${_ftEsc(a.usuario||'—')}</b> (${_ftEsc(a.perfil||'')}) · IP ${_ftEsc(a.ip||'')}<br>Rota: ${_ftEsc(a.metodo||'')} ${_ftEsc(a.rota||'')}${a.ref_id?'<br>Identificador do item: '+_ftEsc(a.ref_id):''}</div>${bloco('Como estava ANTES da alteração',a.antes)}${bloco('Dados enviados na alteração',a.dados)}`;openM('m-faud');}
+function exportFinAuditoriaCSV(){const esc=v=>`"${String(v==null?'':v).replace(/"/g,'""')}"`,l=[['Data e hora','Usuário','Perfil','Item','Ação','Resumo','Identificador','IP'].map(esc).join(';')];
+  G_finAud.forEach(a=>l.push([_audDH(a.em),a.usuario,a.perfil,_audEnt[a.entidade]||a.entidade,a.acao,a.resumo,a.ref_id,a.ip].map(esc).join(';')));
+  const x=document.createElement('a');x.href=URL.createObjectURL(new Blob(['\uFEFF'+l.join('\n')],{type:'text/csv;charset=utf-8'}));x.download=`Auditoria_${_ftHoje()}.csv`;x.click();}
 
 function exportFinExcel(){
   const esc=v=>`"${String(v||'').replace(/"/g,'""')}"`;
