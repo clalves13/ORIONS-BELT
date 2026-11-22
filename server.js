@@ -638,7 +638,7 @@ app.get('/api/dashboard', requireAuth, async (req,res) => {
 // BACKUP
 app.get('/api/backup', requireAuth, requireAdmin, async (req,res) => {
   try {
-    const [users,tecnicos,clientes,equipamentos,ordens,laboratorio,logistica,historico,estoque,suprCli,suprMovs,estMovs,lancamentos,contratos,financeiro,agenda,veiculos,financeiroTitulos,financeiroConfig,financeiroFiscal,financeiroServicos,financeiroNotas,financeiroPedidos,financeiroFechamentos,financeiroContratosCfg,financeiroAuditoria]=await Promise.all([
+    const [users,tecnicos,clientes,equipamentos,ordens,laboratorio,logistica,historico,estoque,suprCli,suprMovs,estMovs,lancamentos,contratos,financeiro,agenda,veiculos,financeiroTitulos,financeiroConfig,financeiroFiscal,financeiroServicos,financeiroNotas,financeiroPedidos,financeiroFechamentos,financeiroContratosCfg,financeiroAuditoria,financeiroContas,financeiroExtrato,financeiroImportacoes]=await Promise.all([
       col('users').find().toArray(),
       col('tecnicos').find().toArray(),
       tenantCol('clientes', req).find().toArray(),
@@ -665,6 +665,9 @@ app.get('/api/backup', requireAuth, requireAdmin, async (req,res) => {
       col('financeiro_fechamentos').find().toArray(),
       col('financeiro_contratos_cfg').find().toArray(),
       col('financeiro_auditoria').find().toArray(),
+      col('financeiro_contas').find().toArray(),
+      col('financeiro_extrato').find().toArray(),
+      col('financeiro_importacoes').find().toArray(),
     ]);
     // Converte _id ObjectId para string para preservar referências no restore
     const toStr = arr => arr.map(d => ({...d, _id: d._id?.toString(), id: d._id?.toString()}));
@@ -696,6 +699,9 @@ app.get('/api/backup', requireAuth, requireAdmin, async (req,res) => {
       financeiro_fechamentos: toStr(financeiroFechamentos),
       financeiro_contratos_cfg: toStr(financeiroContratosCfg),
       financeiro_auditoria: toStr(financeiroAuditoria),
+      financeiro_contas: toStr(financeiroContas),
+      financeiro_extrato: toStr(financeiroExtrato),
+      financeiro_importacoes: toStr(financeiroImportacoes),
     };
     res.setHeader('Content-Disposition',`attachment; filename="orion_backup_${new Date().toISOString().slice(0,10)}.json"`);
     res.json(backup);
@@ -743,6 +749,9 @@ app.post('/api/restore', requireAuth, requireAdmin, async (req, res) => {
       { key: 'financeiro_pedidos',  col: 'financeiro_pedidos' },
       { key: 'financeiro_fechamentos', col: 'financeiro_fechamentos' },
       { key: 'financeiro_contratos_cfg', col: 'financeiro_contratos_cfg' },
+      { key: 'financeiro_contas', col: 'financeiro_contas' },
+      { key: 'financeiro_extrato', col: 'financeiro_extrato' },
+      { key: 'financeiro_importacoes', col: 'financeiro_importacoes' },
     ];
 
     const resultados = {};
@@ -867,6 +876,8 @@ const ID24='([a-f0-9]{24})', AUDIT_ROTAS=[
   ['POST',/^\/notas$/,'nota','criar'],['PUT',new RegExp('^\\/notas\\/'+ID24+'$'),'nota','editar','financeiro_notas'],['DELETE',new RegExp('^\\/notas\\/'+ID24+'$'),'nota','excluir','financeiro_notas'],
   ['POST',/^\/pedidos$/,'pedido','criar'],['PUT',new RegExp('^\\/pedidos\\/'+ID24+'$'),'pedido','editar','financeiro_pedidos'],['DELETE',new RegExp('^\\/pedidos\\/'+ID24+'$'),'pedido','excluir','financeiro_pedidos'],['POST',new RegExp('^\\/pedidos\\/'+ID24+'\\/faturar$'),'pedido','faturar','financeiro_pedidos'],
   ['POST',/^\/fechamentos$/,'fechamento','salvar'],['POST',new RegExp('^\\/fechamentos\\/'+ID24+'\\/faturar$'),'fechamento','faturar','financeiro_fechamentos'],['DELETE',new RegExp('^\\/fechamentos\\/'+ID24+'$'),'fechamento','excluir','financeiro_fechamentos'],
+  ['POST',/^\/contas$/,'conta','criar'],['PUT',new RegExp('^\\/contas\\/'+ID24+'$'),'conta','editar','financeiro_contas'],['DELETE',new RegExp('^\\/contas\\/'+ID24+'$'),'conta','excluir','financeiro_contas'],
+  ['POST',/^\/extrato\/importar$/,'extrato','importar'],['POST',/^\/extrato\/conciliar-sugeridos$/,'extrato','conciliar em lote'],['POST',new RegExp('^\\/extrato\\/'+ID24+'\\/conciliar$'),'extrato','conciliar','financeiro_extrato'],['POST',new RegExp('^\\/extrato\\/'+ID24+'\\/lancar$'),'extrato','lançar','financeiro_extrato'],['POST',new RegExp('^\\/extrato\\/'+ID24+'\\/ignorar$'),'extrato','ignorar','financeiro_extrato'],['POST',new RegExp('^\\/extrato\\/'+ID24+'\\/desfazer$'),'extrato','desfazer','financeiro_extrato'],
   ['PUT',/^\/contratos-cfg\/padrao$/,'previsao','configurar'],['PUT',/^\/contratos-cfg\/contrato\/([\w-]+)$/,'previsao','configurar']];
 const slimFin=o=>{ if(o==null)return null; let t; try{t=JSON.stringify(o);}catch(e){return null;} return t.length>6000?{_truncado:true,tamanho:t.length}:JSON.parse(t); };
 app.use('/api/financeiro', async (req,res,next) => {
@@ -1140,6 +1151,71 @@ app.post('/api/financeiro/fechamentos/:id/faturar', requireAuth, requireFinancei
     await tc.updateOne({_id:f._id},{$set:{titulo_id:r.insertedId.toString()}}); res.json({ok:true,titulo_id:r.insertedId.toString()});
   }catch(err){ await tc.updateOne({_id:f._id},{$set:{status:'rascunho',updated_at:now()}}); throw err; } }catch(e){res.status(500).json({error:e.message});} });
 app.delete('/api/financeiro/fechamentos/:id', requireAuth, requireFinanceiroAcesso, async (req,res) => { try{ const tc=tenantCol('financeiro_fechamentos',req), f=await tc.findOne({_id:new ObjectId(req.params.id)}); if(!f)return res.status(404).json({error:'Fechamento não encontrado.'}); if(f.status!=='rascunho')return res.status(409).json({error:'Fechamento faturado não pode ser excluído.'}); await tc.deleteOne({_id:f._id}); res.json({ok:true}); }catch(e){res.status(500).json({error:e.message});} });
+
+// BANCOS — contas, extrato importado de arquivo OFX e conciliação com os lançamentos de caixa. Não guarda senha nem acesso bancário.
+const dataOfxFin=v=>{const m=String(v||'').match(/^(\d{4})(\d{2})(\d{2})/);return m?`${m[1]}-${m[2]}-${m[3]}`:'';};
+const valorOfxFin=v=>{let t=String(v||'').replace(/\s/g,''); if(!t)return NaN; const vi=t.lastIndexOf(','), po=t.lastIndexOf('.');
+  if(vi>-1&&po>-1)t=vi>po?t.replace(/\./g,'').replace(',','.'):t.replace(/,/g,''); else if(vi>-1)t=t.replace(',','.'); const n=Number(t); return Number.isFinite(n)?round2Fin(n):NaN;};
+const entOfxFin=s=>String(s==null?'':s).replace(/&amp;/gi,'&').replace(/&lt;/gi,'<').replace(/&gt;/gi,'>').replace(/&quot;/gi,'"').replace(/&apos;/gi,"'").trim();
+// Lê OFX nos dois formatos (SGML 1.x sem tags de fechamento nos campos, e XML 2.x); suporta conta corrente (STMTRS) e cartão (CCSTMTRS)
+function parseOfxFin(txt){
+  const t=String(txt||'').replace(/^\uFEFF/,''), i=t.search(/<OFX[>\s]/i); if(i<0)throw new Error('Este arquivo não parece ser um OFX (tag <OFX> não encontrada).');
+  const corpo=t.slice(i), tag=(b,n)=>{const m=b.match(new RegExp('<'+n+'>\\s*([^<\\r\\n]*)','i'));return m?entOfxFin(m[1]):'';}, contas=[]; let m; const re=/<(STMTRS|CCSTMTRS)>([\s\S]*?)<\/\1>/gi;
+  while((m=re.exec(corpo))){ const b=m[2], tr=[]; let x; const rt=/<STMTTRN>([\s\S]*?)<\/STMTTRN>/gi; let seq=0;
+    while((x=rt.exec(b))){ const c=x[1], data=dataOfxFin(tag(c,'DTPOSTED')), valor=valorOfxFin(tag(c,'TRNAMT')); if(!data||Number.isNaN(valor))continue; seq++;
+      const nome=tag(c,'NAME'), memo=tag(c,'MEMO'), fitid=tag(c,'FITID')||`h:${data}|${valor}|${(memo||nome).slice(0,40)}|${seq}`;
+      tr.push({fitid,data,valor,tipo:tag(c,'TRNTYPE'),descricao:(memo&&memo.length>=nome.length?memo:nome)||memo||nome,doc:tag(c,'CHECKNUM')||tag(c,'REFNUM')}); }
+    const bal=b.match(/<LEDGERBAL>([\s\S]*?)<\/LEDGERBAL>/i), saldo=bal?valorOfxFin(tag(bal[1],'BALAMT')):NaN;
+    contas.push({cartao:m[1].toUpperCase()==='CCSTMTRS',bankid:tag(b,'BANKID'),acctid:tag(b,'ACCTID'),tipo:tag(b,'ACCTTYPE'),moeda:tag(b,'CURDEF').toUpperCase(),dtini:dataOfxFin(tag(b,'DTSTART')),dtfim:dataOfxFin(tag(b,'DTEND')),saldo:Number.isNaN(saldo)?null:saldo,data_saldo:bal?dataOfxFin(tag(bal[1],'DTASOF')):'',transacoes:tr}); }
+  if(!contas.length)throw new Error('Nenhum extrato foi encontrado dentro do arquivo OFX.'); return contas; }
+const contaFin=b=>{ if(!strFin(b.nome))return{erro:'Informe o nome da conta.'}; const si=Number(b.saldo_inicial||0); if(!Number.isFinite(si))return{erro:'Saldo inicial inválido.'}; const tipo=['corrente','poupanca','caixa','cartao'].includes(b.tipo)?b.tipo:'corrente';
+  return{d:{nome:strFin(b.nome),tipo,banco:strFin(b.banco,60),agencia:strFin(b.agencia,20),conta:strFin(b.conta,30),saldo_inicial:round2Fin(si),data_saldo_inicial:dataIsoFin(b.data_saldo_inicial)?b.data_saldo_inicial:'',ativa:b.ativa!==false}}; };
+app.get('/api/financeiro/contas', requireAuth, requireFinanceiroAcesso, async (req,res) => { try{ const cs=await tenantCol('financeiro_contas',req).find({}).sort({nome:1}).toArray(), ex=await tenantCol('financeiro_extrato',req).find({}).toArray();
+  res.json(cs.map(c=>{ const id=c._id.toString(), l=ex.filter(e=>e.conta_id===id), mov=round2Fin(l.reduce((a,e)=>a+e.valor,0)), us=c.ultimo_saldo||null, ate=us?round2Fin(l.filter(e=>e.data<=us.data).reduce((a,e)=>a+e.valor,0)):0, pend=l.filter(e=>e.status==='pendente');
+    return {...c,id,saldo_extrato:round2Fin((c.saldo_inicial||0)+mov),qtd_extrato:l.length,pendentes:pend.length,valor_pendente:round2Fin(pend.reduce((a,e)=>a+e.valor,0)),data_ultimo_mov:l.reduce((a,e)=>e.data>a?e.data:a,''),dif_saldo:us?round2Fin(us.valor-((c.saldo_inicial||0)+ate)):null}; })); }catch(e){res.status(500).json({error:e.message});} });
+app.post('/api/financeiro/contas', requireAuth, requireFinanceiroAcesso, async (req,res) => { try{ const r=contaFin(req.body||{}); if(r.erro)return res.status(400).json({error:r.erro}); const x=await tenantCol('financeiro_contas',req).insertOne({...r.d,created_at:now(),updated_at:now()}); res.json({ok:true,id:x.insertedId.toString()}); }catch(e){res.status(500).json({error:e.message});} });
+app.put('/api/financeiro/contas/:id', requireAuth, requireFinanceiroAcesso, async (req,res) => { try{ const b=req.body||{}; const r=contaFin(b); if(r.erro)return res.status(400).json({error:r.erro}); const tc=tenantCol('financeiro_contas',req), c=await tc.findOne({_id:new ObjectId(req.params.id)}); if(!c)return res.status(404).json({error:'Conta não encontrada.'});
+  let d=r.d;
+  if(b.ajustar_saldo_para_banco&&c.ultimo_saldo){ const ex=await tenantCol('financeiro_extrato',req).find({conta_id:req.params.id}).toArray(); d={...d,saldo_inicial:round2Fin(c.ultimo_saldo.valor-ex.filter(e=>e.data<=c.ultimo_saldo.data).reduce((a,e)=>a+e.valor,0))}; }
+  await tc.updateOne({_id:c._id},{$set:{...d,updated_at:now()}}); res.json({ok:true}); }catch(e){res.status(500).json({error:e.message});} });
+app.delete('/api/financeiro/contas/:id', requireAuth, requireFinanceiroAcesso, async (req,res) => { try{ const tc=tenantCol('financeiro_contas',req), c=await tc.findOne({_id:new ObjectId(req.params.id)}); if(!c)return res.status(404).json({error:'Conta não encontrada.'});
+  if(await tenantCol('financeiro_extrato',req).findOne({conta_id:req.params.id}))return res.status(409).json({error:'Conta com extrato importado não pode ser excluída. Desative-a.'}); await tc.deleteOne({_id:c._id}); res.json({ok:true}); }catch(e){res.status(500).json({error:e.message});} });
+app.post('/api/financeiro/extrato/importar', requireAuth, requireFinanceiroAcesso, async (req,res) => { try{ const b=req.body||{}, tcc=tenantCol('financeiro_contas',req), conta=await tcc.findOne({_id:new ObjectId(b.conta_id)}); if(!conta)return res.status(404).json({error:'Escolha a conta que receberá o extrato.'});
+  let ofx; try{ ofx=parseOfxFin(b.conteudo); }catch(e){ return res.status(400).json({error:e.message}); }
+  let ex=ofx.length===1?ofx[0]:(ofx.find(x=>conta.ofx_acctid&&x.acctid===conta.ofx_acctid)||ofx[parseInt(b.indice,10)]); if(!ex)return res.status(409).json({codigo:'varias',error:'O arquivo tem mais de uma conta. Escolha qual importar.',contas:ofx.map((x,i)=>({indice:i,acctid:x.acctid,tipo:x.tipo,qtd:x.transacoes.length}))});
+  if(ex.moeda&&ex.moeda!=='BRL'&&!b.confirmar_moeda)return res.status(409).json({codigo:'moeda',error:`A moeda deste arquivo é ${ex.moeda}, e não BRL (real). Confirme se deseja importar mesmo assim.`});
+  if(conta.ofx_acctid&&ex.acctid&&conta.ofx_acctid!==ex.acctid&&!b.confirmar_conta)return res.status(409).json({codigo:'conta',error:`Este arquivo é da conta ${ex.acctid}, mas a conta escolhida está vinculada à ${conta.ofx_acctid}. Confirme para importar mesmo assim.`});
+  const te=tenantCol('financeiro_extrato',req), ja=new Set((await te.find({conta_id:req.body.conta_id,fitid:{$in:ex.transacoes.map(t=>t.fitid)}}).toArray()).map(x=>x.fitid)); let novas=0;
+  for(const t of ex.transacoes){ if(ja.has(t.fitid))continue; ja.add(t.fitid); await te.insertOne({conta_id:b.conta_id,fitid:t.fitid,data:t.data,valor:t.valor,tipo:t.tipo,descricao:strFin(t.descricao,200),doc:strFin(t.doc,30),status:'pendente',vinculo:null,created_at:now()}); novas++; }
+  const up={updated_at:now()}; if(!conta.ofx_acctid&&ex.acctid){up.ofx_acctid=ex.acctid;up.ofx_bankid=ex.bankid;} if(ex.saldo!==null&&ex.data_saldo&&(!conta.ultimo_saldo||ex.data_saldo>=conta.ultimo_saldo.data))up.ultimo_saldo={valor:ex.saldo,data:ex.data_saldo};
+  await tcc.updateOne({_id:conta._id},{$set:up}); await tenantCol('financeiro_importacoes',req).insertOne({conta_id:b.conta_id,arquivo:strFin(b.arquivo,120),periodo_ini:ex.dtini,periodo_fim:ex.dtfim,moeda:ex.moeda,total:ex.transacoes.length,novas,duplicadas:ex.transacoes.length-novas,saldo_arquivo:ex.saldo,data_saldo:ex.data_saldo,created_at:now()});
+  res.json({ok:true,total:ex.transacoes.length,novas,duplicadas:ex.transacoes.length-novas,periodo:[ex.dtini,ex.dtfim],saldo:ex.saldo,moeda:ex.moeda}); }catch(e){res.status(500).json({error:e.message});} });
+app.get('/api/financeiro/extrato', requireAuth, requireFinanceiroAcesso, async (req,res) => { try{ const q=req.query, f={}; if(q.conta_id)f.conta_id=String(q.conta_id).slice(0,40); if(['pendente','conciliado','lancado','ignorado'].includes(q.status))f.status=q.status; if(dataIsoFin(q.de)||dataIsoFin(q.ate)){f.data={}; if(dataIsoFin(q.de))f.data.$gte=q.de; if(dataIsoFin(q.ate))f.data.$lte=q.ate;}
+  const l=await tenantCol('financeiro_extrato',req).find(f).sort({data:-1}).toArray(); res.json({total:l.length,itens:l.slice(0,1000).map(x=>({...x,id:x._id.toString()}))}); }catch(e){res.status(500).json({error:e.message});} });
+// Sugestões: lançamentos de caixa de mesmo valor e tipo (crédito=receita, débito=despesa), até 7 dias de diferença, ainda não ligados a outro item do extrato
+async function sugestoesFin(req,contaId){ const te=tenantCol('financeiro_extrato',req), todos=await te.find({conta_id:contaId}).toArray(), pend=todos.filter(e=>e.status==='pendente'); if(!pend.length)return {};
+  const usados=new Set(todos.filter(e=>e.vinculo&&e.vinculo.ref_id).map(e=>e.vinculo.ref_id)), ds=pend.map(e=>e.data).sort(), dia=(d,n)=>new Date(Date.parse(d+'T00:00:00Z')+n*86400000).toISOString().slice(0,10);
+  const l=await col('financeiro').find({$and:[filtroFinanceiroTenant(req),{data:{$gte:dia(ds[0],-7),$lte:dia(ds[ds.length-1],7)}}]}).toArray(), out={};
+  for(const e of pend){ const tipo=e.valor>=0?'receita':'despesa', cand=l.filter(x=>x.tipo===tipo&&!usados.has(x._id.toString())&&Math.abs(round2Fin(x.valor)-Math.abs(e.valor))<0.005).map(x=>({id:x._id.toString(),data:x.data,descricao:x.descricao||'',valor:x.valor,origem:x.origem||'',dias:Math.abs(Math.round((Date.parse(x.data+'T00:00:00Z')-Date.parse(e.data+'T00:00:00Z'))/86400000))})).filter(x=>x.dias<=7).sort((a,b)=>a.dias-b.dias).slice(0,4);
+    if(cand.length)out[e._id.toString()]={candidatos:cand,auto:cand.length===1&&cand[0].dias<=3}; } return out; }
+app.get('/api/financeiro/extrato/sugestoes', requireAuth, requireFinanceiroAcesso, async (req,res) => { try{ res.json({sugestoes:await sugestoesFin(req,String(req.query.conta_id||'').slice(0,40))}); }catch(e){res.status(500).json({error:e.message});} });
+const itemExtratoFin=async(req,res)=>{ const te=tenantCol('financeiro_extrato',req), e=await te.findOne({_id:new ObjectId(req.params.id)}); if(!e){res.status(404).json({error:'Item do extrato não encontrado.'});return null;} return {te,e}; };
+async function vincularFin(req,te,e,ref_id,status){ const u=await te.updateOne({_id:e._id,status:'pendente'},{$set:{status,vinculo:{tipo:'lancamento',ref_id},conciliado_em:now(),updated_at:now()}}); return u.modifiedCount>0; }
+app.post('/api/financeiro/extrato/:id/conciliar', requireAuth, requireFinanceiroAcesso, async (req,res) => { try{ const it=await itemExtratoFin(req,res); if(!it)return; const {te,e}=it; if(e.status!=='pendente')return res.status(409).json({error:'Este item já foi tratado.'});
+  const ref=strFin((req.body||{}).ref_id,40), l=await col('financeiro').findOne({$and:[filtroFinanceiroTenant(req),{_id:new ObjectId(ref)}]}); if(!l)return res.status(404).json({error:'Lançamento não encontrado.'});
+  if((l.tipo==='receita')!==(e.valor>=0)||Math.abs(round2Fin(l.valor)-Math.abs(e.valor))>=0.005)return res.status(400).json({error:'O lançamento não tem o mesmo tipo e valor do item do extrato.'});
+  if(await te.findOne({'vinculo.ref_id':ref}))return res.status(409).json({error:'Este lançamento já está conciliado com outro item do extrato.'});
+  if(!(await vincularFin(req,te,e,ref,'conciliado')))return res.status(409).json({error:'Este item já foi tratado.'}); res.json({ok:true}); }catch(e){res.status(500).json({error:e.message});} });
+app.post('/api/financeiro/extrato/:id/lancar', requireAuth, requireFinanceiroAcesso, async (req,res) => { try{ const it=await itemExtratoFin(req,res); if(!it)return; const {te,e}=it, b=req.body||{}; if(e.status!=='pendente')return res.status(409).json({error:'Este item já foi tratado.'});
+  const d=strFin(b.descricao,200)||e.descricao; const r=await tenantCol('financeiro',req).insertOne({tipo:e.valor>=0?'receita':'despesa',data:e.data,categoria:strFin(b.categoria,40)||'Outros',descricao:d,valor:Math.abs(e.valor),cliente_id:strFin(b.cliente_id,40),ref:'Extrato '+e.fitid.slice(0,30),forma:'Transferência',obs:'Lançado a partir do extrato bancário',origem:'extrato',origem_id:req.params.id,created_at:now(),updated_at:now()});
+  if(!(await vincularFin(req,te,e,r.insertedId.toString(),'lancado'))){ await tenantCol('financeiro',req).deleteOne({_id:r.insertedId}); return res.status(409).json({error:'Este item já foi tratado.'}); } res.json({ok:true,id:r.insertedId.toString()}); }catch(e){res.status(500).json({error:e.message});} });
+app.post('/api/financeiro/extrato/:id/ignorar', requireAuth, requireFinanceiroAcesso, async (req,res) => { try{ const it=await itemExtratoFin(req,res); if(!it)return; const {te,e}=it; if(e.status!=='pendente')return res.status(409).json({error:'Este item já foi tratado.'});
+  await te.updateOne({_id:e._id,status:'pendente'},{$set:{status:'ignorado',motivo:strFin((req.body||{}).motivo,200),updated_at:now()}}); res.json({ok:true}); }catch(e){res.status(500).json({error:e.message});} });
+app.post('/api/financeiro/extrato/:id/desfazer', requireAuth, requireFinanceiroAcesso, async (req,res) => { try{ const it=await itemExtratoFin(req,res); if(!it)return; const {te,e}=it; if(e.status==='pendente')return res.status(409).json({error:'Este item já está pendente.'});
+  if(e.status==='lancado'&&e.vinculo&&e.vinculo.ref_id){ const fc=tenantCol('financeiro',req), l=await fc.findOne({_id:new ObjectId(e.vinculo.ref_id)}); if(l&&l.origem==='extrato')await fc.deleteOne({_id:l._id}); }
+  await te.updateOne({_id:e._id},{$set:{status:'pendente',vinculo:null,motivo:'',updated_at:now()}}); res.json({ok:true}); }catch(e){res.status(500).json({error:e.message});} });
+app.post('/api/financeiro/extrato/conciliar-sugeridos', requireAuth, requireFinanceiroAcesso, async (req,res) => { try{ const cid=String((req.body||{}).conta_id||'').slice(0,40), sg=await sugestoesFin(req,cid), te=tenantCol('financeiro_extrato',req), usados=new Set(); let n=0;
+  for(const [id,s] of Object.entries(sg)){ if(!s.auto||usados.has(s.candidatos[0].id))continue; const e=await te.findOne({_id:new ObjectId(id)}); if(e&&await vincularFin(req,te,e,s.candidatos[0].id,'conciliado')){usados.add(s.candidatos[0].id);n++;} } res.json({ok:true,conciliados:n}); }catch(e){res.status(500).json({error:e.message});} });
 
 // LANÇAMENTOS MANUAIS (histórico sem OS)
 app.get('/api/lancamentos', requireAuth, async (req,res) => {

@@ -1280,6 +1280,7 @@ label { font-size: 11px !important; font-weight: 600 !important; color: #475569 
 #fin-relnav{gap:6px;margin:-4px 0 12px}#fin-relnav button{border:1px solid var(--bd);background:var(--sf);color:var(--tx2);border-radius:20px;padding:5px 14px;font-size:12px;cursor:pointer}#fin-relnav button.active{background:var(--nv);color:#fff;border-color:var(--nv)}
 </style>
 <style>
+#fin-bancosnav{gap:6px;margin:-4px 0 12px}#fin-bancosnav button{border:1px solid var(--bd);background:var(--sf);color:var(--tx2);border-radius:20px;padding:5px 14px;font-size:12px;cursor:pointer}#fin-bancosnav button.active{background:var(--nv);color:#fff;border-color:var(--nv)}
 #fin-vendasnav{display:flex;gap:6px;margin:0 0 12px}#fin-vendasnav button{border:1px solid var(--bd);background:var(--sf);color:var(--tx2);border-radius:20px;padding:5px 14px;font-size:12px;cursor:pointer}#fin-vendasnav button.active{background:var(--nv);color:#fff;border-color:var(--nv)}
 #fch-lin input{height:30px;padding:0 6px;border:1px solid var(--bd);border-radius:6px;font-size:12px;background:var(--sf);color:var(--tx)}#fch-lin td,#fch-lin th{padding:4px 6px;font-size:12px;vertical-align:top}
 #fin-fiscnav{gap:6px;margin:-4px 0 12px}#fin-fiscnav button{border:1px solid var(--bd);background:var(--sf);color:var(--tx2);border-radius:20px;padding:5px 14px;font-size:12px;cursor:pointer}#fin-fiscnav button.active{background:var(--nv);color:#fff;border-color:var(--nv)}
@@ -2601,9 +2602,11 @@ label { font-size: 11px !important; font-weight: 600 !important; color: #475569 
       <button class="log-tab" id="ftab-lancamentos" onclick="switchFinTab('lancamentos')">📒 Lançamentos</button>
       <button class="log-tab" id="ftab-vendas" onclick="switchFinTab('vendas')">🛒 Vendas e serviços</button>
       <button class="log-tab" id="ftab-titulos" onclick="switchFinTab('titulos')">💳 Contas a Pagar/Receber</button>
+      <button class="log-tab" id="ftab-bancos" onclick="switchFinTab('bancos')">🏦 Bancos</button>
       <button class="log-tab" id="ftab-rel" onclick="switchFinTab('rel')">🧾 Relatórios</button>
       <button class="log-tab" id="ftab-fiscal" onclick="switchFinTab('fiscal')">🏛️ Fiscal</button>
     </div>
+    <div id="fin-bancosnav" style="display:none"><button class="active" data-s="conc" onclick="finBancoSub('conc')">Conciliação</button><button data-s="contas" onclick="finBancoSub('contas')">Contas</button></div>
     <div id="fin-fiscnav" style="display:none"><button data-s="notas" onclick="finFiscSub('notas')">Notas fiscais</button><button data-s="clientes" onclick="finFiscSub('clientes')">Clientes</button><button data-s="pecas" onclick="finFiscSub('pecas')">Peças</button><button data-s="servicos" onclick="finFiscSub('servicos')">Serviços</button><button data-s="config" onclick="switchFinTab('config')">Configuração da empresa</button></div>
     <div id="fin-relnav" style="display:none"><button data-t="rel" onclick="switchFinTab('rel')">Demonstrativo</button><button data-t="dre" onclick="switchFinTab('dre')">DRE</button><button data-t="fluxo" onclick="switchFinTab('fluxo')">Fluxo de caixa</button><button data-t="audit" onclick="switchFinTab('audit')">Auditoria</button></div>
     <!-- Filtros período -->
@@ -2676,13 +2679,28 @@ label { font-size: 11px !important; font-weight: 600 !important; color: #475569 
         <div class="card" style="padding:0"><div class="twrap"><table><thead><tr><th>Cliente</th><th>Contrato</th><th>Mensalidade</th><th>Franquia contratada</th><th>Fechamento</th><th>Ação</th></tr></thead><tbody id="tb-fc"></tbody></table></div></div>
       </div>
     </div>
+    <!-- Aba Bancos -->
+    <div id="fin-tab-bancos" style="display:none">
+      <div id="bk-conc">
+        <div class="fin-bar"><select id="bk-conta" onchange="carregarFinExtrato()" style="min-width:200px"></select>
+          <select id="bk-status" onchange="carregarFinExtrato()"><option value="pendente">Pendentes</option><option value="">Todos</option><option value="conciliado">Conciliados</option><option value="lancado">Lançados</option><option value="ignorado">Ignorados</option></select>
+          <span style="flex:1"></span><input type="file" id="bk-file" accept=".ofx,.OFX,text/plain" style="display:none" onchange="importarOfx(this)">
+          <button class="btn btn-ghost btn-sm" id="bk-auto" onclick="conciliarSugeridos()">Conciliar sugestões exatas</button><button class="btn btn-primary btn-sm" onclick="document.getElementById('bk-file').click()">⬆ Importar extrato (OFX)</button></div>
+        <div id="bk-cards" class="fin-kpis"></div><div id="bk-aviso"></div>
+        <div class="card" style="padding:0"><div class="twrap"><table><thead><tr><th>Data</th><th>Descrição no extrato</th><th>Valor R$</th><th>Situação</th><th>Ação</th></tr></thead><tbody id="tb-bk"></tbody></table></div></div>
+      </div>
+      <div id="bk-contas" style="display:none">
+        <div class="fin-bar"><div class="fin-cfg-sub" style="flex:1;margin:0">Cadastre as contas bancárias e caixas. O Orion não guarda senha nem acesso ao banco: o extrato entra por arquivo OFX, baixado por você no internet banking.</div><button class="btn btn-primary btn-sm" onclick="abrirFinConta()">+ Nova conta</button></div>
+        <div class="card" style="padding:0"><div class="twrap"><table><thead><tr><th>Conta</th><th>Tipo</th><th>Banco / agência / conta</th><th>Saldo inicial</th><th>Saldo conforme extrato</th><th>Saldo informado pelo banco</th><th>Diferença</th><th>Pendentes</th><th>Ações</th></tr></thead><tbody id="tb-bkc"></tbody></table></div></div>
+      </div>
+    </div>
     <!-- Aba Auditoria -->
     <div id="fin-tab-audit" style="display:none">
       <div class="fin-bar">
         <label style="font-size:12px;color:var(--tx3)">De</label><input type="date" id="aud-de"><label style="font-size:12px;color:var(--tx3)">até</label><input type="date" id="aud-ate">
         <input type="text" id="aud-user" placeholder="Usuário" style="width:140px">
-        <select id="aud-ent"><option value="">Todos os itens</option><option value="titulo">Contas a pagar/receber</option><option value="lancamento">Lançamentos</option><option value="pedido">Lançamentos avulsos</option><option value="fechamento">Fechamentos de contrato</option><option value="nota">Notas fiscais</option><option value="servico">Serviços</option><option value="fiscal">Dados fiscais</option><option value="previsao">Previsão de contratos</option><option value="config">Configuração da empresa</option></select>
-        <select id="aud-acao"><option value="">Todas as ações</option><option value="criar">Criar</option><option value="editar">Editar</option><option value="excluir">Excluir</option><option value="baixa">Baixa</option><option value="estorno">Estorno</option><option value="faturar">Faturar</option><option value="emitir">Emitir nota</option><option value="cancelar">Cancelar nota</option><option value="configurar">Configurar</option></select>
+        <select id="aud-ent"><option value="">Todos os itens</option><option value="titulo">Contas a pagar/receber</option><option value="lancamento">Lançamentos</option><option value="pedido">Lançamentos avulsos</option><option value="fechamento">Fechamentos de contrato</option><option value="nota">Notas fiscais</option><option value="servico">Serviços</option><option value="fiscal">Dados fiscais</option><option value="previsao">Previsão de contratos</option><option value="config">Configuração da empresa</option><option value="conta">Contas bancárias</option><option value="extrato">Extrato bancário</option></select>
+        <select id="aud-acao"><option value="">Todas as ações</option><option value="criar">Criar</option><option value="editar">Editar</option><option value="excluir">Excluir</option><option value="baixa">Baixa</option><option value="estorno">Estorno</option><option value="faturar">Faturar</option><option value="emitir">Emitir nota</option><option value="cancelar">Cancelar nota</option><option value="configurar">Configurar</option><option value="importar">Importar extrato</option><option value="conciliar">Conciliar</option><option value="lançar">Lançar do extrato</option><option value="ignorar">Ignorar</option><option value="desfazer">Desfazer</option></select>
         <button class="btn btn-primary btn-sm" onclick="carregarFinAuditoria()">Buscar</button><span style="flex:1"></span><button class="btn btn-ghost btn-sm" onclick="exportFinAuditoriaCSV()">📊 Excel</button>
       </div>
       <div class="fin-cfg-sub" style="margin:0 0 8px;max-width:none">Registro de quem criou, alterou ou excluiu itens do Financeiro. Os registros não podem ser editados nem apagados pelo sistema. Acesso restrito a administradores. Horários no fuso do seu navegador.</div>
@@ -4483,6 +4501,28 @@ Outros</textarea>
     <div style="margin-top:10px;padding:10px 12px;border-radius:8px;background:var(--bl2bg);font-weight:700;color:var(--nv)" id="fb-total"></div>
   </div>
   <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('m-finbaixa')">Cancelar</button><button class="btn btn-primary" id="fb-save-btn" onclick="confirmarBaixaTitulo()">Confirmar baixa</button></div>
+</div></div>
+
+<!-- Modais Bancos -->
+<div class="mov" id="m-fconta"><div class="modal" style="max-width:520px">
+  <div class="mhd"><div class="mhd-title" id="m-fconta-title">Nova conta</div><button class="btnx" onclick="closeM('m-fconta')">×</button></div>
+  <div class="mbody"><input type="hidden" id="bc-id"><div class="fgrid fg2">
+    <div class="fg" style="grid-column:1/-1"><label>Nome da conta *</label><input id="bc-nome" placeholder="Ex: Conta corrente Banco X"></div>
+    <div class="fg"><label>Tipo</label><select id="bc-tipo"><option value="corrente">Conta corrente</option><option value="poupanca">Poupança / aplicação</option><option value="caixa">Caixa (dinheiro)</option><option value="cartao">Cartão de crédito</option></select></div>
+    <div class="fg"><label>Situação</label><select id="bc-ativa"><option value="1">Ativa</option><option value="0">Inativa</option></select></div>
+    <div class="fg"><label>Banco</label><input id="bc-banco"></div><div class="fg"><label>Agência</label><input id="bc-ag"></div>
+    <div class="fg"><label>Conta</label><input id="bc-conta-n"></div><div class="fg"><label>Saldo inicial R$</label><input type="number" id="bc-saldo" step="0.01" value="0"></div>
+    <div class="fg"><label>Data do saldo inicial</label><input type="date" id="bc-dsaldo"></div></div>
+    <div id="bc-ajuste" style="margin-top:10px;display:none;padding:10px 12px;border-radius:8px;background:var(--orbg);color:var(--or);font-size:12px"></div></div>
+  <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('m-fconta')">Cancelar</button><button class="btn btn-primary" onclick="salvarFinConta(false)">Salvar</button></div>
+</div></div>
+<div class="mov" id="m-fbklanc"><div class="modal" style="max-width:480px">
+  <div class="mhd"><div class="mhd-title">Lançar no caixa</div><button class="btnx" onclick="closeM('m-fbklanc')">×</button></div>
+  <div class="mbody"><input type="hidden" id="bl-id"><div id="bl-res" style="font-size:12px;margin-bottom:10px;line-height:1.6"></div><div class="fgrid fg2">
+    <div class="fg" style="grid-column:1/-1"><label>Descrição</label><input id="bl-desc"></div>
+    <div class="fg"><label>Categoria</label><select id="bl-cat"><option>OS / Atendimento</option><option>Contrato</option><option>Implantação</option><option>Peças / Material</option><option>Combustível</option><option>Salários</option><option>Aluguel</option><option>Serviços Terceiros</option><option>Impostos</option><option>Outros</option></select></div>
+    <div class="fg"><label>Cliente (opcional)</label><select id="bl-cli"></select></div></div></div>
+  <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('m-fbklanc')">Cancelar</button><button class="btn btn-primary" onclick="confirmarLancarExtrato()">Lançar</button></div>
 </div></div>
 
 <!-- Modal Detalhe da auditoria -->
@@ -8386,10 +8426,10 @@ async function lancarReceitaOS(os) {
 let _finTab='visao';
 function switchFinTab(tab) {
   _finTab=tab; const rels=['rel','dre','fluxo','audit'], aba=rels.includes(tab)?'rel':(tab==='config'?'fiscal':tab);
-  ['visao','lancamentos','vendas','titulos','rel','dre','fluxo','audit','fiscal','config'].forEach(t=>{const p=document.getElementById('fin-tab-'+t); if(p)p.style.display=t===tab?'':'none';});
-  ['visao','lancamentos','vendas','titulos','rel','fiscal'].forEach(t=>{const b=document.getElementById('ftab-'+t); if(b)b.classList.toggle('active',t===aba);});
+  ['visao','lancamentos','vendas','titulos','bancos','rel','dre','fluxo','audit','fiscal','config'].forEach(t=>{const p=document.getElementById('fin-tab-'+t); if(p)p.style.display=t===tab?'':'none';});
+  ['visao','lancamentos','vendas','titulos','bancos','rel','fiscal'].forEach(t=>{const b=document.getElementById('ftab-'+t); if(b)b.classList.toggle('active',t===aba);});
   const show=(id,v)=>{const e=document.getElementById(id); if(e)e.style.display=v;};
-  show('fin-kpis',tab==='lancamentos'?'grid':'none'); show('fin-top-actions',tab==='lancamentos'?'':'none'); show('fin-relnav',rels.includes(tab)?'flex':'none'); show('fin-fiscnav',(tab==='fiscal'||tab==='config')?'flex':'none');
+  show('fin-kpis',tab==='lancamentos'?'grid':'none'); show('fin-top-actions',tab==='lancamentos'?'':'none'); show('fin-relnav',rels.includes(tab)?'flex':'none'); show('fin-fiscnav',(tab==='fiscal'||tab==='config')?'flex':'none'); show('fin-bancosnav',tab==='bancos'?'flex':'none');
   const barra=document.getElementById('s-fin')?.parentElement?.parentElement; if(barra)barra.style.display=(tab==='lancamentos'||tab==='dre'||tab==='fluxo')?'':'none';
   document.querySelectorAll('#fin-relnav button').forEach(b=>b.classList.toggle('active',b.dataset.t===tab));
   if(tab==='visao')renderFinVisao();
@@ -8398,6 +8438,7 @@ function switchFinTab(tab) {
   if(tab==='titulos')carregarFinTitulos();
   if(tab==='rel')renderFinDemo();
   if(tab==='audit')carregarFinAuditoria();
+  if(tab==='bancos')carregarFinBancos();
   if(tab==='fiscal')carregarFinFiscal();
   if(tab==='vendas')carregarFinPedidos();
   if(tab==='config')document.querySelectorAll('#fin-fiscnav button').forEach(b=>b.classList.toggle('active',b.dataset.s==='config'));
@@ -9105,15 +9146,15 @@ function _fvPrevCard(){const k=document.getElementById('fv-kpis');if(!k)return;c
   const v=_ftR2(p.itens.filter(i=>i.venc>=hoje&&i.venc<=lim).reduce((s,i)=>s+i.valor,0)),pend=_ftR2(p.itens.filter(i=>i.pendente).reduce((s,i)=>s+i.valor,0));
   k.insertAdjacentHTML('beforeend',`<div class="fin-kpi" id="fv-prev"><div class="fin-kpi-l">Contratos previstos (30 dias) <span class="badge bo" style="font-size:9px">PREVISÃO</span></div><div class="fin-kpi-v" style="color:var(--bl2)">${p.semDia&&!p.itens.length?'—':fm(v)}</div><div class="fin-kpi-s">${p.semDia&&!p.itens.length?'defina o dia padrão em Vendas › Fechamento de contratos':(pend?fm(pend)+' com fechamento pendente':'valor fixo, ainda não faturado')}</div></div>`);}
 async function renderFinProjecao(){const el=document.getElementById('fin-proj');if(!el)return;
-  if(!G_finTitulos.length&&!_ftErro)await carregarFinTitulos(); await _prevEnsure();
+  if(!G_finTitulos.length&&!_ftErro)await carregarFinTitulos(); await _prevEnsure(); await _bancoEnsure(); const B=_bancoBase();
   if(_ftErro){el.innerHTML=`<div class="fv-vazio">Projeção indisponível: ${_ftEsc(_ftErro)}</div>`;return;}
   const hoje=_ftHoje(),ms=_fvMeses(_ftAddMes(hoje.slice(0,8)+'01',11).slice(0,7),12),ab=G_finTitulos.filter(t=>_ftSit(t)!=='pago'),P=_prevContratos(),sm=(l,f)=>_ftR2(l.reduce((s,x)=>s+f(x),0));
   const rec=l=>sm(l.filter(t=>t.tipo==='receber'),_ftSaldo),pag=l=>sm(l.filter(t=>t.tipo==='pagar'),_ftSaldo),venc=ab.filter(t=>t.vencimento<hoje);
   const lin=ms.map(m=>{const l=ab.filter(t=>t.vencimento>=hoje&&t.vencimento.slice(0,7)===m);return{m,r:rec(l),c:sm(P.itens.filter(i=>!i.pendente&&i.venc.slice(0,7)===m),i=>i.valor),p:pag(l)};});
-  let acc=_ftR2(rec(venc)+sm(P.itens.filter(i=>i.pendente),i=>i.valor)-pag(venc));
+  let acc=_ftR2((B?B.valor:0)+rec(venc)+sm(P.itens.filter(i=>i.pendente),i=>i.valor)-pag(venc));
   const rows=[{l:'Em atraso / fechamento pendente',r:rec(venc),c:sm(P.itens.filter(i=>i.pendente),i=>i.valor),p:pag(venc),s:acc,a:acc,atraso:1}].concat(lin.map(x=>{const s=_ftR2(x.r+x.c-x.p);acc=_ftR2(acc+s);return{l:x.m.slice(5)+'/'+x.m.slice(0,4),r:x.r,c:x.c,p:x.p,s,a:acc};}));
   el.innerHTML=`<div class="fin-sec" style="margin-top:14px"><h4>Projeção dos próximos 12 meses <span class="badge bo" style="font-size:10px;margin-left:6px">PROJEÇÃO</span></h4>
-    <div class="fin-cfg-sub" style="max-width:none;margin:0 0 8px">Soma as contas em aberto (por vencimento) e a <b>previsão do valor fixo dos contratos ativos</b> ainda não faturados. Não inclui saldo bancário, o excedente de páginas (só se conhece ao fechar o mês) nem despesas não cadastradas. O acumulado parte de zero.</div>
+    <div class="fin-cfg-sub" style="max-width:none;margin:0 0 8px">Soma as contas em aberto (por vencimento) e a <b>previsão do valor fixo dos contratos ativos</b> ainda não faturados. ${B?`O acumulado parte do <b>saldo bancário do último extrato importado: ${fm(B.valor)}</b> (movimentos até ${fd(B.data)}). Não é o saldo de hoje.`:'Não inclui saldo bancário (importe o extrato em Bancos para usá-lo como ponto de partida).'} Também não inclui o excedente de páginas (só se conhece ao fechar o mês) nem despesas não cadastradas.${B?'':' O acumulado parte de zero.'}</div>
     ${P.semDia?'<div style="background:var(--orbg);color:var(--or);border-radius:8px;padding:8px 12px;font-size:12px;margin-bottom:8px">Há contratos ativos sem previsão: defina o <b>dia padrão de vencimento</b> em Vendas e serviços › Fechamento de contratos.</div>':''}${P.avisos.map(a=>`<div style="background:var(--orbg);color:var(--or);border-radius:8px;padding:6px 12px;font-size:12px;margin-bottom:6px">${_ftEsc(a)}</div>`).join('')}
     ${_fvBarras(lin.map(x=>x.m),lin.map(x=>_ftR2(x.r+x.c)),lin.map(x=>x.p))}
     <div class="twrap" style="margin-top:8px"><table><thead><tr><th>Período</th><th>Contas a receber</th><th>Contratos <span class="badge bo" style="font-size:9px">PREVISÃO</span></th><th>A pagar</th><th>Saldo do período</th><th>Acumulado</th></tr></thead><tbody>${rows.map(r=>`<tr${r.atraso?' style="background:var(--orbg)"':''}><td>${r.l}</td><td>${fm(r.r)}</td><td style="color:var(--bl2)">${fm(r.c)}</td><td>${fm(r.p)}</td><td style="font-weight:700;color:${r.s>=0?'var(--gn)':'var(--rd)'}">${fm(r.s)}</td><td style="font-weight:700;color:${r.a>=0?'var(--gn)':'var(--rd)'}">${fm(r.a)}</td></tr>`).join('')}</tbody></table></div></div>`;}
@@ -9130,7 +9171,7 @@ async function salvarCfgContrato(){const id=document.getElementById('cf-id').val
 
 // ─── AUDITORIA (somente administradores) ─────────────────
 let G_finAud=[],_audErro='';
-const _audEnt={titulo:'Conta a pagar/receber',lancamento:'Lançamento',pedido:'Lançamento avulso',fechamento:'Fechamento de contrato',nota:'Nota fiscal',servico:'Serviço',fiscal:'Dados fiscais',previsao:'Previsão de contratos',config:'Configuração da empresa'};
+const _audEnt={titulo:'Conta a pagar/receber',lancamento:'Lançamento',pedido:'Lançamento avulso',fechamento:'Fechamento de contrato',nota:'Nota fiscal',servico:'Serviço',fiscal:'Dados fiscais',previsao:'Previsão de contratos',config:'Configuração da empresa',conta:'Conta bancária',extrato:'Extrato bancário'};
 const _audDH=iso=>{const d=new Date(iso);return isNaN(d)?'':d.toLocaleString('pt-BR');};
 async function carregarFinAuditoria(){const de=document.getElementById('aud-de');if(!de.value){const d=new Date();d.setDate(d.getDate()-30);de.value=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
   const q=new URLSearchParams({de:de.value,ate:document.getElementById('aud-ate').value,usuario:document.getElementById('aud-user').value,entidade:document.getElementById('aud-ent').value,acao:document.getElementById('aud-acao').value});
@@ -9146,6 +9187,53 @@ function verFinAuditoria(i){const a=G_finAud[i];if(!a)return;const bloco=(t,o)=>
 function exportFinAuditoriaCSV(){const esc=v=>`"${String(v==null?'':v).replace(/"/g,'""')}"`,l=[['Data e hora','Usuário','Perfil','Item','Ação','Resumo','Identificador','IP'].map(esc).join(';')];
   G_finAud.forEach(a=>l.push([_audDH(a.em),a.usuario,a.perfil,_audEnt[a.entidade]||a.entidade,a.acao,a.resumo,a.ref_id,a.ip].map(esc).join(';')));
   const x=document.createElement('a');x.href=URL.createObjectURL(new Blob(['\uFEFF'+l.join('\n')],{type:'text/csv;charset=utf-8'}));x.download=`Auditoria_${_ftHoje()}.csv`;x.click();}
+
+// ─── BANCOS: contas, importação de extrato OFX e conciliação ───────────
+let G_finContas=[],G_finExtrato=[],G_finSug={},_bkErro='';
+const _bk=id=>document.getElementById(id);
+async function _bancoEnsure(){try{const r=await api('GET','/api/financeiro/contas');G_finContas=Array.isArray(r)?r:[];}catch(e){G_finContas=[];}}
+function _bancoBase(){const l=G_finContas.filter(c=>c.ativa!==false&&c.tipo!=='cartao'&&c.qtd_extrato>0);return l.length?{valor:_ftR2(l.reduce((s,c)=>s+c.saldo_extrato,0)),data:l.reduce((a,c)=>c.data_ultimo_mov>a?c.data_ultimo_mov:a,''),n:l.length}:null;}
+const _bkTipo={corrente:'Conta corrente',poupanca:'Poupança / aplicação',caixa:'Caixa',cartao:'Cartão de crédito'};
+const _bkDecode=buf=>{const b=new Uint8Array(buf);try{return new TextDecoder('utf-8',{fatal:true}).decode(b);}catch(e){return new TextDecoder('windows-1252').decode(b);}};
+function finBancoSub(s){_bk('bk-conc').style.display=s==='conc'?'':'none';_bk('bk-contas').style.display=s==='contas'?'':'none';document.querySelectorAll('#fin-bancosnav button').forEach(b=>b.classList.toggle('active',b.dataset.s===s));}
+async function carregarFinBancos(){const sel=_bk('bk-conta'),atual=sel.value;await _bancoEnsure();
+  sel.innerHTML=G_finContas.filter(c=>c.ativa!==false).map(c=>`<option value="${c.id}">${_ftEsc(c.nome)}</option>`).join('')||'<option value="">— cadastre uma conta —</option>';if(G_finContas.some(c=>c.id===atual))sel.value=atual;
+  renderFinContas();await carregarFinExtrato();}
+function renderFinContas(){_bk('tb-bkc').innerHTML=G_finContas.length?G_finContas.map(c=>`<tr><td>${_ftEsc(c.nome)}${c.ativa===false?' <span class="badge bgr" style="font-size:9px">inativa</span>':''}</td><td style="font-size:12px">${_bkTipo[c.tipo]||c.tipo}</td><td style="font-size:12px">${_ftEsc([c.banco,c.agencia,c.conta].filter(Boolean).join(' · ')||'—')}</td><td>${fm(c.saldo_inicial)}</td><td style="font-weight:700">${fm(c.saldo_extrato)}</td><td>${c.ultimo_saldo?fm(c.ultimo_saldo.valor)+`<div style="font-size:10px;color:var(--tx3)">em ${fd(c.ultimo_saldo.data)}</div>`:'—'}</td><td>${c.dif_saldo==null?'—':`<span class="badge ${c.dif_saldo===0?'bg':'bo'}" style="font-size:10px">${c.dif_saldo===0?'confere':fm(c.dif_saldo)}</span>`}</td><td>${c.pendentes||0}</td><td><button class="btn btn-ghost btn-xs" onclick="abrirFinConta('${c.id}')">Editar</button></td></tr>`).join(''):`<tr><td colspan="9"><div class="empty"><div class="empty-ico">🏦</div><div class="empty-t">Nenhuma conta. Clique em “+ Nova conta”.</div></div></td></tr>`;}
+async function carregarFinExtrato(){const cid=_bk('bk-conta').value,st=_bk('bk-status').value;G_finExtrato=[];G_finSug={};_bkErro='';
+  if(cid){try{const r=await api('GET',`/api/financeiro/extrato?conta_id=${cid}${st?'&status='+st:''}`);G_finExtrato=r.itens;if(!st||st==='pendente')G_finSug=(await api('GET','/api/financeiro/extrato/sugestoes?conta_id='+cid)).sugestoes;}catch(e){_bkErro=e.message||'Erro ao carregar.';}}
+  renderFinExtrato();}
+function renderFinExtrato(){const cid=_bk('bk-conta').value,c=G_finContas.find(x=>x.id===cid),tb=_bk('tb-bk');
+  if(_bkErro){_bk('bk-cards').innerHTML='';tb.innerHTML=`<tr><td colspan="5"><div class="empty"><div class="empty-ico">🔒</div><div class="empty-t">${_ftEsc(_bkErro)}</div></div></td></tr>`;return;}
+  if(!c){_bk('bk-cards').innerHTML='';_bk('bk-aviso').innerHTML='';tb.innerHTML=`<tr><td colspan="5"><div class="empty"><div class="empty-ico">🏦</div><div class="empty-t">Cadastre uma conta (aba Contas) e importe o extrato OFX do seu banco.</div></div></td></tr>`;return;}
+  const card=(l,v,s,cor)=>`<div class="fin-kpi"><div class="fin-kpi-l">${l}</div><div class="fin-kpi-v" style="color:${cor}">${v}</div><div class="fin-kpi-s">${s}</div></div>`,nAuto=Object.values(G_finSug).filter(s=>s.auto).length;
+  _bk('bk-cards').innerHTML=card('Saldo conforme extrato importado',fm(c.saldo_extrato),c.data_ultimo_mov?'até '+fd(c.data_ultimo_mov):'nenhum extrato importado','var(--nv)')+card('Saldo informado pelo banco (arquivo)',c.ultimo_saldo?fm(c.ultimo_saldo.valor):'—',c.ultimo_saldo?'em '+fd(c.ultimo_saldo.data):'o arquivo não trouxe saldo','var(--bl2)')+card('Pendentes de conciliação',String(c.pendentes||0),fm(c.valor_pendente||0)+' no total','var(--or)');
+  _bk('bk-aviso').innerHTML=c.dif_saldo?`<div style="background:var(--orbg);color:var(--or);border-radius:8px;padding:8px 12px;font-size:12px;margin-bottom:8px">O saldo informado pelo banco difere em <b>${fm(c.dif_saldo)}</b> do calculado (saldo inicial + movimentos importados). Confira o saldo inicial em Contas › Editar, onde há a opção de ajustá-lo para bater com o banco.</div>`:'';
+  _bk('bk-auto').textContent=`Conciliar sugestões exatas${nAuto?' ('+nAuto+')':''}`;_bk('bk-auto').disabled=!nAuto;
+  const bd={pendente:['bo','Pendente'],conciliado:['bg','Conciliado'],lancado:['bb','Lançado'],ignorado:['bgr','Ignorado']};
+  tb.innerHTML=G_finExtrato.length?G_finExtrato.map((e,i)=>{const sg=G_finSug[e.id],pend=e.status==='pendente';
+    const acoes=pend?`${(sg?sg.candidatos.slice(0,2):[]).map(k=>`<button class="btn btn-success btn-xs" title="${_ftEsc(k.descricao)}" onclick="conciliarExtrato('${e.id}','${k.id}')">Conciliar com ${fd(k.data)} · ${_ftEsc(k.descricao.slice(0,22))}</button>`).join(' ')} <button class="btn btn-ghost btn-xs" onclick="abrirLancarExtrato('${e.id}')">Lançar</button> <button class="btn btn-ghost btn-xs" onclick="ignorarExtrato('${e.id}')">Ignorar</button>${sg&&sg.auto?' <span class="badge bg" style="font-size:9px">sugestão exata</span>':''}`:`<button class="btn btn-ghost btn-xs" onclick="desfazerExtrato('${e.id}')">Desfazer</button>${e.motivo?` <span style="font-size:11px;color:var(--tx3)">${_ftEsc(e.motivo)}</span>`:''}`;
+    return `<tr><td style="font-size:12px;white-space:nowrap">${fd(e.data)}</td><td style="font-size:12px;max-width:300px">${_ftEsc(e.descricao)}</td><td style="font-weight:700;white-space:nowrap;color:${e.valor>=0?'var(--gn)':'var(--rd)'}">${fm(e.valor)}</td><td><span class="badge ${bd[e.status][0]}" style="font-size:10px">${bd[e.status][1]}</span></td><td><div style="display:flex;flex-wrap:wrap;gap:4px;max-width:360px">${acoes}</div></td></tr>`;}).join(''):`<tr><td colspan="5"><div class="empty"><div class="empty-ico">🧾</div><div class="empty-t">Nada por aqui. Importe um extrato OFX ou mude o filtro de situação.</div></div></td></tr>`;}
+async function importarOfx(inp){const f=inp.files[0],cid=_bk('bk-conta').value;inp.value='';if(!f)return;if(!cid)return alert('Cadastre e escolha uma conta antes de importar.');
+  let txt;try{txt=_bkDecode(await f.arrayBuffer());}catch(e){return alert('Não foi possível ler o arquivo.');}
+  const env=async extra=>api('POST','/api/financeiro/extrato/importar',{conta_id:cid,arquivo:f.name,conteudo:txt,...extra});let r,ex={};
+  for(let t=0;t<3;t++){try{r=await env(ex);break;}catch(e){const m=e.message||'';if(/moeda deste arquivo/.test(m)&&confirm(m))ex.confirmar_moeda=true;else if(/é da conta/.test(m)&&confirm(m))ex.confirmar_conta=true;else return alert(m);}}
+  if(r)alert(`Extrato importado: ${r.novas} lançamento(s) novo(s), ${r.duplicadas} já existia(m).\nPeríodo: ${fd(r.periodo[0])} a ${fd(r.periodo[1])}.`+(r.saldo!=null?`\nSaldo informado pelo arquivo: ${fm(r.saldo)}.`:''));
+  await carregarFinBancos();}
+async function conciliarExtrato(id,ref){try{await api('POST',`/api/financeiro/extrato/${id}/conciliar`,{ref_id:ref});await carregarFinBancos();}catch(e){alert(e.message);}}
+async function conciliarSugeridos(){const n=Object.values(G_finSug).filter(s=>s.auto).length;if(!n||!confirm(`Conciliar ${n} item(ns) com sugestão exata (mesmo valor e tipo, até 3 dias de diferença, uma única opção)?`))return;
+  try{const r=await api('POST','/api/financeiro/extrato/conciliar-sugeridos',{conta_id:_bk('bk-conta').value});alert(r.conciliados+' item(ns) conciliado(s).');await carregarFinBancos();}catch(e){alert(e.message);}}
+function abrirLancarExtrato(id){const e=G_finExtrato.find(x=>x.id===id);if(!e)return;_bk('bl-id').value=id;_bk('bl-desc').value=e.descricao;_bk('bl-cat').value=e.valor>=0?'Contrato':'Outros';
+  _bk('bl-res').innerHTML=`${fd(e.data)} · <b>${fm(e.valor)}</b> · será lançado como <b>${e.valor>=0?'receita':'despesa'}</b> no caixa.`;_bk('bl-cli').innerHTML='<option value="">—</option>'+(G.clientes||[]).map(c=>`<option value="${c.id}">${_ftEsc(c.nome)}</option>`).join('');openM('m-fbklanc');}
+async function confirmarLancarExtrato(){try{await api('POST',`/api/financeiro/extrato/${_bk('bl-id').value}/lancar`,{descricao:_bk('bl-desc').value,categoria:_bk('bl-cat').value,cliente_id:_bk('bl-cli').value});closeM('m-fbklanc');await carregarFinBancos();await loadFinanceiro();renderFinLanc();renderFinKpis();}catch(e){alert(e.message);}}
+async function ignorarExtrato(id){const m=prompt('Motivo para ignorar (opcional):');if(m===null)return;try{await api('POST',`/api/financeiro/extrato/${id}/ignorar`,{motivo:m});await carregarFinExtrato();}catch(e){alert(e.message);}}
+async function desfazerExtrato(id){const e=G_finExtrato.find(x=>x.id===id);if(!confirm('Desfazer esta conciliação?'+(e&&e.status==='lancado'?'\nO lançamento criado a partir deste item será removido do caixa.':'')))return;
+  try{await api('POST',`/api/financeiro/extrato/${id}/desfazer`,{});await carregarFinBancos();await loadFinanceiro();renderFinLanc();renderFinKpis();}catch(e){alert(e.message);}}
+function abrirFinConta(id){const c=G_finContas.find(x=>x.id===id)||{};_bk('m-fconta-title').textContent=id?'Editar conta':'Nova conta';
+  Object.entries({'bc-id':id||'','bc-nome':c.nome||'','bc-tipo':c.tipo||'corrente','bc-ativa':c.ativa===false?'0':'1','bc-banco':c.banco||'','bc-ag':c.agencia||'','bc-conta-n':c.conta||'','bc-saldo':c.saldo_inicial||0,'bc-dsaldo':c.data_saldo_inicial||''}).forEach(([k,v])=>{_bk(k).value=v;});
+  const aj=_bk('bc-ajuste');if(c.dif_saldo){aj.style.display='';aj.innerHTML=`O saldo informado pelo banco difere em <b>${fm(c.dif_saldo)}</b> do calculado. <button class="btn btn-ghost btn-xs" onclick="salvarFinConta(true)">Ajustar o saldo inicial para bater com o banco</button>`;}else aj.style.display='none';openM('m-fconta');}
+async function salvarFinConta(ajustar){const id=_bk('bc-id').value,b={nome:_bk('bc-nome').value,tipo:_bk('bc-tipo').value,ativa:_bk('bc-ativa').value==='1',banco:_bk('bc-banco').value,agencia:_bk('bc-ag').value,conta:_bk('bc-conta-n').value,saldo_inicial:+_bk('bc-saldo').value||0,data_saldo_inicial:_bk('bc-dsaldo').value,ajustar_saldo_para_banco:!!ajustar};
+  try{await api(id?'PUT':'POST','/api/financeiro/contas'+(id?'/'+id:''),b);closeM('m-fconta');await carregarFinBancos();}catch(e){alert(e.message);}}
 
 function exportFinExcel(){
   const esc=v=>`"${String(v||'').replace(/"/g,'""')}"`;
