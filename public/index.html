@@ -1280,6 +1280,7 @@ label { font-size: 11px !important; font-weight: 600 !important; color: #475569 
 #fin-relnav{gap:6px;margin:-4px 0 12px}#fin-relnav button{border:1px solid var(--bd);background:var(--sf);color:var(--tx2);border-radius:20px;padding:5px 14px;font-size:12px;cursor:pointer}#fin-relnav button.active{background:var(--nv);color:#fff;border-color:var(--nv)}
 </style>
 <style>
+.dre-t th,.dre-t td{padding:5px 8px;font-size:12px;text-align:right;white-space:nowrap}.dre-t th:first-child,.dre-t td:first-child{text-align:left;position:sticky;left:0;background:var(--sf);min-width:260px}.dre-t tr.dre-sub td{font-weight:700;background:var(--bl2bg)}.dre-t td.dre-det{padding-left:26px;color:var(--tx2);font-weight:400}
 #fin-bancosnav{gap:6px;margin:-4px 0 12px}#fin-bancosnav button{border:1px solid var(--bd);background:var(--sf);color:var(--tx2);border-radius:20px;padding:5px 14px;font-size:12px;cursor:pointer}#fin-bancosnav button.active{background:var(--nv);color:#fff;border-color:var(--nv)}
 #fin-vendasnav{display:flex;gap:6px;margin:0 0 12px}#fin-vendasnav button{border:1px solid var(--bd);background:var(--sf);color:var(--tx2);border-radius:20px;padding:5px 14px;font-size:12px;cursor:pointer}#fin-vendasnav button.active{background:var(--nv);color:#fff;border-color:var(--nv)}
 #fch-lin input{height:30px;padding:0 6px;border:1px solid var(--bd);border-radius:6px;font-size:12px;background:var(--sf);color:var(--tx)}#fch-lin td,#fch-lin th{padding:4px 6px;font-size:12px;vertical-align:top}
@@ -2608,7 +2609,7 @@ label { font-size: 11px !important; font-weight: 600 !important; color: #475569 
     </div>
     <div id="fin-bancosnav" style="display:none"><button class="active" data-s="conc" onclick="finBancoSub('conc')">Conciliação</button><button data-s="contas" onclick="finBancoSub('contas')">Contas</button></div>
     <div id="fin-fiscnav" style="display:none"><button data-s="notas" onclick="finFiscSub('notas')">Notas fiscais</button><button data-s="clientes" onclick="finFiscSub('clientes')">Clientes</button><button data-s="pecas" onclick="finFiscSub('pecas')">Peças</button><button data-s="servicos" onclick="finFiscSub('servicos')">Serviços</button><button data-s="config" onclick="switchFinTab('config')">Configuração da empresa</button></div>
-    <div id="fin-relnav" style="display:none"><button data-t="rel" onclick="switchFinTab('rel')">Demonstrativo</button><button data-t="dre" onclick="switchFinTab('dre')">DRE</button><button data-t="fluxo" onclick="switchFinTab('fluxo')">Fluxo de caixa</button><button data-t="audit" onclick="switchFinTab('audit')">Auditoria</button></div>
+    <div id="fin-relnav" style="display:none"><button data-t="rel" onclick="switchFinTab('rel')">Demonstrativo</button><button data-t="dre" onclick="switchFinTab('dre')">DRE gerencial</button><button data-t="abc" onclick="switchFinTab('abc')">Curva ABC</button><button data-t="prazos" onclick="switchFinTab('prazos')">Prazos médios</button><button data-t="fluxo" onclick="switchFinTab('fluxo')">Fluxo de caixa</button><button data-t="audit" onclick="switchFinTab('audit')">Auditoria</button></div>
     <!-- Filtros período -->
     <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
       <div class="swrap" style="flex:1;min-width:160px"><span style="color:var(--tx3)">🔍</span><input type="text" id="s-fin" placeholder="Buscar descrição, categoria..." oninput="renderFinLanc()"></div>
@@ -2656,6 +2657,18 @@ label { font-size: 11px !important; font-weight: 600 !important; color: #475569 
     <div id="fin-tab-dre" style="display:none">
       <div id="fin-dre-content"></div>
     </div>
+    <!-- Aba Curva ABC -->
+    <div id="fin-tab-abc" style="display:none">
+      <div class="fin-bar"><label style="font-size:12px;color:var(--tx3)">De</label><input type="month" id="abc-de" onchange="renderFinABC()"><label style="font-size:12px;color:var(--tx3)">até</label><input type="month" id="abc-ate" onchange="renderFinABC()">
+        <select id="abc-tipo" onchange="renderFinABC()"><option value="cli">Clientes (por receita recebida)</option><option value="desp">Despesas (por categoria)</option></select>
+        <label class="fin-meta">Corte A até <input type="number" id="abc-ca" min="1" max="99" value="80" onchange="renderFinABC()">% · B até <input type="number" id="abc-cb" min="2" max="99" value="95" onchange="renderFinABC()">%</label><span style="flex:1"></span><button class="btn btn-ghost btn-sm" onclick="exportFinABC()">📊 Excel</button></div>
+      <div id="abc-res"></div>
+    </div>
+    <!-- Aba Prazos médios -->
+    <div id="fin-tab-prazos" style="display:none">
+      <div class="fin-bar"><label style="font-size:12px;color:var(--tx3)">Baixas de</label><input type="date" id="pz-de" onchange="renderFinPrazos()"><label style="font-size:12px;color:var(--tx3)">até</label><input type="date" id="pz-ate" onchange="renderFinPrazos()"></div>
+      <div id="pz-res"></div>
+    </div>
     <!-- Aba Fluxo -->
     <div id="fin-tab-fluxo" style="display:none">
       <div id="fin-fluxo-content"></div>
@@ -2699,8 +2712,8 @@ label { font-size: 11px !important; font-weight: 600 !important; color: #475569 
       <div class="fin-bar">
         <label style="font-size:12px;color:var(--tx3)">De</label><input type="date" id="aud-de"><label style="font-size:12px;color:var(--tx3)">até</label><input type="date" id="aud-ate">
         <input type="text" id="aud-user" placeholder="Usuário" style="width:140px">
-        <select id="aud-ent"><option value="">Todos os itens</option><option value="titulo">Contas a pagar/receber</option><option value="lancamento">Lançamentos</option><option value="pedido">Lançamentos avulsos</option><option value="fechamento">Fechamentos de contrato</option><option value="nota">Notas fiscais</option><option value="servico">Serviços</option><option value="fiscal">Dados fiscais</option><option value="previsao">Previsão de contratos</option><option value="config">Configuração da empresa</option><option value="conta">Contas bancárias</option><option value="extrato">Extrato bancário</option></select>
-        <select id="aud-acao"><option value="">Todas as ações</option><option value="criar">Criar</option><option value="editar">Editar</option><option value="excluir">Excluir</option><option value="baixa">Baixa</option><option value="estorno">Estorno</option><option value="faturar">Faturar</option><option value="emitir">Emitir nota</option><option value="cancelar">Cancelar nota</option><option value="configurar">Configurar</option><option value="importar">Importar extrato</option><option value="conciliar">Conciliar</option><option value="lançar">Lançar do extrato</option><option value="ignorar">Ignorar</option><option value="desfazer">Desfazer</option><option value="remover pendentes">Remover pendentes</option></select>
+        <select id="aud-ent"><option value="">Todos os itens</option><option value="titulo">Contas a pagar/receber</option><option value="lancamento">Lançamentos</option><option value="pedido">Lançamentos avulsos</option><option value="fechamento">Fechamentos de contrato</option><option value="nota">Notas fiscais</option><option value="servico">Serviços</option><option value="fiscal">Dados fiscais</option><option value="previsao">Previsão de contratos</option><option value="config">Configuração da empresa</option><option value="conta">Contas bancárias</option><option value="extrato">Extrato bancário</option><option value="dre">Classificação da DRE</option></select>
+        <select id="aud-acao"><option value="">Todas as ações</option><option value="criar">Criar</option><option value="editar">Editar</option><option value="excluir">Excluir</option><option value="baixa">Baixa</option><option value="estorno">Estorno</option><option value="faturar">Faturar</option><option value="emitir">Emitir nota</option><option value="cancelar">Cancelar nota</option><option value="configurar">Configurar</option><option value="importar">Importar extrato</option><option value="conciliar">Conciliar</option><option value="lançar">Lançar do extrato</option><option value="ignorar">Ignorar</option><option value="desfazer">Desfazer</option><option value="remover pendentes">Remover pendentes</option><option value="classificar">Classificar</option></select>
         <button class="btn btn-primary btn-sm" onclick="carregarFinAuditoria()">Buscar</button><span style="flex:1"></span><button class="btn btn-ghost btn-sm" onclick="exportFinAuditoriaCSV()">📊 Excel</button>
       </div>
       <div class="fin-cfg-sub" style="margin:0 0 8px;max-width:none">Registro de quem criou, alterou ou excluiu itens do Financeiro. Os registros não podem ser editados nem apagados pelo sistema. Acesso restrito a administradores. Horários no fuso do seu navegador.</div>
@@ -8425,15 +8438,17 @@ async function lancarReceitaOS(os) {
 
 let _finTab='visao';
 function switchFinTab(tab) {
-  _finTab=tab; const rels=['rel','dre','fluxo','audit'], aba=rels.includes(tab)?'rel':(tab==='config'?'fiscal':tab);
-  ['visao','lancamentos','vendas','titulos','bancos','rel','dre','fluxo','audit','fiscal','config'].forEach(t=>{const p=document.getElementById('fin-tab-'+t); if(p)p.style.display=t===tab?'':'none';});
+  _finTab=tab; const rels=['rel','dre','abc','prazos','fluxo','audit'], aba=rels.includes(tab)?'rel':(tab==='config'?'fiscal':tab);
+  ['visao','lancamentos','vendas','titulos','bancos','rel','dre','abc','prazos','fluxo','audit','fiscal','config'].forEach(t=>{const p=document.getElementById('fin-tab-'+t); if(p)p.style.display=t===tab?'':'none';});
   ['visao','lancamentos','vendas','titulos','bancos','rel','fiscal'].forEach(t=>{const b=document.getElementById('ftab-'+t); if(b)b.classList.toggle('active',t===aba);});
   const show=(id,v)=>{const e=document.getElementById(id); if(e)e.style.display=v;};
   show('fin-kpis',tab==='lancamentos'?'grid':'none'); show('fin-top-actions',tab==='lancamentos'?'':'none'); show('fin-relnav',rels.includes(tab)?'flex':'none'); show('fin-fiscnav',(tab==='fiscal'||tab==='config')?'flex':'none'); show('fin-bancosnav',tab==='bancos'?'flex':'none');
-  const barra=document.getElementById('s-fin')?.parentElement?.parentElement; if(barra)barra.style.display=(tab==='lancamentos'||tab==='dre'||tab==='fluxo')?'':'none';
+  const barra=document.getElementById('s-fin')?.parentElement?.parentElement; if(barra)barra.style.display=(tab==='lancamentos'||tab==='fluxo')?'':'none';
   document.querySelectorAll('#fin-relnav button').forEach(b=>b.classList.toggle('active',b.dataset.t===tab));
   if(tab==='visao')renderFinVisao();
-  if(tab==='dre')renderFinDRE();
+  if(tab==='dre')renderFinDREGer();
+  if(tab==='abc')renderFinABC();
+  if(tab==='prazos')renderFinPrazos();
   if(tab==='fluxo'){renderFinFluxo();renderFinProjecao();}
   if(tab==='titulos')carregarFinTitulos();
   if(tab==='rel')renderFinDemo();
@@ -9171,7 +9186,7 @@ async function salvarCfgContrato(){const id=document.getElementById('cf-id').val
 
 // ─── AUDITORIA (somente administradores) ─────────────────
 let G_finAud=[],_audErro='';
-const _audEnt={titulo:'Conta a pagar/receber',lancamento:'Lançamento',pedido:'Lançamento avulso',fechamento:'Fechamento de contrato',nota:'Nota fiscal',servico:'Serviço',fiscal:'Dados fiscais',previsao:'Previsão de contratos',config:'Configuração da empresa',conta:'Conta bancária',extrato:'Extrato bancário'};
+const _audEnt={titulo:'Conta a pagar/receber',lancamento:'Lançamento',pedido:'Lançamento avulso',fechamento:'Fechamento de contrato',nota:'Nota fiscal',servico:'Serviço',fiscal:'Dados fiscais',previsao:'Previsão de contratos',config:'Configuração da empresa',conta:'Conta bancária',extrato:'Extrato bancário',dre:'Classificação da DRE'};
 const _audDH=iso=>{const d=new Date(iso);return isNaN(d)?'':d.toLocaleString('pt-BR');};
 async function carregarFinAuditoria(){const de=document.getElementById('aud-de');if(!de.value){const d=new Date();d.setDate(d.getDate()-30);de.value=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
   const q=new URLSearchParams({de:de.value,ate:document.getElementById('aud-ate').value,usuario:document.getElementById('aud-user').value,entidade:document.getElementById('aud-ent').value,acao:document.getElementById('aud-acao').value});
@@ -9243,6 +9258,72 @@ function abrirFinConta(id){const c=G_finContas.find(x=>x.id===id)||{};_bk('m-fco
   const aj=_bk('bc-ajuste');if(c.dif_saldo){aj.style.display='';aj.innerHTML=`O saldo informado pelo banco difere em <b>${fm(c.dif_saldo)}</b> do calculado. <button class="btn btn-ghost btn-xs" onclick="salvarFinConta(true)">Ajustar o saldo inicial para bater com o banco</button>`;}else aj.style.display='none';openM('m-fconta');}
 async function salvarFinConta(ajustar){const id=_bk('bc-id').value,b={nome:_bk('bc-nome').value,tipo:_bk('bc-tipo').value,ativa:_bk('bc-ativa').value==='1',banco:_bk('bc-banco').value,agencia:_bk('bc-ag').value,conta:_bk('bc-conta-n').value,saldo_inicial:+_bk('bc-saldo').value||0,data_saldo_inicial:_bk('bc-dsaldo').value,ajustar_saldo_para_banco:!!ajustar};
   try{await api(id?'PUT':'POST','/api/financeiro/contas'+(id?'/'+id:''),b);closeM('m-fconta');await carregarFinBancos();}catch(e){alert(e.message);}}
+
+// ─── DRE GERENCIAL, CURVA ABC E PRAZOS MÉDIOS (regime de caixa) ──────────────
+let G_finDreMap=[],_dreMapOk=false,_dreLin=[];
+const _dreG={receita:{operacional:'Receita operacional',financeira:'Receita financeira'},despesa:{deducoes:'Deduções da receita (impostos sobre vendas)',custos:'Custos diretos dos serviços (CSP)',operacionais:'Despesas operacionais',depreciacao:'Depreciação e amortização',financeiro:'Despesas financeiras',ir:'Impostos sobre o lucro (IRPJ/CSLL)'}};
+const _dreDef={'Impostos':'deducoes','Peças / Material':'custos','Combustível':'custos','Serviços Terceiros':'custos','Salários':'operacionais','Aluguel':'operacionais'};
+const _drePad=(nat,cat)=>nat==='receita'?'operacional':(_dreDef[cat]||'operacionais');
+const _dreGrupo=(nat,cat)=>{const m=G_finDreMap.find(x=>x.natureza===nat&&x.categoria===cat);return m?m.grupo:_drePad(nat,cat);};
+async function _dreMapEnsure(f){if(_dreMapOk&&!f)return;try{const r=await api('GET','/api/financeiro/dre-map');G_finDreMap=Array.isArray(r)?r:[];_dreMapOk=true;}catch(e){G_finDreMap=[];}}
+const _mesIni=()=>`${new Date().getFullYear()}-01`;
+function _perMeses(de,ate){const o=[];let [y,m]=de.split('-').map(Number);const [y2,m2]=ate.split('-').map(Number);while((y<y2||(y===y2&&m<=m2))&&o.length<13){o.push(`${y}-${String(m).padStart(2,'0')}`);m++;if(m>12){m=1;y++;}}return o;}
+function _perCtl(pref){const de=document.getElementById(pref+'-de'),ate=document.getElementById(pref+'-ate');if(!de.value)de.value=_mesIni();if(!ate.value)ate.value=_ftHoje().slice(0,7);return[de.value,ate.value];}
+async function renderFinDREGer(){const el=document.getElementById('fin-dre-content');if(!el)return;await _dreMapEnsure();
+  if(!document.getElementById('dre-de')){el.innerHTML=`<div class="fin-bar"><label style="font-size:12px;color:var(--tx3)">De</label><input type="month" id="dre-de" onchange="renderFinDREGer()"><label style="font-size:12px;color:var(--tx3)">até</label><input type="month" id="dre-ate" onchange="renderFinDREGer()"><span style="flex:1"></span><button class="btn btn-ghost btn-sm" onclick="document.getElementById('dre-map').style.display=document.getElementById('dre-map').style.display==='none'?'':'none'">⚙ Classificação das categorias</button><button class="btn btn-ghost btn-sm" onclick="exportFinDREGer()">📊 Excel</button></div><div id="dre-map" style="display:none"></div><div id="dre-out"></div>`;}
+  const [de,ate]=_perCtl('dre'),ms=_perMeses(de,ate),out=document.getElementById('dre-out');
+  if(!ms.length||de>ate){out.innerHTML='<div class="fv-vazio">Período inválido.</div>';return;}
+  const L=G_financeiro.filter(l=>ms.includes((l.data||'').slice(0,7))),g=(nat,grp)=>{const cats={};L.filter(l=>l.tipo===nat&&_dreGrupo(nat,l.categoria||'Outros')===grp).forEach(l=>{const c=l.categoria||'Outros';(cats[c]=cats[c]||{})[(l.data||'').slice(0,7)]=_ftR2(((cats[c]||{})[(l.data||'').slice(0,7)]||0)+(l.valor||0));});return cats;};
+  const tot=(cats)=>ms.map(m=>_ftR2(Object.values(cats).reduce((s,c)=>s+(c[m]||0),0))),sub=(a,b)=>a.map((v,i)=>_ftR2(v-b[i])),add=(a,b)=>a.map((v,i)=>_ftR2(v+b[i]));
+  const rb=g('receita','operacional'),ded=g('despesa','deducoes'),cus=g('despesa','custos'),ope=g('despesa','operacionais'),dep=g('despesa','depreciacao'),fin=g('despesa','financeiro'),ir=g('despesa','ir'),rf=g('receita','financeira');
+  const vRB=tot(rb),vDed=tot(ded),vRL=sub(vRB,vDed),vCus=tot(cus),vLB=sub(vRL,vCus),vOpe=tot(ope),vEBITDA=sub(vLB,vOpe),vDep=tot(dep),vEBIT=sub(vEBITDA,vDep),vResFin=sub(tot(rf),tot(fin)),vAIR=add(vEBIT,vResFin),vIR=tot(ir),vLiq=sub(vAIR,vIR);
+  const somaT=v=>_ftR2(v.reduce((a,b)=>a+b,0)),rlT=somaT(vRL);_dreLin=[];
+  const lin=(nome,v,o={})=>{const t=somaT(v);_dreLin.push([nome,...v,t,rlT>0?_ftR2(t/rlT*100):'']);const neg=o.neg?-1:1;return `<tr class="${o.sub?'dre-sub':''}"><td class="${o.det?'dre-det':''}">${_ftEsc(nome)}</td>${v.map(x=>`<td>${x?fm(x*neg):'—'}</td>`).join('')}<td style="font-weight:700">${t?fm(t*neg):'—'}</td><td style="color:var(--tx3)">${rlT>0&&t?(t/rlT*100).toFixed(1).replace('.',',')+'%':''}</td></tr>`;};
+  const dets=(cats,neg)=>Object.entries(cats).sort((a,b)=>Object.values(b[1]).reduce((x,y)=>x+y,0)-Object.values(a[1]).reduce((x,y)=>x+y,0)).map(([c,o])=>lin(c,ms.map(m=>o[m]||0),{det:1,neg})).join('');
+  const rows=lin('Receita bruta',vRB,{sub:1})+dets(rb,0)+lin('(−) Deduções da receita (impostos sobre vendas)',vDed,{neg:1})+dets(ded,1)+lin('= Receita líquida',vRL,{sub:1})
+    +lin('(−) Custos diretos dos serviços (CSP)',vCus,{neg:1})+dets(cus,1)+lin('= Lucro bruto (margem de contribuição)',vLB,{sub:1})
+    +lin('(−) Despesas operacionais',vOpe,{neg:1})+dets(ope,1)+lin('= EBITDA (antes de depreciação e resultado financeiro)',vEBITDA,{sub:1})
+    +lin('(−) Depreciação e amortização',vDep,{neg:1})+dets(dep,1)+lin('= EBIT (resultado operacional)',vEBIT,{sub:1})
+    +lin('(±) Resultado financeiro',vResFin)+dets(rf,0)+dets(fin,1)+lin('= Resultado antes dos impostos sobre o lucro',vAIR,{sub:1})
+    +lin('(−) Impostos sobre o lucro (IRPJ/CSLL)',vIR,{neg:1})+dets(ir,1)+lin('= Resultado líquido do período',vLiq,{sub:1});
+  const pct=(a,b)=>b>0?(a/b*100).toFixed(1).replace('.',',')+'%':'—',vazio=!L.length;
+  out.innerHTML=(vazio?'<div class="fv-vazio">Sem lançamentos no período.</div>':`<div class="fin-kpis"><div class="fin-kpi"><div class="fin-kpi-l">Margem bruta</div><div class="fin-kpi-v">${pct(somaT(vLB),rlT)}</div><div class="fin-kpi-s">lucro bruto ÷ receita líquida</div></div><div class="fin-kpi"><div class="fin-kpi-l">Margem EBITDA</div><div class="fin-kpi-v">${pct(somaT(vEBITDA),rlT)}</div><div class="fin-kpi-s">EBITDA ÷ receita líquida</div></div><div class="fin-kpi"><div class="fin-kpi-l">Margem líquida</div><div class="fin-kpi-v" style="color:${somaT(vLiq)>=0?'var(--gn)':'var(--rd)'}">${pct(somaT(vLiq),rlT)}</div><div class="fin-kpi-s">resultado líquido ÷ receita líquida</div></div></div>`)
+    +`<div class="card" style="padding:0"><div class="twrap"><table class="dre-t"><thead><tr><th>Linha</th>${ms.map(m=>`<th>${m.slice(5)}/${m.slice(2,4)}</th>`).join('')}<th>Total</th><th>% rec. líq.</th></tr></thead><tbody>${rows}</tbody></table></div></div>
+    <div class="fin-cfg-sub" style="max-width:none;margin-top:8px"><b>Regime de caixa:</b> considera apenas o que foi efetivamente recebido e pago (lançamentos do caixa). A classificação das categorias nas linhas é <b>padrão assumido</b> (ex.: Impostos em Deduções, Peças/Material, Combustível e Serviços Terceiros em Custos diretos) e pode ser ajustada em “Classificação das categorias”; confirme com o contador. Os custos diretos são tratados como variáveis na “margem de contribuição”. Linhas sem lançamentos aparecem com “—”: depreciação e resultado financeiro só aparecem se você classificar categorias nelas.</div>`;
+  const cats=[...new Set([...G_financeiro.map(l=>l.tipo+'|'+(l.categoria||'Outros')),'despesa|Impostos','despesa|Peças / Material','despesa|Combustível','despesa|Serviços Terceiros','despesa|Salários','despesa|Aluguel','despesa|Outros','receita|Contrato','receita|OS / Atendimento','receita|Implantação','receita|Peças / Material','receita|Outros'])].sort(),mp=document.getElementById('dre-map');
+  mp.innerHTML=`<div class="fin-sec"><h4>Em qual linha da DRE cada categoria entra</h4><table style="width:100%;font-size:12px"><tbody>${cats.map((k,i)=>{const[nat,c]=k.split('|'),cur=_dreGrupo(nat,c),def=!G_finDreMap.some(x=>x.natureza===nat&&x.categoria===c);return `<tr><td style="width:90px;color:var(--tx3)">${nat==='receita'?'Receita':'Despesa'}</td><td>${_ftEsc(c)}</td><td><select data-nat="${nat}" data-cat="${_ftEsc(c)}" class="dre-sel">${Object.entries(_dreG[nat]).map(([v,l])=>`<option value="${v}"${v===cur?' selected':''}>${l}</option>`).join('')}</select></td><td style="width:70px">${def?'<span class="badge bo" style="font-size:9px">padrão</span>':'<span class="badge bg" style="font-size:9px">definida</span>'}</td></tr>`;}).join('')}</tbody></table><button class="btn btn-primary btn-sm" style="margin-top:8px" onclick="salvarDreMap()">Salvar classificação</button></div>`;}
+async function salvarDreMap(){const itens=[...document.querySelectorAll('.dre-sel')].map(s=>({natureza:s.dataset.nat,categoria:s.dataset.cat.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"'),grupo:s.value}));
+  try{await api('PUT','/api/financeiro/dre-map',{itens});await _dreMapEnsure(true);renderFinDREGer();alert('Classificação salva.');}catch(e){alert(e.message);}}
+function exportFinDREGer(){const esc=v=>`"${String(v==null?'':v).replace(/"/g,'""')}"`,[de,ate]=_perCtl('dre'),ms=_perMeses(de,ate),n=v=>typeof v==='number'?String(v).replace('.',','):v;
+  const l=[['Linha',...ms,'Total','% receita líquida'].map(esc).join(';'),..._dreLin.map(r=>r.map(x=>esc(n(x))).join(';'))];
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\uFEFF'+l.join('\n')],{type:'text/csv;charset=utf-8'}));a.download=`DRE_${de}_${ate}.csv`;a.click();}
+// Curva ABC (regra de Pareto): a classe de cada item depende do acumulado ANTES dele; o item que cruza o corte fica na classe anterior
+let _abcLin=[];
+function renderFinABC(){const el=document.getElementById('abc-res');if(!el)return;const [de,ate]=_perCtl('abc'),ms=_perMeses(de,ate),tipo=document.getElementById('abc-tipo').value;let ca=+document.getElementById('abc-ca').value||80,cb=+document.getElementById('abc-cb').value||95;if(cb<=ca)cb=Math.min(99,ca+1);
+  const L=G_financeiro.filter(l=>ms.includes((l.data||'').slice(0,7))&&l.tipo===(tipo==='cli'?'receita':'despesa')),o={};
+  L.forEach(l=>{const k=tipo==='cli'?((_ffCli(l.cliente_id).nome)||'Sem cliente informado'):(l.categoria||'Outros');o[k]=_ftR2((o[k]||0)+(l.valor||0));});
+  const it=Object.entries(o).sort((a,b)=>b[1]-a[1]),T=_ftR2(it.reduce((s,x)=>s+x[1],0));let ac=0;_abcLin=[];
+  if(!it.length||T<=0){el.innerHTML='<div class="fv-vazio">Sem dados no período.</div>';return;}
+  const R=it.map(([n,v],i)=>{const antes=ac;ac+=v;const cl=antes/T*100<ca?'A':(antes/T*100<cb?'B':'C');_abcLin.push([i+1,n,v,_ftR2(v/T*100),_ftR2(ac/T*100),cl]);return{n,v,p:v/T*100,a:ac/T*100,cl};});
+  const res=['A','B','C'].map(c=>{const l=R.filter(x=>x.cl===c);return{c,n:l.length,v:_ftR2(l.reduce((s,x)=>s+x.v,0))};}),cor={A:'var(--gn)',B:'var(--or)',C:'var(--tx3)'},pc=x=>x.toFixed(1).replace('.',',')+'%';
+  el.innerHTML=`<div class="fin-kpis">${res.map(r=>`<div class="fin-kpi"><div class="fin-kpi-l">Classe ${r.c}</div><div class="fin-kpi-v" style="color:${cor[r.c]}">${r.n} ${tipo==='cli'?'cliente(s)':'categoria(s)'}</div><div class="fin-kpi-s">${fm(r.v)} · ${pc(r.v/T*100)} do total</div></div>`).join('')}</div>
+    <div class="card" style="padding:0"><div class="twrap"><table><thead><tr><th>#</th><th>${tipo==='cli'?'Cliente':'Categoria'}</th><th>Valor</th><th>% do total</th><th>% acumulado</th><th>Classe</th><th style="width:30%"></th></tr></thead><tbody>${R.map((x,i)=>`<tr><td>${i+1}</td><td>${_ftEsc(x.n)}</td><td>${fm(x.v)}</td><td>${pc(x.p)}</td><td>${pc(x.a)}</td><td><span class="badge ${x.cl==='A'?'bg':(x.cl==='B'?'bo':'bgr')}" style="font-size:10px">${x.cl}</span></td><td><div class="hb-t"><div class="hb-b" style="width:${Math.max(2,x.p/R[0].p*100)}%;background:${cor[x.cl]}"></div></div></td></tr>`).join('')}</tbody></table></div></div>
+    <div class="fin-cfg-sub" style="max-width:none;margin-top:8px">Total do período: ${fm(T)} (regime de caixa). Classe A: itens até ${ca}% do acumulado; B: até ${cb}%; C: o restante. Os cortes 80/95 são a convenção mais usada (princípio de Pareto) e podem ser alterados acima. O item que cruza um corte fica na classe anterior.</div>`;}
+function exportFinABC(){const esc=v=>`"${String(v==null?'':v).replace(/"/g,'""')}"`,n=v=>typeof v==='number'?String(v).replace('.',','):v,l=[['#','Item','Valor','% do total','% acumulado','Classe'].map(esc).join(';'),..._abcLin.map(r=>r.map(x=>esc(n(x))).join(';'))];
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\uFEFF'+l.join('\n')],{type:'text/csv;charset=utf-8'}));a.download=`Curva_ABC_${_ftHoje()}.csv`;a.click();}
+// Prazos médios: média ponderada pelo valor baixado. Prazo = dias da emissão (ou criação da conta) até a baixa; atraso = dias além do vencimento
+async function renderFinPrazos(){const el=document.getElementById('pz-res');if(!el)return;if(!G_finTitulos.length&&!_ftErro)await carregarFinTitulos();
+  if(_ftErro){el.innerHTML=`<div class="fv-vazio">${_ftEsc(_ftErro)}</div>`;return;}
+  const de=document.getElementById('pz-de'),ate=document.getElementById('pz-ate');if(!de.value){const d=new Date();d.setMonth(d.getMonth()-5);d.setDate(1);de.value=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-01`;}if(!ate.value)ate.value=_ftHoje();
+  const B=[];G_finTitulos.forEach(t=>(t.baixas||[]).forEach(b=>{if(b.data>=de.value&&b.data<=ate.value&&b.principal>0){const em=t.emissao||(t.created_at||'').slice(0,10)||t.vencimento;B.push({t,b,prazo:_ftDias(em,b.data),atraso:t.vencimento?_ftDias(t.vencimento,b.data):0,v:b.principal,semEm:!t.emissao});}}));
+  const calc=tp=>{const l=B.filter(x=>x.t.tipo===tp),V=l.reduce((s,x)=>s+x.v,0);return{n:l.length,V:_ftR2(V),pm:V?l.reduce((s,x)=>s+x.prazo*x.v,0)/V:null,am:V?l.reduce((s,x)=>s+x.atraso*x.v,0)/V:null,pa:V?l.filter(x=>x.atraso>0).reduce((s,x)=>s+x.v,0)/V*100:null,sem:l.filter(x=>x.semEm).length};};
+  const R=calc('receber'),P=calc('pagar'),d1=x=>x==null?'—':x.toFixed(1).replace('.',',')+' dias',pc=x=>x==null?'—':x.toFixed(1).replace('.',',')+'%',card=(l,v,s,c)=>`<div class="fin-kpi"><div class="fin-kpi-l">${l}</div><div class="fin-kpi-v" style="color:${c}">${v}</div><div class="fin-kpi-s">${s}</div></div>`;
+  const ab=G_finTitulos.filter(t=>t.tipo==='receber'&&_ftSit(t)!=='pago'),sA=ab.reduce((s,t)=>s+_ftSaldo(t),0),sV=ab.filter(t=>_ftSit(t)==='vencido').reduce((s,t)=>s+_ftSaldo(t),0);
+  const por={};B.filter(x=>x.t.tipo==='receber').forEach(x=>{const n=_ffCli(x.t.cliente_id).nome||'Sem cliente';const o=por[n]=por[n]||{V:0,p:0,a:0,n:0};o.V+=x.v;o.p+=x.prazo*x.v;o.a+=x.atraso*x.v;o.n++;});
+  el.innerHTML=`<div class="fin-kpis">${card('Prazo médio de recebimento (PMR)',d1(R.pm),`${R.n} baixa(s) · ${fm(R.V)} recebido`,'var(--bl2)')}${card('Atraso médio no recebimento',d1(R.am),`${pc(R.pa)} do valor recebido veio após o vencimento`,'var(--or)')}${card('Prazo médio de pagamento (PMP)',d1(P.pm),`${P.n} baixa(s) · ${fm(P.V)} pago`,'var(--bl2)')}${card('Atraso médio nos pagamentos',d1(P.am),`${pc(P.pa)} do valor pago foi após o vencimento`,'var(--or)')}${card('Inadimplência hoje',sA>0?pc(sV/sA*100):'—',`${fm(sV)} vencido de ${fm(sA)} a receber em aberto`,'var(--rd)')}</div>
+    ${(R.sem+P.sem)?`<div style="background:var(--orbg);color:var(--or);border-radius:8px;padding:8px 12px;font-size:12px;margin-bottom:8px">${R.sem+P.sem} baixa(s) pertencem a contas sem data de emissão: nelas o prazo foi contado a partir da data em que a conta foi criada no Orion.</div>`:''}
+    <div class="fin-sec"><h4>Recebimento por cliente</h4>${Object.keys(por).length?`<div class="twrap"><table><thead><tr><th>Cliente</th><th>Baixas</th><th>Valor recebido</th><th>Prazo médio</th><th>Atraso médio</th></tr></thead><tbody>${Object.entries(por).sort((a,b)=>b[1].V-a[1].V).map(([n,o])=>`<tr><td>${_ftEsc(n)}</td><td>${o.n}</td><td>${fm(_ftR2(o.V))}</td><td>${d1(o.p/o.V)}</td><td style="color:${o.a/o.V>0?'var(--or)':'var(--tx)'}">${d1(o.a/o.V)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="fv-vazio">Nenhum recebimento no período.</div>'}</div>
+    <div class="fin-cfg-sub" style="max-width:none">Médias ponderadas pelo valor de cada baixa. Só entram contas baixadas no período; o resultado melhora com o uso, à medida que as baixas se acumulam.</div>`;}
 
 function exportFinExcel(){
   const esc=v=>`"${String(v||'').replace(/"/g,'""')}"`;

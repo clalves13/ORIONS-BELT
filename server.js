@@ -638,7 +638,7 @@ app.get('/api/dashboard', requireAuth, async (req,res) => {
 // BACKUP
 app.get('/api/backup', requireAuth, requireAdmin, async (req,res) => {
   try {
-    const [users,tecnicos,clientes,equipamentos,ordens,laboratorio,logistica,historico,estoque,suprCli,suprMovs,estMovs,lancamentos,contratos,financeiro,agenda,veiculos,financeiroTitulos,financeiroConfig,financeiroFiscal,financeiroServicos,financeiroNotas,financeiroPedidos,financeiroFechamentos,financeiroContratosCfg,financeiroAuditoria,financeiroContas,financeiroExtrato,financeiroImportacoes]=await Promise.all([
+    const [users,tecnicos,clientes,equipamentos,ordens,laboratorio,logistica,historico,estoque,suprCli,suprMovs,estMovs,lancamentos,contratos,financeiro,agenda,veiculos,financeiroTitulos,financeiroConfig,financeiroFiscal,financeiroServicos,financeiroNotas,financeiroPedidos,financeiroFechamentos,financeiroContratosCfg,financeiroAuditoria,financeiroContas,financeiroExtrato,financeiroImportacoes,financeiroDreMap]=await Promise.all([
       col('users').find().toArray(),
       col('tecnicos').find().toArray(),
       tenantCol('clientes', req).find().toArray(),
@@ -668,6 +668,7 @@ app.get('/api/backup', requireAuth, requireAdmin, async (req,res) => {
       col('financeiro_contas').find().toArray(),
       col('financeiro_extrato').find().toArray(),
       col('financeiro_importacoes').find().toArray(),
+      col('financeiro_dre_map').find().toArray(),
     ]);
     // Converte _id ObjectId para string para preservar referências no restore
     const toStr = arr => arr.map(d => ({...d, _id: d._id?.toString(), id: d._id?.toString()}));
@@ -702,6 +703,7 @@ app.get('/api/backup', requireAuth, requireAdmin, async (req,res) => {
       financeiro_contas: toStr(financeiroContas),
       financeiro_extrato: toStr(financeiroExtrato),
       financeiro_importacoes: toStr(financeiroImportacoes),
+      financeiro_dre_map: toStr(financeiroDreMap),
     };
     res.setHeader('Content-Disposition',`attachment; filename="orion_backup_${new Date().toISOString().slice(0,10)}.json"`);
     res.json(backup);
@@ -752,6 +754,7 @@ app.post('/api/restore', requireAuth, requireAdmin, async (req, res) => {
       { key: 'financeiro_contas', col: 'financeiro_contas' },
       { key: 'financeiro_extrato', col: 'financeiro_extrato' },
       { key: 'financeiro_importacoes', col: 'financeiro_importacoes' },
+      { key: 'financeiro_dre_map', col: 'financeiro_dre_map' },
     ];
 
     const resultados = {};
@@ -877,7 +880,7 @@ const ID24='([a-f0-9]{24})', AUDIT_ROTAS=[
   ['POST',/^\/pedidos$/,'pedido','criar'],['PUT',new RegExp('^\\/pedidos\\/'+ID24+'$'),'pedido','editar','financeiro_pedidos'],['DELETE',new RegExp('^\\/pedidos\\/'+ID24+'$'),'pedido','excluir','financeiro_pedidos'],['POST',new RegExp('^\\/pedidos\\/'+ID24+'\\/faturar$'),'pedido','faturar','financeiro_pedidos'],
   ['POST',/^\/fechamentos$/,'fechamento','salvar'],['POST',new RegExp('^\\/fechamentos\\/'+ID24+'\\/faturar$'),'fechamento','faturar','financeiro_fechamentos'],['DELETE',new RegExp('^\\/fechamentos\\/'+ID24+'$'),'fechamento','excluir','financeiro_fechamentos'],
   ['POST',/^\/contas$/,'conta','criar'],['PUT',new RegExp('^\\/contas\\/'+ID24+'$'),'conta','editar','financeiro_contas'],['DELETE',new RegExp('^\\/contas\\/'+ID24+'$'),'conta','excluir','financeiro_contas'],
-  ['POST',/^\/extrato\/importar$/,'extrato','importar'],['POST',/^\/extrato\/conciliar-sugeridos$/,'extrato','conciliar em lote'],['POST',/^\/extrato\/remover-pendentes$/,'extrato','remover pendentes'],['POST',new RegExp('^\\/extrato\\/'+ID24+'\\/conciliar$'),'extrato','conciliar','financeiro_extrato'],['POST',new RegExp('^\\/extrato\\/'+ID24+'\\/lancar$'),'extrato','lançar','financeiro_extrato'],['POST',new RegExp('^\\/extrato\\/'+ID24+'\\/ignorar$'),'extrato','ignorar','financeiro_extrato'],['POST',new RegExp('^\\/extrato\\/'+ID24+'\\/desfazer$'),'extrato','desfazer','financeiro_extrato'],
+  ['POST',/^\/extrato\/importar$/,'extrato','importar'],['POST',/^\/extrato\/conciliar-sugeridos$/,'extrato','conciliar em lote'],['PUT',/^\/dre-map$/,'dre','classificar'],['POST',/^\/extrato\/remover-pendentes$/,'extrato','remover pendentes'],['POST',new RegExp('^\\/extrato\\/'+ID24+'\\/conciliar$'),'extrato','conciliar','financeiro_extrato'],['POST',new RegExp('^\\/extrato\\/'+ID24+'\\/lancar$'),'extrato','lançar','financeiro_extrato'],['POST',new RegExp('^\\/extrato\\/'+ID24+'\\/ignorar$'),'extrato','ignorar','financeiro_extrato'],['POST',new RegExp('^\\/extrato\\/'+ID24+'\\/desfazer$'),'extrato','desfazer','financeiro_extrato'],
   ['PUT',/^\/contratos-cfg\/padrao$/,'previsao','configurar'],['PUT',/^\/contratos-cfg\/contrato\/([\w-]+)$/,'previsao','configurar']];
 const slimFin=o=>{ if(o==null)return null; let t; try{t=JSON.stringify(o);}catch(e){return null;} return t.length>6000?{_truncado:true,tamanho:t.length}:JSON.parse(t); };
 app.use('/api/financeiro', async (req,res,next) => {
@@ -912,6 +915,14 @@ app.put('/api/financeiro/config', requireAuth, requireFinanceiroAcesso, async (r
     res.json({ok:true,dados});
   } catch(e){res.status(500).json({error:e.message});}
 });
+
+// CLASSIFICAÇÃO DA DRE — em qual linha da DRE gerencial cada categoria entra (o padrão é assumido na tela até o usuário ajustar)
+const GRUPOS_DRE_FIN={receita:['operacional','financeira'],despesa:['deducoes','custos','operacionais','depreciacao','financeiro','ir']};
+app.get('/api/financeiro/dre-map', requireAuth, requireFinanceiroAcesso, async (req,res) => { try{ const l=await tenantCol('financeiro_dre_map',req).find({}).toArray(); res.json(l.map(x=>({natureza:x.natureza,categoria:x.categoria,grupo:x.grupo}))); }catch(e){res.status(500).json({error:e.message});} });
+app.put('/api/financeiro/dre-map', requireAuth, requireFinanceiroAcesso, async (req,res) => { try{ const it=(req.body||{}).itens; if(!Array.isArray(it)||!it.length||it.length>200)return res.status(400).json({error:'Informe de 1 a 200 categorias.'});
+  for(const x of it){ if(!GRUPOS_DRE_FIN[x.natureza]||!GRUPOS_DRE_FIN[x.natureza].includes(x.grupo)||!strFin(x.categoria,60))return res.status(400).json({error:'Classificação inválida: '+strFin(x.categoria,60)}); }
+  const tc=tenantCol('financeiro_dre_map',req); for(const x of it){ const c=strFin(x.categoria,60), ex=await tc.findOne({natureza:x.natureza,categoria:c}); if(ex)await tc.updateOne({_id:ex._id},{$set:{grupo:x.grupo,updated_at:now()}}); else await tc.insertOne({natureza:x.natureza,categoria:c,grupo:x.grupo,created_at:now(),updated_at:now()}); }
+  res.json({ok:true,salvas:it.length}); }catch(e){res.status(500).json({error:e.message});} });
 
 app.get('/api/financeiro', requireAuth, async (req,res) => {
   try { const d=await col('financeiro').find(filtroFinanceiroTenant(req)).sort({data:-1}).toArray(); res.json(d.map(x=>({...x,id:x._id.toString()}))); }
