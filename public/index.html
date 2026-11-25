@@ -2600,6 +2600,7 @@ label { font-size: 11px !important; font-weight: 600 !important; color: #475569 
     <div id="fin-kpis" style="display:none;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:10px;margin-bottom:14px"></div>
     <div id="fin-tabs">
       <button class="log-tab active" id="ftab-visao" onclick="switchFinTab('visao')">📊 Visão geral</button>
+      <button class="log-tab" id="ftab-paineis" onclick="switchFinTab('paineis')">📈 Painéis</button>
       <button class="log-tab" id="ftab-lancamentos" onclick="switchFinTab('lancamentos')">📒 Lançamentos</button>
       <button class="log-tab" id="ftab-vendas" onclick="switchFinTab('vendas')">🛒 Vendas e serviços</button>
       <button class="log-tab" id="ftab-titulos" onclick="switchFinTab('titulos')">💳 Contas a Pagar/Receber</button>
@@ -2635,6 +2636,12 @@ label { font-size: 11px !important; font-weight: 600 !important; color: #475569 
         <div class="fin-sec"><h4>Contas em aberto por vencimento</h4><div id="fv-ch3"></div></div>
         <div class="fin-sec"><h4>Maiores clientes no mês (receita recebida)</h4><div id="fv-ch4"></div></div>
       </div>
+    </div>
+    <!-- Aba Painéis (dashboards por processo) -->
+    <div id="fin-tab-paineis" style="display:none">
+      <div class="fin-cfg-head"><div><div class="fin-cfg-title">Painéis</div><div class="fin-cfg-sub">Gráficos de cada processo do Financeiro, calculados com os dados já cadastrados. O que é previsão vem marcado como PREVISÃO.</div></div>
+        <div style="display:flex;gap:8px;align-items:center"><select id="pn-n" onchange="renderFinPaineis()" style="height:34px;padding:0 10px;border:1px solid var(--bd);border-radius:7px;font-size:13px;background:var(--sf);color:var(--tx)"><option value="6">Últimos 6 meses</option><option value="12" selected>Últimos 12 meses</option></select><button class="btn btn-ghost btn-sm" onclick="_pnOk=false;renderFinPaineis()">↻ Atualizar</button></div></div>
+      <div id="pn-corpo"></div>
     </div>
     <div id="fin-tab-lancamentos" style="display:none">
       <div class="card" style="padding:0"><div class="twrap"><table>
@@ -8439,13 +8446,14 @@ async function lancarReceitaOS(os) {
 let _finTab='visao';
 function switchFinTab(tab) {
   _finTab=tab; const rels=['rel','dre','abc','prazos','fluxo','audit'], aba=rels.includes(tab)?'rel':(tab==='config'?'fiscal':tab);
-  ['visao','lancamentos','vendas','titulos','bancos','rel','dre','abc','prazos','fluxo','audit','fiscal','config'].forEach(t=>{const p=document.getElementById('fin-tab-'+t); if(p)p.style.display=t===tab?'':'none';});
-  ['visao','lancamentos','vendas','titulos','bancos','rel','fiscal'].forEach(t=>{const b=document.getElementById('ftab-'+t); if(b)b.classList.toggle('active',t===aba);});
+  ['visao','paineis','lancamentos','vendas','titulos','bancos','rel','dre','abc','prazos','fluxo','audit','fiscal','config'].forEach(t=>{const p=document.getElementById('fin-tab-'+t); if(p)p.style.display=t===tab?'':'none';});
+  ['visao','paineis','lancamentos','vendas','titulos','bancos','rel','fiscal'].forEach(t=>{const b=document.getElementById('ftab-'+t); if(b)b.classList.toggle('active',t===aba);});
   const show=(id,v)=>{const e=document.getElementById(id); if(e)e.style.display=v;};
   show('fin-kpis',tab==='lancamentos'?'grid':'none'); show('fin-top-actions',tab==='lancamentos'?'':'none'); show('fin-relnav',rels.includes(tab)?'flex':'none'); show('fin-fiscnav',(tab==='fiscal'||tab==='config')?'flex':'none'); show('fin-bancosnav',tab==='bancos'?'flex':'none');
   const barra=document.getElementById('s-fin')?.parentElement?.parentElement; if(barra)barra.style.display=(tab==='lancamentos'||tab==='fluxo')?'':'none';
   document.querySelectorAll('#fin-relnav button').forEach(b=>b.classList.toggle('active',b.dataset.t===tab));
   if(tab==='visao')renderFinVisao();
+  if(tab==='paineis')renderFinPaineis();
   if(tab==='dre')renderFinDREGer();
   if(tab==='abc')renderFinABC();
   if(tab==='prazos')renderFinPrazos();
@@ -9183,6 +9191,148 @@ function cfRender(){const id=document.getElementById('cf-id').value,c=(G_contrat
   document.getElementById('cf-res').dataset.v=c.valor_mensal||0;document.getElementById('cf-res').dataset.k=k;cfRes();}
 function cfRes(){const r=document.getElementById('cf-res'),v=+r.dataset.v,k=+r.dataset.k,t=_ftR2(_cfItens.reduce((s,i)=>s+(+i.valor||0),0)*k);r.textContent=`Valor do contrato ${fm(v)} + itens fixos ${fm(t)}${k>1?` (valor mensal × ${k} meses)`:''} = ${fm(_ftR2(v+t))} por cobrança prevista`;}
 async function salvarCfgContrato(){const id=document.getElementById('cf-id').value;try{await api('PUT','/api/financeiro/contratos-cfg/contrato/'+id,{dia:document.getElementById('cf-dia').value,itens_fixos:_cfItens.map(i=>({descricao:i.descricao,valor:+i.valor}))});await _prevEnsure(true);closeM('m-fcfg');renderFinFech();}catch(e){alert(e.message);}}
+
+// ─── PAINÉIS (dashboards por processo do Financeiro) ─────────────────────────
+// Somente leitura: usa os dados já cadastrados. Nada aqui grava ou altera registros.
+// Valores de previsão aparecem sempre marcados como PREVISÃO.
+let _pnOk=false,_pnD={ped:[],notas:[],extr:[],aud:null,errPed:'',errNotas:''};
+const _pnCor=['#2563eb','#16a34a','#f59e0b','#dc2626','#7c3aed','#0891b2','#db2777','#64748b'];
+const _pnMes=m=>m.slice(5)+'/'+m.slice(2,4);
+const _pnK=v=>{const a=Math.abs(v),s=v<0?'-':'';return a>=1e6?s+(a/1e6).toFixed(1).replace('.',',')+' mi':a>=1e3?s+(a/1e3).toFixed(1).replace('.',',')+' mil':s+Math.round(a);};
+const _pnVar=(a,b)=>b>0?((a>=b?'▲ ':'▼ ')+Math.abs((a-b)/b*100).toFixed(1).replace('.',',')+'%'):'sem base';
+const _pnLeg=a=>`<div class="fv-leg">${a.map(s=>`<i style="background:${s.cor}"></i>${_ftEsc(s.n)}`).join('')}</div>`;
+const _pnCard=(l,v,sub,cor,prev)=>`<div class="fin-kpi"><div class="fin-kpi-l">${l}${prev?' <span class="badge bo" style="font-size:9px">PREVISÃO</span>':''}</div><div class="fin-kpi-v" style="color:${cor||'var(--tx)'}">${v}</div><div class="fin-kpi-s">${sub||''}</div></div>`;
+const _pnSec=(t,k,cols)=>`<div class="fin-cfg-title" style="margin:20px 0 8px">${t}</div>${k?`<div class="fin-kpis">${k}</div>`:''}<div class="fin-cols">${cols.map(c=>`<div class="fin-sec"><h4>${c[0]}</h4>${c[1]}</div>`).join('')}</div>`;
+const _pnHBn=(o)=>{const it=Object.entries(o).sort((a,b)=>b[1]-a[1]).slice(0,8);if(!it.length)return _pnVazio('Sem registros.');const mx=Math.max(...it.map(i=>i[1]));return it.map(([l,v])=>`<div class="hb"><span class="hb-l" title="${_ftEsc(l)}">${_ftEsc(l)}</span><div class="hb-t"><div class="hb-b" style="width:${Math.max(2,v/mx*100)}%;background:var(--bl2)"></div></div><span class="hb-v">${v}</span></div>`).join('');};
+const _pnVazio=m=>`<div class="fv-vazio">${m||'Sem dados no período.'}</div>`;
+const _pnTop=(o,n,cor)=>Object.entries(o).filter(e=>e[1]>0).sort((a,b)=>b[1]-a[1]).slice(0,n||8).map(([l,v])=>({l,v:_ftR2(v),cor:cor||'var(--bl2)'}));
+const _pnDonutIt=(o,cores)=>Object.entries(o).filter(e=>e[1]>0).sort((a,b)=>b[1]-a[1]).map(([l,v],i)=>({l,v,cor:(cores&&cores[l])||_pnCor[i%_pnCor.length]}));
+
+function _pnBarras(ms,series,linha,lab){
+  const LB=lab||_pnMes;
+  const W=560,H=200,pb=26,pt=12,bh=H-pb-pt,gw=W/Math.max(1,ms.length),ns=series.length,bw=Math.max(3,Math.min(18,gw*0.8/ns));
+  const vals=[].concat(...series.map(s=>s.v),linha?linha.v:[]),mx=Math.max(1,...vals),mn=Math.min(0,...vals),rg=(mx-mn)||1,y=v=>pt+(mx-v)/rg*bh,y0=y(0);
+  if(!vals.some(v=>v!==0))return _pnVazio();
+  let s=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block" role="img"><line x1="0" x2="${W}" y1="${y0}" y2="${y0}" stroke="var(--bd)"/>`;
+  ms.forEach((m,i)=>{const cx=i*gw+gw/2;
+    series.forEach((sr,k)=>{const v=sr.v[i]||0,x=cx-(ns*bw)/2+k*bw,yy=y(v);s+=`<rect x="${x+0.5}" y="${Math.min(yy,y0)}" width="${bw-1}" height="${Math.max(0.5,Math.abs(y0-yy))}" rx="2" fill="${sr.cor}"><title>${_ftEsc(sr.n)} ${LB(m)}: ${fm(v)}</title></rect>`;});
+    s+=`<text x="${cx}" y="${H-8}" text-anchor="middle" font-size="${ms.length>9?9:11}" fill="var(--tx3)">${LB(m)}</text>`;});
+  if(linha){s+=`<polyline points="${ms.map((m,i)=>`${i*gw+gw/2},${y(linha.v[i]||0)}`).join(' ')}" fill="none" stroke="${linha.cor}" stroke-width="2"/>`+ms.map((m,i)=>`<circle cx="${i*gw+gw/2}" cy="${y(linha.v[i]||0)}" r="3" fill="${linha.cor}"><title>${_ftEsc(linha.n)} ${LB(m)}: ${fm(linha.v[i]||0)}</title></circle>`).join('');}
+  return s+'</svg>'+_pnLeg(series.concat(linha?[linha]:[]));
+}
+function _pnLinha(ms,vals,cor,nome){
+  const ok=vals.filter(v=>v!==null); if(!ok.length)return _pnVazio('Sem receita no período para calcular.');
+  const W=560,H=150,pb=24,pt=12,bh=H-pb-pt,gw=W/ms.length,mx=Math.max(1,...ok),mn=Math.min(0,...ok),rg=(mx-mn)||1,y=v=>pt+(mx-v)/rg*bh;
+  let s=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block" role="img"><line x1="0" x2="${W}" y1="${y(0)}" y2="${y(0)}" stroke="var(--bd)"/>`;
+  const pts=vals.map((v,i)=>v===null?null:`${i*gw+gw/2},${y(v)}`).filter(Boolean);
+  s+=`<polyline points="${pts.join(' ')}" fill="none" stroke="${cor}" stroke-width="2"/>`;
+  ms.forEach((m,i)=>{const cx=i*gw+gw/2;if(vals[i]!==null)s+=`<circle cx="${cx}" cy="${y(vals[i])}" r="3" fill="${cor}"><title>${_ftEsc(nome)} ${_pnMes(m)}: ${vals[i].toFixed(1).replace('.',',')}%</title></circle>`;s+=`<text x="${cx}" y="${H-7}" text-anchor="middle" font-size="${ms.length>9?9:11}" fill="var(--tx3)">${_pnMes(m)}</text>`;});
+  return s+'</svg>'+_pnLeg([{n:nome+' (%)',cor}]);
+}
+function _pnDonut(it,fmt,centro,vazio){
+  const l=it.filter(i=>i.v>0),t=l.reduce((s,i)=>s+i.v,0); if(!t)return _pnVazio(vazio);
+  const r=42,C=2*Math.PI*r; let off=0;
+  const arcs=l.map(i=>{const len=i.v/t*C,a=`<circle cx="60" cy="60" r="${r}" fill="none" stroke="${i.cor}" stroke-width="18" stroke-dasharray="${len} ${C-len}" stroke-dashoffset="${-off}" transform="rotate(-90 60 60)"><title>${_ftEsc(i.l)}: ${fmt(i.v)}</title></circle>`;off+=len;return a;}).join('');
+  return `<div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap"><svg viewBox="0 0 120 120" style="width:140px;height:140px;flex:none" role="img">${arcs}<text x="60" y="64" text-anchor="middle" font-size="12" font-weight="700" fill="var(--tx)">${centro}</text></svg><div style="flex:1;min-width:160px">${l.map(i=>`<div style="display:flex;gap:6px;align-items:center;font-size:12px;margin:3px 0"><i style="width:10px;height:10px;border-radius:2px;background:${i.cor};flex:none"></i><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${_ftEsc(i.l)}">${_ftEsc(i.l)}</span><b>${fmt(i.v)}</b><span style="color:var(--tx3);width:46px;text-align:right">${(i.v/t*100).toFixed(1).replace('.',',')}%</span></div>`).join('')}</div></div>`;
+}
+
+async function _pnCarregar(){
+  const D=_pnD, hoje=new Date(), de=new Date(hoje.getTime()-30*86400000).toISOString().slice(0,10);
+  await Promise.all([
+    (!G_finTitulos.length&&!_ftErro)?carregarFinTitulos():0,
+    _prevEnsure(true),
+    (!G_contratos.length)?api('GET','/api/contratos').then(r=>{G_contratos=r||[];}).catch(()=>{}):0,
+    api('GET','/api/financeiro/pedidos').then(r=>{D.ped=r||[];D.errPed='';}).catch(e=>{D.ped=[];D.errPed=e.message||'Erro ao carregar.';}),
+    api('GET','/api/financeiro/notas').then(r=>{D.notas=r||[];D.errNotas='';}).catch(e=>{D.notas=[];D.errNotas=e.message||'Erro ao carregar.';}),
+    _bancoEnsure().then(async()=>{D.extr=[];for(const c of G_finContas){try{const r=await api('GET','/api/financeiro/extrato?conta_id='+c.id);(r.itens||[]).forEach(x=>D.extr.push(x));}catch(e){}}}),
+    api('GET','/api/financeiro/auditoria?de='+de).then(r=>{D.aud=r.itens||[];}).catch(()=>{D.aud=null;}),
+  ]);
+  _pnOk=true;
+}
+
+async function renderFinPaineis(){
+  const el=document.getElementById('pn-corpo'); if(!el)return;
+  if(!_pnOk){el.innerHTML=_pnVazio('Carregando painéis...');await _pnCarregar();}
+  const n=+document.getElementById('pn-n').value||12, hoje=_ftHoje(), mesAt=hoje.slice(0,7), ms=_fvMeses(mesAt,n), D=_pnD;
+  const noPer=d=>ms.includes((d||'').slice(0,7)), porMes=(L,f)=>ms.map(m=>_ftR2(L.filter(x=>x._m===m).reduce((s,x)=>s+f(x),0)));
+  const cli=id=>(G.clientes||[]).find(c=>c.id===id)?.nome||'Sem cliente';
+  let H='';
+
+  // 1) LANÇAMENTOS (caixa realizado)
+  {const L=G_financeiro.map(l=>({...l,_m:(l.data||'').slice(0,7)})).filter(l=>ms.includes(l._m));
+   const R=L.filter(l=>l.tipo==='receita'),Dp=L.filter(l=>l.tipo==='despesa'),rec=porMes(R,x=>x.valor||0),des=porMes(Dp,x=>x.valor||0),res=rec.map((v,i)=>_ftR2(v-des[i])),marg=rec.map((v,i)=>v>0?res[i]/v*100:null);
+   const tR=_ftR2(rec.reduce((a,b)=>a+b,0)),tD=_ftR2(des.reduce((a,b)=>a+b,0)),tS=_ftR2(tR-tD);
+   const mv=(tipo,m)=>_ftR2(G_financeiro.filter(l=>l.tipo===tipo&&(l.data||'').slice(0,7)===m).reduce((s,l)=>s+(l.valor||0),0));
+   const ant=_fvMeses(mesAt,2)[0],aa=`${+mesAt.slice(0,4)-1}-${mesAt.slice(5)}`,cmp=(nome,t)=>{const a=mv(t,mesAt),b=mv(t,ant),c=mv(t,aa);return _pnCard(nome+' do mês',fm(a),`vs mês anterior ${_pnVar(a,b)} · vs ${_pnMes(aa)} ${_pnVar(a,c)}`,t==='receita'?'var(--gn)':'var(--rd)');};
+   const cat=t=>{const o={};L.filter(l=>l.tipo===t).forEach(l=>{o[l.categoria||'Outros']=(o[l.categoria||'Outros']||0)+(l.valor||0);});return _pnDonutIt(o);};
+   H+=_pnSec('📒 Lançamentos — caixa realizado',_pnCard('Receitas no período',fm(tR),`${n} meses`,'var(--gn)')+_pnCard('Despesas no período',fm(tD),`${n} meses`,'var(--rd)')+_pnCard('Resultado',fm(tS),tR>0?(tS/tR*100).toFixed(1).replace('.',',')+'% da receita':'sem receita',tS>=0?'var(--gn)':'var(--rd)')+cmp('Receitas','receita')+cmp('Despesas','despesa'),
+    [['Receitas, despesas e resultado por mês',_pnBarras(ms,[{n:'Receitas',v:rec,cor:'var(--gn)'},{n:'Despesas',v:des,cor:'var(--rd)'}],{n:'Resultado',v:res,cor:'var(--bl2)'})],
+     ['Margem do resultado por mês',_pnLinha(ms,marg,'#7c3aed','Margem')],
+     ['Despesas por categoria',_pnDonut(cat('despesa'),fm,_pnK(tD),'Sem despesas no período.')],
+     ['Receitas por categoria',_pnDonut(cat('receita'),fm,_pnK(tR),'Sem receitas no período.')]]);}
+
+  // 2) CONTAS A PAGAR / RECEBER
+  if(_ftErro){H+=_pnSec('💳 Contas a pagar e a receber',null,[['Indisponível',_pnVazio(_ftErro)]]);}
+  else{const T=G_finTitulos,ab=t=>T.filter(x=>x.tipo===t&&_ftSit(x)!=='pago'),sd=a=>_ftR2(a.reduce((s,x)=>s+_ftSaldo(x),0)),vc=a=>a.filter(x=>_ftSit(x)==='vencido'),aR=ab('receber'),aP=ab('pagar'),vR=sd(vc(aR)),vP=sd(vc(aP)),sR=sd(aR),sP=sd(aP);
+   const sit=t=>{const l=T.filter(x=>x.tipo===t),pago=_ftR2(l.reduce((s,x)=>s+(x.valor_pago||0),0)),a=ab(t),venc=sd(vc(a));return[{l:'Pago',v:pago,cor:'var(--gn)'},{l:'A vencer',v:_ftR2(sd(a)-venc),cor:'var(--bl2)'},{l:'Vencido',v:venc,cor:'var(--rd)'}];};
+   const sem=Array.from({length:8},(_,i)=>{const ini=new Date(hoje+'T00:00:00');ini.setDate(ini.getDate()+i*7);const fim=new Date(ini);fim.setDate(fim.getDate()+6);const f=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;return{l:f(ini),a:f(ini),b:f(fim),lab:String(ini.getDate()).padStart(2,'0')+'/'+String(ini.getMonth()+1).padStart(2,'0')};});
+   const sv=t=>sem.map(w=>_ftR2(ab(t).filter(x=>x.vencimento>=w.a&&x.vencimento<=w.b).reduce((s,x)=>s+_ftSaldo(x),0)));
+   const cv={},fv={};vc(aR).forEach(t=>{const k=cli(t.cliente_id);cv[k]=(cv[k]||0)+_ftSaldo(t);});aP.forEach(t=>{const k=t.fornecedor||'Sem fornecedor';fv[k]=(fv[k]||0)+_ftSaldo(t);});
+   H+=_pnSec('💳 Contas a pagar e a receber',_pnCard('A receber em aberto',fm(sR),`${aR.length} conta(s)`,'var(--bl2)')+_pnCard('Inadimplência (a receber)',sR>0?(vR/sR*100).toFixed(1).replace('.',',')+'%':'—',`${fm(vR)} vencido`,vR>0?'var(--rd)':'var(--gn)')+_pnCard('A pagar em aberto',fm(sP),`${aP.length} conta(s)`,'var(--or)')+_pnCard('A pagar vencido',fm(vP),vP>0?'atenção':'em dia',vP>0?'var(--rd)':'var(--gn)'),
+    [['Situação das contas a receber',_pnDonut(sit('receber'),fm,_pnK(_ftR2(T.filter(x=>x.tipo==='receber').reduce((s,x)=>s+(x.valor||0),0))),'Nenhuma conta a receber.')],
+     ['Situação das contas a pagar',_pnDonut(sit('pagar'),fm,_pnK(_ftR2(T.filter(x=>x.tipo==='pagar').reduce((s,x)=>s+(x.valor||0),0))),'Nenhuma conta a pagar.')],
+     ['Vencimentos nas próximas 8 semanas (saldo em aberto)',_pnBarras(sem.map(w=>w.lab),[{n:'A receber',v:sv('receber'),cor:'var(--gn)'},{n:'A pagar',v:sv('pagar'),cor:'var(--rd)'}],null,x=>x)],
+     ['Clientes com mais valor vencido',_fvHB(_pnTop(cv,8,'var(--rd)'),'Nenhum valor vencido.')],
+     ['Maiores valores a pagar por fornecedor',_fvHB(_pnTop(fv,8,'var(--or)'),'Nada a pagar em aberto.')]]);}
+
+  // 3) VENDAS E SERVIÇOS
+  if(D.errPed){H+=_pnSec('🛒 Vendas e serviços',null,[['Indisponível',_pnVazio(D.errPed)]]);}
+  else{const P=D.ped.map(p=>({...p,_m:(p.data||'').slice(0,7)})).filter(p=>ms.includes(p._m)),tot=_ftR2(P.reduce((s,p)=>s+(p.total||0),0)),st={},ct={},cl={};
+   P.forEach(p=>{st[p.status||'—']=(st[p.status||'—']||0)+1;ct[p.categoria||'Outros']=(ct[p.categoria||'Outros']||0)+(p.total||0);cl[cli(p.cliente_id)]=(cl[cli(p.cliente_id)]||0)+(p.total||0);});
+   H+=_pnSec('🛒 Vendas e serviços',_pnCard('Total lançado',fm(tot),`${P.length} lançamento(s)`,'var(--bl2)')+_pnCard('Ticket médio',P.length?fm(tot/P.length):'—','por lançamento','var(--tx)'),
+    [['Vendas e serviços por mês',_pnBarras(ms,[{n:'Total lançado',v:porMes(P,x=>x.total||0),cor:'var(--bl2)'}])],
+     ['Por categoria',_pnDonut(_pnDonutIt(ct),fm,_pnK(tot),'Sem lançamentos no período.')],
+     ['Situação dos lançamentos',_pnDonut(_pnDonutIt(st),v=>v+'',String(P.length),'Sem lançamentos no período.')],
+     ['Maiores clientes (valor lançado)',_fvHB(_pnTop(cl,8),'Sem lançamentos no período.')]]);}
+
+  // 4) CONTRATOS
+  {const A=(G_contratos||[]).filter(c=>c.status==='Ativo'),mrr=_ftR2(A.reduce((s,c)=>s+(c.valor_mensal||0),0)),porC={};A.forEach(c=>{porC[cli(c.cliente_id)]=(porC[cli(c.cliente_id)]||0)+(c.valor_mensal||0);});
+   const top=Object.values(porC).sort((a,b)=>b-a)[0]||0,lim=_ftAddMes(hoje,3),venc=A.filter(c=>c.vencimento&&c.vencimento>=hoje&&c.vencimento<=lim).length;
+   const F=(G_finFechAll||[]).filter(f=>f.status==='faturado').map(f=>({...f,_m:f.competencia})).filter(f=>ms.includes(f._m));
+   const pv=_prevContratos(),mp=_fvMeses(_ftAddMes(hoje.slice(0,8)+'01',5).slice(0,7),6),pvv=mp.map(m=>_ftR2(pv.itens.filter(i=>i.venc.slice(0,7)===m).reduce((s,i)=>s+i.valor,0)));
+   H+=_pnSec('📑 Contratos e fechamentos',_pnCard('Contratos ativos',String(A.length),'cadastrados como Ativo','var(--tx)')+_pnCard('Receita mensal contratada',fm(mrr),'soma do valor mensal dos ativos','var(--gn)')+_pnCard('Concentração no maior cliente',mrr>0?(top/mrr*100).toFixed(1).replace('.',',')+'%':'—','da receita mensal contratada',mrr>0&&top/mrr>0.4?'var(--or)':'var(--tx)')+_pnCard('Vencem em 90 dias',String(venc),'contratos ativos',venc?'var(--or)':'var(--tx)'),
+    [['Receita mensal contratada por cliente',_fvHB(_pnTop(porC,8,'var(--gn)'),'Nenhum contrato ativo.')],
+     ['Fechamentos faturados: mensalidade e excedente',_pnBarras(ms,[{n:'Mensalidade',v:porMes(F,x=>x.mensalidade||0),cor:'var(--bl2)'},{n:'Excedente de páginas',v:porMes(F,x=>x.excedente||0),cor:'var(--or)'}])],
+     ['Cobrança prevista dos contratos — próximos 6 meses <span class="badge bo" style="font-size:9px">PREVISÃO</span>',pv.semDia&&!pv.itens.length?_pnVazio('Defina o dia padrão de vencimento em Vendas e serviços › Fechamento de contratos.'):_pnBarras(mp,[{n:'Previsto (ainda não faturado)',v:pvv,cor:'var(--bl2)'}])]]);}
+
+  // 5) BANCOS
+  {const C=G_finContas||[],E=(D.extr||[]).map(e=>({...e,_m:(e.data||'').slice(0,7)})),st={pendente:0,conciliado:0,lancado:0,ignorado:0};E.forEach(e=>{st[e.status]=(st[e.status]||0)+1;});
+   const nomes={pendente:'Pendente',conciliado:'Conciliado',lancado:'Lançado no caixa',ignorado:'Ignorado'},cores={Pendente:'var(--or)',Conciliado:'var(--gn)','Lançado no caixa':'var(--bl2)',Ignorado:'var(--tx3)'};
+   const dn=Object.entries(st).map(([k,v])=>({l:nomes[k]||k,v,cor:cores[nomes[k]]||'var(--tx3)'}));
+   const Em=E.filter(e=>ms.includes(e._m)),ent=porMes(Em,x=>x.valor>0?x.valor:0),sai=porMes(Em,x=>x.valor<0?-x.valor:0),conc=E.length?((st.conciliado+st.lancado)/E.length*100):null,sc={};C.forEach(c=>{sc[c.nome]=c.saldo_extrato||0;});
+   H+=_pnSec('🏦 Bancos e conciliação',_pnCard('Contas cadastradas',String(C.length),C.filter(c=>c.ativa!==false).length+' ativa(s)','var(--tx)')+_pnCard('Saldo pelo extrato',fm(_ftR2(C.reduce((s,c)=>s+(c.saldo_extrato||0),0))),'saldo inicial + movimentos importados','var(--bl2)')+_pnCard('Itens pendentes',String(st.pendente),E.length?fm(_ftR2(C.reduce((s,c)=>s+(c.valor_pendente||0),0)))+' em valor':'nenhum extrato importado',st.pendente?'var(--or)':'var(--gn)')+_pnCard('Conciliação',conc===null?'—':conc.toFixed(1).replace('.',',')+'%','itens conciliados ou lançados',conc!==null&&conc<80?'var(--or)':'var(--gn)'),
+    [['Situação dos itens do extrato',_pnDonut(dn,v=>v+'',String(E.length),'Nenhum extrato importado.')],
+     ['Entradas e saídas do extrato por mês',_pnBarras(ms,[{n:'Entradas',v:ent,cor:'var(--gn)'},{n:'Saídas',v:sai,cor:'var(--rd)'}])],
+     ['Saldo por conta (pelo extrato)',_fvHB(_pnTop(sc,8,'var(--bl2)'),'Nenhuma conta com saldo positivo.')]]);}
+
+  // 6) FISCAL
+  if(D.errNotas){H+=_pnSec('🏛️ Fiscal',null,[['Indisponível',_pnVazio(D.errNotas)]]);}
+  else{const N=D.notas.map(x=>({...x,_m:(x.competencia||(x.created_at||'').slice(0,7))})).filter(x=>ms.includes(x._m)),imp=k=>_ftR2(N.reduce((s,x)=>s+((x.calculo&&x.calculo[k])||0),0)),ks=['iss','irrf','pis','cofins','csll'],tot=_ftR2(N.reduce((s,x)=>s+(x.valor||0),0)),ti=_ftR2(ks.reduce((s,k)=>s+imp(k),0)),stN={};
+   N.forEach(x=>{stN[x.status||'—']=(stN[x.status||'—']||0)+1;});const io={};ks.forEach(k=>{io[k.toUpperCase()]=imp(k);});
+   H+=_pnSec('🏛️ Fiscal — notas fiscais',_pnCard('Notas no período',String(N.length),'por competência','var(--tx)')+_pnCard('Valor das notas',fm(tot),'valor bruto','var(--bl2)')+_pnCard('Impostos calculados',fm(ti),tot>0?(ti/tot*100).toFixed(1).replace('.',',')+'% do valor':'—','var(--or)')+_pnCard('Valor líquido',fm(imp('liquido')),'conforme o cálculo de cada nota','var(--gn)'),
+    [['Valor das notas por mês',_pnBarras(ms,[{n:'Valor da nota',v:porMes(N,x=>x.valor||0),cor:'var(--bl2)'},{n:'Impostos',v:porMes(N,x=>ks.reduce((s,k)=>s+((x.calculo&&x.calculo[k])||0),0)),cor:'var(--or)'}])],
+     ['Impostos por tipo',_fvHB(_pnTop(io,6,'var(--or)'),'Nenhum imposto calculado no período.')],
+     ['Notas por situação',_pnDonut(_pnDonutIt(stN),v=>v+'',String(N.length),'Nenhuma nota no período.')]]);}
+
+  // 7) AUDITORIA (só administradores)
+  if(D.aud===null){H+=_pnSec('🔍 Auditoria',null,[['Restrito',_pnVazio('Disponível apenas para administradores.')]]);}
+  else{const u={},en={},ac={};D.aud.forEach(a=>{u[a.usuario||'—']=(u[a.usuario||'—']||0)+1;en[_audEnt[a.entidade]||a.entidade||'—']=(en[_audEnt[a.entidade]||a.entidade||'—']||0)+1;ac[a.acao||'—']=(ac[a.acao||'—']||0)+1;});
+   const hb=_pnHBn;
+   H+=_pnSec('🔍 Auditoria — últimos 30 dias',_pnCard('Ações registradas',String(D.aud.length),'no Financeiro','var(--tx)')+_pnCard('Exclusões e estornos',String(D.aud.filter(a=>/exclu|estorno|cancel/.test(a.acao||'')).length),'ações sensíveis',D.aud.some(a=>/exclu|estorno|cancel/.test(a.acao||''))?'var(--or)':'var(--gn)'),
+    [['Ações por usuário',hb(u)],['Ações por processo',hb(en)],['Tipos de ação',_pnDonut(_pnDonutIt(ac),v=>v+'',String(D.aud.length),'Sem registros.')]]);}
+
+  el.innerHTML=H;
+}
 
 // ─── AUDITORIA (somente administradores) ─────────────────
 let G_finAud=[],_audErro='';
