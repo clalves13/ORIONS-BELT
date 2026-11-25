@@ -2141,11 +2141,11 @@ app.post('/api/monitor/telemetria', rlAgente, async (req,res) => {
     const cliente = await col('clientes').findOne({ monitor_key: clientKey });
     if (!cliente) return res.status(403).json({ error: 'Chave inválida.' });
     const cid = cliente._id.toString();
-    await col('monitor_telemetria').insertOne({ cliente_id:cid, cliente_nome:cliente.nome, hostname:hostname||'', platform:platform||'', agente_ver:agente_ver||'', timestamp:timestamp||now(), impressoras:impressoras||[], created_at:now() });
+    await col('monitor_telemetria').insertOne({ cliente_id:cid, cliente_nome:cliente.nome, monitor_key:clientKey, hostname:hostname||'', platform:platform||'', agente_ver:agente_ver||'', timestamp:timestamp||now(), impressoras:impressoras||[], created_at:now() });
     for (const imp of (impressoras||[])) {
       const filtro = { cliente_id:cid, ip: imp.ip||imp.nome||'' };
       const anterior = await col('monitor_impressoras').findOne(filtro); // leitura da rodada passada, ANTES de sobrescrever
-      await col('monitor_impressoras').updateOne(filtro, { $set:{ ...imp, cliente_id:cid, cliente_nome:cliente.nome, ultimo_contato:now(), online:true }}, { upsert:true });
+      await col('monitor_impressoras').updateOne(filtro, { $set:{ ...imp, cliente_id:cid, cliente_nome:cliente.nome, monitor_key:clientKey, ultimo_contato:now(), online:true }}, { upsert:true });
 
       // ── Detecção automática de troca de toner (consumo real, não lançamento manual) ──
       // Sinal: nível estava baixo (<=15%) na leitura anterior e subiu muito (+40 pontos) agora.
