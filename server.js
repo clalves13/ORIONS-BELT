@@ -1667,6 +1667,8 @@ app.post('/api/portal/chamado', requirePortal, async (req,res) => {
       sla_prazo: b.sla_prazo||'24h',
       sla_deadline: null,
       origem: 'portal',
+      // Sem o tenant_id a OS ficava no banco mas não aparecia na lista de OS do sistema (que filtra por empresa)
+      tenant_id: cliente.tenant_id || TENANT_PADRAO,
       created_at: now()
     });
     res.json({ok:true, num});
@@ -2134,6 +2136,9 @@ app.get('/api/monitor/ping', (req,res) => {
   res.json({ status: 'ok', timestamp: now(), key_recebida: !!key });
 });
 
+// Sem contato do agente por mais que isso = impressora tratada como OFFLINE (intervalo padrão do agente: 15 min).
+const MON_LIMITE_MS = 45*60*1000;
+const monOnline = i => i.online !== false && !!i.ultimo_contato && (Date.now() - new Date(i.ultimo_contato).getTime()) < MON_LIMITE_MS;
 app.post('/api/monitor/telemetria', rlAgente, async (req,res) => {
   try {
     const { clientKey, clientId, hostname, platform, agente_ver, timestamp, impressoras } = req.body;
@@ -2143,9 +2148,26 @@ app.post('/api/monitor/telemetria', rlAgente, async (req,res) => {
     const cid = cliente._id.toString();
     await col('monitor_telemetria').insertOne({ cliente_id:cid, cliente_nome:cliente.nome, monitor_key:clientKey, hostname:hostname||'', platform:platform||'', agente_ver:agente_ver||'', timestamp:timestamp||now(), impressoras:impressoras||[], created_at:now() });
     for (const imp of (impressoras||[])) {
-      const filtro = { cliente_id:cid, ip: imp.ip||imp.nome||'' };
+      // Identidade do card: rede = IP; USB = tipo + nome (USB não tem IP; antes o filtro usava o nome mas o
+      // documento gravava ip:null, então a cada rodada era criado um card novo).
+      const ehUsb = imp.tipo === 'usb';
+      let filtro = ehUsb ? { cliente_id:cid, tipo:'usb', nome: imp.nome||'' } : { cliente_id:cid, ip: imp.ip||imp.nome||'' };
+      const serie = String(imp.serial||'').trim();
+      if (!ehUsb && serie.length >= 5) {
+        // O dado real substitui o card simulado do mesmo equipamento (mesmo nº de série)
+        await col('monitor_impressoras').deleteMany({ cliente_id:cid, serial:serie, _sim:true });
+        // Mesmo equipamento com IP novo: atualiza o card existente em vez de criar outro
+        if (!(await col('monitor_impressoras').findOne(filtro))) {
+          const porSerie = await col('monitor_impressoras').findOne({ cliente_id:cid, serial:serie, _sim:{ $ne:true } });
+          if (porSerie) filtro = { _id: porSerie._id };
+        }
+      }
       const anterior = await col('monitor_impressoras').findOne(filtro); // leitura da rodada passada, ANTES de sobrescrever
       await col('monitor_impressoras').updateOne(filtro, { $set:{ ...imp, cliente_id:cid, cliente_nome:cliente.nome, monitor_key:clientKey, ultimo_contato:now(), online:true }}, { upsert:true });
+      if (ehUsb) { // limpa duplicados antigos da mesma impressora USB (mantém o mais recente)
+        const dup = await col('monitor_impressoras').find(filtro).sort({ ultimo_contato:-1 }).toArray();
+        if (dup.length > 1) await col('monitor_impressoras').deleteMany({ _id:{ $in: dup.slice(1).map(d=>d._id) } });
+      }
 
       // ── Detecção automática de troca de toner (consumo real, não lançamento manual) ──
       // Sinal: nível estava baixo (<=15%) na leitura anterior e subiu muito (+40 pontos) agora.
@@ -2224,7 +2246,7 @@ app.post('/api/monitor/telemetria', rlAgente, async (req,res) => {
         ).catch(()=>{});
       }
     }
-    const limite = new Date(Date.now() - 30*60*1000).toISOString();
+    const limite = new Date(Date.now() - MON_LIMITE_MS).toISOString();
     await col('monitor_impressoras').updateMany({ cliente_id:cid, ultimo_contato:{ $lt:limite } }, { $set:{ online:false } });
     _monClienteCache = null; // invalida cache de integração
     res.json({ ok:true, recebido:(impressoras||[]).length });
@@ -2263,13 +2285,44 @@ async function enrichImps(imps) {
 
 app.get('/api/monitor/impressoras', requireAuth, async (req,res) => {
   try {
-    const { cliente_id } = req.query;
+    const { cliente_id, ocultas } = req.query;
     const filtro = cliente_id ? { cliente_id } : {};
+    if (ocultas !== '1') filtro.oculta = { $ne:true };
     const imps = await col('monitor_impressoras').find(filtro).sort({ ultimo_contato:-1 }).toArray();
     // ── Integração: resolve nomes reais do cadastro de clientes ──
     const enriched = await enrichImps(imps);
-    res.json(enriched.map(i => ({ ...i, id:i._id.toString() })));
+    res.json(enriched.map(i => {
+      const { mib_amostra, ...resto } = i;
+      // online é calculado pelo tempo desde o último contato (o agente parado/PC desligado não envia nada)
+      return { ...resto, id:i._id.toString(), online: monOnline(i), tem_diagnostico: !!mib_amostra,
+               sem_contato_min: i.ultimo_contato ? Math.round((Date.now()-new Date(i.ultimo_contato).getTime())/60000) : null };
+    }));
   } catch(e) { res.status(500).json({ error:e.message }); }
+});
+
+// Excluir card: o agente continua enviando, mas o card fica oculto (não é recriado). Dá para restaurar.
+app.delete('/api/monitor/impressoras/:id', requireAuth, requireAdmin, async (req,res) => {
+  try {
+    const u = req.session.user || {};
+    const r = await col('monitor_impressoras').updateOne({ _id:new ObjectId(req.params.id) }, { $set:{ oculta:true, oculta_em:now(), oculta_por:u.nome||u.login||'' } });
+    if (!r.matchedCount) return res.status(404).json({ error:'Impressora não encontrada.' });
+    res.json({ ok:true });
+  } catch(e) { res.status(500).json({ error:e.message }); }
+});
+app.post('/api/monitor/impressoras/:id/restaurar', requireAuth, requireAdmin, async (req,res) => {
+  try {
+    const r = await col('monitor_impressoras').updateOne({ _id:new ObjectId(req.params.id) }, { $set:{ oculta:false } });
+    if (!r.matchedCount) return res.status(404).json({ error:'Impressora não encontrada.' });
+    res.json({ ok:true });
+  } catch(e) { res.status(500).json({ error:e.message }); }
+});
+// Amostra SNMP bruta (diagnóstico de contadores P&B/Color) enviada pelo agente na primeira rodada
+app.get('/api/monitor/impressoras/:id/mib', requireAuth, requireAdmin, async (req,res) => {
+  try {
+    const i = await col('monitor_impressoras').findOne({ _id:new ObjectId(req.params.id) });
+    if (!i) return res.status(404).type('text/plain').send('Impressora não encontrada.');
+    res.type('text/plain; charset=utf-8').send(i.mib_amostra || 'Sem amostra SNMP ainda. O agente 1.0.2 envia a amostra na primeira rodada após ser iniciado.');
+  } catch(e) { res.status(500).type('text/plain').send(e.message); }
 });
 
 app.get('/api/monitor/historico', requireAuth, async (req,res) => {
@@ -2284,17 +2337,15 @@ app.get('/api/monitor/historico', requireAuth, async (req,res) => {
 
 app.get('/api/monitor/dashboard', requireAuth, async (req,res) => {
   try {
-    const total     = await col('monitor_impressoras').countDocuments();
-    const online    = await col('monitor_impressoras').countDocuments({ online:true });
-    const offline   = await col('monitor_impressoras').countDocuments({ online:false });
-    const tonerCrit = await col('monitor_impressoras').countDocuments({ 'toner.preto':{ $lt:10, $ne:null } });
-    const comErro   = await col('monitor_impressoras').countDocuments({ erros:{ $exists:true, $not:{ $size:0 } } });
+    const todas = await col('monitor_impressoras').find({ oculta:{ $ne:true } }).toArray();
+    const total = todas.length;
+    const online = todas.filter(monOnline).length;
+    const tonerCrit = todas.filter(i => i.toner && i.toner.preto !== null && i.toner.preto !== undefined && i.toner.preto < 10).length;
+    const comErro = todas.filter(i => Array.isArray(i.erros) && i.erros.length > 0).length;
     // ── Integração: conta clientes REAIS cadastrados com pelo menos 1 impressora ──
-    const keysAtivas = await col('monitor_impressoras').distinct('monitor_key');
-    const clientesReais = await tenantCol('clientes', req).countDocuments({
-      monitor_key: { $in: keysAtivas.filter(Boolean) }
-    });
-    res.json({ total, online, offline, toner_critico:tonerCrit, com_erro:comErro, clientes_monitorados:clientesReais });
+    const keysAtivas = [...new Set(todas.map(i => i.monitor_key).filter(Boolean))];
+    const clientesReais = await tenantCol('clientes', req).countDocuments({ monitor_key: { $in: keysAtivas } });
+    res.json({ total, online, offline: total-online, toner_critico:tonerCrit, com_erro:comErro, clientes_monitorados:clientesReais });
   } catch(e) { res.status(500).json({ error:e.message }); }
 });
 
@@ -2612,4 +2663,16 @@ app.get('/api/ordens/buscar/:num', requireAuth, async (req, res) => {
 // ─── ROTAS FINAIS ────────────────────────────────────────────────────────────
 app.get('*',(req,res)=>res.sendFile(path.join(__dirname,'public','index.html')));
 
-connectDB().then(()=>app.listen(PORT,()=>console.log(`Orion Print v4 MongoDB porta ${PORT}`))).catch(e=>{console.error('Erro DB:',e);process.exit(1);});
+connectDB().then(async()=>{
+  // Correção única: OS abertas pelo portal antes do ajuste ficaram sem tenant_id e sumiam da lista do sistema
+  try {
+    const orfas = await col('ordens').find({ origem:'portal', tenant_id:{ $exists:false } }).toArray();
+    for (const o of orfas) {
+      let t = TENANT_PADRAO;
+      try { const c = await col('clientes').findOne({ _id:new ObjectId(o.cliente_id) }); if (c && c.tenant_id) t = c.tenant_id; } catch(e) {}
+      await col('ordens').updateOne({ _id:o._id }, { $set:{ tenant_id:t } });
+    }
+    if (orfas.length) console.log(`Portal: ${orfas.length} OS sem tenant_id corrigida(s).`);
+  } catch(e) { console.error('Ajuste de OS do portal:', e.message); }
+  app.listen(PORT,()=>console.log(`Orion Print v4 MongoDB porta ${PORT}`));
+}).catch(e=>{console.error('Erro DB:',e);process.exit(1);});

@@ -76,6 +76,11 @@ select.fsel:focus{border-color:var(--bl);box-shadow:0 0 0 2px rgba(37,99,235,.1)
 .imp-ip{font-size:10px;color:var(--tx3);font-family:'JetBrains Mono',monospace;margin-top:2px}
 .imp-fab{font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;background:#eff6ff;color:var(--bl);border:1px solid #bfdbfe;text-transform:uppercase;letter-spacing:.5px}
 .imp-status-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:3px}
+.imp-pill{display:inline-flex;align-items:center;gap:5px;font-size:9px;font-weight:800;letter-spacing:.6px;padding:2px 8px;border-radius:999px}
+.imp-pill .imp-status-dot{margin-top:0}
+.imp-pill.on{background:#ecfdf5;color:var(--gn);border:1px solid #a7f3d0}.imp-pill.off{background:#fef2f2;color:var(--rd);border:1px solid #fecaca}.imp-pill.ex{background:#f1f5f9;color:var(--tx3);border:1px solid var(--bd)}
+.imp-card.oculta{opacity:.55}
+.imp-del{font-size:10px;font-weight:700;border:1px solid var(--bd);background:#f8fafc;color:var(--tx2);border-radius:6px;padding:2px 8px;cursor:pointer}.imp-del:hover{background:#fef2f2;color:var(--rd);border-color:#fecaca}
 .dot-online{background:var(--gn);box-shadow:0 0 6px rgba(22,163,74,.5)}
 .dot-offline{background:var(--rd)}
 .dot-warn{background:var(--or);box-shadow:0 0 6px rgba(234,88,12,.5)}
@@ -167,6 +172,7 @@ tbody tr{cursor:pointer;transition:background .12s}
         <option value="cards">⊞ Cards</option>
         <option value="lista">≡ Lista</option>
       </select>
+      <label class="fsel" style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="f-ocultas" onchange="MON.ocultas=this.checked;atualizar()"> Mostrar excluídos</label>
     </div>
   </div>
 
@@ -203,6 +209,7 @@ tbody tr{cursor:pointer;transition:background .12s}
     <button class="btnx" onclick="fecharModal()">×</button>
   </div>
   <div class="mbody">
+    <div id="m-imp-acoes" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"></div>
     <div class="sec-title">Informações</div>
     <div class="info-grid" id="m-imp-info"></div>
     <div class="sec-title">Suprimentos</div>
@@ -218,7 +225,7 @@ tbody tr{cursor:pointer;transition:background .12s}
 </div>
 
 <script>
-const MON = { impressoras:[], view:'cards', chart:null };
+const MON = { impressoras:[], view:'cards', chart:null, ocultas:false };
 let _authOk = false;
 async function api(method,url,body) {
   // Se aberto como arquivo local (file://), usa URL absoluta do servidor
@@ -287,7 +294,7 @@ async function atualizar() {
   document.getElementById('hdr-last').textContent = 'Atualizando...';
   try {
     const [imps, dash] = await Promise.all([
-      api('GET', '/api/monitor/impressoras'),
+      api('GET', '/api/monitor/impressoras' + (MON.ocultas ? '?ocultas=1' : '')),
       api('GET', '/api/monitor/dashboard'),
     ]);
     if (!imps) return;
@@ -385,27 +392,32 @@ function renderCards(lista) {
     const erroTags = (imp.erros||[]).map(e =>
       `<span class="err-tag">${e.replace(/-/g,' ')}</span>`
     ).join('');
-    return `<div class="imp-card ${cls}" onclick="verDetalhes('${imp.id||imp.ip}')">
+    const rotulo = imp.oculta ? '<span class="imp-pill ex">EXCLUÍDO</span>'
+      : `<span class="imp-pill ${imp.online?'on':'off'}"><span class="imp-status-dot ${dotC}"></span>${imp.online?'ONLINE':'OFFLINE'}</span>`;
+    const btnEx = imp.oculta ? `<button class="imp-del" onclick="event.stopPropagation();restaurarImp('${imp.id}')">↩ Restaurar</button>`
+      : `<button class="imp-del" title="Excluir card" onclick="event.stopPropagation();excluirImp('${imp.id}')">🗑 Excluir</button>`;
+    return `<div class="imp-card ${cls}${imp.oculta?' oculta':''}" onclick="verDetalhes('${imp.id||imp.ip}')">
       <div class="imp-card-hd">
         <div>
-          <div class="imp-nome">${imp.descricao?.substring(0,35)||imp.nome_rede||imp.ip||'Impressora'}</div>
-          <div class="imp-ip">${imp.ip||'USB'} · ${imp.cliente_nome||''}</div>
+          <div class="imp-nome">${imp.descricao?.substring(0,35)||imp.nome||imp.nome_rede||imp.ip||'Impressora'}</div>
+          <div class="imp-ip">${imp.ip||('USB'+(imp.porta?' '+imp.porta:''))} · ${imp.cliente_nome||''}</div>
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px">
-          <div class="imp-status-dot ${dotC}"></div>
+          ${rotulo}
           <span class="imp-fab">${imp.fabricante||'—'}</span>
+          ${btnEx}
         </div>
       </div>
       <div class="imp-counters">
-        <div class="imp-cnt"><div class="imp-cnt-val">${fmt(imp.paginas_total)}</div><div class="imp-cnt-lbl">Total</div></div>
-        <div class="imp-cnt"><div class="imp-cnt-val">${fmt(imp.paginas_pb)}</div><div class="imp-cnt-lbl">P&B</div></div>
-        <div class="imp-cnt"><div class="imp-cnt-val">${fmt(imp.paginas_color)}</div><div class="imp-cnt-lbl">Color</div></div>
+        <div class="imp-cnt"><div class="imp-cnt-val">${fmtC(imp.paginas_total)}</div><div class="imp-cnt-lbl">Total</div></div>
+        <div class="imp-cnt"><div class="imp-cnt-val">${fmtC(imp.paginas_pb)}</div><div class="imp-cnt-lbl">P&B</div></div>
+        <div class="imp-cnt"><div class="imp-cnt-val">${fmtC(imp.paginas_color)}</div><div class="imp-cnt-lbl">Color</div></div>
       </div>
       <div class="toner-wrap">${tonerRows}</div>
       ${erroTags ? `<div class="imp-erros">${erroTags}</div>` : ''}
       <div class="imp-footer">
         <span class="imp-contato">Nº Série: ${imp.serial||'—'}</span>
-        <span class="imp-contato">${imp.online ? '🟢' : '🔴'} ${tempoRelativo(imp.ultimo_contato)}</span>
+        <span class="imp-contato">${imp.online ? '🟢 Atualizado ' + tempoRelativo(imp.ultimo_contato) : '🔴 Sem contato — último ' + tempoRelativo(imp.ultimo_contato)}</span>
       </div>
     </div>`;
   }).join('');
@@ -414,21 +426,22 @@ function renderCards(lista) {
 function renderLista(lista) {
   const tbody = document.getElementById('imp-lista-tbody');
   tbody.innerHTML = lista.map(imp => {
-    const st = imp.online
-      ? `<span style="color:var(--gn);font-size:10px;font-weight:700">🟢 Online</span>`
-      : `<span style="color:var(--rd);font-size:10px;font-weight:700">🔴 Offline</span>`;
+    const st = imp.oculta ? `<span style="color:var(--tx3);font-size:10px;font-weight:700">EXCLUÍDO</span>`
+      : imp.online
+      ? `<span style="color:var(--gn);font-size:10px;font-weight:700">🟢 ONLINE</span>`
+      : `<span style="color:var(--rd);font-size:10px;font-weight:700">🔴 OFFLINE</span>`;
     const tp = imp.toner?.preto;
     return `<tr onclick="verDetalhes('${imp.id||imp.ip}')">
       <td>${st}</td>
       <td style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--cy)">${imp.ip||'USB'}</td>
-      <td style="font-weight:600;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${imp.descricao?.substring(0,40)||'—'}</td>
+      <td style="font-weight:600;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${imp.descricao?.substring(0,40)||imp.nome||'—'}</td>
       <td style="color:var(--tx2)">${imp.cliente_nome||'—'}</td>
       <td><span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;background:var(--sf2);color:var(--cy);border:1px solid rgba(34,211,238,.2)">${imp.fabricante||'—'}</span></td>
-      <td style="font-weight:700;font-family:'JetBrains Mono',monospace">${fmt(imp.paginas_total)}</td>
+      <td style="font-weight:700;font-family:'JetBrains Mono',monospace">${fmtC(imp.paginas_total)}</td>
       <td style="${tp < 10 ? 'color:var(--rd);font-weight:800' : 'color:var(--tx)'};font-family:'JetBrains Mono',monospace">${tp !== null && tp !== undefined ? tp+'%' : '—'}</td>
       <td>${(imp.erros||[]).length > 0 ? `<span style="color:var(--rd);font-size:10px">${imp.erros.join(', ')}</span>` : '<span style="color:var(--gn)">—</span>'}</td>
       <td style="font-size:10px;color:var(--tx3);font-family:'JetBrains Mono',monospace">${tempoRelativo(imp.ultimo_contato)}</td>
-      <td><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();verDetalhes('${imp.id||imp.ip}')">Ver</button></td>
+      <td><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();verDetalhes('${imp.id||imp.ip}')">Ver</button> ${imp.oculta ? `<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();restaurarImp('${imp.id}')">↩</button>` : `<button class="btn btn-ghost btn-sm" title="Excluir card" onclick="event.stopPropagation();excluirImp('${imp.id}')">🗑</button>`}</td>
     </tr>`;
   }).join('');
 }
@@ -436,16 +449,20 @@ function renderLista(lista) {
 async function verDetalhes(id) {
   const imp = MON.impressoras.find(i => i.id === id || i.ip === id);
   if (!imp) return;
-  document.getElementById('m-imp-title').textContent = imp.descricao?.substring(0,50) || imp.nome_rede || 'Impressora';
+  document.getElementById('m-imp-title').textContent = imp.descricao?.substring(0,50) || imp.nome || imp.nome_rede || 'Impressora';
   document.getElementById('m-imp-sub').textContent   = `${imp.ip||'USB'} · ${imp.cliente_nome||''} · ${imp.fabricante||''}`;
 
+  document.getElementById('m-imp-acoes').innerHTML =
+    (imp.oculta ? `<button class="btn btn-ghost btn-sm" onclick="restaurarImp('${imp.id}')">↩ Restaurar card</button>`
+                : `<button class="btn btn-ghost btn-sm" style="color:var(--rd)" onclick="excluirImp('${imp.id}')">🗑 Excluir card</button>`) +
+    (imp.tem_diagnostico ? ` <a class="btn btn-ghost btn-sm" href="/api/monitor/impressoras/${imp.id}/mib" target="_blank" rel="noopener">🔧 Amostra SNMP</a>` : '');
   document.getElementById('m-imp-info').innerHTML = [
     { l:'IP / Porta',    v: imp.ip||'USB' },
     { l:'Número de Série', v: imp.serial||'—' },
-    { l:'Status',        v: imp.online ? '🟢 Online' : '🔴 Offline' },
-    { l:'Páginas Total', v: fmt(imp.paginas_total) },
-    { l:'Páginas P&B',   v: fmt(imp.paginas_pb) },
-    { l:'Páginas Color', v: fmt(imp.paginas_color) },
+    { l:'Status',        v: imp.oculta ? 'Card excluído' : (imp.online ? '🟢 Online' : '🔴 Offline — sem contato do agente') },
+    { l:'Páginas Total', v: fmtC(imp.paginas_total) },
+    { l:'Páginas P&B',   v: fmtC(imp.paginas_pb) },
+    { l:'Páginas Color', v: fmtC(imp.paginas_color) },
     { l:'Último Contato', v: tempoRelativo(imp.ultimo_contato) },
     { l:'Tambor',        v: imp.drum_pct !== null ? imp.drum_pct+'%' : '—' },
     { l:'Papel Bandeja', v: imp.papel_nivel !== null ? imp.papel_nivel+'%' : '—' },
@@ -572,6 +589,17 @@ function setView(v) {
 }
 
 function fmt(n) { return (n||0).toLocaleString('pt-BR'); }
+// Contador que a impressora não informa aparece como "—" (e não como 0)
+function fmtC(n) { return (n===null||n===undefined) ? '—' : Number(n).toLocaleString('pt-BR'); }
+async function excluirImp(id) {
+  const imp = MON.impressoras.find(i => i.id === id); if (!imp) return;
+  if (!confirm('Excluir este card do monitor?\n\n' + (imp.descricao||imp.nome||imp.ip||'Impressora') + '\n\nO agente continua enviando dados, mas o card não aparece mais. Você pode restaurar marcando "Mostrar excluídos".')) return;
+  try { await api('DELETE', '/api/monitor/impressoras/' + id); fecharModal(); await atualizar(); } catch(e) { alert(e.message || 'Não foi possível excluir.'); }
+}
+async function restaurarImp(id) {
+  try { await api('POST', '/api/monitor/impressoras/' + id + '/restaurar'); fecharModal(); await atualizar(); } catch(e) { alert(e.message || 'Não foi possível restaurar.'); }
+}
+
 function tempoRelativo(ts) {
   if (!ts) return '—';
   const diff = Math.floor((Date.now() - new Date(ts).getTime()) / 1000);
