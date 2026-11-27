@@ -1,6 +1,6 @@
 {
   "name": "orion-agente",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "description": "Orion Agente — Coletor de Impressoras via SNMP (net-snmp)",
   "main": "agent.js",
   "scripts": {

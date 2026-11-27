@@ -1,6 +1,6 @@
 /**
  * Orion AT — Agente de Monitoramento de Impressoras
- * Versão 1.0.0
+ * Versão 1.0.3
  *
  * Coleta dados via SNMP (rede LAN) de impressoras HP, Kyocera, Ricoh,
  * Canon, Xerox e similares. Envia para o servidor Orion AT a cada
@@ -14,10 +14,17 @@ const axios   = require('axios');
 const os      = require('os');
 const fs      = require('fs');
 const path    = require('path');
-const { execSync } = require('child_process');
+const { execFileSync } = require('child_process');
 
 // ─── CONFIGURAÇÃO ────────────────────────────────────────────────────────────
-const CONFIG_PATH = path.join(__dirname, 'config.json');
+const AGENT_VERSION = '1.0.3';
+const URL_PADRAO = 'https://orions-belt-bcpq.onrender.com';
+// Dentro do .exe gerado pelo pkg, __dirname aponta para um sistema de arquivos virtual
+// interno (C:\snapshot\...), e não para a pasta onde o .exe está. Por isso o config.json
+// e o log ficavam fora do alcance e o agente subia com a configuração padrão (sem chave).
+// process.execPath é o caminho real do .exe.
+const BASE_DIR = process.pkg ? path.dirname(process.execPath) : __dirname;
+const CONFIG_PATH = path.join(BASE_DIR, 'config.json');
 const readline = require('readline');
 
 async function setupConfig() {
@@ -38,7 +45,7 @@ async function setupConfig() {
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
   const pergunta = (q) => new Promise(resolve => rl.question(q, resolve));
 
-  const serverUrl = await pergunta('URL do servidor (ex: https://orion-at-production.up.railway.app): ');
+  const serverUrl = await pergunta('URL do servidor (ex: https://orions-belt-bcpq.onrender.com): ');
   const clientKey = await pergunta('Chave do cliente (copie do sistema Orion Print → Clientes): ');
   const intervalMin = await pergunta('Intervalo de coleta em minutos (padrão: 15): ') || '15';
 
@@ -61,7 +68,7 @@ async function setupConfig() {
     const r = await axios.post(`${cfg.serverUrl}/api/monitor/registrar-agente`, {
       clientKey: cfg.clientKey,
       hostname: require('os').hostname(),
-      agente_ver: '1.0.0'
+      agente_ver: AGENT_VERSION
     }, { timeout: 10000 });
     if (r.data && r.data.clientId) {
       cfg.clientId = r.data.clientId;
@@ -83,7 +90,7 @@ function loadConfig() {
 
 // Inicialização assíncrona
 let CFG_TEMP = loadConfig();
-const SERVER_URL   = CFG_TEMP?.serverUrl   || 'https://orion-at-production.up.railway.app';
+const SERVER_URL   = CFG_TEMP?.serverUrl   || URL_PADRAO;
 const CLIENT_KEY   = CFG_TEMP?.clientKey   || '';
 const CLIENT_ID    = CFG_TEMP?.clientId    || '';
 const INTERVAL_MIN  = CFG_TEMP?.intervalMin || 15; // minutos entre coletas
@@ -109,7 +116,8 @@ const OIDs = {
 
   // Status da impressora
   printerStatus:   '1.3.6.1.2.1.25.3.5.1.1.1',      // 3=idle, 4=printing, 5=warmup
-  printerDetected: '1.3.6.1.2.1.25.3.5.1.2.1',      // Erros detectados
+  printerDetected: '1.3.6.1.2.1.25.3.5.1.2.1',      // Erros detectados (OCTET STRING com bits)
+  deviceStatus:    '1.3.6.1.2.1.25.3.2.1.5.1',      // hrDeviceStatus: 2=running, 3=warning, 4=testing, 5=down
 
   // Suprimentos — toner preto (índice 1, 2, 3, 4 para CMYK)
   tonerBlackMax:   '1.3.6.1.2.1.43.11.1.1.8.1.1',
@@ -150,6 +158,9 @@ const OIDs_FABRICANTE = {
   },
   XEROX: {
     pagesTotal:   '1.3.6.1.4.1.253.8.53.13.2.1.6.1.20.1',
+    // Contadores de cobrança da Xerox (XEROX-HOST-RESOURCES-EXT-MIB): 34 = Total Black Impressions, 33 = Total Color Impressions
+    pagesBW:      '1.3.6.1.4.1.253.8.53.13.2.1.6.1.20.34',
+    pagesColor:   '1.3.6.1.4.1.253.8.53.13.2.1.6.1.20.33',
     serialNumber: '1.3.6.1.4.1.253.8.53.3.2.1.3.1',
   },
   CANON: {
@@ -246,7 +257,13 @@ function snmpGet(ip, oidMap) {
         if (vb.type !== snmp.ObjectType.NoSuchObject &&
             vb.type !== snmp.ObjectType.NoSuchInstance &&
             vb.type !== snmp.ObjectType.EndOfMibView) {
-          result[keys[i]] = vb.value?.toString() || null;
+          // hrPrinterDetectedErrorState é um campo de bits (OCTET STRING): converter para
+          // texto destrói os bits, então guardamos em hexadecimal.
+          if (keys[i] === 'printerDetected' && Buffer.isBuffer(vb.value)) {
+            result[keys[i]] = vb.value.toString('hex') || null;
+          } else {
+            result[keys[i]] = vb.value?.toString() || null;
+          }
         }
       });
       resolve(result);
@@ -275,25 +292,132 @@ function calcPct(cur, max) {
   return Math.round((c / m) * 100);
 }
 
-function parseStatus(code) {
-  const c = parseInt(code);
-  const map = { 1:'other', 2:'unknown', 3:'idle', 4:'printing', 5:'warmup' };
-  return map[c] || 'unknown';
+function parseStatus(printerCode, deviceCode) {
+  // hrPrinterStatus (RFC 2790): 3=idle, 4=printing, 5=warmup
+  const p = parseInt(printerCode);
+  const mapPrinter = { 3:'idle', 4:'printing', 5:'warmup' };
+  if (mapPrinter[p]) return mapPrinter[p];
+  // Algumas impressoras (ex.: Xerox VersaLink) respondem 'other'(1)/'unknown'(2) em
+  // hrPrinterStatus. Nesse caso usa hrDeviceStatus: running = equipamento operacional.
+  const d = parseInt(deviceCode);
+  const mapDevice = { 2:'idle', 3:'warning', 4:'testing', 5:'down' };
+  if (mapDevice[d]) return mapDevice[d];
+  return p === 1 ? 'other' : 'unknown';
 }
 
-function parseErros(code) {
-  if (!code) return [];
+// hrPrinterDetectedErrorState (RFC 2790): OCTET STRING em que o bit 0 é o bit mais
+// significativo do primeiro byte. Recebe o valor em hexadecimal.
+function parseErros(hex) {
+  if (!hex) return [];
+  const b = Buffer.from(hex, 'hex');
+  const b0 = b[0] || 0, b1 = b[1] || 0;
   const erros = [];
-  const c = parseInt(code);
-  if (c & 1)   erros.push('sem-papel');
-  if (c & 2)   erros.push('papel-preso');
-  if (c & 4)   erros.push('tampa-aberta');
-  if (c & 8)   erros.push('sem-toner');
-  if (c & 16)  erros.push('toner-baixo');
-  if (c & 32)  erros.push('erro-memoria');
-  if (c & 64)  erros.push('offline');
-  if (c & 128) erros.push('erro-hardware');
+  if (b0 & 0x80) erros.push('papel-baixo');
+  if (b0 & 0x40) erros.push('sem-papel');
+  if (b0 & 0x20) erros.push('toner-baixo');
+  if (b0 & 0x10) erros.push('sem-toner');
+  if (b0 & 0x08) erros.push('tampa-aberta');
+  if (b0 & 0x04) erros.push('papel-preso');
+  if (b0 & 0x02) erros.push('offline');
+  if (b0 & 0x01) erros.push('manutencao');
+  if (b1 & 0x80) erros.push('bandeja-ausente');
+  if (b1 & 0x40) erros.push('saida-ausente');
+  if (b1 & 0x20) erros.push('suprimento-ausente');
+  if (b1 & 0x10) erros.push('saida-quase-cheia');
+  if (b1 & 0x08) erros.push('saida-cheia');
+  if (b1 & 0x04) erros.push('bandeja-vazia');
+  if (b1 & 0x02) erros.push('manutencao-vencida');
   return erros;
+}
+
+// ─── LEITURA EM ÁRVORE (walk) ───────────────────────────────────────────────
+function snmpWalk(ip, baseOid, maxItens = 400) {
+  return new Promise((resolve) => {
+    const out = []; let fechado = false; let t = null;
+    const session = snmp.createSession(ip, SNMP_COMMUNITY, { timeout: SNMP_TIMEOUT, retries: SNMP_RETRIES, version: snmp.Version2c });
+    const fim = () => { if (fechado) return; fechado = true; clearTimeout(t); try { session.close(); } catch(e) {} resolve(out); };
+    t = setTimeout(fim, 25000);
+    try {
+      session.subtree(baseOid, 20, (vbs) => {
+        for (const vb of vbs) {
+          if (snmp.isVarbindError(vb)) continue;
+          if (out.length < maxItens) out.push({ oid: vb.oid, value: vb.value });
+        }
+      }, () => fim());
+    } catch(e) { fim(); }
+  });
+}
+
+function valorLegivel(v) {
+  if (Buffer.isBuffer(v)) {
+    const s = v.toString('utf8');
+    return /^[\x20-\x7e\u00a0-\uffff]*$/.test(s) ? s : '0x' + v.toString('hex');
+  }
+  return String(v);
+}
+
+const _numOuNulo = v => { const n = parseInt(v); return Number.isFinite(n) ? n : null; };
+
+// Contadores P&B e Color pela tabela de marcadores da Printer MIB (RFC 3805).
+// Só devolve números quando a impressora separa os marcadores; caso contrário devolve null
+// (o painel mostra "—" em vez de inventar um valor).
+async function lerContadoresPorMarcador(ip) {
+  const itens = await snmpWalk(ip, '1.3.6.1.2.1.43.10.2.1', 200);
+  const linhas = {};
+  for (const it of itens) {
+    const m = it.oid.match(/^1\.3\.6\.1\.2\.1\.43\.10\.2\.1\.(\d+)\.(\d+)\.(\d+)$/);
+    if (!m) continue;
+    const coluna = +m[1], idx = m[2] + '.' + m[3];
+    (linhas[idx] = linhas[idx] || {})[coluna] = it.value;
+  }
+  let pb = null, cor = null;
+  for (const l of Object.values(linhas)) {
+    const unidade = parseInt(l[3]), vida = parseInt(l[4]), corantes = parseInt(l[6]);
+    if (!Number.isFinite(vida) || !Number.isFinite(corantes)) continue;
+    if (unidade !== 7 && unidade !== 8) continue; // 7 = impressões, 8 = folhas
+    if (corantes <= 1) pb = (pb || 0) + vida; else cor = (cor || 0) + vida;
+  }
+  if (pb !== null && cor !== null) return { pb, cor };
+  if (pb !== null && cor === null) return { pb, cor: 0 }; // equipamento monocromático
+  return null;
+}
+
+// Amostra SNMP bruta, enviada UMA vez por impressora a cada início do agente, para diagnóstico
+// de contadores que cada fabricante expõe em OIDs próprios.
+const _dumpFeito = new Set();
+const SUBARVORE_FAB = {
+  XEROX:   '1.3.6.1.4.1.253.8.53.13.2.1',
+  HP:      '1.3.6.1.4.1.11.2.3.9.4.2',
+  KYOCERA: '1.3.6.1.4.1.1347.42',
+  RICOH:   '1.3.6.1.4.1.367.3.2.1.2.19',
+  CANON:   '1.3.6.1.4.1.1602.1.11.1.3',
+  MINOLTA: '1.3.6.1.4.1.18334.1.1.1.5.7.2',
+};
+async function montarAmostraMib(ip, fabricante) {
+  const partes = [`Amostra SNMP de ${ip} (${fabricante}) em ${new Date().toISOString()}`];
+  const bases = ['1.3.6.1.2.1.43.10.2.1'];
+  if (SUBARVORE_FAB[fabricante]) bases.push(SUBARVORE_FAB[fabricante]);
+  for (const base of bases) {
+    const itens = await snmpWalk(ip, base, 500);
+    partes.push(`# ${base} (${itens.length} itens)`);
+    itens.forEach(it => partes.push(`${it.oid} = ${valorLegivel(it.value).slice(0, 80)}`));
+  }
+  return partes.join('\n').slice(0, 40000);
+}
+
+// Decide de onde vêm os contadores P&B/Color e diz a origem, para o painel nunca mostrar número
+// inventado como se fosse leitura: origem 'inferido-mono' = equipamento monocromático (P&B = total).
+function resolverContadores(fabricante, data, marc, ehColor) {
+  const total = _numOuNulo(data.pagesTotal);
+  const pbV = _numOuNulo(data.pagesBW), corV = _numOuNulo(data.pagesColor);
+  if (fabricante === 'XEROX' || fabricante === 'MINOLTA') {
+    if (pbV !== null && corV !== null) return { pb: pbV, cor: corV, origem: 'fabricante' };
+    if (pbV !== null && corV === null && !ehColor) return { pb: pbV, cor: 0, origem: 'fabricante-mono' };
+    if (pbV === null && corV === null && !ehColor && total !== null) return { pb: total, cor: 0, origem: 'inferido-mono' };
+  }
+  if (marc) return { pb: marc.pb, cor: marc.cor, origem: 'marcadores' };
+  if (fabricante !== 'XEROX' && (pbV !== null || corV !== null)) return { pb: pbV, cor: corV, origem: 'generico' };
+  return { pb: null, cor: null, origem: null };
 }
 
 async function coletarImpressora(ip) {
@@ -323,18 +447,25 @@ async function coletarImpressora(ip) {
 
   const erros = parseErros(data.printerDetected);
 
-  return {
+  const marc = await lerContadoresPorMarcador(ip).catch(() => null);
+  const ehColor = [tonerCyanPct, tonerMagPct, tonerYelPct].some(v => v !== null);
+  const cont = resolverContadores(fabricante, data, marc, ehColor);
+
+  const dados = {
     ip,
     fabricante,
     descricao:      data.sysDescr  || '',
     nome_rede:      data.sysName   || '',
     serial:         data.serialNumber || '',
-    status:         parseStatus(data.printerStatus),
+    status:         parseStatus(data.printerStatus, data.deviceStatus),
+    status_snmp:    `hrPrinterStatus=${data.printerStatus ?? '-'} hrDeviceStatus=${data.deviceStatus ?? '-'}`,
     erros,
     online:         true,
     paginas_total:  parseInt(data.pagesTotal)  || 0,
-    paginas_pb:     parseInt(data.pagesBW)     || 0,
-    paginas_color:  parseInt(data.pagesColor)  || 0,
+    // null = a impressora não informa essa separação (o painel mostra "—", e não zero)
+    paginas_pb:     cont.pb,
+    paginas_color:  cont.cor,
+    contadores_origem: cont.origem,
     toner: {
       preto:  tonerBlackPct,
       ciano:  tonerCyanPct,
@@ -345,28 +476,50 @@ async function coletarImpressora(ip) {
     papel_nivel: calcPct(data.paperTrayCur, data.paperTrayCapMax),
     coletado_em: new Date().toISOString(),
   };
+
+  if (dados.paginas_pb !== null && dados.paginas_color !== null && dados.paginas_total > 0) {
+    const soma = dados.paginas_pb + dados.paginas_color;
+    if (Math.abs(soma - dados.paginas_total) > Math.max(10, dados.paginas_total * 0.01)) {
+      dados.contadores_divergentes = true;
+      log(`⚠️  ${ip}: P&B + Color (${soma}) difere do total (${dados.paginas_total}) — conferir o contador`);
+    }
+  }
+  if (!_dumpFeito.has(ip)) {
+    _dumpFeito.add(ip);
+    try { dados.mib_amostra = await montarAmostraMib(ip, fabricante); } catch(e) { log(`Amostra SNMP de ${ip} falhou: ${e.message}`); }
+  }
+  return dados;
 }
 
 // ─── DETECÇÃO USB (impressoras locais) ───────────────────────────────────────
+// O WMIC foi removido das versões recentes do Windows; a consulta agora usa PowerShell.
+// Só entram impressoras em porta USB (ignora PDF, XPS, OneNote e impressoras de rede,
+// que já são coletadas via SNMP).
 function detectarImpressorasUSB() {
+  if (os.platform() !== 'win32') return [];
   try {
-    // wmic lista impressoras instaladas no Windows
-    const out = execSync(
-      'wmic printer get Name,PortName,PrinterStatus,WorkOffline /format:csv',
-      { timeout: 5000, encoding: 'utf8' }
-    );
-    const linhas = out.split('\n').filter(l => l.trim() && !l.startsWith('Node'));
-    return linhas.map(linha => {
-      const cols = linha.split(',');
+    const comando =
+      "[Console]::OutputEncoding=[System.Text.Encoding]::UTF8; " +
+      "Get-CimInstance Win32_Printer | Where-Object { $_.PortName -like 'USB*' } | " +
+      "Select-Object Name,PortName,PrinterStatus,WorkOffline | ConvertTo-Json -Compress";
+    const out = execFileSync('powershell.exe',
+      ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', comando],
+      { timeout: 20000, encoding: 'utf8', windowsHide: true });
+    const txt = (out || '').trim();
+    if (!txt) return [];
+    let lista = JSON.parse(txt);
+    if (!Array.isArray(lista)) lista = [lista]; // PowerShell devolve objeto único sem array
+    return lista.map(p => {
+      const offline = p.WorkOffline === true;
       return {
         tipo: 'usb',
-        nome: (cols[2] || '').trim(),
-        porta: (cols[3] || '').trim(),
-        status_raw: (cols[4] || '').trim(),
-        offline: (cols[5] || '').trim().toLowerCase() === 'true',
-        online: (cols[5] || '').trim().toLowerCase() !== 'true',
+        nome: String(p.Name || '').trim(),
+        porta: String(p.PortName || '').trim(),
+        status_raw: String(p.PrinterStatus ?? ''),
+        offline,
+        online: !offline,
         ip: null,
-        fabricante: detectFabricante((cols[2] || '')),
+        fabricante: detectFabricante(p.Name || ''),
         coletado_em: new Date().toISOString(),
       };
     }).filter(p => p.nome);
@@ -379,13 +532,17 @@ function detectarImpressorasUSB() {
 // ─── ENVIO PARA O SERVIDOR ───────────────────────────────────────────────────
 async function enviarDados(impressoras) {
   if (!impressoras.length) { log('Nenhuma impressora para enviar.'); return; }
+  if (!CLIENT_KEY) {
+    log(`⛔ Chave do cliente ausente — nada foi enviado. Verifique se o config.json está na mesma pasta do .exe (${BASE_DIR}) com "clientKey" preenchido. Baixe o pacote do cliente no Orion.`);
+    return;
+  }
   try {
     const payload = {
       clientKey:   CLIENT_KEY,
       clientId:    CLIENT_ID,
       hostname:    os.hostname(),
       platform:    os.platform(),
-      agente_ver:  '1.0.0',
+      agente_ver:  AGENT_VERSION,
       timestamp:   new Date().toISOString(),
       impressoras,
     };
@@ -415,7 +572,7 @@ async function ciclo() {
     const dados = await coletarImpressora(ip);
     if (dados) {
       impressorasRede.push(dados);
-      log(`  → ${dados.fabricante} | ${dados.descricao.substring(0,40)} | Páginas: ${dados.paginas_total} | Toner P: ${dados.toner.preto}%`);
+      log(`  → ${dados.fabricante} | ${dados.descricao.substring(0,40)} | Páginas: ${dados.paginas_total} (P&B ${dados.paginas_pb ?? 'n/d'} / Color ${dados.paginas_color ?? 'n/d'}) | Toner P: ${dados.toner.preto}% | Status: ${dados.status} (${dados.status_snmp})`);
     }
   }
 
@@ -450,7 +607,7 @@ function verificarAlertas(impressoras) {
 }
 
 // ─── LOG ─────────────────────────────────────────────────────────────────────
-const LOG_FILE = path.join(__dirname, 'agente.log');
+const LOG_FILE = path.join(BASE_DIR, 'agente.log');
 function log(msg) {
   const linha = `[${new Date().toLocaleString('pt-BR')}] ${msg}`;
   console.log(linha);
@@ -463,7 +620,7 @@ function log(msg) {
 }
 
 // ─── START ───────────────────────────────────────────────────────────────────
-log('Orion Agente v1.0.0 iniciado');
+log(`Orion Agente v${AGENT_VERSION} iniciado`);
 log(`Servidor: ${SERVER_URL}`);
 log(`Cliente ID: ${CLIENT_ID} | Intervalo: ${INTERVAL_MIN} min`);
 
