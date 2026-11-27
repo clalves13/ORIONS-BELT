@@ -1122,16 +1122,18 @@ function calcFechFin(ct,modo,linhas,mens){
 // Lê do monitoramento (telemetria) o contador de cada impressora do cliente no início e no fim da competência
 async function leituraMonitorFin(req,cid,comp){
   const [y,m]=comp.split('-').map(Number), ini=new Date(Date.UTC(y,m-1,1)).toISOString(), fimD=new Date(Date.UTC(y,m,1)-1).toISOString(), desde=new Date(Date.UTC(y,m-1,1)-45*86400000).toISOString();
-  const am=await col('monitor_telemetria').find({cliente_id:cid,created_at:{$gte:desde,$lte:fimD}},{projection:{created_at:1,'impressoras.ip':1,'impressoras.nome':1,'impressoras.descricao':1,'impressoras.serial':1,'impressoras.paginas_total':1,'impressoras.paginas_pb':1,'impressoras.paginas_color':1}}).sort({created_at:1}).toArray();
+  const am=await col('monitor_telemetria').find({cliente_id:cid,created_at:{$gte:desde,$lte:fimD}},{projection:{created_at:1,'impressoras.ip':1,'impressoras.nome':1,'impressoras.descricao':1,'impressoras.serial':1,'impressoras.paginas_total':1,'impressoras.paginas_pb':1,'impressoras.paginas_color':1,'impressoras.contadores_origem':1,'impressoras.contadores_divergentes':1}}).sort({created_at:1}).toArray();
   const eqs=await tenantCol('equipamentos',req).find({cliente_id:cid}).toArray(), por={}, n=v=>(v===null||v===undefined||v===''||!Number.isFinite(Number(v)))?null:Number(v);
-  for(const a of am)for(const imp of (a.impressoras||[])){ const k=imp.serial||imp.ip||imp.nome; if(!k)continue; const r=por[k]=por[k]||{antes:null,primeiro:null,ultimo:null}; r.imp=imp; const l={t:a.created_at,pb:n(imp.paginas_pb),cor:n(imp.paginas_color),tot:n(imp.paginas_total)}; if(a.created_at<ini)r.antes=l; else{ if(!r.primeiro)r.primeiro=l; r.ultimo=l; } }
+  for(const a of am)for(const imp of (a.impressoras||[])){ const k=imp.serial||imp.ip||imp.nome; if(!k)continue; const r=por[k]=por[k]||{antes:null,primeiro:null,ultimo:null}; r.imp=imp; let pb=n(imp.paginas_pb), cor=n(imp.paginas_color); const tot=n(imp.paginas_total); if(tot>0&&!pb&&!cor){pb=null;cor=null;} /* 0+0 com total = divisão não informada (agente antigo) */ const l={t:a.created_at,pb,cor,tot,orig:imp.contadores_origem||'',div:!!imp.contadores_divergentes}; if(a.created_at<ini)r.antes=l; else{ if(!r.primeiro)r.primeiro=l; r.ultimo=l; } }
   const linhas=[], avisos=[]; const dia=t=>t.slice(8,10)+'/'+t.slice(5,7);
   for(const [k,r] of Object.entries(por)){ const eq=eqs.find(e=>e.nserie&&e.nserie===r.imp.serial), nome=eq?[eq.nome,eq.modelo].filter(Boolean).join(' '):(r.imp.descricao||r.imp.nome||r.imp.ip||k); const av=[];
     if(!r.ultimo){ avisos.push(`${nome}: sem leitura do monitoramento neste mês.`); continue; }
     const a=r.antes||r.primeiro; if(!r.antes)av.push('sem leitura do mês anterior: usada a primeira leitura do mês (início aproximado)');
-    const apenasTotal=a.pb===null&&a.cor===null&&r.ultimo.pb===null&&r.ultimo.cor===null;
+    const temDiv=x=>x.pb!==null||x.cor!==null, apenasTotal=!(temDiv(a)&&temDiv(r.ultimo));
     const ipb=apenasTotal?(a.tot||0):(a.pb||0), fpb=apenasTotal?(r.ultimo.tot||0):(r.ultimo.pb||0), icor=apenasTotal?0:(a.cor||0), fcor=apenasTotal?0:(r.ultimo.cor||0);
-    if(apenasTotal)av.push('monitoramento informou só o total de páginas: lançado como P&B, confira a divisão P&B/Color');
+    if(apenasTotal)av.push(temDiv(a)||temDiv(r.ultimo)?'a divisão P&B/Color só existe em uma das leituras (início ou fim do mês): lançado o total como P&B, confira e ajuste manualmente':'monitoramento informou só o total de páginas: lançado como P&B, confira a divisão P&B/Color');
+    if(r.ultimo.orig==='inferido-mono')av.push('P&B inferido: equipamento monocromático (P&B = total de páginas)');
+    if(r.ultimo.div)av.push('P&B + Color difere do total na última leitura: confira o contador');
     if(fpb<ipb||fcor<icor)av.push('contador diminuiu (troca ou zeragem da máquina?): confira a leitura');
     if(new Date(fimD)-new Date(r.ultimo.t)>7*86400000)av.push(`última leitura em ${dia(r.ultimo.t)}`);
     if(!eq)av.push('equipamento não encontrado no cadastro pelo nº de série');
@@ -1147,6 +1149,26 @@ app.post('/api/financeiro/fechamentos/preparar', requireAuth, requireFinanceiroA
   const ex=await tenantCol('financeiro_fechamentos',req).findOne({contrato_id:b.contrato_id,competencia:b.competencia}); const prop=await leituraMonitorFin(req,ct.cliente_id,b.competencia);
   const cc=await tenantCol('financeiro_contratos_cfg',req).findOne({kind:'contrato',contrato_id:b.contrato_id}), meses=MESES_PERIODO_FIN[ct.periodicidade||'Mensal']||1, fixos=round2Fin(((cc&&cc.itens_fixos)||[]).reduce((s,x)=>s+numFin(x.valor),0)*meses);
   res.json({contrato:{id:b.contrato_id,cliente_id:ct.cliente_id,tipo:ct.tipo,valor_mensal:ct.valor_mensal||0,franq_pb:ct.franq_pb||0,exc_pb:ct.exc_pb||0,franq_cor:ct.franq_cor||0,exc_cor:ct.exc_cor||0,periodicidade:ct.periodicidade||'Mensal',itens_fixos_total:fixos},existente:ex?{...ex,id:ex._id.toString()}:null,proposta:{...prop,modo:'somada',mensalidade:round2Fin((ct.valor_mensal||0)+fixos)}}); }catch(e){res.status(500).json({error:e.message});} });
+// Prepara de uma vez o RASCUNHO de fechamento dos contratos ativos com franquia que ainda não têm fechamento no mês.
+// Nada é faturado nem enviado: cada fechamento continua exigindo conferência e o botão "Faturar".
+app.post('/api/financeiro/fechamentos/preparar-todos', requireAuth, requireFinanceiroAcesso, async (req,res) => { try{
+  const comp=(req.body||{}).competencia; if(!compFin(comp))return res.status(400).json({error:'Competência inválida.'});
+  const tc=tenantCol('financeiro_fechamentos',req), cts=await col('contratos').find({status:'Ativo'}).toArray(), out=[];
+  for(const ct of cts){
+    if(ct.tipo==='Fixo Mensal')continue; // sem contador não há fechamento por leitura
+    const cid=ct.cliente_id, ctid=ct._id.toString(); let cli=null;
+    try{ cli=await tenantCol('clientes',req).findOne({_id:new ObjectId(cid)}); }catch(e){}
+    if(!cli)continue; // cliente de outra empresa (tenant) ou removido
+    const nome=cli.nome||'—', ex=await tc.findOne({contrato_id:ctid,competencia:comp});
+    if(ex){ out.push({contrato_id:ctid,cliente:nome,situacao:ex.status==='faturado'?'faturado':'ja_existe',total:ex.total||0}); continue; }
+    const prop=await leituraMonitorFin(req,cid,comp), L=linhasFin(prop.linhas);
+    if(!L){ out.push({contrato_id:ctid,cliente:nome,situacao:'sem_leitura',avisos:prop.avisos}); continue; }
+    const cc=await tenantCol('financeiro_contratos_cfg',req).findOne({kind:'contrato',contrato_id:ctid}), meses=MESES_PERIODO_FIN[ct.periodicidade||'Mensal']||1;
+    const fixos=round2Fin(((cc&&cc.itens_fixos)||[]).reduce((x,i)=>x+numFin(i.valor),0)*meses), c=calcFechFin(ct,'somada',L,round2Fin((ct.valor_mensal||0)+fixos));
+    const r=await tc.insertOne({contrato_id:ctid,cliente_id:cid,competencia:comp,modo:'somada',...c,status:'rascunho',titulo_id:'',origem_auto:true,created_at:now(),updated_at:now()});
+    out.push({contrato_id:ctid,cliente:nome,situacao:'criado',id:r.insertedId.toString(),total:c.total,pg_pb:c.pg_pb_total,pg_cor:c.pg_cor_total,excedente:c.excedente,avisos:[...prop.avisos,...prop.linhas.filter(l=>l.aviso).map(l=>l.nome+': '+l.aviso)]});
+  }
+  res.json({competencia:comp,resultados:out}); }catch(e){res.status(500).json({error:e.message});} });
 app.post('/api/financeiro/fechamentos', requireAuth, requireFinanceiroAcesso, async (req,res) => { try{ const b=req.body||{}; if(!compFin(b.competencia))return res.status(400).json({error:'Competência inválida.'});
   const ct=await col('contratos').findOne({_id:new ObjectId(b.contrato_id)}); if(!ct)return res.status(404).json({error:'Contrato não encontrado.'}); const L=linhasFin(b.linhas); if(!L)return res.status(400).json({error:'Inclua de 1 a 60 máquinas.'});
   const modo=b.modo==='maquina'?'maquina':'somada', c=calcFechFin(ct,modo,L,b.mensalidade), tc=tenantCol('financeiro_fechamentos',req), ex=await tc.findOne({contrato_id:b.contrato_id,competencia:b.competencia});
@@ -2146,6 +2168,10 @@ app.post('/api/monitor/telemetria', rlAgente, async (req,res) => {
     const cliente = await col('clientes').findOne({ monitor_key: clientKey });
     if (!cliente) return res.status(403).json({ error: 'Chave inválida.' });
     const cid = cliente._id.toString();
+    // Agentes 1.0.1 mandavam 0 em P&B e Color quando a impressora não informa a divisão: 0 + 0 com total > 0 = "não informado"
+    for (const i of (impressoras||[])) {
+      if (i && Number(i.paginas_total) > 0 && !Number(i.paginas_pb) && !Number(i.paginas_color)) { i.paginas_pb = null; i.paginas_color = null; }
+    }
     await col('monitor_telemetria').insertOne({ cliente_id:cid, cliente_nome:cliente.nome, monitor_key:clientKey, hostname:hostname||'', platform:platform||'', agente_ver:agente_ver||'', timestamp:timestamp||now(), impressoras:impressoras||[], created_at:now() });
     for (const imp of (impressoras||[])) {
       // Identidade do card: rede = IP; USB = tipo + nome (USB não tem IP; antes o filtro usava o nome mas o

@@ -463,6 +463,7 @@ async function verDetalhes(id) {
     { l:'Páginas Total', v: fmtC(imp.paginas_total) },
     { l:'Páginas P&B',   v: fmtC(imp.paginas_pb) },
     { l:'Páginas Color', v: fmtC(imp.paginas_color) },
+    { l:'Origem P&B/Color', v: ({fabricante:'Lido da impressora', 'fabricante-mono':'Lido da impressora (monocromática)', 'inferido-mono':'Inferido: monocromática (P&B = total)', marcadores:'Lido (tabela padrão)', generico:'Não verificado'})[imp.contadores_origem] || 'Não informado' },
     { l:'Último Contato', v: tempoRelativo(imp.ultimo_contato) },
     { l:'Tambor',        v: imp.drum_pct !== null ? imp.drum_pct+'%' : '—' },
     { l:'Papel Bandeja', v: imp.papel_nivel !== null ? imp.papel_nivel+'%' : '—' },

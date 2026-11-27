@@ -2694,8 +2694,9 @@ label { font-size: 11px !important; font-weight: 600 !important; color: #475569 
       <div id="fv-fech" style="display:none">
         <div class="fin-bar"><label style="font-size:12px;color:var(--tx3)">Competência</label><input type="month" id="fc-mes" onchange="carregarFinFech()">
           <div class="swrap" style="flex:1;min-width:160px"><span style="color:var(--tx3)">🔍</span><input type="text" id="fc-q" placeholder="Buscar cliente..." oninput="renderFinFech()"></div>
-          <label style="font-size:12px;color:var(--tx3)">Dia padrão de vencimento</label><input type="number" id="fc-dia" min="1" max="31" style="width:70px" placeholder="1-31"><button class="btn btn-ghost btn-sm" onclick="salvarDiaPadrao()">Salvar dia</button></div>
+          <label style="font-size:12px;color:var(--tx3)">Dia padrão de vencimento</label><input type="number" id="fc-dia" min="1" max="31" style="width:70px" placeholder="1-31"><button class="btn btn-ghost btn-sm" onclick="salvarDiaPadrao()">Salvar dia</button> <button class="btn btn-primary btn-sm" onclick="prepararTodosFech()" title="Cria rascunhos de fechamento com as leituras do monitoramento">📡 Preparar todos do mês</button></div>
         <div class="fin-cfg-sub" style="margin:0 0 8px">Escolha o mês e feche cada contrato: o Orion importa o contador de cada máquina do monitoramento (você pode corrigir ou digitar), calcula o excedente e gera <b>uma única fatura por cliente</b>.</div>
+        <div id="fc-lote"></div>
         <div class="card" style="padding:0"><div class="twrap"><table><thead><tr><th>Cliente</th><th>Contrato</th><th>Mensalidade</th><th>Franquia contratada</th><th>Fechamento</th><th>Ação</th></tr></thead><tbody id="tb-fc"></tbody></table></div></div>
       </div>
     </div>
@@ -8274,8 +8275,9 @@ function renderContratos(tab) {
               <div style="font-size:10px;color:var(--tx3)">${(c.periodicidade&&c.periodicidade!=='Mensal')?'Mensal ('+c.periodicidade+'/'+({'Anual':12,'Semestral':6,'Trimestral':3}[c.periodicidade]||1)+'x)':'Mensalidade'}</div>
             </div>`:
           `<div style="text-align:center;padding:7px;background:var(--sf2);border-radius:6px">
-              <div style="font-size:14px;font-weight:700">P&B: ${c.franq_pb||0}</div>
+              <div style="font-size:13px;font-weight:700">P&B: ${c.franq_pb||0} · Color: ${c.franq_cor||0}</div>
               <div style="font-size:10px;color:var(--tx3)">Franquia cópias/mês</div>
+              <div style="font-size:10px;color:var(--tx3);margin-top:2px">Excedente: ${fm(c.exc_pb||0)} P&B · ${fm(c.exc_cor||0)} Color</div>
             </div>`}
           <div style="text-align:center;padding:7px;background:var(--sf2);border-radius:6px">
             <div style="font-size:14px;font-weight:700">${c.vencimento?fd(c.vencimento):'—'}</div>
@@ -9103,6 +9105,18 @@ function finVendasSub(s){document.getElementById('fv-avulso').style.display=s===
   document.querySelectorAll('#fin-vendasnav button').forEach(b=>b.classList.toggle('active',b.dataset.s===s));if(s==='fech')carregarFinFech();}
 async function carregarFinFech(){const el=document.getElementById('fc-mes');if(!el.value)el.value=_fcMesPadrao();
   try{G_finFech=await api('GET','/api/financeiro/fechamentos?competencia='+el.value);_fcErro='';}catch(e){G_finFech=[];_fcErro=e.message||'Erro ao carregar.';}await _prevEnsure(true);document.getElementById('fc-dia').value=G_finCfgCt.padrao||'';renderFinFech();}
+async function prepararTodosFech(){
+  const comp=document.getElementById('fc-mes').value||_fcMesPadrao(), box=document.getElementById('fc-lote');
+  if(!confirm('Preparar o fechamento de '+comp+' para todos os contratos de franquia que ainda não foram fechados?\n\nIsso só cria RASCUNHOS com as leituras do monitoramento. Nada é faturado nem enviado: cada fechamento precisa ser conferido e faturado por você.'))return;
+  box.innerHTML='<div class="fin-cfg-sub">Preparando fechamentos...</div>';
+  try{
+    const r=await api('POST','/api/financeiro/fechamentos/preparar-todos',{competencia:comp});
+    const rot={criado:'<span class="badge bo" style="font-size:10px">Rascunho criado</span>',ja_existe:'<span class="badge bgr" style="font-size:10px">Já tinha rascunho</span>',faturado:'<span class="badge bg" style="font-size:10px">Já faturado</span>',sem_leitura:'<span class="badge br" style="font-size:10px">Sem leitura</span>'};
+    const linhas=r.resultados.map(x=>`<tr><td>${_ftEsc(x.cliente)}</td><td>${rot[x.situacao]||_ftEsc(x.situacao)}</td><td>${x.pg_pb!==undefined?x.pg_pb+' P&B · '+x.pg_cor+' Color':'—'}</td><td>${x.total!==undefined?fm(x.total):'—'}</td><td style="font-size:11px;color:var(--tx3)">${_ftEsc((x.avisos||[]).join(' | ')||'—')}</td></tr>`).join('');
+    box.innerHTML=`<div class="card" style="padding:12px;margin-bottom:10px"><div style="font-weight:700;margin-bottom:6px">Resultado — ${_ftEsc(comp)}</div>${r.resultados.length?`<div class="twrap"><table style="font-size:12px"><thead><tr><th>Cliente</th><th>Situação</th><th>Páginas</th><th>Total</th><th>Avisos para conferir</th></tr></thead><tbody>${linhas}</tbody></table></div>`:'<div class="fin-cfg-sub">Nenhum contrato de franquia ativo encontrado.</div>'}<div class="fin-cfg-sub" style="margin-top:6px">São rascunhos: abra cada um em <b>Continuar</b> para conferir as leituras antes de faturar.</div></div>`;
+    await carregarFinFech();
+  }catch(e){box.innerHTML='';alert(e.message||'Não foi possível preparar os fechamentos.');}
+}
 function renderFinFech(){const tb=document.getElementById('tb-fc');if(!tb)return;
   if(_fcErro){tb.innerHTML=`<tr><td colspan="6"><div class="empty"><div class="empty-ico">🔒</div><div class="empty-t">${_ftEsc(_fcErro)}</div></div></td></tr>`;return;}
   const q=(document.getElementById('fc-q').value||'').toLowerCase(),l=(G_contratos||[]).filter(c=>c.status==='Ativo'&&(_ffCli(c.cliente_id).nome||'').toLowerCase().includes(q));
